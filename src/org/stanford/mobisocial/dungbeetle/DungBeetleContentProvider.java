@@ -1,12 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.security.AccessControlException;
 import java.util.List;
 import android.content.ContentProvider;
 import android.content.ContentValues;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -47,27 +44,16 @@ public class DungBeetleContentProvider extends ContentProvider {
 
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
-        if(match(uri, "me", "profile")){
+        List<String> segs = uri.getPathSegments();
+        if(match(uri, "me", ".+")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                long seqId = dbo.addToFeed(dbo.getMyPersonTag(),
-                                           "me",
-                                           "profile",
-                                           obj);
-                return Uri.parse(CONTENT_URI + "/" + "me" + "/" + seqId);
-            }
-            catch(JSONException e){
-                return null;
-            }
-        }
-        else if(match(uri, "me", "status")){
-            try{
-                JSONObject obj = new JSONObject(values.getAsString("json"));
-                long seqId = dbo.addToFeed(dbo.getMyPersonTag(),
-                                           "me",
-                                           "status",
-                                           obj);
-                return Uri.parse(CONTENT_URI + "/" + "me" + "/" + seqId);
+                dbo.addToFeed(
+                    dbo.getMyCreatorTag(),
+                    "friend",
+                    segs.get(1),
+                    obj);
+                return Uri.parse(CONTENT_URI + "/" + "me" + "/" + segs.get(1));
             }
             catch(JSONException e){
                 return null;
@@ -77,6 +63,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             return null;
         }
     }
+
 
     @Override
     public boolean onCreate() {
@@ -85,31 +72,30 @@ public class DungBeetleContentProvider extends ContentProvider {
         return (db == null) ? false : true;
     }
 
+
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        if(match(uri, "friend", "profile")){
-            
+        List<String> segs = uri.getPathSegments();
+        if(match(uri, "friend", ".+")){
+            return dbo.queryLatest("friend", segs.get(1));
         }
-        else if(match(uri, "me", "profile")){
-            
-        }
-        else if(match(uri, "me", "status")){
-            
-        }
-        else if(match(uri, "friend", "status")){
-            
+        else if(match(uri, "me", ".+")){
+            return dbo.queryLatest(dbo.getMyCreatorTag(), 
+                                   "friend", segs.get(1));
         }
         else{
             return null;
         }
     }
 
+
     @Override
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
         return 0;
     }
+
 
     // Helper for dispatching on url paths
     private boolean match(Uri uri, String... regexes){

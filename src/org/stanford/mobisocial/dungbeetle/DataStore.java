@@ -52,12 +52,12 @@ public class DataStore extends SQLiteOpenHelper {
         return mPrivKey;
     }
 
-    public String getMyPersonTag(){
+    public String getMyCreatorTag(){
         assert mPubKeyTag != null;
         return mPubKeyTag;
     }
 
-    public static String personTagForPublicKey(PublicKey key){
+    public static String creatorTagForPublicKey(PublicKey key){
 		String me = null;
 		try {
 			me = Util.SHA1(key.getEncoded());
@@ -72,7 +72,7 @@ public class DataStore extends SQLiteOpenHelper {
 	public void onOpen(SQLiteDatabase db) {
         mPubKey = getMyPubKey(db);
         mPrivKey = getMyPrivKey(db);
-        mPubKeyTag = personTagForPublicKey(mPubKey);
+        mPubKeyTag = creatorTagForPublicKey(mPubKey);
 	}
 
 	private static PublicKey getMyPubKey(SQLiteDatabase db) {
@@ -137,26 +137,16 @@ public class DataStore extends SQLiteOpenHelper {
 		db.execSQL("DROP_TABLE objects");
 		db.execSQL(
 			"CREATE TABLE objects (" +
-            "id INTEGER PRIMARY KEY," +
             "type TEXT," +
             "sequence_id INTEGER," +
-            "feed_id INTEGER," +
+            "feed_name TEXT," +
+            "creator_tag TEXT," +
             "json TEXT" +
 			")");
-        db.execSQL("CREATE UNIQUE INDEX objects_by_sequence_id ON objects (sequence_id)");
-        db.execSQL("CREATE INDEX objects_by_feed_id ON objects (feed_id)");
+        db.execSQL("CREATE INDEX objects_by_sequence_id ON objects (sequence_id)");
+        db.execSQL("CREATE INDEX objects_by_feed_name ON objects (feed_name)");
+        db.execSQL("CREATE INDEX objects_by_creator_tag ON objects (creator_tag)");
         db.execSQL("CREATE INDEX objects_by_type ON objects (type)");
-
-
-		db.execSQL("DROP_TABLE feeds");
-		db.execSQL(
-			"CREATE TABLE feeds (" +
-            "id INTEGER PRIMARY KEY," +
-            "person_tag TEXT," +
-            "name TEXT" +
-			")");
-        db.execSQL("CREATE UNIQUE INDEX feeds_by_name ON feeds (name)");
-        db.execSQL("CREATE INDEX objects_by_person_tag ON feeds (person_tag)");
 
         try {
             // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
@@ -188,49 +178,31 @@ public class DataStore extends SQLiteOpenHelper {
 	}
 
 
-	long addToFeed(String personTag, String feedName, String type, JSONObject json) {
-        long feedId = getFeedId(personTag, feedName);
-        if(feedId < 0){
-            Log.e(TAG, "No feed named:" + feedName);
-            return -1;
+	long addToFeed(String creatorTag, String feedName, String type, JSONObject json) {
+        try{
+            long maxSeqId = getFeedMaxSequenceId(creatorTag, feedName);
+            json.put("type", type);
+            json.put("sequenceId", maxSeqId);
+            ContentValues cv = new ContentValues();
+            cv.put("feed_name", feedName);
+            cv.put("creator_tag", creatorTag);
+            cv.put("type", type);
+            cv.put("sequence_id", maxSeqId + 1);
+            cv.put("json", json.toString());
+            getWritableDatabase().insert("objects", null, cv);
+            return maxSeqId;
         }
-        else{
-            try{
-                long maxSeqId = getFeedMaxSequenceId(feedId);
-                json.put("type", type);
-                json.put("sequenceId", maxSeqId);
-                ContentValues cv = new ContentValues();
-                cv.put("feed_id", feedId);
-                cv.put("type", type);
-                cv.put("sequence_id", maxSeqId + 1);
-                cv.put("json", json.toString());
-                getWritableDatabase().insert("objects", null, cv);
-                return maxSeqId;
-            }
-            catch(Exception e){
-                e.printStackTrace(System.err);
-                return -1;
-            }
+        catch(Exception e){
+            e.printStackTrace(System.err);
+            return -1;
         }
     }
 
-
-    private long getFeedId(String personTag, String feedName){
-        Cursor c = getReadableDatabase().rawQuery("SELECT id FROM feeds WHERE person_tag = ? AND name = ?", new String[] {personTag, feedName});
-        c.moveToFirst();
-        if(c.isAfterLast()){
-            return -1;
-        }
-        else{
-            return c.getLong(0);
-        }
-    }
-
-
-    private long getFeedMaxSequenceId(long id){
+    private long getFeedMaxSequenceId(String creatorTag, String feedName){
         Cursor c = getReadableDatabase().rawQuery(
-            "SELECT max(sequence_id) FROM objects WHERE feed_id = ?", 
-            new String[] {Long.toString(id)});
+            "SELECT max(sequence_id) FROM objects WHERE creator_tag = ? AND " + 
+            " feed_name = ?",
+            new String[] {creatorTag, feedName});
         c.moveToFirst();
         if(c.isAfterLast()){
             return -1;
@@ -240,24 +212,37 @@ public class DataStore extends SQLiteOpenHelper {
         }
     }
 
-	public JSONObject getLatestObjectOfType(String personTag, String feedName, String objectType) {
-        long feedId = getFeedId(personTag, feedName);
-		Cursor c = getReadableDatabase().rawQuery(
-            "SELECT json FROM objects WHERE feed_id = ? AND " + 
-            " sequence_id = SELECT max(sequence_id) FROM objects where type = ?",
-            new String[] {Long.toString(feedId), objectType});
-        if(c.isAfterLast()){
-            return null;
-        }
-        else{
-            try{
-                return new JSONObject(c.getString(0));
-            }
-            catch(JSONException e){
-                return null;
-            }
-        }
+	public Cursor queryLatest(String creatorTag, 
+                              String feedName, 
+                              String objectType) {
+		return getReadableDatabase().rawQuery(
+            " SELECT json FROM objects WHERE " + 
+            " creator_tag = ? AND feed_name = ? AND type = ? AND " + 
+            " sequence_id = (SELECT max(sequence_id) FROM " + 
+            " objects WHERE creator_tag = ? AND feed_name = ? AND type = ?)",
+            new String[] {creatorTag, feedName, objectType});
 	}
 
+	public Cursor queryLatest(String feedName, 
+                              String objectType) {
+        return getReadableDatabase().rawQuery(
+            " SELECT json FROM " + 
+            " (SELECT creator_tag,max(sequence_id) as max_seq_id FROM objects " + 
+            " WHERE feed_name = ? AND type = ? " + 
+            " GROUP BY creator_tag) AS x INNER JOIN " + 
+            " (SELECT * FROM objects " + 
+            "  WHERE feed_name = ? AND type = ?)  AS o ON " + 
+            "  o.creator_tag = x.creator_tag AND o.sequence_id = x.max_seq_id",
+            new String[] {feedName, objectType});
+	}
+
+	public Cursor queryAll(String creatorTag, 
+                           String feedName, 
+                           String objectType) {
+		return getReadableDatabase().rawQuery(
+            " SELECT json FROM objects WHERE  " + 
+            " creator_tag = ? AND feed_name = ? AND type = ?",
+            new String[] {creatorTag, feedName, objectType});
+	}
 
 }
