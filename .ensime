@@ -1,0 +1,6 @@
+(
+:project-package "edu.stanford.mobisocial.dungbeetle"
+:sources ("src" "gen")
+:compile-jars ("./libs/" "/home/aemon/lib/android/platforms/android-9")
+:target "./bin/classes/"
+)
