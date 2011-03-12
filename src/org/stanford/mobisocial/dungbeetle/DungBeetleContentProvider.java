@@ -62,7 +62,15 @@ public class DungBeetleContentProvider extends ContentProvider {
             }
         }
         else if(match(uri, "contacts")){
-            helper.addToContacts(values);
+            helper.insertContact(values);
+            return Uri.parse(uri.toString());
+        }
+        else if(match(uri, "subscriptions")){
+            helper.insertSubscription(values);
+            return Uri.parse(uri.toString());
+        }
+        else if(match(uri, "subscribers")){
+            helper.insertSubscriber(values);
             return Uri.parse(uri.toString());
         }
         else{
@@ -90,8 +98,10 @@ public class DungBeetleContentProvider extends ContentProvider {
                                           "friend", 
                                           segs.get(2));
         }
-        else if(match(uri, "contacts")){
-            return db.query("contacts",
+        else if(match(uri, "contacts") || 
+                match(uri, "subscribers") || 
+                match(uri, "subscriptions")){
+            return db.query(segs.get(0),
                             projection, 
                             selection, 
                             selectionArgs, 
