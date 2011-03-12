@@ -9,8 +9,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
 public class DungBeetleContentProvider extends ContentProvider {
+	public static final String AUTHORITY = "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
 	public static final Uri CONTENT_URI = 
         Uri.parse("content://edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider");
+	static final String TAG = "DungBeetleContentProvider";
 
     private DataStore dbo;
 	private SQLiteDatabase db;
@@ -96,6 +98,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         return 0;
     }
 
+
+    public DataStore getDatabaseHelper(){
+        return dbo;
+    }
 
     // Helper for dispatching on url paths
     private boolean match(Uri uri, String... regexes){

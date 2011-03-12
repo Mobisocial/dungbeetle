@@ -126,7 +126,6 @@ public class DataStore extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		db.beginTransaction();
 
-		db.execSQL("DROP_TABLE my_info");
 		db.execSQL(
 			"CREATE TABLE my_info (" +
             "public_key TEXT," +
@@ -134,7 +133,6 @@ public class DataStore extends SQLiteOpenHelper {
 			")");
 
 
-		db.execSQL("DROP_TABLE objects");
 		db.execSQL(
 			"CREATE TABLE objects (" +
             "type TEXT," +
@@ -143,6 +141,7 @@ public class DataStore extends SQLiteOpenHelper {
             "creator_tag TEXT," +
             "json TEXT" +
 			")");
+
         db.execSQL("CREATE INDEX objects_by_sequence_id ON objects (sequence_id)");
         db.execSQL("CREATE INDEX objects_by_feed_name ON objects (feed_name)");
         db.execSQL("CREATE INDEX objects_by_creator_tag ON objects (creator_tag)");
@@ -162,7 +161,7 @@ public class DataStore extends SQLiteOpenHelper {
             ContentValues cv = new ContentValues();
             cv.put("public_key", pubKeyStr);
             cv.put("private_key", privKeyStr);
-            getWritableDatabase().insertOrThrow("my_info", null, cv);
+            db.insertOrThrow("my_info", null, cv);
 
             Log.d(TAG, "Generated public key: " + pubKeyStr);
             Log.d(TAG, "Generated priv key: " + privKeyStr);
@@ -189,7 +188,7 @@ public class DataStore extends SQLiteOpenHelper {
             cv.put("type", type);
             cv.put("sequence_id", maxSeqId + 1);
             cv.put("json", json.toString());
-            getWritableDatabase().insert("objects", null, cv);
+            getWritableDatabase().insertOrThrow("objects", null, cv);
             return maxSeqId;
         }
         catch(Exception e){
@@ -217,9 +216,9 @@ public class DataStore extends SQLiteOpenHelper {
                               String objectType) {
 		return getReadableDatabase().rawQuery(
             " SELECT json FROM objects WHERE " + 
-            " creator_tag = ? AND feed_name = ? AND type = ? AND " + 
+            " creator_tag = :tag AND feed_name = :feed AND type = :type AND " + 
             " sequence_id = (SELECT max(sequence_id) FROM " + 
-            " objects WHERE creator_tag = ? AND feed_name = ? AND type = ?)",
+            " objects WHERE creator_tag = :tag AND feed_name = :feed AND type = :type)",
             new String[] {creatorTag, feedName, objectType});
 	}
 
@@ -228,10 +227,10 @@ public class DataStore extends SQLiteOpenHelper {
         return getReadableDatabase().rawQuery(
             " SELECT json FROM " + 
             " (SELECT creator_tag,max(sequence_id) as max_seq_id FROM objects " + 
-            " WHERE feed_name = ? AND type = ? " + 
+            " WHERE feed_name = :feed AND type = :type " + 
             " GROUP BY creator_tag) AS x INNER JOIN " + 
             " (SELECT * FROM objects " + 
-            "  WHERE feed_name = ? AND type = ?)  AS o ON " + 
+            "  WHERE feed_name = :feed AND type = :type)  AS o ON " + 
             "  o.creator_tag = x.creator_tag AND o.sequence_id = x.max_seq_id",
             new String[] {feedName, objectType});
 	}
