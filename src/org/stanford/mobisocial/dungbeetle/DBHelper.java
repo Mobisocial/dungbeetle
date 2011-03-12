@@ -8,8 +8,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.ContentValues;
@@ -22,14 +20,14 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
 import android.util.Log;
 
-public class DataStore extends SQLiteOpenHelper {
+public class DBHelper extends SQLiteOpenHelper {
 	static final int VERSION = 1;
-	static final String TAG = "DataStore";
+	static final String TAG = "DBHelper";
 	private PublicKey mPubKey;
 	private String mPubKeyTag;
 	private PrivateKey mPrivKey;
 
-	public DataStore(Context context) {
+	public DBHelper(Context context) {
 		super(
 		    context, 
 		    "DUNG_HEAP", 
@@ -68,6 +66,30 @@ public class DataStore extends SQLiteOpenHelper {
 		return me.substring(0, 10);
     }
 
+    public static PublicKey publicKeyFromString(String str){
+        try{
+            byte[] pubKeyBytes = Base64.decode(str);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
+            return keyFactory.generatePublic(publicKeySpec);                
+        }
+        catch(Exception e){
+            throw new IllegalStateException("Error loading public key: " + e);
+        }
+    }
+
+    public static PrivateKey privateKeyFromString(String str){
+        try{
+            byte[] privKeyBytes = Base64.decode(str);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
+            return keyFactory.generatePrivate(privateKeySpec);
+        }
+        catch(Exception e){
+            throw new IllegalStateException("Error loading public key: " + e);
+        }
+    }
+
 	@Override
 	public void onOpen(SQLiteDatabase db) {
         mPubKey = getMyPubKey(db);
@@ -82,17 +104,9 @@ public class DataStore extends SQLiteOpenHelper {
             throw new IllegalStateException("Missing my_info entry!");
         }
         else{
-            try{
-                String pubKeyStr = c.getString(0);
-                Log.d(TAG, "Loaded public key: " + pubKeyStr);
-                byte[] pubKeyBytes = Base64.decode(pubKeyStr);
-                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
-                return keyFactory.generatePublic(publicKeySpec);
-            }
-            catch(Exception e){
-                throw new IllegalStateException("Error loading public key: " + e);
-            }
+            String pubKeyStr = c.getString(0);
+            Log.d(TAG, "Loaded public key: " + pubKeyStr);
+            return publicKeyFromString(pubKeyStr);
         }
 	}
 
@@ -106,10 +120,7 @@ public class DataStore extends SQLiteOpenHelper {
             try{
                 String privKeyStr = c.getString(0);
                 Log.d(TAG, "Loaded private key: " + privKeyStr);
-                byte[] privKeyBytes = Base64.decode(privKeyStr);
-                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-                return keyFactory.generatePrivate(privateKeySpec);
+                return privateKeyFromString(privKeyStr);
             }
             catch(Exception e){
                 throw new IllegalStateException("Error loading private key: " + e);
@@ -141,11 +152,19 @@ public class DataStore extends SQLiteOpenHelper {
             "creator_tag TEXT," +
             "json TEXT" +
 			")");
-
         db.execSQL("CREATE INDEX objects_by_sequence_id ON objects (sequence_id)");
         db.execSQL("CREATE INDEX objects_by_feed_name ON objects (feed_name)");
         db.execSQL("CREATE INDEX objects_by_creator_tag ON objects (creator_tag)");
         db.execSQL("CREATE INDEX objects_by_type ON objects (type)");
+
+
+		db.execSQL(
+			"CREATE TABLE contacts (" +
+            "name TEXT," +
+            "public_key TEXT," +
+            "creator_tag TEXT" +
+			")");
+        db.execSQL("CREATE UNIQUE INDEX contacts_by_creator_tag ON contacts (creator_tag)");
 
         try {
             // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
@@ -197,6 +216,23 @@ public class DataStore extends SQLiteOpenHelper {
         }
     }
 
+	long addToContacts(ContentValues cv) {
+        try{
+            String pubKeyStr = cv.getAsString("public_key");
+            assert (pubKeyStr != null) && pubKeyStr.length() > 0;
+            PublicKey key = publicKeyFromString(pubKeyStr);
+            String tag = creatorTagForPublicKey(key);
+            cv.put("creator_tag", tag);
+            String name = cv.getAsString("name");
+            assert (name != null) && name.length() > 0;
+            return getWritableDatabase().insertOrThrow("contacts", null, cv);
+        }
+        catch(Exception e){
+            e.printStackTrace(System.err);
+            return -1;
+        }
+    }
+
     private long getFeedMaxSequenceId(String creatorTag, String feedName){
         Cursor c = getReadableDatabase().rawQuery(
             "SELECT max(sequence_id) FROM objects WHERE creator_tag = ? AND " + 
@@ -211,9 +247,9 @@ public class DataStore extends SQLiteOpenHelper {
         }
     }
 
-	public Cursor queryLatest(String creatorTag, 
-                              String feedName, 
-                              String objectType) {
+	public Cursor queryFeedLatest(String creatorTag, 
+                                  String feedName, 
+                                  String objectType) {
 		return getReadableDatabase().rawQuery(
             " SELECT json FROM objects WHERE " + 
             " creator_tag = :tag AND feed_name = :feed AND type = :type AND " + 
@@ -222,8 +258,8 @@ public class DataStore extends SQLiteOpenHelper {
             new String[] {creatorTag, feedName, objectType});
 	}
 
-	public Cursor queryLatest(String feedName, 
-                              String objectType) {
+	public Cursor queryFeedLatest(String feedName, 
+                                  String objectType) {
         return getReadableDatabase().rawQuery(
             " SELECT json FROM " + 
             " (SELECT creator_tag,max(sequence_id) as max_seq_id FROM objects " + 

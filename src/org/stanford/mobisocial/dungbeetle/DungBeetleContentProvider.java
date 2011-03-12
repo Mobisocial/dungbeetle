@@ -14,7 +14,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         Uri.parse("content://edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider");
 	static final String TAG = "DungBeetleContentProvider";
 
-    private DataStore dbo;
+    private DBHelper helper;
 	private SQLiteDatabase db;
 
 	public DungBeetleContentProvider() {
@@ -47,19 +47,23 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "me", ".+")){
+        if(match(uri, "feeds", "me", ".+")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                dbo.addToFeed(
-                    dbo.getMyCreatorTag(),
+                helper.addToFeed(
+                    helper.getMyCreatorTag(),
                     "friend",
-                    segs.get(1),
+                    segs.get(2),
                     obj);
-                return Uri.parse(CONTENT_URI + "/" + "me" + "/" + segs.get(1));
+                return Uri.parse(uri.toString());
             }
             catch(JSONException e){
                 return null;
             }
+        }
+        else if(match(uri, "contacts")){
+            helper.addToContacts(values);
+            return Uri.parse(uri.toString());
         }
         else{
             return null;
@@ -69,22 +73,31 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        dbo = new DataStore(getContext());
-        db = dbo.getWritableDatabase();
+        helper = new DBHelper(getContext());
+        db = helper.getWritableDatabase();
         return (db == null) ? false : true;
     }
-
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "friend", ".+")){
-            return dbo.queryLatest("friend", segs.get(1));
+        if(match(uri, "feeds", "friend", ".+")){
+            return helper.queryFeedLatest("friend", segs.get(2));
         }
-        else if(match(uri, "me", ".+")){
-            return dbo.queryLatest(dbo.getMyCreatorTag(), 
-                                   "friend", segs.get(1));
+        else if(match(uri, "feeds", "me", ".+")){
+            return helper.queryFeedLatest(helper.getMyCreatorTag(), 
+                                          "friend", 
+                                          segs.get(2));
+        }
+        else if(match(uri, "contacts")){
+            return db.query("contacts",
+                            projection, 
+                            selection, 
+                            selectionArgs, 
+                            null,
+                            null,
+                            sortOrder);
         }
         else{
             return null;
@@ -98,9 +111,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         return 0;
     }
 
-
-    public DataStore getDatabaseHelper(){
-        return dbo;
+    public DBHelper getDatabaseHelper(){
+        return helper;
     }
 
     // Helper for dispatching on url paths
