@@ -1,44 +1,29 @@
 package edu.stanford.mobisocial.dungbeetle.transport;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.util.*;
 import java.security.*;
-import java.security.spec.*;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 
 import javax.crypto.*;
 
-public class StandardIdentity implements Identity {
+public class XMPPMessageFormat {
 
     public static final int AES_Key_Size = 128;
+    private IdentityProvider mIdent;
 
-	private PublicKey pubkey;
-	private PrivateKey privkey;
-
-	public StandardIdentity(PublicKey pubkey, PrivateKey privkey) {
-		this.pubkey = pubkey;
-		this.privkey = privkey;
+	public XMPPMessageFormat(IdentityProvider ident) {
+        mIdent = ident;
 	}
 
-	public PublicKey publicKey() {
-		return pubkey;
+	public String getMessagePersonId(String s) {
+        try{
+            String[] parts = s.split(",");
+            return new String(Base64.decode(parts[0]), "UTF8");
+        }catch(UnsupportedEncodingException e){ return null; }
 	}
 
-	public PublicKey getMessagePublicKey(String s) {
-		try {
-			String[] parts = s.split(",");
-			String keyS = parts[0];
-			byte[] keyBytes = Base64.decode(keyS);
-			X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-			KeyFactory kf = KeyFactory.getInstance("RSA");
-
-			return kf.generatePublic(spec);
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-
-			return null;
-		}
-	}
 
 	public String prepareIncomingMessage(String s, PublicKey sender) throws CryptoException{
 		try {
@@ -64,7 +49,7 @@ public class StandardIdentity implements Identity {
 
             // Decrypt AES key
 			Cipher keyCipher = Cipher.getInstance("RSA");
-            keyCipher.init(Cipher.DECRYPT_MODE, privkey);
+            keyCipher.init(Cipher.DECRYPT_MODE, mIdent.userPrivateKey());
             CipherInputStream is = new CipherInputStream(
                 new ByteArrayInputStream(aesKeyBytes), keyCipher);
             byte[] aesKey = new byte[AES_Key_Size/8];
@@ -112,7 +97,7 @@ public class StandardIdentity implements Identity {
 
             // Generate a signature of the AES key
 			Signature signature = Signature.getInstance("SHA1withRSA");
-			signature.initSign(privkey, new SecureRandom());
+			signature.initSign(mIdent.userPrivateKey(), new SecureRandom());
 			signature.update(aesKeyCipherBytes);
 			byte[] sigBytes = signature.sign();
 			System.out.println("Computed signature of length " + sigBytes.length);
@@ -133,10 +118,9 @@ public class StandardIdentity implements Identity {
 			byte[] cipherData = cipherOut.toByteArray();
 			System.out.println("Computed cipher of length " + cipherData.length);
 
-			byte[] pkeyBytes = pubkey.getEncoded();
-			System.out.println("Public key of length " + pkeyBytes.length);
+			byte[] personIdBytes = mIdent.userPersonId().getBytes("UTF8");
 
-			return (Base64.encodeToString(pkeyBytes, false) + "," + 
+			return (Base64.encodeToString(personIdBytes, false) + "," + 
                     Base64.encodeToString(aesKeyCipherBytes, false) + "," +
                     Base64.encodeToString(sigBytes, false) + "," + 
                     Base64.encodeToString(iv, false) + "," +

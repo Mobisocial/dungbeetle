@@ -5,23 +5,21 @@ import java.util.List;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
 public class DungBeetleContentProvider extends ContentProvider {
-	public static final String AUTHORITY = "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
+	public static final String AUTHORITY = 
+        "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 
-    private DBHelper helper;
-	private SQLiteDatabase db;
+    private DBHelper mHelper;
 
-	public DungBeetleContentProvider() {
-	}
+	public DungBeetleContentProvider() {}
+
 	@Override
 	protected void finalize() throws Throwable {
-		if(db != null)
-			db.close();
+        mHelper.close();
 	}
 
 	@Override
@@ -49,8 +47,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         if(match(uri, "feeds", "me", ".+")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                helper.addToFeed(
-                    helper.getMyCreatorTag(),
+                mHelper.addToFeed(
+                    mHelper.userPersonId(),
                     "friend",
                     segs.get(2),
                     obj);
@@ -61,15 +59,15 @@ public class DungBeetleContentProvider extends ContentProvider {
             }
         }
         else if(match(uri, "contacts")){
-            helper.insertContact(values);
+            mHelper.insertContact(values);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscriptions")){
-            helper.insertSubscription(values);
+            mHelper.insertSubscription(values);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscribers")){
-            helper.insertSubscriber(values);
+            mHelper.insertSubscriber(values);
             return Uri.parse(uri.toString());
         }
         else{
@@ -80,9 +78,8 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        helper = new DBHelper(getContext());
-        db = helper.getWritableDatabase();
-        return (db == null) ? false : true;
+        mHelper = new DBHelper(getContext());
+        return mHelper.getWritableDatabase() == null;
     }
 
     @Override
@@ -90,23 +87,23 @@ public class DungBeetleContentProvider extends ContentProvider {
                         String[] selectionArgs, String sortOrder) {
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feeds", "friend", ".+")){
-            return helper.queryFeedLatest("friend", segs.get(2));
+            return mHelper.queryFeedLatest("friend", segs.get(2));
         }
         else if(match(uri, "feeds", "me", ".+")){
-            return helper.queryFeedLatest(helper.getMyCreatorTag(), 
-                                          "friend", 
-                                          segs.get(2));
+            return mHelper.queryFeedLatest(mHelper.userPersonId(), 
+                                           "friend", 
+                                           segs.get(2));
         }
         else if(match(uri, "contacts") || 
                 match(uri, "subscribers") || 
                 match(uri, "subscriptions")){
-            return db.query(segs.get(0),
-                            projection, 
-                            selection, 
-                            selectionArgs, 
-                            null,
-                            null,
-                            sortOrder);
+            return mHelper.getReadableDatabase().query(segs.get(0),
+                                                       projection, 
+                                                       selection, 
+                                                       selectionArgs, 
+                                                       null,
+                                                       null,
+                                                       sortOrder);
         }
         else{
             return null;
@@ -120,8 +117,9 @@ public class DungBeetleContentProvider extends ContentProvider {
         return 0;
     }
 
+    // For unit tests
     public DBHelper getDatabaseHelper(){
-        return helper;
+        return mHelper;
     }
 
     // Helper for dispatching on url paths

@@ -3,7 +3,6 @@ import android.os.Message;
 import edu.stanford.mobisocial.dungbeetle.transport.StateListener;
 import edu.stanford.mobisocial.dungbeetle.transport.IncomingMessage;
 import edu.stanford.mobisocial.dungbeetle.transport.MessageListener;
-import edu.stanford.mobisocial.dungbeetle.transport.StandardIdentity;
 import edu.stanford.mobisocial.dungbeetle.transport.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.transport.MessengerService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -26,11 +25,12 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(Context context, Handler toastHandler){
+    public ManagerThread(IdentityProvider ident, 
+                         Context context, 
+                         Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;
-		mMessenger = new XMPPMessengerService(
-            new StandardIdentity(myPubKey, myPrivKey));
+		mMessenger = new XMPPMessengerService(ident);
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Message m = mToastHandler.obtainMessage();
@@ -38,46 +38,42 @@ public class ManagerThread extends Thread {
                     mToastHandler.sendMessage(m);
                 }
                 public void onNotReady() {
+                    Message m = mToastHandler.obtainMessage();
+                    m.obj = "Messenger NOT ready.";
+                    mToastHandler.sendMessage(m);
                 }
             });
 		mMessenger.addMessageListener(new MessageListener() {
-                public void onMessage(IncomingMessage m) {
-                    System.out.println("Got message! " + m.toString());
+                public void onMessage(IncomingMessage incoming) {
+                    Message m = mToastHandler.obtainMessage();
+                    m.obj = incoming.contents();
+                    mToastHandler.sendMessage(m);
                 }
             });
-
-		mMessenger.init();
     }
 
 
     @Override
     public void run(){
         Log.i("ManagerThread", "Starting DungBeetle manager thread");
+        Log.i("ManagerThread", "Starting messenger...");
+		mMessenger.init();
         final ObjectContentObserver oco = new ObjectContentObserver(
             new Handler(mContext.getMainLooper()));
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), 
             true, oco);
-
 		for(;;) {
-			Date start = new Date();
-            processReceiveQueue();
-            processSendQueue();
-			Date stop = new Date();
+            update();
 			try {
 				Thread.sleep(10000);
 			} catch(InterruptedException e) {}
 		}
     }
 
-    private void processReceiveQueue(){
+
+    private void update(){
         if(receiveQueue.size() > 0){
-        }
-    }
-
-
-    private void processSendQueue(){
-        if(sendQueue.size() > 0){
         }
     }
 

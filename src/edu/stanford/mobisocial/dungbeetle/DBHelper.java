@@ -1,15 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import org.json.JSONObject;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -18,116 +9,36 @@ import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
-import android.util.Log;
 
 public class DBHelper extends SQLiteOpenHelper {
-	static final int VERSION = 1;
-	static final String TAG = "DBHelper";
-	private PublicKey mPubKey;
-	private String mPubKeyTag;
-	private PrivateKey mPrivKey;
+	public static final String TAG = "DBHelper";
+	public static final String DB_NAME = "DUNG_HEAP";
+	public static final int VERSION = 1;
+    private IdentityProvider mIdent;
 
 	public DBHelper(Context context) {
 		super(
 		    context, 
-		    "DUNG_HEAP", 
+		    DB_NAME, 
 		    new SQLiteDatabase.CursorFactory() {
 		    	@Override
-		    	public Cursor newCursor(SQLiteDatabase db, SQLiteCursorDriver masterQuery, String editTable, SQLiteQuery query) {
+		    	public Cursor newCursor(SQLiteDatabase db, 
+                                        SQLiteCursorDriver masterQuery, 
+                                        String editTable, 
+                                        SQLiteQuery query) {
 		    		return new SQLiteCursor(db, masterQuery, editTable, query);
 		    	}
 		    }, 
 		    VERSION);
 	}
 
-    public PublicKey getPublicKey(){
-        assert mPubKey != null;
-        return mPubKey;
-    }
-
-    public PrivateKey getPrivateKey(){
-        assert mPrivKey != null;
-        return mPrivKey;
-    }
-
-    public String getMyCreatorTag(){
-        assert mPubKeyTag != null;
-        return mPubKeyTag;
-    }
-
-    public static String personIdForPublicKey(PublicKey key){
-		String me = null;
-		try {
-			me = Util.SHA1(key.getEncoded());
-		} catch (Exception e) {
-			throw new IllegalArgumentException(
-                "Could not compute SHA1 of public key.");
-		}
-		return me.substring(0, 10);
-    }
-
-    public static PublicKey publicKeyFromString(String str){
-        try{
-            byte[] pubKeyBytes = Base64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
-            return keyFactory.generatePublic(publicKeySpec);                
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
-    }
-
-    public static PrivateKey privateKeyFromString(String str){
-        try{
-            byte[] privKeyBytes = Base64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-            return keyFactory.generatePrivate(privateKeySpec);
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
-    }
-
 	@Override
 	public void onOpen(SQLiteDatabase db) {
-        mPubKey = getMyPubKey(db);
-        mPrivKey = getMyPrivKey(db);
-        mPubKeyTag = personIdForPublicKey(mPubKey);
-	}
-
-	private static PublicKey getMyPubKey(SQLiteDatabase db) {
-		Cursor c = db.rawQuery("SELECT public_key FROM my_info", new String[] {});
-		c.moveToFirst();
-        if(c.isAfterLast()){
-            throw new IllegalStateException("Missing my_info entry!");
-        }
-        else{
-            String pubKeyStr = c.getString(0);
-            Log.d(TAG, "Loaded public key: " + pubKeyStr);
-            return publicKeyFromString(pubKeyStr);
-        }
-	}
-
-	private static PrivateKey getMyPrivKey(SQLiteDatabase db) {
-		Cursor c = db.rawQuery("SELECT private_key FROM my_info", new String[] {});
-		c.moveToFirst();
-        if(c.isAfterLast()){
-            throw new IllegalStateException("Missing my_info entry!");
-        }
-        else{
-            try{
-                String privKeyStr = c.getString(0);
-                Log.d(TAG, "Loaded private key: " + privKeyStr);
-                return privateKeyFromString(privKeyStr);
-            }
-            catch(Exception e){
-                throw new IllegalStateException("Error loading private key: " + e);
-            }
-        }
-	}
-
+        // enable locking so we can safely share 
+        // this instance around
+        db.setLockingEnabled(true);
+        mIdent = new DBIdentityProvider(this);
+    }
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
@@ -180,35 +91,18 @@ public class DBHelper extends SQLiteOpenHelper {
 			")");
         db.execSQL("CREATE UNIQUE INDEX subscriptions_by_person_id ON subscribers (person_id)");
 
-        try {
-            // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(1024);
-            KeyPair keypair = keyGen.genKeyPair();
-            PrivateKey privateKey = keypair.getPrivate();
-            PublicKey publicKey = keypair.getPublic();
-
-            String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-            String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
-
-            ContentValues cv = new ContentValues();
-            cv.put("public_key", pubKeyStr);
-            cv.put("private_key", privKeyStr);
-            db.insertOrThrow("my_info", null, cv);
-
-            Log.d(TAG, "Generated public key: " + pubKeyStr);
-            Log.d(TAG, "Generated priv key: " + privKeyStr);
-
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Failed to generate key pair! " + e);
-        }
-
         db.setVersion(VERSION);
         db.setTransactionSuccessful();
         db.endTransaction();
+
+        DBIdentityProvider.generateAndStoreKeys(this);
+
         this.onOpen(db);
 	}
 
+    public String userPersonId(){
+        return mIdent.userPersonId();
+    }
 
 	long addToFeed(String personId, String feedName, String type, JSONObject json) {
         try{
@@ -234,8 +128,8 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             String pubKeyStr = cv.getAsString("public_key");
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
-            PublicKey key = publicKeyFromString(pubKeyStr);
-            String tag = personIdForPublicKey(key);
+            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            String tag = mIdent.personIdForPublicKey(key);
             cv.put("person_id", tag);
             String name = cv.getAsString("name");
             assert (name != null) && name.length() > 0;

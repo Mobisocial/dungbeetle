@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.transport;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.PublicKey;
 import java.security.PrivateKey;
@@ -13,6 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 
 public class Main {
+
 	public static PrivateKey loadPrivateKey(String filename) {
 		try {
 			File f = new File(filename);
@@ -59,27 +62,43 @@ public class Main {
 		final String myKeyPrefix = args[0];
 		final String otherKeyPrefix = args[1];
 		final PublicKey myPubKey = loadPublicKey("etc/" + myKeyPrefix
-				+ "_public_key.der");
+                                                 + "_public_key.der");
 		final PrivateKey myPrivKey = loadPrivateKey("etc/" + myKeyPrefix
-				+ "_private_key.der");
+                                                    + "_private_key.der");
 		final PublicKey otherPubKey = loadPublicKey("etc/" + otherKeyPrefix
-				+ "_public_key.der");
+                                                    + "_public_key.der");
 
-		MessengerService m = new XMPPMessengerService(new StandardIdentity(
-				myPubKey, myPrivKey));
+        IdentityProvider ident = new IdentityProvider(){
+                public PublicKey userPublicKey() { return myPubKey; }
+                public PrivateKey userPrivateKey(){ return myPrivKey; }
+                public String userPersonId(){ return personIdForPublicKey(userPublicKey()); }
+                public PublicKey publicKeyForPersonId(String id){
+                    if(id.equals(personIdForPublicKey(myPubKey))){
+                        return myPubKey;
+                    }
+                    else if(id.equals(personIdForPublicKey(otherPubKey))) {
+                        return otherPubKey;
+                    }
+                    return null;
+                }
+                public String personIdForPublicKey(PublicKey key){
+                    return DBIdentityProvider.makePersonIdForPublicKey(key);
+                }
+            };
+        MessengerService m = new XMPPMessengerService(ident);
 		m.addStateListener(new StateListener() {
-			public void onReady() {
-				System.out.println("READY!");
-			}
+                public void onReady() {
+                    System.out.println("READY!");
+                }
 
-			public void onNotReady() {
-			}
-		});
+                public void onNotReady() {
+                }
+            });
 		m.addMessageListener(new MessageListener() {
-			public void onMessage(IncomingMessage m) {
-				System.out.println("Got message! " + m.toString());
-			}
-		});
+                public void onMessage(IncomingMessage m) {
+                    System.out.println("Got message! " + m.toString());
+                }
+            });
 
 		m.init();
 
@@ -95,14 +114,14 @@ public class Main {
 
 				if (!(curLine.equals("q"))) {
 					m.sendMessage(new OutgoingMessage() {
-						public PublicKey toPublicKey() {
-							return otherPubKey;
-						}
+                            public PublicKey toPublicKey() {
+                                return otherPubKey;
+                            }
 
-						public String contents() {
-							return line;
-						}
-					});
+                            public String contents() {
+                                return line;
+                            }
+                        });
 					System.out.println("You typed: " + curLine);
 				}
 			}

@@ -1,18 +1,19 @@
 package edu.stanford.mobisocial.dungbeetle.transport;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 
 import java.util.*;
 
 public abstract class MessengerService {
 	private Set<StateListener> stateListeners = new HashSet<StateListener>();
 	private Set<MessageListener> messageListeners = new HashSet<MessageListener>();
-	private Identity ident;
+	private IdentityProvider mIdent;
 
-	public MessengerService(Identity ident) {
-		this.ident = ident;
+	public MessengerService(IdentityProvider ident) {
+		this.mIdent = ident;
 	}
 
-	protected Identity identity() {
-		return ident;
+	protected IdentityProvider identity() {
+		return mIdent;
 	}
 
 	public abstract void init();

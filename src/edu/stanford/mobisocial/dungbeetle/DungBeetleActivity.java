@@ -11,7 +11,7 @@ public class DungBeetleActivity extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        new Intent(this, DungBeetleService.class);
+        startService(new Intent(this, DungBeetleService.class));
     }
 
 }

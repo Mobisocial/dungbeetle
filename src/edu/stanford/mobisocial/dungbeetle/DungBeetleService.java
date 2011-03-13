@@ -1,7 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.os.Message;
 import android.os.Handler;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -16,10 +15,11 @@ public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private ManagerThread mManagerThread;
 
+    // Display toasts originating in other threads
 	private Handler mToastHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
-                Toast.makeText(DungBeetleService.this, 
+                Toast.makeText(DungBeetleService.this,
                                msg.obj.toString(), 
                                Toast.LENGTH_SHORT).show();
             }
@@ -30,7 +30,8 @@ public class DungBeetleService extends Service {
     public void onCreate() {
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         showNotification();
-        mManagerThread = new ManagerThread(this, mToastHandler);
+        IdentityProvider ident = new DBIdentityProvider(new DBHelper(this));
+        mManagerThread = new ManagerThread(ident, this, mToastHandler);
         mManagerThread.start();
     }
 
