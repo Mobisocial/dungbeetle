@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Contact Manager Service</string>
-    <string name="start">Start application...</string>
-    <string name="stopping">Contact Manager Service is shutting down...</string>
+    <string name="start">Running...</string>
+    <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>
 </resources>

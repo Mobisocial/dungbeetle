@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.List;
@@ -79,6 +80,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
+        Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
         mIdent = new DBIdentityProvider(mHelper);
         return mHelper.getWritableDatabase() == null;

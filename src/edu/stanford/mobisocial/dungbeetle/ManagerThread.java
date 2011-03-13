@@ -37,12 +37,12 @@ public class ManagerThread extends Thread {
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Message m = mToastHandler.obtainMessage();
-                    m.obj = "Messenger ready!";
+                    m.obj = "Connected to message transport!";
                     mToastHandler.sendMessage(m);
                 }
                 public void onNotReady() {
                     Message m = mToastHandler.obtainMessage();
-                    m.obj = "Messenger NOT ready.";
+                    m.obj = "Message transport not available.";
                     mToastHandler.sendMessage(m);
                 }
             });
