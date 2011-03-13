@@ -14,6 +14,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	static final String TAG = "DungBeetleContentProvider";
 
     private DBHelper mHelper;
+    private DBIdentityProvider mIdent;
 
 	public DungBeetleContentProvider() {}
 
@@ -48,7 +49,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToFeed(
-                    mHelper.userPersonId(),
+                    mIdent.userPersonId(),
                     "friend",
                     segs.get(2),
                     obj);
@@ -79,6 +80,7 @@ public class DungBeetleContentProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mHelper = new DBHelper(getContext());
+        mIdent = new DBIdentityProvider(mHelper);
         return mHelper.getWritableDatabase() == null;
     }
 
@@ -90,7 +92,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             return mHelper.queryFeedLatest("friend", segs.get(2));
         }
         else if(match(uri, "feeds", "me", ".+")){
-            return mHelper.queryFeedLatest(mHelper.userPersonId(), 
+            return mHelper.queryFeedLatest(mIdent.userPersonId(), 
                                            "friend", 
                                            segs.get(2));
         }

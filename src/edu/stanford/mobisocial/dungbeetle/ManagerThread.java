@@ -1,10 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import android.os.Message;
-import edu.stanford.mobisocial.dungbeetle.transport.StateListener;
-import edu.stanford.mobisocial.dungbeetle.transport.IncomingMessage;
-import edu.stanford.mobisocial.dungbeetle.transport.MessageListener;
-import edu.stanford.mobisocial.dungbeetle.transport.XMPPMessengerService;
-import edu.stanford.mobisocial.dungbeetle.transport.MessengerService;
+import edu.stanford.mobisocial.bumblebee.StateListener;
+import edu.stanford.mobisocial.bumblebee.IncomingMessage;
+import edu.stanford.mobisocial.bumblebee.MessageListener;
+import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
+import edu.stanford.mobisocial.bumblebee.MessengerService;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.json.JSONObject;
 import android.database.ContentObserver;
@@ -25,12 +28,12 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(IdentityProvider ident, 
+    public ManagerThread(final IdentityProvider ident, 
                          Context context, 
                          Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;
-		mMessenger = new XMPPMessengerService(ident);
+		mMessenger = new XMPPMessengerService(wrapIdent(ident));
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Message m = mToastHandler.obtainMessage();
@@ -69,6 +72,27 @@ public class ManagerThread extends Thread {
 				Thread.sleep(10000);
 			} catch(InterruptedException e) {}
 		}
+    }
+
+
+    private TransportIdentityProvider wrapIdent(final IdentityProvider ident){
+        return new TransportIdentityProvider(){
+            public PublicKey userPublicKey(){
+                return ident.userPublicKey();
+            }
+            public PrivateKey userPrivateKey(){
+                return ident.userPrivateKey();
+            }
+            public String userPersonId(){
+                return ident.userPersonId();
+            }
+            public PublicKey publicKeyForPersonId(String id){
+                return ident.publicKeyForPersonId(id);
+            }
+            public String personIdForPublicKey(PublicKey key){
+                return personIdForPublicKey(key);
+            }
+        };
     }
 
 

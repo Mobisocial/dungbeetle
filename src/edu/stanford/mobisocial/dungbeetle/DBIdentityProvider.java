@@ -70,7 +70,8 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 
-    public static void generateAndStoreKeys(SQLiteOpenHelper db){
+    // Helper called only from DBHelper#onCreate
+    public static void generateAndStoreKeys(SQLiteDatabase db){
         try {
             // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
@@ -85,7 +86,7 @@ public class DBIdentityProvider implements IdentityProvider {
             ContentValues cv = new ContentValues();
             cv.put("public_key", pubKeyStr);
             cv.put("private_key", privKeyStr);
-            db.getWritableDatabase().insertOrThrow("my_info", null, cv);
+            db.insertOrThrow("my_info", null, cv);
 
             Log.d(TAG, "Generated public key: " + pubKeyStr);
             Log.d(TAG, "Generated priv key: " + privKeyStr);

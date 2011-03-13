@@ -14,7 +14,6 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
 	public static final int VERSION = 1;
-    private IdentityProvider mIdent;
 
 	public DBHelper(Context context) {
 		super(
@@ -37,7 +36,6 @@ public class DBHelper extends SQLiteOpenHelper {
         // enable locking so we can safely share 
         // this instance around
         db.setLockingEnabled(true);
-        mIdent = new DBIdentityProvider(this);
     }
 
 	@Override
@@ -91,18 +89,15 @@ public class DBHelper extends SQLiteOpenHelper {
 			")");
         db.execSQL("CREATE UNIQUE INDEX subscriptions_by_person_id ON subscribers (person_id)");
 
+        DBIdentityProvider.generateAndStoreKeys(db);
         db.setVersion(VERSION);
         db.setTransactionSuccessful();
         db.endTransaction();
 
-        DBIdentityProvider.generateAndStoreKeys(this);
+
 
         this.onOpen(db);
 	}
-
-    public String userPersonId(){
-        return mIdent.userPersonId();
-    }
 
 	long addToFeed(String personId, String feedName, String type, JSONObject json) {
         try{
@@ -129,7 +124,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String pubKeyStr = cv.getAsString("public_key");
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
             PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
-            String tag = mIdent.personIdForPublicKey(key);
+            String tag = DBIdentityProvider.makePersonIdForPublicKey(key);
             cv.put("person_id", tag);
             String name = cv.getAsString("name");
             assert (name != null) && name.length() > 0;
