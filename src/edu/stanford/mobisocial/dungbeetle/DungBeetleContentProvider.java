@@ -90,24 +90,40 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", "friend", ".+")){
-            return mHelper.queryFeedLatest("friend", segs.get(2));
+        if(match(uri, "feeds", "friend", "all")){
+            Cursor c = mHelper.queryFeedAll(mIdent.userPersonId(), 
+                                            "friend");
+            c.setNotificationUri(getContext().getContentResolver(), 
+                                 Uri.parse(CONTENT_URI + "/feeds/friend"));
+            return c;
+        }
+        else if(match(uri, "feeds", "friend", ".+")){
+            Cursor c = mHelper.queryFeedLatest("friend", segs.get(2));
+            c.setNotificationUri(getContext().getContentResolver(), 
+                                 Uri.parse(CONTENT_URI + "/feeds/friend"));
+            return c;
         }
         else if(match(uri, "feeds", "me", ".+")){
-            return mHelper.queryFeedLatest(mIdent.userPersonId(), 
-                                           "friend", 
-                                           segs.get(2));
+            Cursor c = mHelper.queryFeedLatest(mIdent.userPersonId(), 
+                                               "friend",
+                                               segs.get(2));
+            c.setNotificationUri(getContext().getContentResolver(), 
+                                 Uri.parse(CONTENT_URI + "/feeds/me"));
+            return c;
         }
         else if(match(uri, "contacts") || 
                 match(uri, "subscribers") || 
                 match(uri, "subscriptions")){
-            return mHelper.getReadableDatabase().query(segs.get(0),
-                                                       projection, 
-                                                       selection, 
-                                                       selectionArgs, 
-                                                       null,
-                                                       null,
-                                                       sortOrder);
+            Cursor c = mHelper.getReadableDatabase().query(segs.get(0),
+                                                           projection, 
+                                                           selection, 
+                                                           selectionArgs, 
+                                                           null,
+                                                           null,
+                                                           sortOrder);
+            c.setNotificationUri(getContext().getContentResolver(), 
+                                 Uri.parse(CONTENT_URI + "/" + segs.get(0)));
+            return c;
         }
         else{
             return null;

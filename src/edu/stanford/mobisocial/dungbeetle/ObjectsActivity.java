@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.widget.CursorAdapter;
 import android.net.Uri;
 import android.database.Cursor;
@@ -14,25 +14,25 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 
 
-public class ContactsActivity extends ListActivity implements OnItemClickListener{
+public class ObjectsActivity extends ListActivity implements OnItemClickListener{
 
-	private ContactListCursorAdapter mContacts;
+	private ObjectListCursorAdapter mObjects;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.contacts);
+		setContentView(R.layout.objects);
         Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact._ID, Contact.NAME, Contact.PUBLIC_KEY}, 
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/all"), 
+            new String[]{Object._ID, Object.JSON }, 
             null, null, null);
-		mContacts = new ContactListCursorAdapter(this, c);
-		setListAdapter(mContacts);
+		mObjects = new ObjectListCursorAdapter(this, c);
+		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
 	}
 
 
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-		// JSONObject o = mContacts.getItem(position);
+		// JSONObject o = mObjects.getItem(position);
 		// String userId = o.optString("id");
 		// Intent intent = new Intent(ViewProfileActivity.LAUNCH_INTENT);
 		// intent.putExtra("user_id", userId);
@@ -40,17 +40,17 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	}
 
 
-    private class ContactListCursorAdapter extends CursorAdapter {
+    private class ObjectListCursorAdapter extends CursorAdapter {
 
-        public ContactListCursorAdapter (Context context, Cursor c) {
+        public ObjectListCursorAdapter (Context context, Cursor c) {
             super(context, c);
         }
 
         @Override
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
-            View v = inflater.inflate(R.layout.contacts_item, parent, false);
-            String name = c.getString(c.getColumnIndex(Contact.NAME));
+            View v = inflater.inflate(R.layout.objects_item, parent, false);
+            String name = c.getString(c.getColumnIndexOrThrow(Object.JSON));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             if (nameText != null) {
                 nameText.setText(name);
@@ -61,7 +61,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            String name = c.getString(c.getColumnIndex(Contact.NAME));
+            String name = c.getString(c.getColumnIndexOrThrow(Object.JSON));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             if (nameText != null) {
                 nameText.setText(name);

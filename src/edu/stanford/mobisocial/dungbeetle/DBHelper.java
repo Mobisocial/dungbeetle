@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.security.PublicKey;
 import org.json.JSONObject;
 import android.content.ContentValues;
@@ -67,17 +69,17 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
 		db.execSQL(
-			"CREATE TABLE objects (" +
-            "type TEXT," +
-            "sequence_id INTEGER," +
-            "feed_name TEXT," +
-            "person_id TEXT," +
-            "json TEXT" +
+			"CREATE TABLE " + Object.TABLE + " (" +
+            Object._ID + " INTEGER PRIMARY KEY, " +
+            Object.TYPE + " TEXT," +
+            Object.SEQUENCE_ID + " INTEGER," +
+            Object.FEED_NAME + " TEXT," +
+            Object.PERSON_ID + " TEXT," +
+            Object.JSON + " TEXT" +
 			")");
-        db.execSQL("CREATE INDEX objects_by_sequence_id ON objects (sequence_id)");
-        db.execSQL("CREATE INDEX objects_by_feed_name ON objects (feed_name)");
-        db.execSQL("CREATE INDEX objects_by_person_id ON objects (person_id)");
-        db.execSQL("CREATE INDEX objects_by_type ON objects (type)");
+        db.execSQL("CREATE INDEX objects_by_sequence_id ON " + Object.TABLE + " (" + Object.SEQUENCE_ID + ")");
+        db.execSQL("CREATE INDEX objects_by_feed_name ON " + Object.TABLE + " (" + Object.FEED_NAME + ")");
+        db.execSQL("CREATE INDEX objects_by_person_id ON " + Object.TABLE + " (" + Object.PERSON_ID + ")");
 
 
 		db.execSQL(
@@ -89,6 +91,8 @@ public class DBHelper extends SQLiteOpenHelper {
 			")");
         db.execSQL("CREATE UNIQUE INDEX contacts_by_person_id ON " + 
                    Contact.TABLE + " (" + Contact.PERSON_ID + ")");
+
+
 
 		db.execSQL(
 			"CREATE TABLE subscribers (" +
@@ -201,7 +205,7 @@ public class DBHelper extends SQLiteOpenHelper {
                                   String feedName, 
                                   String objectType) {
 		return getReadableDatabase().rawQuery(
-            " SELECT json FROM objects WHERE " + 
+            " SELECT _id,json FROM objects WHERE " + 
             " person_id = :tag AND feed_name = :feed AND type = :type AND " + 
             " sequence_id = (SELECT max(sequence_id) FROM " + 
             " objects WHERE person_id = :tag AND feed_name = :feed AND type = :type)",
@@ -211,21 +215,29 @@ public class DBHelper extends SQLiteOpenHelper {
 	public Cursor queryFeedLatest(String feedName, 
                                   String objectType) {
         return getReadableDatabase().rawQuery(
-            " SELECT json FROM " + 
+            " SELECT _id,json FROM " + 
             " (SELECT person_id,max(sequence_id) as max_seq_id FROM objects " + 
             " WHERE feed_name = :feed AND type = :type " + 
             " GROUP BY person_id) AS x INNER JOIN " + 
             " (SELECT * FROM objects " + 
             "  WHERE feed_name = :feed AND type = :type)  AS o ON " + 
-            "  o.person_id = x.person_id AND o.sequence_id = x.max_seq_id",
+            "  o.person_id = x.person_id AND o.sequence_id = x.max_seq_id ORDER BY _id",
             new String[] {feedName, objectType});
+	}
+
+	public Cursor queryFeedAll(String personId, 
+                           String feedName) {
+		return getReadableDatabase().rawQuery(
+            " SELECT _id,json FROM objects WHERE  " + 
+            " person_id = ? AND feed_name = ?",
+            new String[] {personId, feedName});
 	}
 
 	public Cursor queryAll(String personId, 
                            String feedName, 
                            String objectType) {
 		return getReadableDatabase().rawQuery(
-            " SELECT json FROM objects WHERE  " + 
+            " SELECT _id,json FROM objects WHERE  " + 
             " person_id = ? AND feed_name = ? AND type = ?",
             new String[] {personId, feedName, objectType});
 	}

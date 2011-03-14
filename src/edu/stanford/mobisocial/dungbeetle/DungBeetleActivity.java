@@ -36,6 +36,12 @@ public class DungBeetleActivity extends TabActivity
 			"Contacts",
 			res.getDrawable(R.drawable.icon)).setContent(intent);
 		tabHost.addTab(spec);
+
+		intent = new Intent().setClass(this, ObjectsActivity.class);
+		spec = tabHost.newTabSpec("objects").setIndicator(
+			"Objects",
+			res.getDrawable(R.drawable.icon)).setContent(intent);
+		tabHost.addTab(spec);
 		tabHost.setCurrentTab(0);
 
 		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);

@@ -1,0 +1,12 @@
+package edu.stanford.mobisocial.dungbeetle.model;
+
+public class Object{
+    public static final String TABLE = "objects";
+
+    public static final String _ID = "_id";
+    public static final String TYPE = "type";
+    public static final String SEQUENCE_ID = "sequence_id";
+    public static final String FEED_NAME = "feed_name";
+    public static final String PERSON_ID = "person_id";
+    public static final String JSON = "json";
+}
