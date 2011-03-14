@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
 import java.security.KeyPair;
@@ -43,14 +44,17 @@ public class DBIdentityProvider implements IdentityProvider {
 
 	public PublicKey publicKeyForPersonId(String id){
         Cursor c = mDb.getReadableDatabase().rawQuery(
-            "SELECT public_key FROM contacts WHERE person_id = ?",
+            "SELECT " + Contact.PUBLIC_KEY + 
+            " FROM " + Contact.TABLE + 
+            " WHERE " + Contact.PERSON_ID + " = ?",
             new String[] {id});
         c.moveToFirst();
         if(c.isAfterLast()){
             return null;
         }
         else{
-            return publicKeyFromString(c.getString(0));
+            return publicKeyFromString(
+                c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
         }
     }
 

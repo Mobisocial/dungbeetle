@@ -54,6 +54,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                     "friend",
                     segs.get(2),
                     obj);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
@@ -62,14 +64,17 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         else if(match(uri, "contacts")){
             mHelper.insertContact(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/contacts"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscriptions")){
             mHelper.insertSubscription(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscriptions"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscribers")){
             mHelper.insertSubscriber(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
             return Uri.parse(uri.toString());
         }
         else{
@@ -115,9 +120,9 @@ public class DungBeetleContentProvider extends ContentProvider {
                 match(uri, "subscribers") || 
                 match(uri, "subscriptions")){
             Cursor c = mHelper.getReadableDatabase().query(segs.get(0),
-                                                           projection, 
-                                                           selection, 
-                                                           selectionArgs, 
+                                                           projection,
+                                                           selection,
+                                                           selectionArgs,
                                                            null,
                                                            null,
                                                            sortOrder);

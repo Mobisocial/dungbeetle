@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
+import android.database.Cursor;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
@@ -11,16 +14,19 @@ import edu.stanford.mobisocial.bumblebee.MessengerService;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.json.JSONObject;
 import android.database.ContentObserver;
-import java.util.Date;
 import android.net.Uri;
 import android.content.Context;
 import android.util.Log;
 import android.os.Handler;
 
 public class ManagerThread extends Thread {
+    public static final String TAG = "ManagerThread";
     private Handler mToastHandler;
     private Context mContext;
     private MessengerService mMessenger;
+    private ObjectContentObserver mOco;
+    private DBHelper mHelper;
+    private IdentityProvider mIdent;
 
     private LinkedBlockingQueue<JSONObject> receiveQueue = 
         new LinkedBlockingQueue<JSONObject>();
@@ -28,12 +34,13 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(final IdentityProvider ident,
-                         Context context,
+    public ManagerThread(Context context,
                          Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;
-		mMessenger = new XMPPMessengerService(wrapIdent(ident));
+        mHelper = new DBHelper(context);
+        mIdent = new DBIdentityProvider(mHelper);
+		mMessenger = new XMPPMessengerService(wrapIdent(mIdent));
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Message m = mToastHandler.obtainMessage();
@@ -53,25 +60,59 @@ public class ManagerThread extends Thread {
                     mToastHandler.sendMessage(m);
                 }
             });
+
+        mOco = new ObjectContentObserver(
+            new Handler(mContext.getMainLooper()));
+
+		mContext.getContentResolver().registerContentObserver(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me"), true, mOco);
     }
 
 
     @Override
     public void run(){
-        Log.i("ManagerThread", "Starting DungBeetle manager thread");
-        Log.i("ManagerThread", "Starting messenger...");
+        Log.i(TAG, "Starting DungBeetle manager thread");
+        Log.i(TAG, "Starting messenger...");
 		mMessenger.init();
-        final ObjectContentObserver oco = new ObjectContentObserver(
-            new Handler(mContext.getMainLooper()));
-		mContext.getContentResolver().registerContentObserver(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), 
-            true, oco);
 		for(;;) {
-            update();
+            if(mOco.changed){
+                Log.i(TAG, "Noticed change...");
+                mOco.clearChanged();
+                Cursor objs = mHelper.queryRecentlyAdded(mIdent.userPersonId(), "friend");
+                Log.i(TAG, objs.getCount() + " objects...");
+                objs.moveToFirst();
+                Cursor subscribers = mHelper.querySubscribers("friend");
+                Log.i(TAG, subscribers.getCount() + " subscribers...");
+                subscribers.moveToFirst();
+                while(!objs.isAfterLast()){
+                    while(!subscribers.isAfterLast()){
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs, subscribers);
+                        mMessenger.sendMessage(m);
+                        Log.i(TAG, "Sending message " + m);
+                        subscribers.moveToNext();
+                    }
+                    objs.moveToNext();
+                }
+            }
 			try {
 				Thread.sleep(10000);
 			} catch(InterruptedException e) {}
 		}
+    }
+
+
+    private class OutgoingFeedObjectMsg implements OutgoingMessage{
+        private String mBody;
+        private PublicKey mPubKey;
+        private String mToId;
+        public OutgoingFeedObjectMsg(Cursor objs, Cursor subs){
+            mToId = subs.getString(subs.getColumnIndexOrThrow("person_id"));
+            mPubKey = mIdent.publicKeyForPersonId(mToId);
+            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
+        }
+        public PublicKey toPublicKey(){ return mPubKey; }
+        public String contents(){ return mBody; }
+        public String toString(){ return "[Message to " + mToId + " with body: " + mBody + "]"; }
     }
 
 
@@ -90,16 +131,11 @@ public class ManagerThread extends Thread {
                 return ident.publicKeyForPersonId(id);
             }
             public String personIdForPublicKey(PublicKey key){
-                return personIdForPublicKey(key);
+                return ident.personIdForPublicKey(key);
             }
         };
     }
 
-
-    private void update(){
-        if(receiveQueue.size() > 0){
-        }
-    }
 
 
     class ObjectContentObserver extends ContentObserver {

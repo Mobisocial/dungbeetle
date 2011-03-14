@@ -49,8 +49,8 @@ public class DBHelper extends SQLiteOpenHelper {
               + newVersion + ", which will destroy all old data");
 
         db.execSQL("DROP TABLE IF EXISTS my_info");
-        db.execSQL("DROP TABLE IF EXISTS objects");
-        db.execSQL("DROP TABLE IF EXISTS contacts");
+        db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
         db.execSQL("DROP TABLE IF EXISTS subscribers");
         db.execSQL("DROP TABLE IF EXISTS subscriptions");
         onCreate(db);
@@ -96,6 +96,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
 		db.execSQL(
 			"CREATE TABLE subscribers (" +
+            "_id INTEGER PRIMARY KEY, " +
             "person_id TEXT," +
             "feed_name TEXT" +
 			")");
@@ -103,6 +104,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
 		db.execSQL(
 			"CREATE TABLE subscriptions (" +
+            "_id INTEGER PRIMARY KEY, " +
             "person_id TEXT," +
             "feed_name TEXT" +
 			")");
@@ -112,8 +114,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.setVersion(VERSION);
         db.setTransactionSuccessful();
         db.endTransaction();
-
-
 
         this.onOpen(db);
 	}
@@ -140,14 +140,15 @@ public class DBHelper extends SQLiteOpenHelper {
 
 	long insertContact(ContentValues cv) {
         try{
-            String pubKeyStr = cv.getAsString("public_key");
+            Log.i(TAG, "Inserting contact: " + cv);
+            String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
             PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
             String tag = DBIdentityProvider.makePersonIdForPublicKey(key);
-            cv.put("person_id", tag);
-            String name = cv.getAsString("name");
+            cv.put(Contact.PERSON_ID, tag);
+            String name = cv.getAsString(Contact.NAME);
             assert (name != null) && name.length() > 0;
-            return getWritableDatabase().insertOrThrow("contacts", null, cv);
+            return getWritableDatabase().insertOrThrow(Contact.TABLE, null, cv);
         }
         catch(Exception e){
             e.printStackTrace(System.err);
@@ -226,7 +227,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	}
 
 	public Cursor queryFeedAll(String personId, 
-                           String feedName) {
+                               String feedName) {
 		return getReadableDatabase().rawQuery(
             " SELECT _id,json FROM objects WHERE  " + 
             " person_id = ? AND feed_name = ?",
@@ -240,6 +241,19 @@ public class DBHelper extends SQLiteOpenHelper {
             " SELECT _id,json FROM objects WHERE  " + 
             " person_id = ? AND feed_name = ? AND type = ?",
             new String[] {personId, feedName, objectType});
+	}
+
+	public Cursor querySubscribers(String feedName) {
+		return getReadableDatabase().rawQuery(
+            " SELECT _id,person_id FROM subscribers WHERE feed_name = ?",
+            new String[] {feedName});
+	}
+
+	public Cursor queryRecentlyAdded(String personId, String feedName) {
+		return getReadableDatabase().rawQuery(
+            " SELECT _id,json FROM objects WHERE " + 
+            " person_id = ? AND feed_name = ? ORDER BY sequence_id LIMIT 1",
+            new String[] { personId, feedName});
 	}
 
 }

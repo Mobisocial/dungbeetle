@@ -1,4 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.widget.Button;
+import org.json.JSONException;
+import org.json.JSONObject;
+import android.content.ContentValues;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.widget.CursorAdapter;
 import android.net.Uri;
@@ -12,6 +16,7 @@ import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
+import android.view.View.OnClickListener;
 
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
@@ -28,6 +33,20 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
+
+
+		Button button = (Button)findViewById(R.id.add_object_button);
+		button.setOnClickListener(new OnClickListener() {
+				public void onClick(View v) {
+                    // DEBUG
+                    Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/status");
+                    ContentValues values = new ContentValues();
+                    JSONObject obj = new JSONObject();
+                    try{obj.put("text", "blllaaaaarg");}catch(JSONException e){}
+                    values.put("json", obj.toString());
+                    getContentResolver().insert(url, values); 
+				}
+			});
 	}
 
 
