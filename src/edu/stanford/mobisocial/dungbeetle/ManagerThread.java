@@ -28,8 +28,8 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(final IdentityProvider ident, 
-                         Context context, 
+    public ManagerThread(final IdentityProvider ident,
+                         Context context,
                          Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;

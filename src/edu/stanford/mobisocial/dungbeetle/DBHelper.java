@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import java.security.PublicKey;
 import org.json.JSONObject;
 import android.content.ContentValues;
@@ -39,7 +41,18 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 	@Override
-	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+        Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
+              + newVersion + ", which will destroy all old data");
+
+        db.execSQL("DROP TABLE IF EXISTS my_info");
+        db.execSQL("DROP TABLE IF EXISTS objects");
+        db.execSQL("DROP TABLE IF EXISTS contacts");
+        db.execSQL("DROP TABLE IF EXISTS subscribers");
+        db.execSQL("DROP TABLE IF EXISTS subscriptions");
+        onCreate(db);
+    }
 
     
 	@Override
@@ -68,12 +81,14 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
 		db.execSQL(
-			"CREATE TABLE contacts (" +
-            "name TEXT," +
-            "public_key TEXT," +
-            "person_id TEXT" +
+			"CREATE TABLE " + Contact.TABLE + " (" +
+            Contact._ID + " INTEGER PRIMARY KEY, " +
+            Contact.NAME + " TEXT," +
+            Contact.PUBLIC_KEY + " TEXT," +
+            Contact.PERSON_ID + " TEXT" +
 			")");
-        db.execSQL("CREATE UNIQUE INDEX contacts_by_person_id ON contacts (person_id)");
+        db.execSQL("CREATE UNIQUE INDEX contacts_by_person_id ON " + 
+                   Contact.TABLE + " (" + Contact.PERSON_ID + ")");
 
 		db.execSQL(
 			"CREATE TABLE subscribers (" +

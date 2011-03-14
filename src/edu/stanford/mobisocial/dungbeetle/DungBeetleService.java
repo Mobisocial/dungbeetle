@@ -35,13 +35,11 @@ public class DungBeetleService extends Service {
         mManagerThread.start();
     }
 
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i("DungBeetleService", "Received start id " + startId + ": " + intent);
         return START_STICKY;
     }
-
 
     @Override
     public void onDestroy() {
@@ -66,7 +64,6 @@ public class DungBeetleService extends Service {
             return DungBeetleService.this;
         }
     }
-
 
     // This is the object that receives interactions from clients.  See
     // RemoteService for a more complete example.
