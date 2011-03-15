@@ -46,13 +46,14 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", "me", ".+")){
+        if(match(uri, "feeds", "me")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
+                String type = values.getAsString("type");
                 mHelper.addToFeed(
                     mIdent.userPersonId(),
                     "friend",
-                    segs.get(2),
+                    type,
                     obj);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
@@ -95,25 +96,30 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", "friend", "all")){
-            Cursor c = mHelper.queryFeedAll(mIdent.userPersonId(), 
-                                            "friend");
-            c.setNotificationUri(getContext().getContentResolver(), 
-                                 Uri.parse(CONTENT_URI + "/feeds/friend"));
+        if(match(uri, "feeds", ".+")){
+            boolean isMe = segs.get(1).equals("me");
+            String feedName = isMe ? "friend" : segs.get(1);
+            String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
+            Cursor c = mHelper.queryFeed(feedName,
+                                         projection,
+                                         select,
+                                         selectionArgs,
+                                         sortOrder);
+            c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/" + feedName));
+            if(isMe) c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         }
-        else if(match(uri, "feeds", "friend", ".+")){
-            Cursor c = mHelper.queryFeedLatest("friend", segs.get(2));
-            c.setNotificationUri(getContext().getContentResolver(), 
-                                 Uri.parse(CONTENT_URI + "/feeds/friend"));
-            return c;
-        }
-        else if(match(uri, "feeds", "me", ".+")){
-            Cursor c = mHelper.queryFeedLatest(mIdent.userPersonId(), 
-                                               "friend",
-                                               segs.get(2));
-            c.setNotificationUri(getContext().getContentResolver(), 
-                                 Uri.parse(CONTENT_URI + "/feeds/me"));
+        else if(match(uri, "feeds", ".+", "head")){
+            boolean isMe = segs.get(1).equals("me");
+            String feedName = isMe ? "friend" : segs.get(1);
+            String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
+            Cursor c = mHelper.queryFeedLatest(feedName,
+                                               projection,
+                                               select,
+                                               selectionArgs,
+                                               sortOrder);
+            c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/" + feedName));
+            if(isMe) c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         }
         else if(match(uri, "contacts") || 

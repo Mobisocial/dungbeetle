@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.net.Uri;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -56,65 +56,79 @@ public class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    private void createTable(SQLiteDatabase db, String tableName, String... cols){
+        assert cols.length % 2 == 0;
+        String s = "CREATE TABLE " + tableName + " (";
+        for(int i = 0; i < cols.length; i += 2){
+            s += cols[i] + " " + cols[i + 1];
+            if(i < (cols.length - 2)){
+                s += ", ";
+            }
+            else{
+                s += " ";
+            }
+        }
+        s += ")";
+        Log.i(TAG, s);
+        db.execSQL(s);
+    } 
+
+    private void createIndex(SQLiteDatabase db, String type, String name, String tableName, String col){
+        String s = "CREATE " + type + " " + name + " on " + tableName + " (" + col + ")";
+        Log.i(TAG, s);
+        db.execSQL(s);
+    } 
+
     
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		db.beginTransaction();
 
-		db.execSQL(
-			"CREATE TABLE my_info (" +
-            "public_key TEXT," +
-            "private_key TEXT" +
-			")");
+        createTable(db, "my_info", 
+                    "public_key", "TEXT",
+                    "private_key", "TEXT");
 
 
-		db.execSQL(
-			"CREATE TABLE " + Object.TABLE + " (" +
-            Object._ID + " INTEGER PRIMARY KEY, " +
-            Object.TYPE + " TEXT," +
-            Object.SEQUENCE_ID + " INTEGER," +
-            Object.FEED_NAME + " TEXT," +
-            Object.PERSON_ID + " TEXT," +
-            Object.JSON + " TEXT" +
-			")");
-        db.execSQL("CREATE INDEX objects_by_sequence_id ON " + Object.TABLE + " (" + Object.SEQUENCE_ID + ")");
-        db.execSQL("CREATE INDEX objects_by_feed_name ON " + Object.TABLE + " (" + Object.FEED_NAME + ")");
-        db.execSQL("CREATE INDEX objects_by_person_id ON " + Object.TABLE + " (" + Object.PERSON_ID + ")");
+        createTable(db, Object.TABLE,
+                    Object._ID, "INTEGER PRIMARY KEY",
+                    Object.TYPE, "TEXT",
+                    Object.SEQUENCE_ID, "INTEGER",
+                    Object.FEED_NAME, "TEXT",
+                    Object.PERSON_ID, "TEXT",
+                    Object.JSON, "TEXT");
+        createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
+        createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
+        createIndex(db, "INDEX", "objects_by_person_id", Object.TABLE, Object.PERSON_ID);
 
 
-		db.execSQL(
-			"CREATE TABLE " + Contact.TABLE + " (" +
-            Contact._ID + " INTEGER PRIMARY KEY, " +
-            Contact.NAME + " TEXT," +
-            Contact.PUBLIC_KEY + " TEXT," +
-            Contact.PERSON_ID + " TEXT" +
-			")");
-        db.execSQL("CREATE UNIQUE INDEX contacts_by_person_id ON " + 
-                   Contact.TABLE + " (" + Contact.PERSON_ID + ")");
+        createTable(db, Contact.TABLE,
+                    Contact._ID, "INTEGER PRIMARY KEY",
+                    Contact.NAME, "TEXT",
+                    Contact.PUBLIC_KEY, "TEXT",
+                    Contact.PERSON_ID, "TEXT",
+                    Contact.EMAIL, "TEXT"
+                    );
+        createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
+		createTable(db, "subscribers",
+                    "_id", "INTEGER PRIMARY KEY",
+                    "person_id", "TEXT",
+                    "feed_name", "TEXT");
+        createIndex(db, "UNIQUE INDEX", "subscribers_by_person_id", "subscribers", "person_id");
 
-		db.execSQL(
-			"CREATE TABLE subscribers (" +
-            "_id INTEGER PRIMARY KEY, " +
-            "person_id TEXT," +
-            "feed_name TEXT" +
-			")");
-        db.execSQL("CREATE UNIQUE INDEX subscribers_by_person_id ON subscribers (person_id)");
 
-		db.execSQL(
-			"CREATE TABLE subscriptions (" +
-            "_id INTEGER PRIMARY KEY, " +
-            "person_id TEXT," +
-            "feed_name TEXT" +
-			")");
-        db.execSQL("CREATE UNIQUE INDEX subscriptions_by_person_id ON subscribers (person_id)");
+		createTable(db, "subscriptions",
+                    "_id", "INTEGER PRIMARY KEY",
+                    "person_id", "TEXT",
+                    "feed_name", "TEXT");
+        createIndex(db, "UNIQUE INDEX", "subscriptions_by_person_id", "subscriptions", "person_id");
+
 
         DBIdentityProvider.generateAndStoreKeys(db);
         db.setVersion(VERSION);
         db.setTransactionSuccessful();
         db.endTransaction();
-
         this.onOpen(db);
 	}
 
@@ -202,46 +216,57 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-	public Cursor queryFeedLatest(String personId, 
-                                  String feedName, 
-                                  String objectType) {
+	// public Cursor queryFeedLatest(String personId, 
+    //                               String feedName, 
+    //                               String objectType) {
+	// 	return getReadableDatabase().rawQuery(
+    //         " SELECT _id,json FROM objects WHERE " + 
+    //         " person_id = :tag AND feed_name = :feed AND type = :type AND " + 
+    //         " sequence_id = (SELECT max(sequence_id) FROM " + 
+    //         " objects WHERE person_id = :tag AND feed_name = :feed AND type = :type)",
+    //         new String[] {personId, feedName, objectType});
+	// }
+
+
+	public Cursor queryFeed(String feedName,
+                            String[] projection, String selection,
+                            String[] selectionArgs, String sortOrder
+                            ){
+        String select = andClauses(selection,"feed_name='" + feedName + "'");
 		return getReadableDatabase().rawQuery(
-            " SELECT _id,json FROM objects WHERE " + 
-            " person_id = :tag AND feed_name = :feed AND type = :type AND " + 
-            " sequence_id = (SELECT max(sequence_id) FROM " + 
-            " objects WHERE person_id = :tag AND feed_name = :feed AND type = :type)",
-            new String[] {personId, feedName, objectType});
+            SQLiteQueryBuilder.buildQueryString(false, "objects", projection, select, null, null, sortOrder, null),
+            selectionArgs);
 	}
 
 	public Cursor queryFeedLatest(String feedName, 
-                                  String objectType) {
-        return getReadableDatabase().rawQuery(
-            " SELECT _id,json FROM " + 
+                                  String[] projection, String selection,
+                                  String[] selectionArgs, String sortOrder){
+        String select = andClauses(selection,"feed_name='" + feedName + "'");
+        // Double this because select appears twice in full query
+        String[] selectArgs = selectionArgs == null ? 
+            new String[]{} : concat(selectionArgs, selectionArgs);
+        String orderBy = sortOrder == null ? "" : " ORDER BY " + sortOrder;
+        String q = 
+            " SELECT " + projToStr(projection) + " FROM " + 
             " (SELECT person_id,max(sequence_id) as max_seq_id FROM objects " + 
-            " WHERE feed_name = :feed AND type = :type " + 
+            " WHERE " + select + 
             " GROUP BY person_id) AS x INNER JOIN " + 
             " (SELECT * FROM objects " + 
-            "  WHERE feed_name = :feed AND type = :type)  AS o ON " + 
-            "  o.person_id = x.person_id AND o.sequence_id = x.max_seq_id ORDER BY _id",
-            new String[] {feedName, objectType});
+            " WHERE " + select + ") AS o ON " + 
+            " o.person_id = x.person_id AND o.sequence_id = x.max_seq_id " + orderBy;
+        return getReadableDatabase().rawQuery(q,selectArgs);
 	}
 
-	public Cursor queryFeedAll(String personId, 
-                               String feedName) {
-		return getReadableDatabase().rawQuery(
-            " SELECT _id,json FROM objects WHERE  " + 
-            " person_id = ? AND feed_name = ?",
-            new String[] {personId, feedName});
-	}
 
-	public Cursor queryAll(String personId, 
-                           String feedName, 
-                           String objectType) {
-		return getReadableDatabase().rawQuery(
-            " SELECT _id,json FROM objects WHERE  " + 
-            " person_id = ? AND feed_name = ? AND type = ?",
-            new String[] {personId, feedName, objectType});
-	}
+	// public Cursor queryAll(String personId, 
+    //                        String feedName, 
+    //                        String objectType) {
+	// 	return getReadableDatabase().rawQuery(
+    //         " SELECT _id,json FROM objects WHERE  " + 
+    //         " person_id = ? AND feed_name = ? AND type = ?",
+    //         new String[] {personId, feedName, objectType});
+	// }
+
 
 	public Cursor querySubscribers(String feedName) {
 		return getReadableDatabase().rawQuery(
@@ -255,5 +280,29 @@ public class DBHelper extends SQLiteOpenHelper {
             " person_id = ? AND feed_name = ? ORDER BY sequence_id LIMIT 1",
             new String[] { personId, feedName});
 	}
+
+    public static String projToStr(String[] strings) {
+        if(strings == null) return "*";
+        StringBuffer sb = new StringBuffer();
+        for (int i=0; i < strings.length; i++) {
+            if (i != 0) sb.append(",");
+            sb.append(strings[i]);
+        }
+        return sb.toString();
+    }
+
+    public static String andClauses(String A, String B) {
+        if(A == null && B == null) return "1 = 1";
+        if(A == null) return B;
+        if(B == null) return A;
+        return A + " AND " + B;
+    }
+
+    public static String[] concat(String[] A, String[] B) {
+        String[] C = new String[A.length + B.length];
+        System.arraycopy(A, 0, C, 0, A.length);
+        System.arraycopy(B, 0, C, A.length, B.length);
+        return C;
+    }
 
 }
