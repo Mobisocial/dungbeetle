@@ -4,4 +4,5 @@
     <string name="start">Running...</string>
     <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>
+    <string name="new_shared_contact">Shared Contact</string>
 </resources>

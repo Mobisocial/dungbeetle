@@ -9,4 +9,5 @@ public class Object{
     public static final String FEED_NAME = "feed_name";
     public static final String PERSON_ID = "person_id";
     public static final String JSON = "json";
+    public static final String TIMESTAMP = "timestamp";
 }

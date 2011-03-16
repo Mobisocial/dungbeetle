@@ -16,7 +16,7 @@
 	android:id="@+id/add_object_button"
 	android:layout_width="fill_parent"
 	android:layout_height="50dip"
-	android:text="Add Debug Object"
+	android:text="Update Status"
 	/> 
   </LinearLayout>
 

@@ -18,16 +18,35 @@ import android.util.Log;
 public class DBIdentityProvider implements IdentityProvider {
 
     public static final String TAG = "DBIdentityProvider";
-	private PublicKey mPubKey;
-	private String mPubKeyTag;
-	private PrivateKey mPrivKey;
-	private SQLiteOpenHelper mDb;
+	private final PublicKey mPubKey;
+	private final String mPubKeyTag;
+	private final PrivateKey mPrivKey;
+	private final SQLiteOpenHelper mDb;
+    private final String mName;
+    private final String mEmail;
 
 	public DBIdentityProvider(SQLiteOpenHelper db) {
         mDb = db;
-        mPubKey = getMyPubKey(db);
-        mPrivKey = getMyPrivKey(db);
-        mPubKeyTag = personIdForPublicKey(mPubKey);
+		Cursor c = db.getReadableDatabase().rawQuery("SELECT * FROM my_info", new String[] {});
+		c.moveToFirst();
+        if(c.isAfterLast()){
+            throw new IllegalStateException("Missing my_info entry!");
+        }
+        else{
+            mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow("public_key")));
+            mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow("private_key")));
+            mName = c.getString(c.getColumnIndexOrThrow("name"));
+            mEmail = c.getString(c.getColumnIndexOrThrow("email"));
+            mPubKeyTag = personIdForPublicKey(mPubKey);
+        }
+    }
+
+	public String userName(){
+        return mName;
+    }
+
+	public String userEmail(){
+        return mEmail;
     }
 
 	public PublicKey userPublicKey(){
@@ -74,30 +93,20 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 
-    // Helper called only from DBHelper#onCreate
-    public static void generateAndStoreKeys(SQLiteDatabase db){
+    public static KeyPair generateKeyPair(){
         try {
             // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             keyGen.initialize(1024);
-            KeyPair keypair = keyGen.genKeyPair();
-            PrivateKey privateKey = keypair.getPrivate();
-            PublicKey publicKey = keypair.getPublic();
-
-            String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-            String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
-
-            ContentValues cv = new ContentValues();
-            cv.put("public_key", pubKeyStr);
-            cv.put("private_key", privKeyStr);
-            db.insertOrThrow("my_info", null, cv);
-
-            Log.d(TAG, "Generated public key: " + pubKeyStr);
-            Log.d(TAG, "Generated priv key: " + privKeyStr);
-
+            return keyGen.genKeyPair();        
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new IllegalStateException("Failed to generate key pair! " + e);
         }
+    }
+
+
+    public static String publicKeyToString(PublicKey pubkey){
+        return Base64.encodeToString(pubkey.getEncoded(), false);
     }
 
     public static PublicKey publicKeyFromString(String str){

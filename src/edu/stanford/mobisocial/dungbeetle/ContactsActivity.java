@@ -1,4 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.security.PublicKey;
+import android.widget.Toast;
+import android.nfc.NfcAdapter;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.view.MenuItem;
+import android.view.Menu;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.widget.CursorAdapter;
 import android.net.Uri;
@@ -16,7 +23,9 @@ import android.widget.AdapterView;
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 
+	private NfcAdapter mNfcAdapter;
 	private ContactListCursorAdapter mContacts;
+    public static final String SHARE_SCHEME = "db-share-contact";
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -28,6 +37,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		mContacts = new ContactListCursorAdapter(this, c);
 		setListAdapter(mContacts);
 		getListView().setOnItemClickListener(this);
+		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
 	}
 
 
@@ -39,6 +49,59 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		// startActivity(intent);
 	}
 
+
+	private final static int SHARE_CONTACT = 0;
+
+	public boolean onCreateOptionsMenu(Menu menu){
+		return true;
+	}
+
+	public boolean onPreparePanel(int featureId, View view, Menu menu) {
+		menu.clear();
+		menu.add(0, 0, 0, "Share Contact Info");
+		return true;
+	}
+
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()){
+		case SHARE_CONTACT: {
+			shareContactInfo();
+			return true;
+		}
+		default: return false;
+		}
+	}
+
+	protected void shareContactInfo(){
+        DBHelper helper = new DBHelper(this);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        String name = ident.userName();
+        String email = ident.userEmail();
+        PublicKey pubKey = ident.userPublicKey();
+        Uri.Builder builder = new Uri.Builder();
+        builder.scheme(SHARE_SCHEME);
+        builder.authority("dungbeetle");
+        builder.appendQueryParameter("name", name);
+        builder.appendQueryParameter("email", email);
+        builder.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
+        Uri uri = builder.build();
+        NdefRecord urlRecord = new NdefRecord(
+            NdefRecord.TNF_ABSOLUTE_URI, 
+            NdefRecord.RTD_URI, new byte[] {}, 
+            uri.toString().getBytes());
+        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
+        mNfcAdapter.enableForegroundNdefPush(this, ndef);
+        Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
+        helper.close();
+	}
+
+	@Override
+	public void onPause() {
+        super.onPause();
+        if(mNfcAdapter != null){
+            mNfcAdapter.disableForegroundNdefPush(this);
+        }
+	}
 
     private class ContactListCursorAdapter extends CursorAdapter {
 

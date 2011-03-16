@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.content.ContentValues;
+import org.json.JSONException;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
 import android.database.Cursor;
@@ -34,8 +36,7 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(Context context,
-                         Handler toastHandler){
+    public ManagerThread(Context context, Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;
         mHelper = new DBHelper(context);
@@ -55,9 +56,8 @@ public class ManagerThread extends Thread {
             });
 		mMessenger.addMessageListener(new MessageListener() {
                 public void onMessage(IncomingMessage incoming) {
-                    Message m = mToastHandler.obtainMessage();
-                    m.obj = incoming.contents();
-                    mToastHandler.sendMessage(m);
+                    Log.i(TAG, "Got incoming message " + incoming);
+                    handleIncomingMessage(incoming);
                 }
             });
 
@@ -66,6 +66,24 @@ public class ManagerThread extends Thread {
 
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me"), true, mOco);
+    }
+
+
+    private void handleIncomingMessage(IncomingMessage incoming){
+        String contents = incoming.contents();
+        Log.i(TAG, "Message contents: " + contents);
+        String personId = incoming.from();
+        Log.i(TAG, "Message from: " + personId);
+        try{
+            JSONObject obj = new JSONObject(contents);
+            String feedName = obj.getString("feedName");
+            mHelper.addExistingToFeed(personId, obj);
+            mContext.getContentResolver().notifyChange(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
+        }
+        catch(JSONException e){
+            Log.e(TAG, e.toString());
+        }
     }
 
 
@@ -95,7 +113,7 @@ public class ManagerThread extends Thread {
                 }
             }
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(1000);
 			} catch(InterruptedException e) {}
 		}
     }

@@ -1,4 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.util.Date;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import android.accounts.AccountManager;
+import android.accounts.Account;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -17,7 +23,8 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 1;
+	public static final int VERSION = 7;
+    private final Context mContext;
 
 	public DBHelper(Context context) {
 		super(
@@ -25,14 +32,16 @@ public class DBHelper extends SQLiteOpenHelper {
 		    DB_NAME, 
 		    new SQLiteDatabase.CursorFactory() {
 		    	@Override
-		    	public Cursor newCursor(SQLiteDatabase db, 
-                                        SQLiteCursorDriver masterQuery, 
-                                        String editTable, 
-                                        SQLiteQuery query) {
+		    	public Cursor newCursor(
+                    SQLiteDatabase db, 
+                    SQLiteCursorDriver masterQuery, 
+                    String editTable, 
+                    SQLiteQuery query) {
 		    		return new SQLiteCursor(db, masterQuery, editTable, query);
 		    	}
 		    }, 
 		    VERSION);
+        mContext = context;
 	}
 
 	@Override
@@ -44,10 +53,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
         Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
               + newVersion + ", which will destroy all old data");
-
         db.execSQL("DROP TABLE IF EXISTS my_info");
         db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
@@ -71,7 +78,7 @@ public class DBHelper extends SQLiteOpenHelper {
         s += ")";
         Log.i(TAG, s);
         db.execSQL(s);
-    } 
+    }
 
     private void createIndex(SQLiteDatabase db, String type, String name, String tableName, String col){
         String s = "CREATE " + type + " " + name + " on " + tableName + " (" + col + ")";
@@ -86,7 +93,10 @@ public class DBHelper extends SQLiteOpenHelper {
 
         createTable(db, "my_info", 
                     "public_key", "TEXT",
-                    "private_key", "TEXT");
+                    "private_key", "TEXT",
+                    "name", "TEXT",
+                    "email", "TEXT"
+                    );
 
 
         createTable(db, Object.TABLE,
@@ -95,7 +105,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     Object.SEQUENCE_ID, "INTEGER",
                     Object.FEED_NAME, "TEXT",
                     Object.PERSON_ID, "TEXT",
-                    Object.JSON, "TEXT");
+                    Object.JSON, "TEXT",
+                    Object.TIMESTAMP, "INTEGER");
         createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
         createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
         createIndex(db, "INDEX", "objects_by_person_id", Object.TABLE, Object.PERSON_ID);
@@ -106,8 +117,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Contact.NAME, "TEXT",
                     Contact.PUBLIC_KEY, "TEXT",
                     Contact.PERSON_ID, "TEXT",
-                    Contact.EMAIL, "TEXT"
-                    );
+                    Contact.EMAIL, "TEXT");
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
@@ -125,26 +135,61 @@ public class DBHelper extends SQLiteOpenHelper {
         createIndex(db, "UNIQUE INDEX", "subscriptions_by_person_id", "subscriptions", "person_id");
 
 
-        DBIdentityProvider.generateAndStoreKeys(db);
+        generateAndStorePersonalInfo(db);
+
         db.setVersion(VERSION);
         db.setTransactionSuccessful();
         db.endTransaction();
         this.onOpen(db);
 	}
 
-	long addToFeed(String personId, String feedName, String type, JSONObject json) {
+    private void generateAndStorePersonalInfo(SQLiteDatabase db){
+        String email = getUserEmail();
+        String name = email; // How to get this?
+
+        KeyPair keypair = DBIdentityProvider.generateKeyPair();
+        PrivateKey privateKey = keypair.getPrivate();
+        PublicKey publicKey = keypair.getPublic();
+        String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
+        String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
+        ContentValues cv = new ContentValues();
+        cv.put("public_key", pubKeyStr);
+        cv.put("private_key", privKeyStr);
+        cv.put("name", name);
+        cv.put("email", email);
+        db.insertOrThrow("my_info", null, cv);
+        Log.d(TAG, "Generated public key: " + pubKeyStr);
+        Log.d(TAG, "Generated priv key: " + privKeyStr);
+    }
+
+    private String getUserEmail(){
+        Account[] accounts = AccountManager.get(mContext).getAccounts();
+        String possibleEmail = "NA";
+        for (Account account : accounts) {
+            if(account.name.length() > 0){
+                possibleEmail = account.name;
+            }
+        }
+        return possibleEmail;
+    }
+
+    long addToFeed(String personId, String feedName, String type, JSONObject json) {
         try{
-            long maxSeqId = getFeedMaxSequenceId(personId, feedName);
+            long nextSeqId = getFeedMaxSequenceId(personId, feedName) + 1;
+            long timestamp = new Date().getTime();
             json.put("type", type);
-            json.put("sequenceId", maxSeqId);
+            json.put("feedName", feedName);
+            json.put("sequenceId", nextSeqId);
+            json.put("timestamp", timestamp);
             ContentValues cv = new ContentValues();
-            cv.put("feed_name", feedName);
-            cv.put("person_id", personId);
-            cv.put("type", type);
-            cv.put("sequence_id", maxSeqId + 1);
-            cv.put("json", json.toString());
+            cv.put(Object.FEED_NAME, feedName);
+            cv.put(Object.PERSON_ID, personId);
+            cv.put(Object.TYPE, type);
+            cv.put(Object.SEQUENCE_ID, nextSeqId);
+            cv.put(Object.JSON, json.toString());
+            cv.put(Object.TIMESTAMP, timestamp);
             getWritableDatabase().insertOrThrow("objects", null, cv);
-            return maxSeqId;
+            return nextSeqId;
         }
         catch(Exception e){
             e.printStackTrace(System.err);
@@ -152,7 +197,30 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-	long insertContact(ContentValues cv) {
+
+    long addExistingToFeed(String personId, JSONObject json) {
+        try{
+            long nextSeqId = json.getLong("sequenceId");
+            long timestamp = json.getLong("timestamp");
+            String feedName = json.getString("feedName");
+            String type = json.getString("type");
+            ContentValues cv = new ContentValues();
+            cv.put(Object.FEED_NAME, feedName);
+            cv.put(Object.PERSON_ID, personId);
+            cv.put(Object.TYPE, type);
+            cv.put(Object.SEQUENCE_ID, nextSeqId);
+            cv.put(Object.JSON, json.toString());
+            cv.put(Object.TIMESTAMP, timestamp);
+            getWritableDatabase().insertOrThrow("objects", null, cv);
+            return nextSeqId;
+        }
+        catch(Exception e){
+            e.printStackTrace(System.err);
+            return -1;
+        }
+    }
+
+    long insertContact(ContentValues cv) {
         try{
             Log.i(TAG, "Inserting contact: " + cv);
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
@@ -170,7 +238,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-	long insertSubscription(ContentValues cv) {
+    long insertSubscription(ContentValues cv) {
         try{
             String personId = cv.getAsString("person_id");
             validate(personId);
@@ -184,7 +252,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-	long insertSubscriber(ContentValues cv) {
+    long insertSubscriber(ContentValues cv) {
         try{
             String personId = cv.getAsString("person_id");
             validate(personId);
@@ -204,41 +272,29 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private long getFeedMaxSequenceId(String personId, String feedName){
         Cursor c = getReadableDatabase().rawQuery(
-            "SELECT max(sequence_id) FROM objects WHERE person_id = ? AND " + 
-            " feed_name = ?",
+            "SELECT max(sequence_id) FROM objects WHERE person_id = ? AND feed_name = ?",
             new String[] {personId, feedName});
         c.moveToFirst();
-        if(c.isAfterLast()){
-            return -1;
+        if(!c.isAfterLast()){
+            long max = c.getLong(0);
+            Log.i(TAG, "Found max seq num: " + max);
+            return max;
         }
-        else{
-            return c.getLong(0);
-        }
+        return -1;
     }
 
-	// public Cursor queryFeedLatest(String personId, 
-    //                               String feedName, 
-    //                               String objectType) {
-	// 	return getReadableDatabase().rawQuery(
-    //         " SELECT _id,json FROM objects WHERE " + 
-    //         " person_id = :tag AND feed_name = :feed AND type = :type AND " + 
-    //         " sequence_id = (SELECT max(sequence_id) FROM " + 
-    //         " objects WHERE person_id = :tag AND feed_name = :feed AND type = :type)",
-    //         new String[] {personId, feedName, objectType});
-	// }
 
-
-	public Cursor queryFeed(String feedName,
+    public Cursor queryFeed(String feedName,
                             String[] projection, String selection,
                             String[] selectionArgs, String sortOrder
                             ){
         String select = andClauses(selection,"feed_name='" + feedName + "'");
-		return getReadableDatabase().rawQuery(
+        return getReadableDatabase().rawQuery(
             SQLiteQueryBuilder.buildQueryString(false, "objects", projection, select, null, null, sortOrder, null),
             selectionArgs);
-	}
+    }
 
-	public Cursor queryFeedLatest(String feedName, 
+    public Cursor queryFeedLatest(String feedName, 
                                   String[] projection, String selection,
                                   String[] selectionArgs, String sortOrder){
         String select = andClauses(selection,"feed_name='" + feedName + "'");
@@ -255,31 +311,21 @@ public class DBHelper extends SQLiteOpenHelper {
             " WHERE " + select + ") AS o ON " + 
             " o.person_id = x.person_id AND o.sequence_id = x.max_seq_id " + orderBy;
         return getReadableDatabase().rawQuery(q,selectArgs);
-	}
+    }
 
 
-	// public Cursor queryAll(String personId, 
-    //                        String feedName, 
-    //                        String objectType) {
-	// 	return getReadableDatabase().rawQuery(
-    //         " SELECT _id,json FROM objects WHERE  " + 
-    //         " person_id = ? AND feed_name = ? AND type = ?",
-    //         new String[] {personId, feedName, objectType});
-	// }
-
-
-	public Cursor querySubscribers(String feedName) {
-		return getReadableDatabase().rawQuery(
+    public Cursor querySubscribers(String feedName) {
+        return getReadableDatabase().rawQuery(
             " SELECT _id,person_id FROM subscribers WHERE feed_name = ?",
             new String[] {feedName});
-	}
+    }
 
-	public Cursor queryRecentlyAdded(String personId, String feedName) {
-		return getReadableDatabase().rawQuery(
+    public Cursor queryRecentlyAdded(String personId, String feedName) {
+        return getReadableDatabase().rawQuery(
             " SELECT _id,json FROM objects WHERE " + 
-            " person_id = ? AND feed_name = ? ORDER BY sequence_id LIMIT 1",
+            " person_id = ? AND feed_name = ? ORDER BY timestamp DESC LIMIT 1",
             new String[] { personId, feedName});
-	}
+    }
 
     public static String projToStr(String[] strings) {
         if(strings == null) return "*";
