@@ -23,7 +23,6 @@ public class DBIdentityProvider implements IdentityProvider {
 	private final PrivateKey mPrivKey;
 	private final SQLiteOpenHelper mDb;
     private final String mName;
-    private final String mEmail;
 
 	public DBIdentityProvider(SQLiteOpenHelper db) {
         mDb = db;
@@ -36,7 +35,6 @@ public class DBIdentityProvider implements IdentityProvider {
             mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow("public_key")));
             mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow("private_key")));
             mName = c.getString(c.getColumnIndexOrThrow("name"));
-            mEmail = c.getString(c.getColumnIndexOrThrow("email"));
             mPubKeyTag = personIdForPublicKey(mPubKey);
         }
     }
@@ -46,7 +44,9 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public String userEmail(){
-        return mEmail;
+		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT email FROM my_info", new String[] {});
+		c.moveToFirst();
+        return c.getString(c.getColumnIndexOrThrow("email"));
     }
 
 	public PublicKey userPublicKey(){

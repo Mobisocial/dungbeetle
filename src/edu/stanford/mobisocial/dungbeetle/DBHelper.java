@@ -173,6 +173,12 @@ public class DBHelper extends SQLiteOpenHelper {
         return possibleEmail;
     }
 
+    void setMyEmail(String email) {
+        ContentValues cv = new ContentValues();
+        cv.put("email", email);
+        getWritableDatabase().update("objects", cv, null, null);
+    }
+
     long addToFeed(String personId, String feedName, String type, JSONObject json) {
         try{
             long nextSeqId = getFeedMaxSequenceId(personId, feedName) + 1;

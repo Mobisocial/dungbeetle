@@ -1,11 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.nfc.NfcAdapter;
-import android.widget.Button;
-import android.content.Intent;
-import java.security.PublicKey;
-import android.widget.Toast;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
+import android.content.DialogInterface;
+import android.widget.EditText;
+import android.app.AlertDialog;
+import android.view.MenuItem;
+import android.view.Menu;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.widget.CursorAdapter;
 import android.net.Uri;
@@ -19,7 +17,7 @@ import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android.view.View.OnClickListener;
+
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 
@@ -70,6 +68,44 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         }
 
     }
+
+
+    private final static int UPDATE_CONTACT = 0;
+
+	public boolean onCreateOptionsMenu(Menu menu){
+		return true;
+	}
+
+	public boolean onPreparePanel(int featureId, View view, Menu menu) {
+		menu.clear();
+		menu.add(0, 0, 0, "Set email (debug)");
+		return true;
+	}
+
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()){
+		case UPDATE_CONTACT: {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setMessage("Please enter your new status message:");
+            final EditText input = new EditText(this);
+            alert.setView(input);
+            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        DBHelper helper = new DBHelper(ContactsActivity.this);
+                        helper.setMyEmail(input.getText().toString());
+                    }
+                });
+
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+            alert.show();
+			return true;
+		}
+		default: return false;
+		}
+	}
 
 
 }

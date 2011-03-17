@@ -1,4 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import android.widget.ImageView;
+import android.widget.TextView;
 import java.security.PublicKey;
 import android.content.ContentValues;
 import android.app.Activity;
@@ -17,6 +21,7 @@ public class HandleNfcContact extends Activity {
     private String mEmail;
     private String mPubKeyStr;
     private PublicKey mPubKey;
+	private BitmapManager mgr = new BitmapManager(1);
     
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -31,6 +36,15 @@ public class HandleNfcContact extends Activity {
             mEmail = uri.getQueryParameter("email");
             mPubKeyStr = uri.getQueryParameter("publicKey");
             mPubKey = DBIdentityProvider.publicKeyFromString(mPubKeyStr);
+
+            TextView nameView = (TextView)findViewById(R.id.name_text);
+            nameView.setText(mEmail);
+
+            ImageView portraitView = (ImageView)findViewById(R.id.image);
+            //portraitView.setImageResource(R.drawable.ellipsis);
+            if(uri != null){
+                mgr.lazyLoadImage(portraitView, Gravatar.gravatarUri(mEmail));
+            }
 		}
 		else{
             saveButton.setVisibility(View.INVISIBLE);
