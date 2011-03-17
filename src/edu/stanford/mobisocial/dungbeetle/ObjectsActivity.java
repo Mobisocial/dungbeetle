@@ -37,8 +37,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
-
-        mIdent = new DBIdentityProvider(new DBHelper(this));
+ 
+       mIdent = new DBIdentityProvider(new DBHelper(this));
 
 		Button button = (Button)findViewById(R.id.add_object_button);
 		button.setOnClickListener(new OnClickListener() {
