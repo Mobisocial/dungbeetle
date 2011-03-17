@@ -1,13 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.content.ContentValues;
+import android.os.Message;
+import android.os.Handler;
+import android.widget.Button;
 import android.content.Intent;
 import edu.stanford.mobisocial.nfc.Nfc;
 import java.security.PublicKey;
 import android.widget.Toast;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
-import android.view.MenuItem;
-import android.view.Menu;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.widget.CursorAdapter;
 import android.net.Uri;
@@ -21,13 +21,20 @@ import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-
+import android.view.View.OnClickListener;
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 
     private Nfc mNfc;
 	private ContactListCursorAdapter mContacts;
     public static final String SHARE_SCHEME = "db-share-contact";
+
+	private Handler mNfcHandler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                doHandleNdef((NdefMessage[])msg.obj);
+            }
+        };
 
 
     public void onCreate(Bundle savedInstanceState) {
@@ -43,71 +50,40 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         mNfc = new Nfc(this);
         mNfc.addNdefHandler(new Nfc.NdefHandler(){
                 public int handleNdef(final NdefMessage[] messages){
-                    ContactsActivity.this.runOnUiThread(new Runnable(){
-                            public void run(){ handleNdef(messages); }
-                        });
-                    return 1;
+                    Message m = mNfcHandler.obtainMessage();
+                    m.obj = messages;
+                    mNfcHandler.sendMessage(m);
+                    return NDEF_CONSUME;
                 }
             });
+
+		Button button = (Button)findViewById(R.id.share_info_button);
+		button.setOnClickListener(new OnClickListener() {
+				public void onClick(View v) {
+                    shareContactInfo();
+				}
+			});
 	}
 
 
-    protected void handleNdef(NdefMessage[] messages){
+    protected void doHandleNdef(NdefMessage[] messages){
         if(messages.length != 1 || messages[0].getRecords().length != 1){
             Toast.makeText(this, "Oops! expected a single Uri record.", Toast.LENGTH_SHORT).show();
             return;
         }
         String uriStr = new String(messages[0].getRecords()[0].getPayload());
-        Uri myURI = Uri.parse(uriStr);
-        if(myURI == null || !myURI.getScheme().equals(SHARE_SCHEME)){
+        Uri myUri = Uri.parse(uriStr);
+        if(myUri == null || !myUri.getScheme().equals(SHARE_SCHEME)){
             Toast.makeText(this, "Received record without valid Uri!", Toast.LENGTH_SHORT).show();
             return;
         }
-        String pubKeyStr = myURI.getQueryParameter("publicKey");
-        String name = myURI.getQueryParameter("name");
-        String email = myURI.getQueryParameter("email");
-        PublicKey pubKey = DBIdentityProvider.publicKeyFromString(pubKeyStr);
-        ContentValues values = new ContentValues();
-        values.put("public_key", pubKeyStr);
-        values.put("name", name);
-        values.put("email", email);
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
-        getContentResolver().insert(url, values);
-
-        values = new ContentValues();
-        values.put("person_id", DBIdentityProvider.makePersonIdForPublicKey(pubKey));
-        values.put("feed_name", "friend");
-        url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers");
-        getContentResolver().insert(url, values);
-        Toast.makeText(this, "Received contact info for " + name + ".", 
-                       Toast.LENGTH_SHORT).show();
+		Intent intent = new Intent().setClass(this, HandleNfcContact.class);
+		intent.setData(myUri);
+		startActivity(intent);
     }
 
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
-
-
-    private final static int SHARE_CONTACT = 0;
-
-    public boolean onCreateOptionsMenu(Menu menu){
-        return true;
-    }
-
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
-        menu.clear();
-        menu.add(0, 0, 0, "Share Contact Info");
-        return true;
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
-        case SHARE_CONTACT: {
-            shareContactInfo();
-            return true;
-        }
-        default: return false;
-        }
-    }
 
     protected void shareContactInfo(){
         DBHelper helper = new DBHelper(this);

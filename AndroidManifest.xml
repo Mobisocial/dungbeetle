@@ -39,19 +39,6 @@
     <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleNfcContact"
 	      android:label="@string/new_shared_contact"
 	      android:screenOrientation="portrait">
-
-      <intent-filter>
-	<action android:name="edu.stanford.mobisocial.dungbeetle.HANDLE_NFC_CONTACT" />
-	<category android:name="android.intent.category.DEFAULT" />
-      </intent-filter>
-
-      <intent-filter>
-	<action android:name="android.intent.action.VIEW" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<category android:name="android.intent.category.BROWSABLE" />
-	<data android:scheme="db-share-contact" android:host="dungbeetle" />
-      </intent-filter>
-
     </activity>
 
 

@@ -102,7 +102,7 @@ import android.util.Log;
 public class Nfc {
 	private static final String TAG = "easynfc";
 
-	private final Set<ConnectionHandover> mConnectionHandovers;
+	private Set<ConnectionHandover> mConnectionHandovers;
 	private Activity mActivity;
 	private NfcAdapter mNfcAdapter;
 	private NdefMessage mForegroundMessage = null;

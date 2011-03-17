@@ -5,7 +5,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_gravity="center_horizontal"
-    android:background="#FFFFFFFF" 
     >
 
   <ImageView
@@ -36,10 +35,16 @@
       android:gravity="center|bottom"
       >
     <Button
-	android:id="@+id/finished_button"
+	android:id="@+id/save_contact_button"
 	android:layout_width="100dip"
 	android:layout_height="wrap_content"
-	android:text="Done"
+	android:text="Save Contact"
+	/>
+    <Button
+	android:id="@+id/cancel_button"
+	android:layout_width="100dip"
+	android:layout_height="wrap_content"
+	android:text="Cancel"
 	/>
   </LinearLayout>
 
