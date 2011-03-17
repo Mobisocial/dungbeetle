@@ -23,7 +23,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 8;
+	public static final int VERSION = 9;
     private final Context mContext;
 
 	public DBHelper(Context context) {

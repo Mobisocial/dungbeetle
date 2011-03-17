@@ -10,20 +10,12 @@
       xmlns:android="http://schemas.android.com/apk/res/android"
       android:orientation="horizontal"
       android:gravity="center">
-    <Button
-	android:id="@+id/share_info_button"
-	android:layout_width="fill_parent"
-	android:layout_height="50dip"
-	android:text="Share My Info"
-	/> 
   </LinearLayout>
-
 
   <ListView
       android:id="@+id/android:list"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       />
-
 </LinearLayout>
 

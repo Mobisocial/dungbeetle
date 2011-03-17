@@ -46,12 +46,12 @@ public class HandleNfcContact extends Activity {
                     values.put("email", mEmail);
                     Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
                     getContentResolver().insert(url, values);
-
                     values = new ContentValues();
                     values.put("person_id", DBIdentityProvider.makePersonIdForPublicKey(mPubKey));
                     values.put("feed_name", "friend");
                     url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers");
                     getContentResolver().insert(url, values);
+                    finish();
 				}
 			});
 
