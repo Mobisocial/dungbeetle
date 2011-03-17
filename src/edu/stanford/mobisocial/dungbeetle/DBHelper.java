@@ -176,7 +176,7 @@ public class DBHelper extends SQLiteOpenHelper {
     void setMyEmail(String email) {
         ContentValues cv = new ContentValues();
         cv.put("email", email);
-        getWritableDatabase().update("objects", cv, null, null);
+        getWritableDatabase().update("my_info", cv, null, null);
     }
 
     long addToFeed(String personId, String feedName, String type, JSONObject json) {

@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.net.NetworkInfo;
+import android.net.ConnectivityManager;
+import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import android.content.ContentValues;
 import org.json.JSONException;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -36,12 +39,20 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(Context context, Handler toastHandler){
+    public ManagerThread(final Context context, final Handler toastHandler){
         mToastHandler = toastHandler;
         mContext = context;
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
-		mMessenger = new XMPPMessengerService(wrapIdent(mIdent));
+        ConnectionStatus status = new ConnectionStatus(){
+                public boolean isConnected(){
+                    ConnectivityManager cm = 
+                        (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                    NetworkInfo info = cm.getActiveNetworkInfo();
+                    return info != null && info.isConnected();
+                }
+            };
+		mMessenger = new XMPPMessengerService(wrapIdent(mIdent), status);
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Message m = mToastHandler.obtainMessage();

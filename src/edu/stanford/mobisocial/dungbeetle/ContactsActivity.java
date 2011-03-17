@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import edu.stanford.mobisocial.util.BitmapManager;
+import android.widget.ImageView;
 import android.content.DialogInterface;
 import android.widget.EditText;
 import android.app.AlertDialog;
@@ -23,13 +26,14 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
 	private ContactListCursorAdapter mContacts;
     public static final String SHARE_SCHEME = "db-share-contact";
+	protected final BitmapManager mgr = new BitmapManager(10);
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact._ID, Contact.NAME, Contact.PUBLIC_KEY}, 
+            new String[]{Contact._ID, Contact.NAME, Contact.EMAIL, Contact.PUBLIC_KEY}, 
             null, null, null);
 		mContacts = new ContactListCursorAdapter(this, c);
 		setListAdapter(mContacts);
@@ -54,6 +58,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             if (nameText != null) {
                 nameText.setText(name);
             }
+
+            String email = c.getString(c.getColumnIndex(Contact.EMAIL));
+            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
             return v;
         }
 
@@ -65,6 +74,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             if (nameText != null) {
                 nameText.setText(name);
             }
+
+            String email = c.getString(c.getColumnIndex(Contact.EMAIL));
+            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
         }
 
     }
@@ -86,7 +100,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		switch(item.getItemId()){
 		case UPDATE_CONTACT: {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            alert.setMessage("Please enter your new status message:");
+            alert.setMessage("Enter email:");
             final EditText input = new EditText(this);
             alert.setView(input);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {

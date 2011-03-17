@@ -2,8 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.nfc.NdefMessage;
 import android.widget.Toast;
 import edu.stanford.mobisocial.nfc.Nfc;
-import edu.stanford.mobisocial.nfc.Nfc.NdefHandler;
-import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.net.Uri;
 import java.security.PublicKey;
@@ -72,34 +70,12 @@ public class DungBeetleActivity extends TabActivity
             });
 
 
-        // // DEBUG DATA
-
-        // String pubKeyStr = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDdZjHO9Ef0XS+XqF2lFwxrpnzhNY06TKnrSyjGHbXzxORnHfoLVB0xSCJ6HRI9+/hLWtErTqcmkaJ5YvS074gpfo7kZR5WGapqCe64mTmTCCO8Oxm+PLdIE5w+dYBpCkxMJAdiSscAt6LZHSNYeaxEfBgzmLYTyGYGtC+kNYDSnQIDAQAB";
-        // ContentValues values = new ContentValues();
-        // values.put("public_key", pubKeyStr);
-        // values.put("name", "Aemon Cannon");
-        // Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
-        // getContentResolver().insert(url, values);
-
-
-        // // Make every contact a subscriber of the local friend feed
-        // Cursor contacts = getContentResolver().query(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-        //                                              null, null, null, null);
-        // contacts.moveToFirst();
-        // while(!contacts.isAfterLast()){
-        //     String id = contacts.getString(contacts.getColumnIndexOrThrow(Contact.PERSON_ID));
-        //     ContentValues vals = new ContentValues();
-        //     vals.put("person_id", id);
-        //     vals.put("feed_name", "friend");
-        //     getContentResolver().insert(
-        //         Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers"), vals);
-        //     contacts.moveToNext();
-        // }
 	}
 
     protected void doHandleNdef(NdefMessage[] messages){
         if(messages.length != 1 || messages[0].getRecords().length != 1){
-            Toast.makeText(this, "Oops! expected a single Uri record.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Oops! expected a single Uri record. ",
+                           Toast.LENGTH_SHORT).show();
             return;
         }
         String uriStr = new String(messages[0].getRecords()[0].getPayload());

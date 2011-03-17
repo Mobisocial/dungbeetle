@@ -501,7 +501,7 @@ public class Nfc {
 			NdefProxy ndefProxy = new NdefProxy() {
 				@Override
 				public void handleNdef(NdefMessage ndef) {
-					doHandleNdef(ndefMessages);
+					doHandleNdef(new NdefMessage[]{ ndef });
 				}
 				
 				@Override
