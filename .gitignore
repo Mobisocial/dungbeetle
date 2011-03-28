@@ -7,3 +7,5 @@ classes.dex
 gen
 .project
 .classpath
+local.properties
+default.properties
