@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import android.widget.ImageView;
 import android.widget.TextView;

@@ -78,6 +78,16 @@ public class DungBeetleContentProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
             return Uri.parse(uri.toString());
         }
+        else if(match(uri, "groups")){
+            mHelper.insertGroup(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+            return Uri.parse(uri.toString());
+        }
+        else if(match(uri, "group_members")){
+            mHelper.insertGroupMember(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
+            return Uri.parse(uri.toString());
+        }
         else{
             return null;
         }
@@ -124,7 +134,9 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         else if(match(uri, "contacts") || 
                 match(uri, "subscribers") || 
-                match(uri, "subscriptions")){
+                match(uri, "subscriptions") ||
+                match(uri, "groups") ||
+                match(uri, "group_members")){
             Cursor c = mHelper.getReadableDatabase().query(segs.get(0),
                                                            projection,
                                                            selection,

@@ -1,10 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
-import edu.stanford.mobisocial.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.Toast;
 import android.content.DialogInterface;
 import android.widget.EditText;
 import android.app.AlertDialog;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.Menu;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -14,9 +17,11 @@ import android.database.Cursor;
 import android.app.ListActivity;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
@@ -37,9 +42,68 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             null, null, null);
 		mContacts = new ContactListCursorAdapter(this, c);
 		setListAdapter(mContacts);
-		getListView().setOnItemClickListener(this);
+
+        ListView lv = getListView();
+        lv.setTextFilterEnabled(true);
+        registerForContextMenu(lv);
+        
+		lv.setOnItemClickListener(this);
 	}
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+      //if (v.getId()==R.id.list) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+        //menu.setHeaderTitle(((Friend)mContacts.get(info.position)).getUserName());
+        menu.setHeaderTitle("Menu");
+        //String[] menuItems = getResources().getStringArray(R.array.menu);
+        //for (int i = 0; i<menuItems.length; i++) {
+          menu.add(Menu.NONE, 0, 0, "Manage groups");
+        //}
+     // }
+    }
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+		  Cursor c = getContentResolver().query(
+                  Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
+                  new String[]{"_id", "group_id", "feed_name"}, 
+                  null, null, null);
+		  CharSequence[] groups = new CharSequence[c.getCount()];
+          Log.i("DBHelper", c.getCount() + " groups");
+          if(c.moveToFirst())
+          {
+              int group_id_col = c.getColumnIndex("group_id");
+              int i = 0;
+              do{
+            	 groups[i] = c.getString(group_id_col);
+            	 i++; 
+              }while(c.moveToNext());
+          }
+		  final CharSequence[] items = groups;
+		  final boolean[] selected = new boolean[items.length];
+
+		  AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		  builder.setTitle("Pick Groups");
+		  builder.setMultiChoiceItems(items, selected, new DialogInterface.OnMultiChoiceClickListener() {
+	            public void onClick(DialogInterface dialog, int item, boolean isChecked) {
+	            	String checked = " was checked";
+	            	if(isChecked) 
+	            		checked = " was checked";
+	            	else
+            			checked = " was unchecked";
+	            	Toast.makeText(getApplicationContext(), items[item] + checked, Toast.LENGTH_SHORT).show();
+	            }
+	        });
+		  builder.setPositiveButton("Done",
+                  new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int whichButton) {
+        	  		
+              }
+          });
+		  AlertDialog alert = builder.create();
+		  alert.show();
+		  return true;
+    }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
 

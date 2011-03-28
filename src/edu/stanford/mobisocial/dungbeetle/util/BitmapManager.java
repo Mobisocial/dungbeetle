@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.util;
+package edu.stanford.mobisocial.dungbeetle.util;
 import android.net.Uri;
 import android.widget.ImageView;
 

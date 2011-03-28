@@ -8,6 +8,7 @@ import android.accounts.Account;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.security.PublicKey;
 import org.json.JSONObject;
@@ -60,6 +61,8 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
         db.execSQL("DROP TABLE IF EXISTS subscribers");
         db.execSQL("DROP TABLE IF EXISTS subscriptions");
+        db.execSQL("DROP TABLE IF EXISTS groups");
+        db.execSQL("DROP TABLE IF EXISTS group_members");
         onCreate(db);
     }
 
@@ -134,6 +137,16 @@ public class DBHelper extends SQLiteOpenHelper {
                     "feed_name", "TEXT");
         createIndex(db, "UNIQUE INDEX", "subscriptions_by_person_id", "subscriptions", "person_id");
 
+        createTable(db, "groups",
+        			Group._ID, "INTEGER PRIMARY KEY",
+        			Group.GROUP_ID, "TEXT",
+        			Group.FEED_NAME, "TEXT");
+        createIndex(db, "UNIQUE INDEX", "groups_by_group_id", "groups", "group_id");
+        
+        createTable(db, "group_members",
+        			"_id", "INTEGER PRIMARY KEY",
+        			"group_id", "TEXT",
+        			"person_id", "TEXT");
 
         generateAndStorePersonalInfo(db);
 
@@ -270,6 +283,34 @@ public class DBHelper extends SQLiteOpenHelper {
             e.printStackTrace(System.err);
             return -1;
         }
+    }
+    
+    long insertGroup(ContentValues cv) {
+    	try{
+    		String groupId = cv.getAsString("group_id");
+    		validate(groupId);
+    		String feedName = cv.getAsString("feed_name");
+    		validate(feedName);
+    		return getWritableDatabase().insertOrThrow("groups", null, cv);
+    	}
+    	catch(Exception e){
+    		e.printStackTrace(System.err);
+    		return -1;
+    	}
+    }
+    
+    long insertGroupMember(ContentValues cv) {
+    	try{
+    		String groupId = cv.getAsString("group_id");
+    		validate(groupId);
+    		String personId = cv.getAsString("person_id");
+    		validate(personId);
+    		return getWritableDatabase().insertOrThrow("group_members", null, cv);
+    	}
+    	catch(Exception e){
+    		e.printStackTrace(System.err);
+    		return -1;
+    	}
     }
 
     private void validate(String val){

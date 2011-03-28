@@ -5,3 +5,5 @@
 *.jar
 classes.dex
 gen
+.project
+.classpath

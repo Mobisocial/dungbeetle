@@ -44,9 +44,29 @@ public class DungBeetleActivity extends TabActivity
 
 		intent = new Intent().setClass(this, ObjectsActivity.class);
 		spec = tabHost.newTabSpec("objects").setIndicator(
-			"Objects",
+			"Feed",
 			null).setContent(intent);
 		tabHost.addTab(spec);
+		
+		// Do the same for the other tabs
+        intent = new Intent().setClass(this, ProfileActivity.class);
+        spec = tabHost.newTabSpec("profile").setIndicator("Profile",
+                          null)
+                      .setContent(intent);
+        tabHost.addTab(spec);
+
+        intent = new Intent().setClass(this, FriendsActivity.class);
+        spec = tabHost.newTabSpec("friends").setIndicator("Friends",
+                          null)
+                      .setContent(intent);
+        tabHost.addTab(spec);
+
+        intent = new Intent().setClass(this, GroupsActivity.class);
+        spec = tabHost.newTabSpec("groups").setIndicator("Groups",
+                          null)
+                      .setContent(intent);
+        tabHost.addTab(spec);
+        
 		tabHost.setCurrentTab(0);
 
 
