@@ -1,11 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.ContentValues;
+import android.app.NotificationManager;
 import android.content.pm.ActivityInfo;
 import android.content.ComponentName;
 import android.content.BroadcastReceiver;
-import android.content.res.Resources;
 import java.util.ArrayList;
 import android.content.pm.ResolveInfo;
 import java.util.List;
@@ -40,14 +37,15 @@ import android.widget.AdapterView;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
-
 	private ContactListCursorAdapter mContacts;
     public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mgr = new BitmapManager(10);
+	private NotificationManager mNotificationManager;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
+        mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
             new String[]{Contact._ID, 
@@ -112,9 +110,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	        });
         builder.setPositiveButton("Done",
                                   new DialogInterface.OnClickListener() {
-                                      public void onClick(DialogInterface dialog, int whichButton) {
-        	  		
-                                      }
+                                      public void onClick(DialogInterface dialog, int whichButton) {}
                                   });
         AlertDialog alert = builder.create();
         alert.show();
@@ -122,59 +118,104 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-        Contact c = new Contact((Cursor)mContacts.getItem(position));
-        startApplicationWithFriend(c);
+        final Contact c = new Contact((Cursor)mContacts.getItem(position));
+        final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Actions");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                    switch(item){
+                    case 0: 
+                        sendMessageToContact(c);
+                        break;
+                    case 1:
+                        startApplicationWithContact(c);
+                        break;
+                    }
+                }
+            });
     }
 
-    private void startApplicationWithFriend(final Contact contact){
+    private void sendMessageToContact(final Contact contact){
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setMessage("Enter message:");
+        final EditText input = new EditText(this);
+        alert.setView(input);
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    DBHelper helper = new DBHelper(ContactsActivity.this);
+                    helper.setMyEmail(input.getText().toString());
+                    Helpers.sendIM(ContactsActivity.this, contact, input.getText().toString());
+                }
+            });
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                }
+            });
+        alert.show();
+    }
+
+    private void startApplicationWithContact(final Contact contact){
         final PackageManager mgr = getPackageManager();
         Intent i = new Intent("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
         final List<ResolveInfo> infos = mgr.queryBroadcastReceivers(i, 0);
-        ArrayList<String> names = new ArrayList<String>();
-        for(ResolveInfo info : infos){
-            names.add(info.loadLabel(mgr).toString());
-        }
-        final CharSequence[] items = names.toArray(new CharSequence[]{});
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Share application:");
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int item) {
-                    final ResolveInfo info = infos.get(item);
-                    Intent i = new Intent();
-                    i.setClassName(info.activityInfo.packageName, 
-                                   info.activityInfo.name);
-                    i.setAction("android.intent.action.CONFIGURE");
-                    i.addCategory("android.intent.category.P2P");
-                    BroadcastReceiver rec = new BroadcastReceiver(){
-                            public void onReceive(Context c, Intent i){
-                                Intent launch = new Intent();
-                                launch.setAction(Intent.ACTION_MAIN);
-                                launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                                launch.setPackage(info.activityInfo.packageName);
-                                List<ResolveInfo> resolved = 
-                                    mgr.queryIntentActivities(launch, 0);
-                                if (resolved.size() > 0) {
-                                    ActivityInfo info = resolved.get(0).activityInfo;
-                                    String arg = getResultData();
-                                    launch.setComponent(new ComponentName(
-                                                            info.packageName,
-                                                            info.name));
-                                    launch.putExtra(
-                                        "android.intent.extra.APPLICATION_ARGUMENT", 
-                                        arg);
-                                    startActivity(launch);
-                                    Helpers.sendApplicationInvite(
-                                        ContactsActivity.this,
-                                        contact, info.packageName, arg);
+        if(infos.size() > 0){
+            ArrayList<String> names = new ArrayList<String>();
+            for(ResolveInfo info : infos){
+                names.add(info.loadLabel(mgr).toString());
+            }
+            final CharSequence[] items = names.toArray(new CharSequence[]{});
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Share application:");
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        final ResolveInfo info = infos.get(item);
+                        Intent i = new Intent();
+                        i.setClassName(info.activityInfo.packageName, 
+                                       info.activityInfo.name);
+                        i.setAction("android.intent.action.CONFIGURE");
+                        i.addCategory("android.intent.category.P2P");
+                        BroadcastReceiver rec = new BroadcastReceiver(){
+                                public void onReceive(Context c, Intent i){
+                                    Intent launch = new Intent();
+                                    launch.setAction(Intent.ACTION_MAIN);
+                                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                                    launch.setPackage(info.activityInfo.packageName);
+                                    List<ResolveInfo> resolved = 
+                                        mgr.queryIntentActivities(launch, 0);
+                                    if (resolved.size() > 0) {
+                                        ActivityInfo info = resolved.get(0).activityInfo;
+                                        String arg = getResultData();
+                                        launch.setComponent(new ComponentName(
+                                                                info.packageName,
+                                                                info.name));
+                                        launch.putExtra(
+                                            "android.intent.extra.APPLICATION_ARGUMENT",
+                                            arg);
+                                        startActivity(launch);
+                                        Helpers.sendApplicationInvite(
+                                            ContactsActivity.this,
+                                            contact, info.packageName, arg);
+                                    }
+                                    else{
+                                        Toast.makeText(getApplicationContext(), 
+                                                       "Sorry, no response from applications.",
+                                                       Toast.LENGTH_SHORT).show();
+                                    }
                                 }
-                            }
-                        };
-                    sendOrderedBroadcast(i, null, rec, null, RESULT_OK, null, null);
-                }
-            });
-        AlertDialog alert = builder.create();
-        alert.show();
+                            };
+                        sendOrderedBroadcast(i, null, rec, null, RESULT_OK, null, null);
+                    }
+                });
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
+        else{
+            Toast.makeText(getApplicationContext(), 
+                           "Sorry, couldn't find any compatible apps.", 
+                           Toast.LENGTH_SHORT).show();
+        }
     }
 
 

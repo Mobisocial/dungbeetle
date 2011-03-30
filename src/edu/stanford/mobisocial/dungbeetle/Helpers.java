@@ -23,6 +23,20 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void sendIM(final Context c, final Contact contact, 
+                                   final String msg){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("text", msg);
+        }catch(JSONException e){}
+        values.put("json", obj.toString());
+        values.put("to_person_id", contact.personId);
+        values.put("type", "instant_message");
+        c.getContentResolver().insert(url, values);
+    }
+
     public static void updateStatus(final Context c, final String status){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
