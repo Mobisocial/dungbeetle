@@ -50,33 +50,16 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 String value = input.getText().toString();
-                                updateStatus(value);
+                                Helpers.updateStatus(ObjectsActivity.this, value);
                             }
                         });
-
                     alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                            }
+                            public void onClick(DialogInterface dialog, int whichButton) {}
                         });
                     alert.show();
-
 				}
 			});
 	}
-
-
-    private void updateStatus(final String status){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        ContentValues values = new ContentValues();
-        JSONObject obj = new JSONObject();
-        try{
-            obj.put("text", status);
-            obj.put("name", mIdent.userName());
-        }catch(JSONException e){}
-        values.put("json", obj.toString());
-        values.put("type", "status");
-        getContentResolver().insert(url, values); 
-    }
 
 
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id){}

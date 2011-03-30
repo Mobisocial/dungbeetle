@@ -1,4 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle;
+import org.json.JSONException;
+import org.json.JSONObject;
+import android.content.ContentValues;
+import android.content.pm.ActivityInfo;
+import android.content.ComponentName;
+import android.content.BroadcastReceiver;
+import android.content.res.Resources;
+import java.util.ArrayList;
+import android.content.pm.ResolveInfo;
+import java.util.List;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import android.widget.ImageView;
@@ -38,7 +50,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		setContentView(R.layout.contacts);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact._ID, Contact.NAME, Contact.EMAIL, Contact.PUBLIC_KEY}, 
+            new String[]{Contact._ID, 
+                         Contact.NAME, 
+                         Contact.EMAIL, 
+                         Contact.PERSON_ID,
+                         Contact.PUBLIC_KEY}, 
             null, null, null);
 		mContacts = new ContactListCursorAdapter(this, c);
 		setListAdapter(mContacts);
@@ -52,39 +68,39 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-      //if (v.getId()==R.id.list) {
+        //if (v.getId()==R.id.list) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
         //menu.setHeaderTitle(((Friend)mContacts.get(info.position)).getUserName());
         menu.setHeaderTitle("Menu");
         //String[] menuItems = getResources().getStringArray(R.array.menu);
         //for (int i = 0; i<menuItems.length; i++) {
-          menu.add(Menu.NONE, 0, 0, "Manage groups");
+        menu.add(Menu.NONE, 0, 0, "Manage groups");
         //}
-     // }
+        // }
     }
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-		  Cursor c = getContentResolver().query(
-                  Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
-                  new String[]{"_id", "group_id", "feed_name"}, 
-                  null, null, null);
-		  CharSequence[] groups = new CharSequence[c.getCount()];
-          Log.i("DBHelper", c.getCount() + " groups");
-          if(c.moveToFirst())
-          {
-              int group_id_col = c.getColumnIndex("group_id");
-              int i = 0;
-              do{
-            	 groups[i] = c.getString(group_id_col);
-            	 i++; 
-              }while(c.moveToNext());
-          }
-		  final CharSequence[] items = groups;
-		  final boolean[] selected = new boolean[items.length];
+        Cursor c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
+            new String[]{"_id", "group_id", "feed_name"}, 
+            null, null, null);
+        CharSequence[] groups = new CharSequence[c.getCount()];
+        Log.i("DBHelper", c.getCount() + " groups");
+        if(c.moveToFirst())
+            {
+                int group_id_col = c.getColumnIndexOrThrow("group_id");
+                int i = 0;
+                do{
+                    groups[i] = c.getString(group_id_col);
+                    i++; 
+                }while(c.moveToNext());
+            }
+        final CharSequence[] items = groups;
+        final boolean[] selected = new boolean[items.length];
 
-		  AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		  builder.setTitle("Pick Groups");
-		  builder.setMultiChoiceItems(items, selected, new DialogInterface.OnMultiChoiceClickListener() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Pick Groups");
+        builder.setMultiChoiceItems(items, selected, new DialogInterface.OnMultiChoiceClickListener() {
 	            public void onClick(DialogInterface dialog, int item, boolean isChecked) {
 	            	String checked = " was checked";
 	            	if(isChecked) 
@@ -94,18 +110,73 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	            	Toast.makeText(getApplicationContext(), items[item] + checked, Toast.LENGTH_SHORT).show();
 	            }
 	        });
-		  builder.setPositiveButton("Done",
-                  new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int whichButton) {
+        builder.setPositiveButton("Done",
+                                  new DialogInterface.OnClickListener() {
+                                      public void onClick(DialogInterface dialog, int whichButton) {
         	  		
-              }
-          });
-		  AlertDialog alert = builder.create();
-		  alert.show();
-		  return true;
+                                      }
+                                  });
+        AlertDialog alert = builder.create();
+        alert.show();
+        return true;
     }
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+        Contact c = new Contact((Cursor)mContacts.getItem(position));
+        startApplicationWithFriend(c);
+    }
+
+    private void startApplicationWithFriend(final Contact contact){
+        final PackageManager mgr = getPackageManager();
+        Intent i = new Intent("android.intent.action.CONFIGURE");
+        i.addCategory("android.intent.category.P2P");
+        final List<ResolveInfo> infos = mgr.queryBroadcastReceivers(i, 0);
+        ArrayList<String> names = new ArrayList<String>();
+        for(ResolveInfo info : infos){
+            names.add(info.loadLabel(mgr).toString());
+        }
+        final CharSequence[] items = names.toArray(new CharSequence[]{});
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Share application:");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                    final ResolveInfo info = infos.get(item);
+                    Intent i = new Intent();
+                    i.setClassName(info.activityInfo.packageName, 
+                                   info.activityInfo.name);
+                    i.setAction("android.intent.action.CONFIGURE");
+                    i.addCategory("android.intent.category.P2P");
+                    BroadcastReceiver rec = new BroadcastReceiver(){
+                            public void onReceive(Context c, Intent i){
+                                Intent launch = new Intent();
+                                launch.setAction(Intent.ACTION_MAIN);
+                                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                                launch.setPackage(info.activityInfo.packageName);
+                                List<ResolveInfo> resolved = 
+                                    mgr.queryIntentActivities(launch, 0);
+                                if (resolved.size() > 0) {
+                                    ActivityInfo info = resolved.get(0).activityInfo;
+                                    String arg = getResultData();
+                                    launch.setComponent(new ComponentName(
+                                                            info.packageName,
+                                                            info.name));
+                                    launch.putExtra(
+                                        "android.intent.extra.APPLICATION_ARGUMENT", 
+                                        arg);
+                                    startActivity(launch);
+                                    Helpers.sendApplicationInvite(
+                                        ContactsActivity.this,
+                                        contact, info.packageName, arg);
+                                }
+                            }
+                        };
+                    sendOrderedBroadcast(i, null, rec, null, RESULT_OK, null, null);
+                }
+            });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
 
     private class ContactListCursorAdapter extends CursorAdapter {
 
@@ -117,13 +188,13 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
             View v = inflater.inflate(R.layout.contacts_item, parent, false);
-            String name = c.getString(c.getColumnIndex(Contact.NAME));
+            String name = c.getString(c.getColumnIndexOrThrow(Contact.NAME));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             if (nameText != null) {
                 nameText.setText(name);
             }
 
-            String email = c.getString(c.getColumnIndex(Contact.EMAIL));
+            String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
@@ -133,13 +204,13 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            String name = c.getString(c.getColumnIndex(Contact.NAME));
+            String name = c.getString(c.getColumnIndexOrThrow(Contact.NAME));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             if (nameText != null) {
                 nameText.setText(name);
             }
 
-            String email = c.getString(c.getColumnIndex(Contact.EMAIL));
+            String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
@@ -150,19 +221,19 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     private final static int UPDATE_CONTACT = 0;
 
-	public boolean onCreateOptionsMenu(Menu menu){
-		return true;
-	}
+    public boolean onCreateOptionsMenu(Menu menu){
+        return true;
+    }
 
-	public boolean onPreparePanel(int featureId, View view, Menu menu) {
-		menu.clear();
-		menu.add(0, 0, 0, "Set email (debug)");
-		return true;
-	}
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        menu.clear();
+        menu.add(0, 0, 0, "Set email (debug)");
+        return true;
+    }
 
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch(item.getItemId()){
-		case UPDATE_CONTACT: {
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+        case UPDATE_CONTACT: {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setMessage("Enter email:");
             final EditText input = new EditText(this);
@@ -179,11 +250,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     }
                 });
             alert.show();
-			return true;
-		}
-		default: return false;
-		}
-	}
+            return true;
+        }
+        default: return false;
+        }
+    }
 
 
 }

@@ -1,4 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.content.ComponentName;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import java.util.List;
+import org.json.JSONObject;
+import android.os.Binder;
+import android.database.ContentObserver;
+import android.net.Uri;
 import android.os.Message;
 import android.os.Handler;
 import android.app.Notification;
@@ -6,7 +15,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -15,23 +23,67 @@ public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private ManagerThread mManagerThread;
 
-    // Display toasts originating in other threads
 	private Handler mToastHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
                 Toast.makeText(DungBeetleService.this,
-                               msg.obj.toString(), 
+                               msg.obj.toString(),
                                Toast.LENGTH_SHORT).show();
             }
         };
 
+	private Handler mDirectMessageHandler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                JSONObject obj = (JSONObject)msg.obj;
+                handleIncomingDirectMessage(obj);
+            }
+        };
+
+    private void handleIncomingDirectMessage(JSONObject obj){
+        Toast.makeText(DungBeetleService.this,
+                       "Direct Msg: " + obj.toString(),
+                       Toast.LENGTH_SHORT).show();
+
+        String packageName = obj.optString("packageName");
+        String arg = obj.optString("arg");
+
+        Intent launch = new Intent();
+        launch.setAction(Intent.ACTION_MAIN);
+        launch.addCategory(Intent.CATEGORY_LAUNCHER);
+        launch.setPackage(packageName);
+        final PackageManager mgr = getPackageManager();
+        List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+        if (resolved.size() > 0) {
+            ActivityInfo info = resolved.get(0).activityInfo;
+            launch.setComponent(new ComponentName(
+                                    info.packageName,
+                                    info.name));
+            launch.putExtra(
+                "android.intent.extra.APPLICATION_ARGUMENT", 
+                arg);
+
+            Notification notification = new Notification(R.drawable.icon, "New Invite", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
+            notification.setLatestEventInfo(this, "Invitation received.", "Click to launch application.", contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
 
     @Override
     public void onCreate() {
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         showNotification();
-        mManagerThread = new ManagerThread(this, mToastHandler);
+        mManagerThread = new ManagerThread(this, mToastHandler, mDirectMessageHandler);
         mManagerThread.start();
+        getContentResolver().registerContentObserver(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/in"), true, 
+            new ContentObserver(new Handler(getMainLooper())) {
+                @Override
+                public synchronized void onChange(boolean self) {
+                    
+                }});
     }
 
 
@@ -48,28 +100,18 @@ public class DungBeetleService extends Service {
         Toast.makeText(this, R.string.stopping, Toast.LENGTH_SHORT).show();
     }
 
-
     @Override
     public IBinder onBind(Intent intent) {
-        return binder_;
+        return mBinder;
     }
-
-
-	/**
-     * Class for clients to access.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with
-     * IPC.
-     */
-    public class DungBeetleBinder extends Binder {
-    	DungBeetleService getService() {
-            return DungBeetleService.this;
-        }
-    }
-
 
     // This is the object that receives interactions from clients.  See
     // RemoteService for a more complete example.
-    private final IBinder binder_ = new DungBeetleBinder();
+    private final IBinder mBinder = new Binder(){
+            DungBeetleService getService() {
+                return DungBeetleService.this;
+            }
+        };
 
 
     /**
@@ -85,7 +127,7 @@ public class DungBeetleService extends Service {
             this, 0,
             new Intent(this, Setup.class), 0);
 
-        notification.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR;
+        notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
         // Set the info for the views that show in the notification panel.
         notification.setLatestEventInfo(this, getText(R.string.app_name),

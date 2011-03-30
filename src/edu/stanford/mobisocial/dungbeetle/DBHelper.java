@@ -24,7 +24,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 9;
+	public static final int VERSION = 10;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -108,6 +108,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Object.SEQUENCE_ID, "INTEGER",
                     Object.FEED_NAME, "TEXT",
                     Object.PERSON_ID, "TEXT",
+                    Object.TO_PERSON_ID, "TEXT",
                     Object.JSON, "TEXT",
                     Object.TIMESTAMP, "INTEGER");
         createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
@@ -192,6 +193,29 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update("my_info", cv, null, null);
     }
 
+    long addToOutgoing(String personId, String toPersonId, String type, JSONObject json) {
+        try{
+            long timestamp = new Date().getTime();
+            json.put("type", type);
+            json.put("feedName", "direct");
+            json.put("timestamp", timestamp);
+            ContentValues cv = new ContentValues();
+            cv.put(Object.FEED_NAME, "direct");
+            cv.put(Object.PERSON_ID, personId);
+            cv.put(Object.TO_PERSON_ID, toPersonId);
+            cv.put(Object.TYPE, type);
+            cv.put(Object.JSON, json.toString());
+            cv.put(Object.SEQUENCE_ID, 0);
+            cv.put(Object.TIMESTAMP, timestamp);
+            getWritableDatabase().insertOrThrow("objects", null, cv);
+            return 0;
+        }
+        catch(Exception e){
+            e.printStackTrace(System.err);
+            return -1;
+        }
+    }
+
     long addToFeed(String personId, String feedName, String type, JSONObject json) {
         try{
             long nextSeqId = getFeedMaxSequenceId(personId, feedName) + 1;
@@ -217,9 +241,9 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addExistingToFeed(String personId, JSONObject json) {
+    long addObjectByJson(String personId, JSONObject json) {
         try{
-            long nextSeqId = json.getLong("sequenceId");
+            long seqId = json.getLong("sequenceId");
             long timestamp = json.getLong("timestamp");
             String feedName = json.getString("feedName");
             String type = json.getString("type");
@@ -227,11 +251,11 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(Object.FEED_NAME, feedName);
             cv.put(Object.PERSON_ID, personId);
             cv.put(Object.TYPE, type);
-            cv.put(Object.SEQUENCE_ID, nextSeqId);
+            cv.put(Object.SEQUENCE_ID, seqId);
             cv.put(Object.JSON, json.toString());
             cv.put(Object.TIMESTAMP, timestamp);
             getWritableDatabase().insertOrThrow("objects", null, cv);
-            return nextSeqId;
+            return seqId;
         }
         catch(Exception e){
             e.printStackTrace(System.err);
@@ -367,11 +391,11 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[] {feedName});
     }
 
-    public Cursor queryRecentlyAdded(String personId, String feedName) {
+    public Cursor queryRecentlyAdded(String personId) {
         return getReadableDatabase().rawQuery(
-            " SELECT _id,json FROM objects WHERE " + 
-            " person_id = ? AND feed_name = ? ORDER BY timestamp DESC LIMIT 1",
-            new String[] { personId, feedName});
+            " SELECT _id,json,to_person_id,feed_name FROM objects WHERE " + 
+            " person_id = ? ORDER BY timestamp DESC LIMIT 1",
+            new String[] { personId});
     }
 
     public static String projToStr(String[] strings) {

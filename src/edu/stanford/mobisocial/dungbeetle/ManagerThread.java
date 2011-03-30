@@ -27,6 +27,7 @@ import android.os.Handler;
 public class ManagerThread extends Thread {
     public static final String TAG = "ManagerThread";
     private Handler mToastHandler;
+    private Handler mDirectMessageHandler;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
@@ -39,15 +40,19 @@ public class ManagerThread extends Thread {
     private LinkedBlockingQueue<JSONObject> sendQueue = 
         new LinkedBlockingQueue<JSONObject>();
 
-    public ManagerThread(final Context context, final Handler toastHandler){
+    public ManagerThread(final Context context, 
+                         final Handler toastHandler, 
+                         final Handler directMessageHandler){
         mToastHandler = toastHandler;
+        mDirectMessageHandler = directMessageHandler;
         mContext = context;
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
         ConnectionStatus status = new ConnectionStatus(){
                 public boolean isConnected(){
                     ConnectivityManager cm = 
-                        (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                        (ConnectivityManager)context.getSystemService(
+                            Context.CONNECTIVITY_SERVICE);
                     NetworkInfo info = cm.getActiveNetworkInfo();
                     return info != null && info.isConnected();
                 }
@@ -72,11 +77,13 @@ public class ManagerThread extends Thread {
                 }
             });
 
-        mOco = new ObjectContentObserver(
-            new Handler(mContext.getMainLooper()));
+        mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me"), true, mOco);
+
+		mContext.getContentResolver().registerContentObserver(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out"), true, mOco);
     }
 
 
@@ -88,9 +95,16 @@ public class ManagerThread extends Thread {
         try{
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
-            mHelper.addExistingToFeed(personId, obj);
+            mHelper.addObjectByJson(personId, obj);
             mContext.getContentResolver().notifyChange(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
+
+            if(feedName.equals("direct")){
+                Message m = mDirectMessageHandler.obtainMessage();
+                m.obj = obj;
+                mDirectMessageHandler.sendMessage(m);
+            }
+
         }
         catch(JSONException e){
             Log.e(TAG, e.toString());
@@ -102,31 +116,44 @@ public class ManagerThread extends Thread {
     public void run(){
         Log.i(TAG, "Starting DungBeetle manager thread");
         Log.i(TAG, "Starting messenger...");
-		mMessenger.init();
-		for(;;) {
+        mMessenger.init();
+        for(;;) {
             if(mOco.changed){
                 Log.i(TAG, "Noticed change...");
                 mOco.clearChanged();
-                Cursor objs = mHelper.queryRecentlyAdded(mIdent.userPersonId(), "friend");
+                Cursor objs = mHelper.queryRecentlyAdded(mIdent.userPersonId());
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
-                Cursor subscribers = mHelper.querySubscribers("friend");
-                Log.i(TAG, subscribers.getCount() + " subscribers...");
-                subscribers.moveToFirst();
                 while(!objs.isAfterLast()){
-                    while(!subscribers.isAfterLast()){
-                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs, subscribers);
+                    String toPersonId = objs.getString(
+                        objs.getColumnIndexOrThrow(Object.TO_PERSON_ID));
+                    if(toPersonId != null){
+                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                        Log.i(TAG, "Sending direct message " + m);
                         mMessenger.sendMessage(m);
-                        Log.i(TAG, "Sending message " + m);
-                        subscribers.moveToNext();
                     }
+                    else{
+                        String feedName = objs.getString(
+                            objs.getColumnIndexOrThrow(Object.FEED_NAME));
+                        Cursor subscribers = mHelper.querySubscribers(feedName);
+                        Log.i(TAG, subscribers.getCount() + " subscribers...");
+                        subscribers.moveToFirst();
+                        while(!subscribers.isAfterLast()){
+                            OutgoingMessage m = new OutgoingFeedObjectMsg(
+                                objs, subscribers);
+                            mMessenger.sendMessage(m);
+                            Log.i(TAG, "Sending message " + m);
+                            subscribers.moveToNext();
+                        }
+                    }
+                    
                     objs.moveToNext();
                 }
             }
-			try {
-				Thread.sleep(1000);
-			} catch(InterruptedException e) {}
-		}
+            try {
+                Thread.sleep(1000);
+            } catch(InterruptedException e) {}
+        }
     }
 
 
@@ -142,6 +169,20 @@ public class ManagerThread extends Thread {
         public PublicKey toPublicKey(){ return mPubKey; }
         public String contents(){ return mBody; }
         public String toString(){ return "[Message to " + mToId + " with body: " + mBody + "]"; }
+    }
+
+    private class OutgoingDirectObjectMsg implements OutgoingMessage{
+        private String mBody;
+        private PublicKey mPubKey;
+        private String mToId;
+        public OutgoingDirectObjectMsg(Cursor objs){
+            mToId = objs.getString(objs.getColumnIndexOrThrow("to_person_id"));
+            mPubKey = mIdent.publicKeyForPersonId(mToId);
+            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
+        }
+        public PublicKey toPublicKey(){ return mPubKey; }
+        public String contents(){ return mBody; }
+        public String toString(){ return "[Direct message to " + mToId + " with body: " + mBody + "]"; }
     }
 
 
@@ -168,28 +209,28 @@ public class ManagerThread extends Thread {
 
 
     class ObjectContentObserver extends ContentObserver {
-		public boolean changed;
-		public ObjectContentObserver(Handler h)  {
-			super(h);
-			changed = false;
-		}
-		@Override
-		public synchronized void onChange(boolean self) {
-			changed = true;
-			notify();
-		}
-		public synchronized void waitForChange() {
-			if(changed)
-				return;
-			try {
-				wait();
-				changed = false;
-			} catch(InterruptedException e) {}
-		}
-		public synchronized void clearChanged() {
-			changed = false;
-		}
-	};
+        public boolean changed;
+        public ObjectContentObserver(Handler h)  {
+            super(h);
+            changed = false;
+        }
+        @Override
+        public synchronized void onChange(boolean self) {
+            changed = true;
+            notify();
+        }
+        public synchronized void waitForChange() {
+            if(changed)
+                return;
+            try {
+                wait();
+                changed = false;
+            } catch(InterruptedException e) {}
+        }
+        public synchronized void clearChanged() {
+            changed = false;
+        }
+    };
 
 
 }

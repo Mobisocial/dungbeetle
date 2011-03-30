@@ -48,15 +48,28 @@ public class DungBeetleContentProvider extends ContentProvider {
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feeds", "me")){
             try{
-                JSONObject obj = new JSONObject(values.getAsString("json"));
-                String type = values.getAsString("type");
                 mHelper.addToFeed(
                     mIdent.userPersonId(),
                     "friend",
-                    type,
-                    obj);
+                    values.getAsString("type"),
+                    new JSONObject(values.getAsString("json")));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
+                return Uri.parse(uri.toString());
+            }
+            catch(JSONException e){
+                return null;
+            }
+        }
+        else if(match(uri, "out")){
+            try{
+                JSONObject obj = new JSONObject(values.getAsString("json"));
+                mHelper.addToOutgoing(
+                    mIdent.userPersonId(),
+                    values.getAsString("to_person_id"),
+                    values.getAsString("type"),
+                    obj);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
