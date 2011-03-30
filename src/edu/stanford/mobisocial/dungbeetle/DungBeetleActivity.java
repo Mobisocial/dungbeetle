@@ -1,4 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.util.Date;
+import android.app.PendingIntent;
+import android.app.Notification;
+import android.app.NotificationManager;
+import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
+import org.json.JSONException;
+import org.json.JSONObject;
 import android.nfc.NdefMessage;
 import android.widget.Toast;
 import edu.stanford.mobisocial.nfc.Nfc;
@@ -18,6 +27,72 @@ public class DungBeetleActivity extends TabActivity
 
     public static final String TAG = "DungBeetleActivity";
     private Nfc mNfc;
+	private NotificationManager mNotificationManager;
+
+    private class CheckForUpdatesTask extends HTTPDownloadTextFileTask {
+
+        final String baseUrl;
+
+        public CheckForUpdatesTask(String base) {
+            baseUrl = base;
+        }
+
+        public void execute(){ 
+            execute(baseUrl + "/" + "dungbeetle_version.json");
+        }
+
+        @Override
+        public void onPostExecute(String result) {
+            try{
+                JSONObject obj = new JSONObject(result);
+                int versionCode = obj.getInt("versionCode");
+                String versionName = obj.getString("versionName");
+                try {
+                    PackageInfo pInfo = getPackageManager().getPackageInfo(
+                        getPackageName(),PackageManager.GET_META_DATA);
+                    System.out.println(pInfo.versionCode);
+                    if(pInfo.versionCode < versionCode){
+                        Toast.makeText(DungBeetleActivity.this,
+                                       "Newer version," + versionName + 
+                                       ", found!", Toast.LENGTH_SHORT).show();
+                        notifyApkDownload(baseUrl + "/" + "dungbeetle-debug.apk");
+                    }
+                    else if(pInfo.versionCode == versionCode){
+                        Toast.makeText(DungBeetleActivity.this, 
+                                       "Up to date.", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        Toast.makeText(DungBeetleActivity.this, 
+                                       "Weird. Local version newer than autoupdate version.", Toast.LENGTH_SHORT).show();
+                    }
+                    
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            catch(JSONException e){
+                Toast.makeText(DungBeetleActivity.this, 
+                               "Failed to load auto-update info.",
+                               Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    private void notifyApkDownload(String url){
+        final Intent intent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(url));
+        Notification notification = new Notification(
+            R.drawable.icon, 
+            "Update available.", System.currentTimeMillis());
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        notification.setLatestEventInfo(
+            this, 
+            "Update available.", 
+            "Click to download latest version.", contentIntent);
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        mNotificationManager.notify(0, notification);
+    }
 
     /** Called when the activity is first created. */
     @Override
@@ -27,49 +102,51 @@ public class DungBeetleActivity extends TabActivity
         setContentView(R.layout.main);
         startService(new Intent(this, DungBeetleService.class));
 
-		// Create top-level tabs
-		//Resources res = getResources();
+        mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+
+        // Create top-level tabs
+        //Resources res = getResources();
         // res.getDrawable(R.drawable.icon)
 
-		TabHost tabHost = getTabHost();
-		TabHost.TabSpec spec;  
-		Intent intent;  
+        TabHost tabHost = getTabHost();
+        TabHost.TabSpec spec;  
+        Intent intent;  
 
-		// Create an Intent to launch an Activity for the tab (to be reused)
-		intent = new Intent().setClass(this, ContactsActivity.class);
-		spec = tabHost.newTabSpec("contacts").setIndicator(
-			"Contacts",
-			null).setContent(intent);
-		tabHost.addTab(spec);
+        // Create an Intent to launch an Activity for the tab (to be reused)
+        intent = new Intent().setClass(this, ContactsActivity.class);
+        spec = tabHost.newTabSpec("contacts").setIndicator(
+            "Contacts",
+            null).setContent(intent);
+        tabHost.addTab(spec);
 
-		intent = new Intent().setClass(this, ObjectsActivity.class);
-		spec = tabHost.newTabSpec("objects").setIndicator(
-			"Feed",
-			null).setContent(intent);
-		tabHost.addTab(spec);
+        intent = new Intent().setClass(this, ObjectsActivity.class);
+        spec = tabHost.newTabSpec("objects").setIndicator(
+            "Feed",
+            null).setContent(intent);
+        tabHost.addTab(spec);
 		
-		// Do the same for the other tabs
+        // Do the same for the other tabs
         intent = new Intent().setClass(this, ProfileActivity.class);
         spec = tabHost.newTabSpec("profile").setIndicator("Profile",
-                          null)
-                      .setContent(intent);
+                                                          null)
+            .setContent(intent);
         tabHost.addTab(spec);
 
         intent = new Intent().setClass(this, GroupsActivity.class);
         spec = tabHost.newTabSpec("groups").setIndicator("Groups",
-                          null)
-                      .setContent(intent);
+                                                         null)
+            .setContent(intent);
         tabHost.addTab(spec);
         
-		tabHost.setCurrentTab(0);
+        tabHost.setCurrentTab(0);
 
 
-		Button button = (Button)findViewById(R.id.share_info_button);
-		button.setOnClickListener(new OnClickListener() {
-				public void onClick(View v) {
+        Button button = (Button)findViewById(R.id.share_info_button);
+        button.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
                     shareContactInfo();
-				}
-			});
+                }
+            });
 
         mNfc = new Nfc(this);
         mNfc.addNdefHandler(new Nfc.NdefHandler(){
@@ -84,7 +161,7 @@ public class DungBeetleActivity extends TabActivity
             });
 
 
-	}
+    }
 
     protected void doHandleNdef(NdefMessage[] messages){
         if(messages.length != 1 || messages[0].getRecords().length != 1){
@@ -133,10 +210,20 @@ public class DungBeetleActivity extends TabActivity
         mNfc.onPause(this);
     }
 
+
+    private long lastUpdateCheckTime = 0;
     @Override
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
+
+        // Don't check for updates too frequently...
+        long t = new Date().getTime();
+        if((t - lastUpdateCheckTime) > 30000){
+            CheckForUpdatesTask task = new CheckForUpdatesTask("http://mobisocial.stanford.edu/files");
+            task.execute();
+            lastUpdateCheckTime = t;
+        }
     }
 
     @Override
@@ -147,9 +234,9 @@ public class DungBeetleActivity extends TabActivity
     }
 
     @Override
-	public void onDestroy(){
-		super.onDestroy();
-	}
+    public void onDestroy(){
+        super.onDestroy();
+    }
 
 
 }

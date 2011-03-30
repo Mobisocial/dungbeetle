@@ -243,7 +243,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     long addObjectByJson(String personId, JSONObject json) {
         try{
-            long seqId = json.getLong("sequenceId");
+            long seqId = json.optLong("sequenceId");
             long timestamp = json.getLong("timestamp");
             String feedName = json.getString("feedName");
             String type = json.getString("type");

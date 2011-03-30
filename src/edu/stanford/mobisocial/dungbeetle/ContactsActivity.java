@@ -134,6 +134,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     }
                 }
             });
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 
     private void sendMessageToContact(final Contact contact){

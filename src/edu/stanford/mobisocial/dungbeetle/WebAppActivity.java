@@ -44,7 +44,7 @@ public class WebAppActivity extends Activity{
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.setWebViewClient(new WebAppViewClient());
         mWebView.setWebChromeClient(new WebAppChromeClient());
-        mWebView.addJavascriptInterface(new WebAppAPI(), "externalInterface"); 
+        mWebView.addJavascriptInterface(new WebAppAPI(), "container");
 		Intent intent = getIntent();
         Uri uri = intent.getData();
         mArg = intent.getStringExtra("android.intent.extra.APPLICATION_ARGUMENT");

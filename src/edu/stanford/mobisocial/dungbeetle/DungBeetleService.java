@@ -1,4 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.os.Handler;
+import android.app.Notification;
+import android.os.IBinder;
+import android.util.Log;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.widget.Toast;
+import android.app.NotificationManager;
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -9,15 +18,8 @@ import android.os.Binder;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Message;
-import android.os.Handler;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-import android.util.Log;
-import android.widget.Toast;
+
+
 
 public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
@@ -47,8 +49,15 @@ public class DungBeetleService extends Service {
         }
         else if(type.equals("instant_message")){
             String msg = obj.optString("text");
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.setComponent(new ComponentName(
+                                    getPackageName(),
+                                    DungBeetleActivity.class.getName()));
             Notification notification = new Notification(R.drawable.icon, "New IM", System.currentTimeMillis());
-            notification.setLatestEventInfo(this, "New IM", "\"" + msg + "\"", null);
+            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
+            notification.setLatestEventInfo(this, "New IM", "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
         }
