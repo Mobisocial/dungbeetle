@@ -73,7 +73,6 @@ public class DungBeetleService extends Service {
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
         }
-
     }
 
     @Override
@@ -113,7 +112,7 @@ public class DungBeetleService extends Service {
     // This is the object that receives interactions from clients.  See
     // RemoteService for a more complete example.
     private final IBinder mBinder = new Binder(){
-            DungBeetleService getService() {
+            DungBeetleService getService(){
                 return DungBeetleService.this;
             }
         };
