@@ -53,14 +53,18 @@
       </intent-filter>
     </activity>
 
+    <activity android:name="WebAppActivity" android:label="@string/app_name"
+	      android:theme="@android:style/Theme.NoTitleBar"
+	      android:configChanges="orientation"
+	      ></activity>
 
-        <activity android:name="FeedActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-    	<activity android:name="ProfileActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-    	<activity android:name="AddGroupActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-    	<activity android:name="FriendsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
-    	<activity android:name="GroupsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-    	<activity android:name="ViewContactActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
-   	 	<activity android:name="ViewGroupActivity"	android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+      <activity android:name="FeedActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+      <activity android:name="ProfileActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+      <activity android:name="AddGroupActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+      <activity android:name="FriendsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+      <activity android:name="GroupsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+      <activity android:name="ViewContactActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+      <activity android:name="ViewGroupActivity"	android:label="@string/app_name" android:screenOrientation="portrait"></activity>
 
-  </application>
-</manifest> 
+    </application>
+  </manifest> 

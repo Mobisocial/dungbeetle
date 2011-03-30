@@ -43,28 +43,7 @@ public class DungBeetleService extends Service {
     private void handleIncomingDirectMessage(JSONObject obj){
         String type = obj.optString("type");
         if(type.equals("invite")){
-            String packageName = obj.optString("packageName");
-            String arg = obj.optString("arg");
-            Intent launch = new Intent();
-            launch.setAction(Intent.ACTION_MAIN);
-            launch.addCategory(Intent.CATEGORY_LAUNCHER);
-            launch.setPackage(packageName);
-            final PackageManager mgr = getPackageManager();
-            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved.size() > 0) {
-                ActivityInfo info = resolved.get(0).activityInfo;
-                launch.setComponent(new ComponentName(
-                                        info.packageName,
-                                        info.name));
-                launch.putExtra(
-                    "android.intent.extra.APPLICATION_ARGUMENT", 
-                    arg);
-                Notification notification = new Notification(R.drawable.icon, "New Invitation", System.currentTimeMillis());
-                PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
-                notification.setLatestEventInfo(this, "Invitation received", "Click to launch application.", contentIntent);
-                notification.flags = Notification.FLAG_AUTO_CANCEL;
-                mNotificationManager.notify(0, notification);
-            }            
+            handleAppInvitation(obj);
         }
         else if(type.equals("instant_message")){
             String msg = obj.optString("text");
@@ -73,6 +52,36 @@ public class DungBeetleService extends Service {
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
         }
+    }
+
+
+    private void handleAppInvitation(JSONObject obj){
+        String webUrl = obj.optString("webUrl");
+        String packageName = obj.optString("packageName");
+        String arg = obj.optString("arg");
+        Intent launch = new Intent();
+        launch.setAction(Intent.ACTION_MAIN);
+        launch.addCategory(Intent.CATEGORY_LAUNCHER);
+        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+        if(webUrl != null){
+            launch.setData(Uri.parse(webUrl));
+        }
+        else{
+            launch.setPackage(packageName);
+            final PackageManager mgr = getPackageManager();
+            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+            if (resolved.size() > 0) {
+                ActivityInfo info = resolved.get(0).activityInfo;
+                launch.setComponent(new ComponentName(
+                                        info.packageName,
+                                        info.name));
+            }    
+        }        
+        Notification notification = new Notification(R.drawable.icon, "New Invitation", System.currentTimeMillis());
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
+        notification.setLatestEventInfo(this, "Invitation received", "Click to launch application.", contentIntent);
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        mNotificationManager.notify(0, notification);
     }
 
     @Override
