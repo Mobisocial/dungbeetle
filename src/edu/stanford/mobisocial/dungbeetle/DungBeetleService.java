@@ -63,6 +63,7 @@ public class DungBeetleService extends Service {
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+        launch.putExtra("creator", false);
         if(webUrl != null){
             launch.setData(Uri.parse(webUrl));
         }

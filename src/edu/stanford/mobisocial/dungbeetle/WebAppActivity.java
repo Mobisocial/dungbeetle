@@ -13,9 +13,9 @@ import android.provider.ContactsContract;
 import android.widget.TextView;
 
 public class WebAppActivity extends Activity{
-    WebView mWebView;
-    String mArg;
-
+    private WebView mWebView;
+    private volatile String mArg;
+    private volatile boolean mIsCreator = false;
     private class WebAppViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -48,6 +48,7 @@ public class WebAppActivity extends Activity{
 		Intent intent = getIntent();
         Uri uri = intent.getData();
         mArg = intent.getStringExtra("android.intent.extra.APPLICATION_ARGUMENT");
+        mIsCreator = intent.getBooleanExtra("creator", false);
 		if(uri != null){
             mWebView.loadUrl(uri.toString());
 		}
@@ -69,6 +70,9 @@ public class WebAppActivity extends Activity{
         }
         public String getArgument(){
             return mArg;
+        }
+        public boolean isCreator(){
+            return mIsCreator;
         }
     }
 

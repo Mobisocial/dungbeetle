@@ -190,6 +190,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                         launch.setComponent(new ComponentName(
                                                                 info.packageName,
                                                                 info.name));
+                                        launch.putExtra("creator", true);
                                         launch.putExtra(
                                             "android.intent.extra.APPLICATION_ARGUMENT",
                                             arg);
