@@ -11,4 +11,5 @@ public class Object{
     public static final String TO_PERSON_ID = "to_person_id";
     public static final String JSON = "json";
     public static final String TIMESTAMP = "timestamp";
+    public static final String APP_ID = "app_id";
 }

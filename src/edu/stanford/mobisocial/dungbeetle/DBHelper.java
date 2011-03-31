@@ -24,7 +24,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 10;
+	public static final int VERSION = 11;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -107,6 +107,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Object.TYPE, "TEXT",
                     Object.SEQUENCE_ID, "INTEGER",
                     Object.FEED_NAME, "TEXT",
+                    Object.APP_ID, "TEXT",
                     Object.PERSON_ID, "TEXT",
                     Object.TO_PERSON_ID, "TEXT",
                     Object.JSON, "TEXT",
@@ -193,13 +194,15 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update("my_info", cv, null, null);
     }
 
-    long addToOutgoing(String personId, String toPersonId, String type, JSONObject json) {
+    long addToOutgoing(String appId, String personId, String toPersonId, String type, JSONObject json) {
         try{
             long timestamp = new Date().getTime();
             json.put("type", type);
             json.put("feedName", "direct");
             json.put("timestamp", timestamp);
+            json.put("appId", appId);
             ContentValues cv = new ContentValues();
+            cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, "direct");
             cv.put(Object.PERSON_ID, personId);
             cv.put(Object.TO_PERSON_ID, toPersonId);
@@ -216,7 +219,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    long addToFeed(String personId, String feedName, String type, JSONObject json) {
+    long addToFeed(String appId, String personId, String feedName, String type, JSONObject json) {
         try{
             long nextSeqId = getFeedMaxSequenceId(personId, feedName) + 1;
             long timestamp = new Date().getTime();
@@ -224,7 +227,9 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put("feedName", feedName);
             json.put("sequenceId", nextSeqId);
             json.put("timestamp", timestamp);
+            json.put("appId", appId);
             ContentValues cv = new ContentValues();
+            cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
             cv.put(Object.PERSON_ID, personId);
             cv.put(Object.TYPE, type);
@@ -247,7 +252,9 @@ public class DBHelper extends SQLiteOpenHelper {
             long timestamp = json.getLong("timestamp");
             String feedName = json.getString("feedName");
             String type = json.getString("type");
+            String appId = json.getString("appId");
             ContentValues cv = new ContentValues();
+            cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
             cv.put(Object.PERSON_ID, personId);
             cv.put(Object.TYPE, type);
@@ -355,20 +362,24 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    public Cursor queryFeed(String feedName,
+    public Cursor queryFeed(String appId, 
+                            String feedName,
                             String[] projection, String selection,
                             String[] selectionArgs, String sortOrder
                             ){
-        String select = andClauses(selection,"feed_name='" + feedName + "'");
+        String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
+        select = andClauses(select, Object.APP_ID + "='" + appId + "'");
         return getReadableDatabase().rawQuery(
             SQLiteQueryBuilder.buildQueryString(false, "objects", projection, select, null, null, sortOrder, null),
             selectionArgs);
     }
 
-    public Cursor queryFeedLatest(String feedName, 
+    public Cursor queryFeedLatest(String appId,
+                                  String feedName, 
                                   String[] projection, String selection,
                                   String[] selectionArgs, String sortOrder){
-        String select = andClauses(selection,"feed_name='" + feedName + "'");
+        String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
+        select = andClauses(select, Object.APP_ID + "='" + appId + "'");
         // Double this because select appears twice in full query
         String[] selectArgs = selectionArgs == null ? 
             new String[]{} : concat(selectionArgs, selectionArgs);

@@ -1,4 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.widget.Toast;
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.os.Binder;
 import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +17,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
+	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
 
     private DBHelper mHelper;
     private DBIdentityProvider mIdent;
@@ -45,10 +50,18 @@ public class DungBeetleContentProvider extends ContentProvider {
 
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
+
+        final String appId = getCallingActivityId();
+        if(appId == null){
+            return null;
+        }
+
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feeds", "me")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             try{
                 mHelper.addToFeed(
+                    appId,
                     mIdent.userPersonId(),
                     "friend",
                     values.getAsString("type"),
@@ -65,6 +78,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToOutgoing(
+                    appId,
                     mIdent.userPersonId(),
                     values.getAsString("to_person_id"),
                     values.getAsString("type"),
@@ -77,26 +91,31 @@ public class DungBeetleContentProvider extends ContentProvider {
             }
         }
         else if(match(uri, "contacts")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             mHelper.insertContact(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/contacts"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscriptions")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             mHelper.insertSubscription(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscriptions"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "subscribers")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             mHelper.insertSubscriber(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "groups")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             mHelper.insertGroup(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return Uri.parse(uri.toString());
         }
         else if(match(uri, "group_members")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
             mHelper.insertGroupMember(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
             return Uri.parse(uri.toString());
@@ -118,12 +137,19 @@ public class DungBeetleContentProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
+
+        final String appId = getCallingActivityId();
+        if(appId == null){
+            return null;
+        }
+
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
-            Cursor c = mHelper.queryFeed(feedName,
+            Cursor c = mHelper.queryFeed(appId,
+                                         feedName,
                                          projection,
                                          select,
                                          selectionArgs,
@@ -136,7 +162,8 @@ public class DungBeetleContentProvider extends ContentProvider {
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
-            Cursor c = mHelper.queryFeedLatest(feedName,
+            Cursor c = mHelper.queryFeedLatest(appId,
+                                               feedName,
                                                projection,
                                                select,
                                                selectionArgs,
@@ -150,6 +177,9 @@ public class DungBeetleContentProvider extends ContentProvider {
                 match(uri, "subscriptions") ||
                 match(uri, "groups") ||
                 match(uri, "group_members")){
+
+            if(!appId.equals(SUPER_APP_ID)) return null;
+
             Cursor c = mHelper.getReadableDatabase().query(segs.get(0),
                                                            projection,
                                                            selection,
@@ -178,7 +208,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         return mHelper;
     }
 
-    // Helper for dispatching on url paths
+    // Helper for matching on url paths
     private boolean match(Uri uri, String... regexes){
         List<String> segs = uri.getPathSegments();
         if(segs.size() == regexes.length){
@@ -191,5 +221,24 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         return false;
     }
+
+    private String getCallingActivityId(){
+        int pid = Binder.getCallingPid();
+
+        ActivityManager am = (ActivityManager) 
+            getContext().getSystemService(Activity.ACTIVITY_SERVICE); 
+
+        List<ActivityManager.RunningAppProcessInfo> lstAppInfo = 
+            am.getRunningAppProcesses();
+
+        for(ActivityManager.RunningAppProcessInfo ai : lstAppInfo) { 
+            if (ai.pid == pid) {
+                return ai.processName;
+            } 
+        } 
+        return null; 
+    }
+
+    
 
 }
