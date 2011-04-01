@@ -26,21 +26,13 @@ public class DungBeetleActivity extends TabActivity
 {
 
     public static final String TAG = "DungBeetleActivity";
+    public static final String AUTO_UPDATE_URL_BASE = "http://mobisocial.stanford.edu/files";
+    public static final String AUTO_UPDATE_METADATA_FILE = "dungbeetle_version.json";
+    public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";
     private Nfc mNfc;
 	private NotificationManager mNotificationManager;
 
     private class CheckForUpdatesTask extends HTTPDownloadTextFileTask {
-
-        final String baseUrl;
-
-        public CheckForUpdatesTask(String base) {
-            baseUrl = base;
-        }
-
-        public void execute(){ 
-            execute(baseUrl + "/" + "dungbeetle_version.json");
-        }
-
         @Override
         public void onPostExecute(String result) {
             try{
@@ -50,12 +42,11 @@ public class DungBeetleActivity extends TabActivity
                 try {
                     PackageInfo pInfo = getPackageManager().getPackageInfo(
                         getPackageName(),PackageManager.GET_META_DATA);
-                    System.out.println(pInfo.versionCode);
                     if(pInfo.versionCode < versionCode){
                         Toast.makeText(DungBeetleActivity.this,
                                        "Newer version," + versionName + 
                                        ", found!", Toast.LENGTH_SHORT).show();
-                        notifyApkDownload(baseUrl + "/" + "dungbeetle-debug.apk");
+                        notifyApkDownload(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_APK_FILE);
                     }
                     else if(pInfo.versionCode == versionCode){
                         Toast.makeText(DungBeetleActivity.this, 
@@ -63,7 +54,8 @@ public class DungBeetleActivity extends TabActivity
                     }
                     else {
                         Toast.makeText(DungBeetleActivity.this, 
-                                       "Weird. Local version newer than autoupdate version.", Toast.LENGTH_SHORT).show();
+                                       "Weird. Local version newer than autoupdate version.", 
+                                       Toast.LENGTH_SHORT).show();
                     }
                     
                 } catch (PackageManager.NameNotFoundException e) {
@@ -78,7 +70,6 @@ public class DungBeetleActivity extends TabActivity
             }
         }
     }
-
 
     private void notifyApkDownload(String url){
         final Intent intent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(url));
@@ -220,8 +211,8 @@ public class DungBeetleActivity extends TabActivity
         // Don't check for updates too frequently...
         long t = new Date().getTime();
         if((t - lastUpdateCheckTime) > 30000){
-            CheckForUpdatesTask task = new CheckForUpdatesTask("http://mobisocial.stanford.edu/files");
-            task.execute();
+            CheckForUpdatesTask task = new CheckForUpdatesTask();
+            task.execute(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_METADATA_FILE);
             lastUpdateCheckTime = t;
         }
     }

@@ -61,13 +61,23 @@
 	      android:configChanges="orientation"
 	      ></activity>
 
-      <activity android:name="FeedActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-      <activity android:name="ProfileActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-      <activity android:name="AddGroupActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-      <activity android:name="FriendsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
-      <activity android:name="GroupsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
-      <activity android:name="ViewContactActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
-      <activity android:name="ViewGroupActivity"	android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+    <activity android:name="FeedActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+    <activity android:name="ProfileActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+    <activity android:name="AddGroupActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+    <activity android:name="FriendsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+    <activity android:name="GroupsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
+    <activity android:name="ViewContactActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
+    <activity android:name="ViewGroupActivity"	android:label="@string/app_name" android:screenOrientation="portrait"></activity>
 
-    </application>
-  </manifest> 
+    <activity android:name="facebook.FacebookInterfaceActivity" 
+	      android:label="@string/app_name"
+	      android:screenOrientation="portrait"
+	      android:configChanges="keyboardHidden">
+      <intent-filter>
+	<action android:name="android.intent.action.MAIN" />
+	<category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+
+  </application>
+</manifest> 
