@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import android.app.NotificationManager;
 import android.content.pm.ActivityInfo;
 import android.content.ComponentName;
@@ -263,8 +264,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
 
-    private final static int UPDATE_CONTACT = 0;
-
     public boolean onCreateOptionsMenu(Menu menu){
         return true;
     }
@@ -272,12 +271,13 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, 0, 0, "Set email (debug)");
+        menu.add(0, 1, 0, "Facebook Bootstrap");
         return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
-        case UPDATE_CONTACT: {
+        case 0: {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setMessage("Enter email:");
             final EditText input = new EditText(this);
@@ -294,6 +294,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     }
                 });
             alert.show();
+            return true;
+        }
+        case 1: {
+            Intent intent = new Intent(this, FacebookInterfaceActivity.class);
+            startActivity(intent); 
             return true;
         }
         default: return false;
