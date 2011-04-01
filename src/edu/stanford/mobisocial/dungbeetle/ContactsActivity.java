@@ -42,10 +42,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mgr = new BitmapManager(10);
 	private NotificationManager mNotificationManager;
+    private boolean mChildMode = false;
+    public static final String CONTACT_SELECTED = 
+        "edu.stanford.mobisocial.dungbeetle.CONTACT_SELECTED";
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
+		Intent intent = getIntent();
+        mChildMode = intent.getBooleanExtra("child", false);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
@@ -119,7 +124,18 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-        final Contact c = new Contact((Cursor)mContacts.getItem(position));
+
+        Cursor cursor = (Cursor)mContacts.getItem(position);
+
+        if(mChildMode){
+            Intent i = new Intent();
+            i.setAction(CONTACT_SELECTED);
+            i.putExtra("contact", new Contact(cursor));
+            sendBroadcast(i);
+            return;
+        }
+
+        final Contact c = new Contact(cursor);
         final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Actions");
