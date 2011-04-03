@@ -1,0 +1,4 @@
+checkboxes for groups
+sql injection
+are we gonna ween off of PERSON_ID?
+let's use xep-0033 to send to multiple people in openfire!

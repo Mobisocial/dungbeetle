@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.widget.Toast;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -64,8 +65,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                     appId,
                     mIdent.userPersonId(),
                     "friend",
-                    values.getAsString("type"),
-                    new JSONObject(values.getAsString("json")));
+                    values.getAsString(Object.TYPE),
+                    new JSONObject(values.getAsString(Object.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
                 return Uri.parse(uri.toString());
@@ -80,10 +81,11 @@ public class DungBeetleContentProvider extends ContentProvider {
                 mHelper.addToOutgoing(
                     appId,
                     mIdent.userPersonId(),
-                    values.getAsString("to_person_id"),
-                    values.getAsString("type"),
+                    values.getAsString(Object.DESTINATION),
+                    values.getAsString(Object.TYPE),
                     obj);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
+                getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){

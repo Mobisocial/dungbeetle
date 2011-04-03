@@ -1,4 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
@@ -125,26 +129,22 @@ public class ManagerThread extends Thread {
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
                 while(!objs.isAfterLast()){
-                    String toPersonId = objs.getString(
-                        objs.getColumnIndexOrThrow(Object.TO_PERSON_ID));
-                    if(toPersonId != null){
+                    String to = objs.getString(
+                        objs.getColumnIndexOrThrow(Object.DESTINATION));
+                    if(to != null){
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
                         Log.i(TAG, "Sending direct message " + m);
+                        if(m.toPublicKeys().isEmpty()){
+                            Log.e(TAG, "Empty addressees!");
+                        }
                         mMessenger.sendMessage(m);
                     }
                     else{
-                        String feedName = objs.getString(
-                            objs.getColumnIndexOrThrow(Object.FEED_NAME));
-                        Cursor subscribers = mHelper.querySubscribers(feedName);
-                        Log.i(TAG, subscribers.getCount() + " subscribers...");
-                        subscribers.moveToFirst();
-                        while(!subscribers.isAfterLast()){
-                            OutgoingMessage m = new OutgoingFeedObjectMsg(
-                                objs, subscribers);
-                            mMessenger.sendMessage(m);
-                            Log.i(TAG, "Sending message " + m);
-                            subscribers.moveToNext();
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        if(m.toPublicKeys().isEmpty()){
+                            Log.e(TAG, "Empty addressees!");
                         }
+                        mMessenger.sendMessage(m);
                     }
                     
                     objs.moveToNext();
@@ -156,35 +156,39 @@ public class ManagerThread extends Thread {
         }
     }
 
-
-    private class OutgoingFeedObjectMsg implements OutgoingMessage{
-        private String mBody;
-        private PublicKey mPubKey;
-        private String mToId;
-        public OutgoingFeedObjectMsg(Cursor objs, Cursor subs){
-            mToId = subs.getString(subs.getColumnIndexOrThrow("person_id"));
-            mPubKey = mIdent.publicKeyForPersonId(mToId);
-            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
-        }
-        public PublicKey toPublicKey(){ return mPubKey; }
+    private abstract class OutgoingMsg implements OutgoingMessage{
+        protected String mBody;
+        protected List<PublicKey> mPubKeys;
+        public List<PublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
-        public String toString(){ return "[Message to " + mToId + " with body: " + mBody + "]"; }
+        public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
     }
 
-    private class OutgoingDirectObjectMsg implements OutgoingMessage{
-        private String mBody;
-        private PublicKey mPubKey;
-        private String mToId;
+    private class OutgoingFeedObjectMsg extends OutgoingMsg{
+        public OutgoingFeedObjectMsg(Cursor objs){
+            String feedName = objs.getString(
+                objs.getColumnIndexOrThrow(Object.FEED_NAME));
+            Cursor subs = mHelper.querySubscribers(feedName);
+            subs.moveToFirst();
+            ArrayList<String> ids = new ArrayList<String>();
+            while(!subs.isAfterLast()){
+                ids.add(subs.getString(
+                            subs.getColumnIndexOrThrow(Subscriber.PERSON_ID)));
+                subs.moveToNext();
+            }
+            mPubKeys = mIdent.publicKeysForPersonIds(ids);
+            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
+        }
+    }
+
+    private class OutgoingDirectObjectMsg extends OutgoingMsg{
         public OutgoingDirectObjectMsg(Cursor objs){
-            mToId = objs.getString(objs.getColumnIndexOrThrow("to_person_id"));
-            mPubKey = mIdent.publicKeyForPersonId(mToId);
+            String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
+            String[] tos = to.split(",");
+            mPubKeys = mIdent.publicKeysForPersonIds(Arrays.asList(tos));
             mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
         }
-        public PublicKey toPublicKey(){ return mPubKey; }
-        public String contents(){ return mBody; }
-        public String toString(){ return "[Direct message to " + mToId + " with body: " + mBody + "]"; }
     }
-
 
     private TransportIdentityProvider wrapIdent(final IdentityProvider ident){
         return new TransportIdentityProvider(){

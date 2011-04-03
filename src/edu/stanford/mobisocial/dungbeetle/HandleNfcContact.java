@@ -54,17 +54,11 @@ public class HandleNfcContact extends Activity {
 
 		saveButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-                    ContentValues values = new ContentValues();
-                    values.put("public_key", mPubKeyStr);
-                    values.put("name", mName);
-                    values.put("email", mEmail);
-                    Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
-                    getContentResolver().insert(url, values);
-                    values = new ContentValues();
-                    values.put("person_id", DBIdentityProvider.makePersonIdForPublicKey(mPubKey));
-                    values.put("feed_name", "friend");
-                    url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers");
-                    getContentResolver().insert(url, values);
+                    Helpers.insertContact(HandleNfcContact.this, 
+                                          mPubKeyStr, mName, mEmail);
+                    Helpers.insertSubscriber(HandleNfcContact.this,
+                        DBIdentityProvider.makePersonIdForPublicKey(mPubKey),
+                        "friend");
                     finish();
 				}
 			});

@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.widget.CheckBox;
+import java.util.Collections;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import android.app.NotificationManager;
 import android.content.pm.ActivityInfo;
@@ -43,17 +43,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mgr = new BitmapManager(10);
 	private NotificationManager mNotificationManager;
-    private boolean mShowCheckboxes = false;
-    public static final String CONTACT_CHECKED = 
-        "edu.stanford.mobisocial.dungbeetle.CONTACT_CHECKED";
-    public static final String CONTACT_UNCHECKED = 
-        "edu.stanford.mobisocial.dungbeetle.CONTACT_UNCHECKED";
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
 		Intent intent = getIntent();
-        mShowCheckboxes = intent.getBooleanExtra("showCheckboxes", false);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
@@ -125,24 +119,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         return true;
     }
 
+    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-
-        if(mShowCheckboxes){
-            Intent i = new Intent();
-            i.putExtra("contact", new Contact(cursor));
-            final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
-            if (checkBox.isChecked()) {
-                checkBox.setChecked(false);
-                i.setAction(CONTACT_UNCHECKED);
-            }
-            else {
-                checkBox.setChecked(true);
-                i.setAction(CONTACT_CHECKED);
-            }
-            sendBroadcast(i);
-            return;
-        }
 
         final Contact c = new Contact(cursor);
         final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application" };
@@ -172,8 +151,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int whichButton) {
                     DBHelper helper = new DBHelper(ContactsActivity.this);
-                    helper.setMyEmail(input.getText().toString());
-                    Helpers.sendIM(ContactsActivity.this, contact, input.getText().toString());
+                    Helpers.sendIM(
+                        ContactsActivity.this, 
+                        Collections.singletonList(contact),
+                        input.getText().toString());
                 }
             });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -225,7 +206,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                         startActivity(launch);
                                         Helpers.sendApplicationInvite(
                                             ContactsActivity.this,
-                                            contact, info.packageName, arg);
+                                            Collections.singletonList(contact), 
+                                            info.packageName, arg);
                                     }
                                     else{
                                         Toast.makeText(getApplicationContext(), 
@@ -258,22 +240,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
             View v = inflater.inflate(R.layout.contacts_item, parent, false);
-            String name = c.getString(c.getColumnIndexOrThrow(Contact.NAME));
-            TextView nameText = (TextView) v.findViewById(R.id.name_text);
-            if (nameText != null) {
-                nameText.setText(name);
-            }
-
-            String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
-            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
-
-            if(!mShowCheckboxes){
-                final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
-                checkBox.setVisibility(View.GONE);
-            }
-
+            bindView(v, context, c);
             return v;
         }
 
@@ -282,19 +249,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         public void bindView(View v, Context context, Cursor c) {
             String name = c.getString(c.getColumnIndexOrThrow(Contact.NAME));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
-            if (nameText != null) {
-                nameText.setText(name);
-            }
+            nameText.setText(name);
 
             String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
-
-            if(!mShowCheckboxes){
-                final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
-                checkBox.setVisibility(View.GONE);
-            }
+            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));
         }
 
     }

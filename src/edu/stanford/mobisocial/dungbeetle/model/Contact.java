@@ -21,12 +21,23 @@ public class Contact implements Serializable{
         email = c.getString(c.getColumnIndexOrThrow(EMAIL));
     }
 
+    public Contact(String personId, String name, String email){
+        this.name = name;
+        this.email = email;
+        this.personId = personId;
+    }
+
+    
+    @Override
+    public int hashCode(){
+        return personId.hashCode();
+    }
 
     @Override
     public boolean equals(java.lang.Object other){
         if(other instanceof Contact){
             Contact c = (Contact)other;
-            return c.name.equals(name) && c.email.equals(email) && c.personId.equals(personId);
+            return c.personId.equals(personId);
         }
         return false;
     }

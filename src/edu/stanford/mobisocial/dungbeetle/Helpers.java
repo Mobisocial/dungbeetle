@@ -1,4 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
+import java.util.Iterator;
+import java.util.Collection;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.ContentValues;
@@ -7,8 +11,26 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.content.Context;
 
 public class Helpers {
+
+    public static void insertSubscriber(final Context c, String personId, String feedName){
+        ContentValues values = new ContentValues();
+        values.put(Subscriber.PERSON_ID, personId);
+        values.put("feed_name", feedName);
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers");
+        c.getContentResolver().insert(url, values);
+    }
+
+
+    public static void insertContact(final Context c, String pubKeyStr, String name, String email){
+        ContentValues values = new ContentValues();
+        values.put(Contact.PUBLIC_KEY, pubKeyStr);
+        values.put(Contact.NAME, name);
+        values.put(Contact.EMAIL, email);
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
+        c.getContentResolver().insert(url, values);
+    }
     
-    public static void sendApplicationInvite(final Context c, final Contact contact, 
+    public static void sendApplicationInvite(final Context c, final Collection<Contact> contacts, 
                                              final String packageName, final String arg){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
@@ -17,24 +39,55 @@ public class Helpers {
             obj.put("packageName", packageName);
             obj.put("arg", arg);
         }catch(JSONException e){}
-        values.put("json", obj.toString());
-        values.put("to_person_id", contact.personId);
-        values.put("type", "invite");
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.DESTINATION, buildAddresses(contacts));
+        values.put(Object.TYPE, "invite");
         c.getContentResolver().insert(url, values);
     }
 
-    public static void sendIM(final Context c, final Contact contact, 
-                                   final String msg){
+    public static void sendIM(final Context c, final Collection<Contact> contacts, 
+                              final String msg){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
             obj.put("text", msg);
         }catch(JSONException e){}
-        values.put("json", obj.toString());
-        values.put("to_person_id", contact.personId);
-        values.put("type", "instant_message");
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.DESTINATION, buildAddresses(contacts));
+        values.put(Object.TYPE, "instant_message");
         c.getContentResolver().insert(url, values);
+    }
+
+    public static void sendFile(final Context c, final Collection<Contact> contacts, 
+                                final String mimeType,
+                                final String uri){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("mimeType", mimeType);
+            obj.put("uri", uri);
+        }catch(JSONException e){}
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.DESTINATION, buildAddresses(contacts));
+        values.put(Object.TYPE, "send_file");
+        c.getContentResolver().insert(url, values);
+    }
+
+    private static String buildAddresses(Collection<Contact> contacts){
+        String to = "";
+        Iterator<Contact> it = contacts.iterator();
+        while(it.hasNext()){
+            Contact c = it.next();
+            if(it.hasNext()){
+                to += c.personId + ",";
+            }
+            else{
+                to += c.personId;
+            }
+        }
+        return to;
     }
 
     public static void updateStatus(final Context c, final String status){
@@ -44,8 +97,8 @@ public class Helpers {
         try{
             obj.put("text", status);
         }catch(JSONException e){}
-        values.put("json", obj.toString());
-        values.put("type", "status");
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.TYPE, "status");
         c.getContentResolver().insert(url, values); 
     }
 
