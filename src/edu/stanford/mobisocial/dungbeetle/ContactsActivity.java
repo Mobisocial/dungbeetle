@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.widget.CheckBox;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import android.app.NotificationManager;
 import android.content.pm.ActivityInfo;
@@ -42,15 +43,17 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mgr = new BitmapManager(10);
 	private NotificationManager mNotificationManager;
-    private boolean mChildMode = false;
-    public static final String CONTACT_SELECTED = 
-        "edu.stanford.mobisocial.dungbeetle.CONTACT_SELECTED";
+    private boolean mShowCheckboxes = false;
+    public static final String CONTACT_CHECKED = 
+        "edu.stanford.mobisocial.dungbeetle.CONTACT_CHECKED";
+    public static final String CONTACT_UNCHECKED = 
+        "edu.stanford.mobisocial.dungbeetle.CONTACT_UNCHECKED";
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
 		Intent intent = getIntent();
-        mChildMode = intent.getBooleanExtra("child", false);
+        mShowCheckboxes = intent.getBooleanExtra("showCheckboxes", false);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
@@ -66,7 +69,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
         registerForContextMenu(lv);
-        
 		lv.setOnItemClickListener(this);
 	}
 
@@ -124,13 +126,20 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-
         Cursor cursor = (Cursor)mContacts.getItem(position);
 
-        if(mChildMode){
+        if(mShowCheckboxes){
             Intent i = new Intent();
-            i.setAction(CONTACT_SELECTED);
             i.putExtra("contact", new Contact(cursor));
+            final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
+            if (checkBox.isChecked()) {
+                checkBox.setChecked(false);
+                i.setAction(CONTACT_UNCHECKED);
+            }
+            else {
+                checkBox.setChecked(true);
+                i.setAction(CONTACT_CHECKED);
+            }
             sendBroadcast(i);
             return;
         }
@@ -142,7 +151,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         builder.setItems(items, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int item) {
                     switch(item){
-                    case 0: 
+                    case 0:
                         sendMessageToContact(c);
                         break;
                     case 1:
@@ -259,6 +268,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
+
+            if(!mShowCheckboxes){
+                final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
+                checkBox.setVisibility(View.GONE);
+            }
+
             return v;
         }
 
@@ -275,6 +290,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));            
+
+            if(!mShowCheckboxes){
+                final CheckBox checkBox = (CheckBox)findViewById(R.id.checkbox);
+                checkBox.setVisibility(View.GONE);
+            }
         }
 
     }

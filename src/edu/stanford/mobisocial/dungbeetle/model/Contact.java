@@ -21,4 +21,15 @@ public class Contact implements Serializable{
         email = c.getString(c.getColumnIndexOrThrow(EMAIL));
     }
 
+
+    @Override
+    public boolean equals(java.lang.Object other){
+        if(other instanceof Contact){
+            Contact c = (Contact)other;
+            return c.name.equals(name) && c.email.equals(email) && c.personId.equals(personId);
+        }
+        return false;
+    }
+
+
 }
