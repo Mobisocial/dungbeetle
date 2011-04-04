@@ -1,47 +1,47 @@
 package edu.stanford.mobisocial.dungbeetle;
-import java.util.Collections;
-import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
-import android.app.NotificationManager;
-import android.content.pm.ActivityInfo;
-import android.content.ComponentName;
-import android.content.BroadcastReceiver;
-import java.util.ArrayList;
-import android.content.pm.ResolveInfo;
-import java.util.List;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.Toast;
-import android.content.DialogInterface;
-import android.widget.EditText;
 import android.app.AlertDialog;
-import android.util.Log;
-import android.view.MenuItem;
-import android.view.Menu;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.widget.CursorAdapter;
-import android.net.Uri;
-import android.database.Cursor;
 import android.app.ListActivity;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
+import android.widget.CursorAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 	private ContactListCursorAdapter mContacts;
     public static final String SHARE_SCHEME = "db-share-contact";
-	protected final BitmapManager mgr = new BitmapManager(10);
+	protected final BitmapManager mBitmaps = new BitmapManager(10);
 	private NotificationManager mNotificationManager;
 
     public void onCreate(Bundle savedInstanceState) {
@@ -254,7 +254,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+            mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
         }
 
     }
@@ -301,6 +301,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         }
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        mBitmaps.recycle();
+    }
 
 }
 

@@ -1,35 +1,35 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
-import android.widget.ImageView;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import java.util.HashMap;
-import java.util.Map;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.content.DialogInterface;
-import android.widget.EditText;
 import android.app.AlertDialog;
-import android.widget.Button;
-import org.json.JSONException;
-import org.json.JSONObject;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import android.widget.CursorAdapter;
-import android.net.Uri;
-import android.database.Cursor;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View.OnClickListener;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.CursorAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
 
-	protected final BitmapManager mgr = new BitmapManager(10);
+	protected final BitmapManager mBitmaps = new BitmapManager(10);
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 
@@ -137,12 +137,19 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     nameText.setText(email);
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                    mgr.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+                    mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
                 }
 
             }catch(JSONException e){}
         }
+    }
 
+
+    @Override
+    public void finish() {
+        super.finish();
+        mIdent.finish();
+        mBitmaps.recycle();
     }
 
 

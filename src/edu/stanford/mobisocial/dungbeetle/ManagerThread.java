@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
-import android.content.ContentValues;
 import org.json.JSONException;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
@@ -121,7 +120,7 @@ public class ManagerThread extends Thread {
         Log.i(TAG, "Starting DungBeetle manager thread");
         Log.i(TAG, "Starting messenger...");
         mMessenger.init();
-        for(;;) {
+        while(!interrupted()) {
             if(mOco.changed){
                 Log.i(TAG, "Noticed change...");
                 mOco.clearChanged();
@@ -146,7 +145,6 @@ public class ManagerThread extends Thread {
                         }
                         mMessenger.sendMessage(m);
                     }
-                    
                     objs.moveToNext();
                 }
             }
@@ -154,6 +152,7 @@ public class ManagerThread extends Thread {
                 Thread.sleep(1000);
             } catch(InterruptedException e) {}
         }
+        mHelper.close();
     }
 
     private abstract class OutgoingMsg implements OutgoingMessage{

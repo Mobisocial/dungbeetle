@@ -198,4 +198,9 @@ public class DBIdentityProvider implements IdentityProvider {
 	}
 
 
+    public void finish(){
+        mDb.close();
+    }
+
+
 }

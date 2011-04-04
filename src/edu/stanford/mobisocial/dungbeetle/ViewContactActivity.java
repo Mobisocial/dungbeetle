@@ -1,5 +1,4 @@
 package edu.stanford.mobisocial.dungbeetle;
-
 import android.app.Activity;
 import android.database.Cursor;
 import android.os.Bundle;

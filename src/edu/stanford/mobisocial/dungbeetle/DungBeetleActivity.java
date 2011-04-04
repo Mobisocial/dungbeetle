@@ -1,26 +1,27 @@
 package edu.stanford.mobisocial.dungbeetle;
-import java.util.Date;
-import android.app.PendingIntent;
 import android.app.Notification;
 import android.app.NotificationManager;
-import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageInfo;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.nfc.NdefMessage;
-import android.widget.Toast;
-import edu.stanford.mobisocial.nfc.Nfc;
-import android.nfc.NdefRecord;
-import android.net.Uri;
-import java.security.PublicKey;
-import android.view.View;
-import android.widget.Button;
+import android.app.PendingIntent;
 import android.app.TabActivity;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.os.Bundle;
-import android.widget.TabHost;
 import android.view.View.OnClickListener;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TabHost;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
+import edu.stanford.mobisocial.nfc.Nfc;
+import java.security.PublicKey;
+import java.util.Date;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class DungBeetleActivity extends TabActivity
 {

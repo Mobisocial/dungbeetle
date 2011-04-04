@@ -1,24 +1,23 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.os.Handler;
 import android.app.Notification;
-import android.os.IBinder;
-import android.util.Log;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.widget.Toast;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import java.util.List;
-import org.json.JSONObject;
-import android.os.Binder;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.Binder;
+import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
-
+import android.util.Log;
+import android.widget.Toast;
+import java.util.List;
+import org.json.JSONObject;
 
 
 public class DungBeetleService extends Service {
@@ -65,7 +64,6 @@ public class DungBeetleService extends Service {
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
-
         }
         else if(type.equals("instant_message")){
             String msg = obj.optString("text");
