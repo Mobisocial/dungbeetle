@@ -37,11 +37,12 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void updateStatus(final Context c, final String status){
+    public static void updateStatus(final Context c, final String status, final String name){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
+        	obj.put("name", name);
             obj.put("text", status);
         }catch(JSONException e){}
         values.put("json", obj.toString());

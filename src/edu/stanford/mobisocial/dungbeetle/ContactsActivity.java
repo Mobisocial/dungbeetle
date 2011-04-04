@@ -1,40 +1,41 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
-import android.app.NotificationManager;
-import android.content.pm.ActivityInfo;
-import android.content.ComponentName;
-import android.content.BroadcastReceiver;
 import java.util.ArrayList;
-import android.content.pm.ResolveInfo;
+import java.util.HashMap;
 import java.util.List;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.Toast;
-import android.content.DialogInterface;
-import android.widget.EditText;
+
 import android.app.AlertDialog;
-import android.util.Log;
-import android.view.MenuItem;
-import android.view.Menu;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.widget.CursorAdapter;
-import android.net.Uri;
-import android.database.Cursor;
 import android.app.ListActivity;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.ContextMenu;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CursorAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -65,7 +66,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		lv.setOnItemClickListener(this);
 	}
 
-    @Override
+    /*@Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         //if (v.getId()==R.id.list) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
@@ -76,37 +77,69 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         menu.add(Menu.NONE, 0, 0, "Manage groups");
         //}
         // }
-    }
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
+    }*/
+    
+    public boolean showGroupPicker(final Contact contact) {
         Cursor c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups_membership/" + contact.personId), 
+            new String[]{"_id", "group_id"}, 
+            null, null, null);
+        
+        HashMap groupMemberships = new HashMap();
+        
+        if(c != null && c.moveToFirst()){
+        	int group_id_col = c.getColumnIndexOrThrow("group_id");
+        	do {
+        		groupMemberships.put(c.getString(group_id_col), 1);
+        	}while(c.moveToNext());
+        }
+        
+        c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
             new String[]{"_id", "group_id", "feed_name"}, 
             null, null, null);
+
+        
         CharSequence[] groups = new CharSequence[c.getCount()];
+        boolean[] tempSelected = new boolean[c.getCount()];
         Log.i("DBHelper", c.getCount() + " groups");
-        if(c.moveToFirst())
-            {
+        if(c.moveToFirst()) {
                 int group_id_col = c.getColumnIndexOrThrow("group_id");
                 int i = 0;
                 do{
                     groups[i] = c.getString(group_id_col);
+                    if(groupMemberships.containsKey(c.getString(group_id_col)))
+                    {
+                    	tempSelected[i] = true;
+                    }
                     i++; 
                 }while(c.moveToNext());
             }
         final CharSequence[] items = groups;
-        final boolean[] selected = new boolean[items.length];
+        
+        final boolean[] selected = tempSelected;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Pick Groups");
+        
         builder.setMultiChoiceItems(items, selected, new DialogInterface.OnMultiChoiceClickListener() {
 	            public void onClick(DialogInterface dialog, int item, boolean isChecked) {
-	            	String checked = " was checked";
+	            	DBHelper helper = new DBHelper(ContactsActivity.this);
+
+            		ContentValues values = new ContentValues();
+                     values.put("group_id", (String) items[item]);
+                     values.put("person_id", contact.personId);
+  	               
+                     
 	            	if(isChecked) 
-	            		checked = " was checked";
+	            	{
+	                     helper.insertGroupMember(values);
+	            	}
 	            	else
-            			checked = " was unchecked";
-	            	Toast.makeText(getApplicationContext(), items[item] + checked, Toast.LENGTH_SHORT).show();
+	            	{
+	            		helper.deleteGroupMember(values);
+	            	}
+	            	
 	            }
 	        });
         builder.setPositiveButton("Done",
@@ -120,7 +153,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         final Contact c = new Contact((Cursor)mContacts.getItem(position));
-        final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application" };
+        final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application", "Manage Groups" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Actions");
         builder.setItems(items, new DialogInterface.OnClickListener() {
@@ -132,6 +165,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     case 1:
                         startApplicationWithContact(c);
                         break;
+                    case 2:
+                    	showGroupPicker(c);
+                    	break;
                     }
                 }
             });

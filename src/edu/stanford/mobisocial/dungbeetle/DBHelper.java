@@ -194,6 +194,26 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update("my_info", cv, null, null);
     }
 
+    void setMyName(String name) {
+        ContentValues cv = new ContentValues();
+        cv.put("name", name);
+        getWritableDatabase().update("my_info", cv, null, null);
+    }
+    
+    String getMyName(){
+        Cursor c = getReadableDatabase().rawQuery(
+            "SELECT name FROM my_info",
+            null);
+        c.moveToFirst();
+        if(!c.isAfterLast()){
+        	
+            String name = c.getString(0);
+            Log.i(TAG, "Found my name: " + name);
+            return name;
+        }
+        return "NA";
+    }
+
     long addToOutgoing(String appId, String personId, String toPersonId, String type, JSONObject json) {
         try{
             long timestamp = new Date().getTime();
@@ -343,6 +363,20 @@ public class DBHelper extends SQLiteOpenHelper {
     		return -1;
     	}
     }
+    
+    long deleteGroupMember(ContentValues cv) {
+    	try{
+    		String groupId = cv.getAsString("group_id");
+    		validate(groupId);
+    		String personId = cv.getAsString("person_id");
+    		validate(personId);
+    		return getWritableDatabase().delete("group_members", "group_id='"+groupId+"' AND person_id='"+personId+"'", null);    		
+    	}
+    	catch(Exception e){
+    		e.printStackTrace(System.err);
+    		return -1;
+    	}
+    }
 
     private void validate(String val){
         assert (val != null) && val.length() > 0;
@@ -400,6 +434,12 @@ public class DBHelper extends SQLiteOpenHelper {
         return getReadableDatabase().rawQuery(
             " SELECT _id,person_id FROM subscribers WHERE feed_name = ?",
             new String[] {feedName});
+    }
+    
+    public Cursor queryGroupsMembership(String personId) {
+    	return getReadableDatabase().rawQuery(
+    			" SELECT _id,group_id FROM group_members WHERE person_id = ?", 
+    			new String[] {personId});
     }
 
     public Cursor queryRecentlyAdded(String personId) {

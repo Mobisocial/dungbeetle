@@ -172,6 +172,15 @@ public class DungBeetleContentProvider extends ContentProvider {
             if(isMe) c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         }
+        else if(match(uri, "groups_membership", ".+")) {
+
+            if(!appId.equals(SUPER_APP_ID)) return null;
+
+        	String personId = segs.get(1);
+        	Cursor c = mHelper.queryGroupsMembership(personId);
+            c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/groups_membership/" + personId));
+            return c;
+        }
         else if(match(uri, "contacts") || 
                 match(uri, "subscribers") || 
                 match(uri, "subscriptions") ||

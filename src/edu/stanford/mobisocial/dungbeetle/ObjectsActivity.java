@@ -39,6 +39,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		getListView().setOnItemClickListener(this);
  
         mIdent = new DBIdentityProvider(new DBHelper(this));
+        
+        final DBHelper helper = new DBHelper(ObjectsActivity.this);
 
 		Button button = (Button)findViewById(R.id.add_object_button);
 		button.setOnClickListener(new OnClickListener() {
@@ -50,7 +52,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 String value = input.getText().toString();
-                                Helpers.updateStatus(ObjectsActivity.this, value);
+                                Helpers.updateStatus(ObjectsActivity.this, value, helper.getMyName());
                             }
                         });
                     alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
