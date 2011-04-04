@@ -84,6 +84,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups_membership/" + contact.personId), 
             new String[]{"_id", "group_id"}, 
             null, null, null);
+        Log.i("DBHelper", "person " + contact.personId);
         
         HashMap groupMemberships = new HashMap();
         

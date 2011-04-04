@@ -4,6 +4,7 @@ import android.app.ListActivity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 
 
@@ -39,7 +41,13 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	}
 
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+    	Intent viewGroupIntent = new Intent(GroupsActivity.this, ViewGroupActivity.class);
+    	Cursor c = (Cursor)mGroups.getItem(position);
+    	String group_id = c.getString(c.getColumnIndex("group_id"));
+    	viewGroupIntent.putExtra("group_id", group_id);
+		startActivity(viewGroupIntent);
+    }
 
     private class GroupListCursorAdapter extends CursorAdapter {
 
