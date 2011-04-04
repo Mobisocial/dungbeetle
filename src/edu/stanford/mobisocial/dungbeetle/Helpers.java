@@ -12,25 +12,29 @@ import android.content.Context;
 
 public class Helpers {
 
-    public static void insertSubscriber(final Context c, String personId, String feedName){
+    public static void insertSubscriber(final Context c, 
+                                        Long contactId, 
+                                        String feedName){
         ContentValues values = new ContentValues();
-        values.put(Subscriber.PERSON_ID, personId);
+        values.put(Subscriber.CONTACT_ID, contactId);
         values.put("feed_name", feedName);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/subscribers");
         c.getContentResolver().insert(url, values);
     }
 
 
-    public static void insertContact(final Context c, String pubKeyStr, String name, String email){
+    public static Uri insertContact(final Context c, String pubKeyStr, 
+                                    String name, String email){
         ContentValues values = new ContentValues();
         values.put(Contact.PUBLIC_KEY, pubKeyStr);
         values.put(Contact.NAME, name);
         values.put(Contact.EMAIL, email);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
-        c.getContentResolver().insert(url, values);
+        return c.getContentResolver().insert(url, values);
     }
     
-    public static void sendApplicationInvite(final Context c, final Collection<Contact> contacts, 
+    public static void sendApplicationInvite(final Context c, 
+                                             final Collection<Contact> contacts, 
                                              final String packageName, final String arg){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
@@ -45,7 +49,8 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void sendIM(final Context c, final Collection<Contact> contacts, 
+    public static void sendIM(final Context c, 
+                              final Collection<Contact> contacts, 
                               final String msg){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
@@ -81,10 +86,10 @@ public class Helpers {
         while(it.hasNext()){
             Contact c = it.next();
             if(it.hasNext()){
-                to += c.personId + ",";
+                to += c.id + ",";
             }
             else{
-                to += c.personId;
+                to += c.id;
             }
         }
         return to;

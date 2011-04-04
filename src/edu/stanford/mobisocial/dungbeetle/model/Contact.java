@@ -5,6 +5,7 @@ import android.database.Cursor;
 public class Contact implements Serializable{
 
     public static final String TABLE = "contacts";
+    public static final long MY_ID = -1;
     public static final String _ID = "_id";
     public static final String NAME = "name";
     public static final String PUBLIC_KEY = "public_key";
@@ -14,14 +15,17 @@ public class Contact implements Serializable{
     public final String name;
     public final String email;
     public final String personId;
+    public final Long id;
 
     public Contact(Cursor c){
+        id = c.getLong(c.getColumnIndexOrThrow(_ID));
         name = c.getString(c.getColumnIndexOrThrow(NAME));
         personId = c.getString(c.getColumnIndexOrThrow(PERSON_ID));
         email = c.getString(c.getColumnIndexOrThrow(EMAIL));
     }
 
-    public Contact(String personId, String name, String email){
+    public Contact(Long id, String personId, String name, String email){
+        this.id = id;
         this.name = name;
         this.email = email;
         this.personId = personId;

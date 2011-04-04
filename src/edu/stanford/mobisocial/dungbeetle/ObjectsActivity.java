@@ -75,23 +75,26 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     // Implement a little cache so we don't have to keep pulling the same
     // contacts. Would be nice to pre-warm this cache given a list of 
     // person ids...
-    private Map<String, Contact> mContactCache = new HashMap<String, Contact>();
-    private Contact getContact(String id){
+    private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
+    private Contact getContact(Long id){
         if(mContactCache.containsKey(id)){
             return mContactCache.get(id);
         }
         else{
-            if(id.equals(mIdent.userPersonId())){
-                Contact contact = new Contact(id, 
-                                              mIdent.userName(), 
-                                              mIdent.userEmail());
+            if(id.equals(Contact.MY_ID)){
+                Contact contact = new Contact(
+                    Contact.MY_ID,
+                    mIdent.userPersonId(),
+                    mIdent.userName(), 
+                    mIdent.userEmail());
                 mContactCache.put(id, contact);
                 return contact;
             }
             else{
                 Cursor c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-                    null, Contact.PERSON_ID + "=?", new String[]{id}, null);
+                    null, Contact._ID + "=?", 
+                    new String[]{String.valueOf(id)}, null);
                 c.moveToFirst();
                 if(c.isAfterLast()){
                     return null;
@@ -122,9 +125,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         @Override
         public void bindView(View v, Context context, Cursor c) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-            String personId = c.getString(c.getColumnIndexOrThrow(
-                                              Object.CREATOR_PERSON_ID));
-            Contact contact = getContact(personId);
+            Long contactId = c.getLong(c.getColumnIndexOrThrow(
+                                           Object.CONTACT_ID));
+            Contact contact = getContact(contactId);
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String text = obj.optString("text");

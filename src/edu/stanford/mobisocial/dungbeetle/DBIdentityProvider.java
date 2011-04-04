@@ -79,22 +79,20 @@ public class DBIdentityProvider implements IdentityProvider {
         }
     }
 
-	public List<PublicKey> publicKeysForPersonIds(List<String> ids){
-
-        Iterator<String> iter = ids.iterator();
+	public List<PublicKey> publicKeysForContactIds(List<Long> ids){
+        Iterator<Long> iter = ids.iterator();
         StringBuffer buffer = new StringBuffer();
         while (iter.hasNext()) {
-            buffer.append("'" + iter.next() + "'");
+            buffer.append(iter.next());
             if(iter.hasNext()){
                 buffer.append(",");
             }
         }
         String idList = buffer.toString();
-
         Cursor c = mDb.getReadableDatabase().query(
             Contact.TABLE,
             new String[]{Contact.PUBLIC_KEY},
-            Contact.PERSON_ID + " IN (" + idList + ")",
+            Contact._ID + " IN (" + idList + ")",
             null,null,null,null);
         c.moveToFirst();
         ArrayList<PublicKey> result = new ArrayList<PublicKey>();
@@ -122,6 +120,23 @@ public class DBIdentityProvider implements IdentityProvider {
                 "Could not compute SHA1 of public key.");
 		}
 		return me.substring(0, 10);
+    }
+
+
+	public Long contactIdForPersonId(String id){
+        Cursor c = mDb.getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{ Contact._ID },
+            Contact.PERSON_ID + " = ?",
+            new String[]{id},
+            null,null,null);
+        c.moveToFirst();
+        if(c.isAfterLast()){
+            return null;
+        }
+        else{
+            return c.getLong(c.getColumnIndexOrThrow(Contact._ID));
+        }
     }
 
 

@@ -98,9 +98,11 @@ public class ManagerThread extends Thread {
         try{
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
-            mHelper.addObjectByJson(personId, obj);
+            long contactId = mIdent.contactIdForPersonId(personId);
+            mHelper.addObjectByJson(contactId, obj);
             mContext.getContentResolver().notifyChange(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), 
+                null);
 
             if(feedName.equals("direct")){
                 Message m = mDirectMessageHandler.obtainMessage();
@@ -124,7 +126,7 @@ public class ManagerThread extends Thread {
             if(mOco.changed){
                 Log.i(TAG, "Noticed change...");
                 mOco.clearChanged();
-                Cursor objs = mHelper.queryRecentlyAdded(mIdent.userPersonId());
+                Cursor objs = mHelper.queryRecentlyAdded();
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
                 while(!objs.isAfterLast()){
@@ -133,6 +135,7 @@ public class ManagerThread extends Thread {
                     if(to != null){
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
                         Log.i(TAG, "Sending direct message " + m);
+                        Log.i(TAG, "Sending to " + to);
                         if(m.toPublicKeys().isEmpty()){
                             Log.e(TAG, "Empty addressees!");
                         }
@@ -169,22 +172,25 @@ public class ManagerThread extends Thread {
                 objs.getColumnIndexOrThrow(Object.FEED_NAME));
             Cursor subs = mHelper.querySubscribers(feedName);
             subs.moveToFirst();
-            ArrayList<String> ids = new ArrayList<String>();
+            ArrayList<Long> ids = new ArrayList<Long>();
             while(!subs.isAfterLast()){
-                ids.add(subs.getString(
-                            subs.getColumnIndexOrThrow(Subscriber.PERSON_ID)));
+                ids.add(subs.getLong(
+                            subs.getColumnIndexOrThrow(Subscriber.CONTACT_ID)));
                 subs.moveToNext();
             }
-            mPubKeys = mIdent.publicKeysForPersonIds(ids);
+            mPubKeys = mIdent.publicKeysForContactIds(ids);
             mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
         }
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg{
         public OutgoingDirectObjectMsg(Cursor objs){
-            String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
+            String to = objs.getString(
+                objs.getColumnIndexOrThrow(Object.DESTINATION));
             String[] tos = to.split(",");
-            mPubKeys = mIdent.publicKeysForPersonIds(Arrays.asList(tos));
+            Long[] ids = new Long[tos.length];
+            for(int i = 0; i < tos.length; i++) ids[i] = Long.valueOf(tos[i]);
+            mPubKeys = mIdent.publicKeysForContactIds(Arrays.asList(ids));
             mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
         }
     }

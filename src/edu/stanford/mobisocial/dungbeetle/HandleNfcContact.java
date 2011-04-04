@@ -54,10 +54,11 @@ public class HandleNfcContact extends Activity {
 
 		saveButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-                    Helpers.insertContact(HandleNfcContact.this, 
+                    Uri uri = Helpers.insertContact(HandleNfcContact.this, 
                                           mPubKeyStr, mName, mEmail);
+                    long contactId = Long.valueOf(uri.getLastPathSegment());
                     Helpers.insertSubscriber(HandleNfcContact.this,
-                        DBIdentityProvider.makePersonIdForPublicKey(mPubKey),
+                        contactId,
                         "friend");
                     finish();
 				}
