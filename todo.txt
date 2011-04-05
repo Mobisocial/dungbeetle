@@ -1,8 +1,8 @@
 checkboxes for groups
 sql injection
-are we gonna ween off of PERSON_ID?
 let's use xep-0033 to send to multiple people in openfire
 start service on boot (and install?)
-reconnection manager is throwing exceptions. Get rid of it!
-person_ids are just an internal conveniance! don't publish them.
-how do apps refer to old feed objects?
+how do apps refer to other feed objects?
+NAT for object and contact ids -- revokable per app
+get rid of code duplication in ViewGroupActivity
+

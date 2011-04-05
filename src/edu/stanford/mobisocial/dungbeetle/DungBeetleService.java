@@ -16,6 +16,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import java.util.List;
 import org.json.JSONObject;
 
@@ -43,7 +44,7 @@ public class DungBeetleService extends Service {
 
     private void handleIncomingDirectMessage(JSONObject obj){
         String type = obj.optString("type");
-        if(type.equals("invite")){
+        if(type.equals(InviteObj.TYPE)){
             handleAppInvitation(obj);
         }
         else if(type.equals("send_file")){
@@ -84,9 +85,9 @@ public class DungBeetleService extends Service {
 
 
     private void handleAppInvitation(JSONObject obj){
-        String webUrl = obj.optString("webUrl");
-        String packageName = obj.optString("packageName");
-        String arg = obj.optString("arg");
+        String webUrl = obj.optString(InviteObj.WEB_URL);
+        String packageName = obj.optString(InviteObj.PACKAGE_NAME);
+        String arg = obj.optString(InviteObj.ARG);
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);

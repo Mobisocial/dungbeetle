@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle.model;
 
 public class Object{
     public static final String TABLE = "objects";
-
     public static final String _ID = "_id";
     public static final String TYPE = "type";
     public static final String SEQUENCE_ID = "sequence_id";
