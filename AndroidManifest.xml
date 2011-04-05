@@ -40,6 +40,13 @@
 
     <service android:name="edu.stanford.mobisocial.dungbeetle.DungBeetleService"/>
 
+    <receiver android:name="StartupIntentReceiver">
+      <intent-filter>
+	<action
+	    android:name="android.intent.action.BOOT_COMPLETED" />
+	<category android:name="android.intent.category.HOME" />
+      </intent-filter>
+    </receiver>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleNfcContact"
 	      android:label="@string/new_shared_contact"
@@ -90,6 +97,7 @@
 	      android:screenOrientation="portrait"
 	      android:configChanges="keyboardHidden">
     </activity>
+
 
   </application>
 </manifest> 

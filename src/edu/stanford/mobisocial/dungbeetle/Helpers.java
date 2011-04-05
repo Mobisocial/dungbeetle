@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.util.Iterator;
@@ -40,12 +41,12 @@ public class Helpers {
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
-            obj.put("packageName", packageName);
-            obj.put("arg", arg);
+            obj.put(InviteObj.PACKAGE_NAME, packageName);
+            obj.put(InviteObj.ARG, arg);
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
         values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, "invite");
+        values.put(Object.TYPE, InviteObj.TYPE);
         c.getContentResolver().insert(url, values);
     }
 
