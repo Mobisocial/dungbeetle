@@ -83,7 +83,6 @@ public class DungBeetleService extends Service {
         }
     }
 
-
     private void handleAppInvitation(JSONObject obj){
         String packageName = obj.optString(InviteObj.PACKAGE_NAME);
         String arg = obj.optString(InviteObj.ARG);
