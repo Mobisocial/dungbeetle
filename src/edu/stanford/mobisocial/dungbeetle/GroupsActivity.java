@@ -26,7 +26,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";
-	protected final BitmapManager mgr = new BitmapManager(10);
+	protected final BitmapManager mBitmaps = new BitmapManager(10);
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -122,6 +122,11 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		}
 	}
 
+    @Override
+    public void finish() {
+        super.finish();
+        mBitmaps.recycle();
+    }
 
 }
 

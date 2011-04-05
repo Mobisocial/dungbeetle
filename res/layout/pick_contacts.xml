@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_gravity="center_horizontal"
+    >
+
+
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      >
+    <TabHost android:id="@android:id/tabhost"
+	     android:layout_width="fill_parent"
+	     android:layout_height="fill_parent">
+      <LinearLayout
+	  android:orientation="vertical"
+	  android:layout_width="fill_parent"
+	  android:layout_height="fill_parent">
+	<TabWidget
+	    android:id="@android:id/tabs"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content" />
+	<FrameLayout
+	    android:id="@android:id/tabcontent"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:padding="5dp">
+
+
+	  <LinearLayout
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent"
+	      android:orientation="vertical"
+	      android:id="@+id/tab1">
+	    <ListView
+		android:id="@+id/contacts_list"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		/>
+	  </LinearLayout>
+
+	  <LinearLayout
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent"
+	      android:orientation="vertical"
+	      android:id="@+id/tab2">
+	  </LinearLayout>
+
+	</FrameLayout>
+      </LinearLayout>
+    </TabHost>
+  </LinearLayout>
+
+
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="60dip"
+      android:orientation="horizontal"
+      android:gravity="center|bottom"
+      >
+    <Button
+	android:id="@+id/ok_button"
+	android:layout_width="120dip"
+	android:layout_height="wrap_content"
+	android:text="Ok"
+	/>
+  </LinearLayout>
+
+
+</LinearLayout>

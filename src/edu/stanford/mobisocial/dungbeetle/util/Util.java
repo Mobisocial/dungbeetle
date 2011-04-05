@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.util;
+import java.util.Collection;
+import java.util.AbstractCollection;
+import java.util.Iterator;
 import java.math.BigInteger;
 import java.io.*;
 import java.security.MessageDigest;
@@ -65,5 +68,16 @@ public class Util {
         }catch(Exception e){
             return null;
         }
+    }
+
+    public static String join(Collection<String> s, String delimiter) {
+        if (s.isEmpty()) return "";
+        Iterator<String> iter = s.iterator();
+        StringBuffer buffer = new StringBuffer(iter.next());
+        while (iter.hasNext()) {
+            buffer.append(delimiter);
+            buffer.append(iter.next());
+        }
+        return buffer.toString();
     }
 }

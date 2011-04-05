@@ -1,11 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.util.Arrays;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.util.Date;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import android.accounts.AccountManager;
 import android.accounts.Account;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -24,7 +26,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 11;
+	public static final int VERSION = 16;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -59,8 +61,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS my_info");
         db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
-        db.execSQL("DROP TABLE IF EXISTS subscribers");
-        db.execSQL("DROP TABLE IF EXISTS subscriptions");
+        db.execSQL("DROP TABLE IF EXISTS " + Subscriber.TABLE);
         db.execSQL("DROP TABLE IF EXISTS groups");
         db.execSQL("DROP TABLE IF EXISTS group_members");
         onCreate(db);
@@ -101,21 +102,19 @@ public class DBHelper extends SQLiteOpenHelper {
                     "email", "TEXT"
                     );
 
-
         createTable(db, Object.TABLE,
                     Object._ID, "INTEGER PRIMARY KEY",
                     Object.TYPE, "TEXT",
                     Object.SEQUENCE_ID, "INTEGER",
                     Object.FEED_NAME, "TEXT",
                     Object.APP_ID, "TEXT",
-                    Object.PERSON_ID, "TEXT",
-                    Object.TO_PERSON_ID, "TEXT",
+                    Object.CONTACT_ID, "INTEGER",
+                    Object.DESTINATION, "TEXT",
                     Object.JSON, "TEXT",
                     Object.TIMESTAMP, "INTEGER");
         createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
         createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
-        createIndex(db, "INDEX", "objects_by_person_id", Object.TABLE, Object.PERSON_ID);
-
+        createIndex(db, "INDEX", "objects_by_creator_id", Object.TABLE, Object.CONTACT_ID);
 
         createTable(db, Contact.TABLE,
                     Contact._ID, "INTEGER PRIMARY KEY",
@@ -126,24 +125,20 @@ public class DBHelper extends SQLiteOpenHelper {
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
-		createTable(db, "subscribers",
-                    "_id", "INTEGER PRIMARY KEY",
-                    "person_id", "TEXT",
-                    "feed_name", "TEXT");
-        createIndex(db, "UNIQUE INDEX", "subscribers_by_person_id", "subscribers", "person_id");
+		createTable(db, Subscriber.TABLE,
+                    Subscriber._ID, "INTEGER PRIMARY KEY",
+                    Subscriber.CONTACT_ID, "INTEGER",
+                    Subscriber.FEED_NAME, "TEXT");
+        createIndex(db, "UNIQUE INDEX", "subscribers_by_contact_id", Subscriber.TABLE, 
+                    Subscriber.CONTACT_ID);
 
-
-		createTable(db, "subscriptions",
-                    "_id", "INTEGER PRIMARY KEY",
-                    "person_id", "TEXT",
-                    "feed_name", "TEXT");
-        createIndex(db, "UNIQUE INDEX", "subscriptions_by_person_id", "subscriptions", "person_id");
 
         createTable(db, "groups",
         			Group._ID, "INTEGER PRIMARY KEY",
         			Group.GROUP_ID, "TEXT",
         			Group.FEED_NAME, "TEXT");
         createIndex(db, "UNIQUE INDEX", "groups_by_group_id", "groups", "group_id");
+
         
         createTable(db, "group_members",
         			"_id", "INTEGER PRIMARY KEY",
@@ -214,7 +209,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return "NA";
     }
 
-    long addToOutgoing(String appId, String personId, String toPersonId, String type, JSONObject json) {
+    long addToOutgoing(String appId, String to, String type, JSONObject json) {
         try{
             long timestamp = new Date().getTime();
             json.put("type", type);
@@ -224,13 +219,13 @@ public class DBHelper extends SQLiteOpenHelper {
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, "direct");
-            cv.put(Object.PERSON_ID, personId);
-            cv.put(Object.TO_PERSON_ID, toPersonId);
+            cv.put(Object.CONTACT_ID, Contact.MY_ID);
+            cv.put(Object.DESTINATION, to);
             cv.put(Object.TYPE, type);
             cv.put(Object.JSON, json.toString());
             cv.put(Object.SEQUENCE_ID, 0);
             cv.put(Object.TIMESTAMP, timestamp);
-            getWritableDatabase().insertOrThrow("objects", null, cv);
+            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
             return 0;
         }
         catch(Exception e){
@@ -239,9 +234,9 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    long addToFeed(String appId, String personId, String feedName, String type, JSONObject json) {
+    long addToFeed(String appId, String feedName, String type, JSONObject json) {
         try{
-            long nextSeqId = getFeedMaxSequenceId(personId, feedName) + 1;
+            long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
             json.put("type", type);
             json.put("feedName", feedName);
@@ -251,7 +246,7 @@ public class DBHelper extends SQLiteOpenHelper {
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
-            cv.put(Object.PERSON_ID, personId);
+            cv.put(Object.CONTACT_ID, Contact.MY_ID);
             cv.put(Object.TYPE, type);
             cv.put(Object.SEQUENCE_ID, nextSeqId);
             cv.put(Object.JSON, json.toString());
@@ -266,7 +261,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(String personId, JSONObject json) {
+    long addObjectByJson(long contactId, JSONObject json) {
         try{
             long seqId = json.optLong("sequenceId");
             long timestamp = json.getLong("timestamp");
@@ -276,7 +271,7 @@ public class DBHelper extends SQLiteOpenHelper {
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
-            cv.put(Object.PERSON_ID, personId);
+            cv.put(Object.CONTACT_ID, contactId);
             cv.put(Object.TYPE, type);
             cv.put(Object.SEQUENCE_ID, seqId);
             cv.put(Object.JSON, json.toString());
@@ -308,27 +303,11 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    long insertSubscription(ContentValues cv) {
-        try{
-            String personId = cv.getAsString("person_id");
-            validate(personId);
-            String feedName = cv.getAsString("feed_name");
-            validate(feedName);
-            return getWritableDatabase().insertOrThrow("subscriptions", null, cv);
-        }
-        catch(Exception e){
-            e.printStackTrace(System.err);
-            return -1;
-        }
-    }
-
     long insertSubscriber(ContentValues cv) {
         try{
-            String personId = cv.getAsString("person_id");
-            validate(personId);
-            String feedName = cv.getAsString("feed_name");
+            String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return getWritableDatabase().insertOrThrow("subscribers", null, cv);
+            return getWritableDatabase().insertOrThrow(Subscriber.TABLE, null, cv);
         }
         catch(Exception e){
             e.printStackTrace(System.err);
@@ -382,10 +361,15 @@ public class DBHelper extends SQLiteOpenHelper {
         assert (val != null) && val.length() > 0;
     }
 
-    private long getFeedMaxSequenceId(String personId, String feedName){
-        Cursor c = getReadableDatabase().rawQuery(
-            "SELECT max(sequence_id) FROM objects WHERE person_id = ? AND feed_name = ?",
-            new String[] {personId, feedName});
+    private long getFeedMaxSequenceId(long contactId, String feedName){
+        Cursor c = getReadableDatabase().query(
+            Object.TABLE,
+            new String[]{ "max(" + Object.SEQUENCE_ID + ")" },
+            Object.CONTACT_ID + "=? AND " + Object.FEED_NAME + "=?",
+            new String[]{ String.valueOf(contactId), feedName },
+            null,
+            null,
+            null);
         c.moveToFirst();
         if(!c.isAfterLast()){
             long max = c.getLong(0);
@@ -403,37 +387,74 @@ public class DBHelper extends SQLiteOpenHelper {
                             ){
         String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
         select = andClauses(select, Object.APP_ID + "='" + appId + "'");
-        return getReadableDatabase().rawQuery(
-            SQLiteQueryBuilder.buildQueryString(false, "objects", projection, select, null, null, sortOrder, null),
-            selectionArgs);
+        return getReadableDatabase().query("objects", projection, 
+                                           select, selectionArgs, 
+                                           null, null, sortOrder, null);
     }
 
     public Cursor queryFeedLatest(String appId,
                                   String feedName, 
-                                  String[] projection, String selection,
+                                  String[] proj, String selection,
                                   String[] selectionArgs, String sortOrder){
         String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
         select = andClauses(select, Object.APP_ID + "='" + appId + "'");
+
+        // Don't allow custom projection. Just grab everything.
+        String[] projection = new String[]{
+            "o." + Object._ID + " as " + Object._ID,
+            "o." + Object.TYPE + " as " + Object.TYPE,
+            "o." + Object.SEQUENCE_ID + " as " + Object.SEQUENCE_ID,
+            "o." + Object.FEED_NAME + " as " + Object.FEED_NAME,
+            "o." + Object.CONTACT_ID + " as " + Object.CONTACT_ID,
+            "o." + Object.DESTINATION + " as " + Object.DESTINATION,
+            "o." + Object.JSON + " as " + Object.JSON,
+            "o." + Object.TIMESTAMP + " as " + Object.TIMESTAMP,
+            "o." + Object.APP_ID + " as " + Object.APP_ID
+        };
+
         // Double this because select appears twice in full query
         String[] selectArgs = selectionArgs == null ? 
             new String[]{} : concat(selectionArgs, selectionArgs);
         String orderBy = sortOrder == null ? "" : " ORDER BY " + sortOrder;
-        String q = 
-            " SELECT " + projToStr(projection) + " FROM " + 
-            " (SELECT person_id,max(sequence_id) as max_seq_id FROM objects " + 
-            " WHERE " + select + 
-            " GROUP BY person_id) AS x INNER JOIN " + 
-            " (SELECT * FROM objects " + 
-            " WHERE " + select + ") AS o ON " + 
-            " o.person_id = x.person_id AND o.sequence_id = x.max_seq_id " + orderBy;
+        String q = joinWithSpaces("SELECT",projToStr(projection),
+                                  "FROM (SELECT ", Object.CONTACT_ID, ",",
+                                  "max(",Object.SEQUENCE_ID,")", "as max_seq_id", 
+                                  "FROM", Object.TABLE,"WHERE",select,"GROUP BY",
+                                  Object.CONTACT_ID,") AS x INNER JOIN ",
+                                  "(SELECT * FROM ",Object.TABLE,
+                                  "WHERE", select,") AS o ON ",
+                                  "o.",Object.CONTACT_ID,"=", 
+                                  "x.",Object.CONTACT_ID,"AND",
+                                  "o.",Object.SEQUENCE_ID,"=x.max_seq_id",
+                                  orderBy);
+        Log.i(TAG, q);
         return getReadableDatabase().rawQuery(q,selectArgs);
     }
 
 
     public Cursor querySubscribers(String feedName) {
-        return getReadableDatabase().rawQuery(
-            " SELECT _id,person_id FROM subscribers WHERE feed_name = ?",
-            new String[] {feedName});
+        return getReadableDatabase().query(
+            Subscriber.TABLE,
+            new String[]{ Subscriber._ID, Subscriber.CONTACT_ID },
+            Subscriber.FEED_NAME + "=?",
+            new String[]{ feedName },
+            null,
+            null,
+            null,
+            null);
+    }
+
+    public Cursor queryRecentlyAdded() {
+        return getReadableDatabase().query(
+            Object.TABLE,
+            new String[]{ Object._ID, Object.JSON, 
+                          Object.DESTINATION, Object.FEED_NAME },
+            Object.CONTACT_ID + "=?",
+            new String[]{ String.valueOf(Contact.MY_ID) },
+            null,
+            null,
+            "timestamp DESC",
+            "1");
     }
     
     public Cursor queryGroupsMembership(String personId) {
@@ -448,21 +469,13 @@ public class DBHelper extends SQLiteOpenHelper {
     			new String[] {group_id});
     }
 
-    public Cursor queryRecentlyAdded(String personId) {
-        return getReadableDatabase().rawQuery(
-            " SELECT _id,json,to_person_id,feed_name FROM objects WHERE " + 
-            " person_id = ? ORDER BY timestamp DESC LIMIT 1",
-            new String[] { personId});
+    public static String joinWithSpaces(String... strings) {
+        return Util.join(Arrays.asList(strings), " ");
     }
 
     public static String projToStr(String[] strings) {
         if(strings == null) return "*";
-        StringBuffer sb = new StringBuffer();
-        for (int i=0; i < strings.length; i++) {
-            if (i != 0) sb.append(",");
-            sb.append(strings[i]);
-        }
-        return sb.toString();
+        return Util.join(Arrays.asList(strings), ",");
     }
 
     public static String andClauses(String A, String B) {

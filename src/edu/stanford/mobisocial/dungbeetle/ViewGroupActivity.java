@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -186,7 +187,7 @@ public class ViewGroupActivity extends ListActivity implements OnItemClickListen
                 public void onClick(DialogInterface dialog, int whichButton) {
                     DBHelper helper = new DBHelper(ViewGroupActivity.this);
                     helper.setMyEmail(input.getText().toString());
-                    Helpers.sendIM(ViewGroupActivity.this, contact, input.getText().toString());
+                    Helpers.sendIM(ViewGroupActivity.this, Collections.singletonList(contact), input.getText().toString());
                 }
             });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -238,7 +239,7 @@ public class ViewGroupActivity extends ListActivity implements OnItemClickListen
                                         startActivity(launch);
                                         Helpers.sendApplicationInvite(
                                         		ViewGroupActivity.this,
-                                            contact, info.packageName, arg);
+                                            Collections.singletonList(contact), info.packageName, arg);
                                     }
                                     else{
                                         Toast.makeText(getApplicationContext(), 

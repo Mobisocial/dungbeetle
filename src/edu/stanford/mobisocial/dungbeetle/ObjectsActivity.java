@@ -1,29 +1,35 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.content.DialogInterface;
-import android.widget.EditText;
 import android.app.AlertDialog;
-import android.widget.Button;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.ContentValues;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import android.widget.CursorAdapter;
-import android.net.Uri;
-import android.database.Cursor;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View.OnClickListener;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.CursorAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
 
+	protected final BitmapManager mBitmaps = new BitmapManager(10);
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 
@@ -32,8 +38,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		setContentView(R.layout.objects);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-            new String[]{Object._ID, Object.JSON },
-            null, null, Object.TIMESTAMP + " DESC");
+            null, 
+            Object.TYPE + "=?", new String[]{ "status" }, 
+            Object.TIMESTAMP + " DESC");
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
@@ -66,6 +73,43 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
 
+
+    // Implement a little cache so we don't have to keep pulling the same
+    // contacts. Would be nice to pre-warm this cache given a list of 
+    // person ids...
+    private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
+    private Contact getContact(Long id){
+        if(mContactCache.containsKey(id)){
+            return mContactCache.get(id);
+        }
+        else{
+            if(id.equals(Contact.MY_ID)){
+                Contact contact = new Contact(
+                    Contact.MY_ID,
+                    mIdent.userPersonId(),
+                    mIdent.userName(), 
+                    mIdent.userEmail());
+                mContactCache.put(id, contact);
+                return contact;
+            }
+            else{
+                Cursor c = getContentResolver().query(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
+                    null, Contact._ID + "=?", 
+                    new String[]{String.valueOf(id)}, null);
+                c.moveToFirst();
+                if(c.isAfterLast()){
+                    return null;
+                }
+                else{
+                    Contact contact = new Contact(c);
+                    mContactCache.put(id, contact);
+                    return contact;
+                }
+            }
+        }
+    }
+
     private class ObjectListCursorAdapter extends CursorAdapter {
 
         public ObjectListCursorAdapter (Context context, Cursor c) {
@@ -76,34 +120,41 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
             View v = inflater.inflate(R.layout.objects_item, parent, false);
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-            try{
-                JSONObject obj = new JSONObject(jsonSrc);
-                String name = obj.optString("name");
-                String text = obj.optString("text");
-                TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                if (nameText != null) {
-                    nameText.setText(name + ": '" + text + "'");
-                }
-            }catch(JSONException e){}
+            bindView(v, context, c);
             return v;
         }
-
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            Long contactId = c.getLong(c.getColumnIndexOrThrow(
+                                           Object.CONTACT_ID));
+            Contact contact = getContact(contactId);
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
-                String name = obj.optString("name");
                 String text = obj.optString("text");
-                TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                if (nameText != null) {
-                    nameText.setText(name + ": '" + text + "'");
+                TextView bodyText = (TextView) v.findViewById(R.id.body_text);
+                bodyText.setText(text);
+
+                if(contact != null){
+                    TextView nameText = (TextView) v.findViewById(R.id.name_text);
+                    String email = contact.email == null ? "NA" : contact.email;
+                    nameText.setText(email);
+                    final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+                    icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                    mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
                 }
+
             }catch(JSONException e){}
         }
+    }
 
+
+    @Override
+    public void finish() {
+        super.finish();
+        mIdent.finish();
+        mBitmaps.recycle();
     }
 
 

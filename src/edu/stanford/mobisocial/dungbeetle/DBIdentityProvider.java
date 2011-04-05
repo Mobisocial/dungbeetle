@@ -1,7 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.content.ContentValues;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -12,7 +14,6 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 public class DBIdentityProvider implements IdentityProvider {
@@ -62,11 +63,12 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public PublicKey publicKeyForPersonId(String id){
-        Cursor c = mDb.getReadableDatabase().rawQuery(
-            "SELECT " + Contact.PUBLIC_KEY + 
-            " FROM " + Contact.TABLE + 
-            " WHERE " + Contact.PERSON_ID + " = ?",
-            new String[] {id});
+        Cursor c = mDb.getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{Contact.PUBLIC_KEY},
+            Contact.PERSON_ID + " = ?",
+            new String[]{id},
+            null,null,null);
         c.moveToFirst();
         if(c.isAfterLast()){
             return null;
@@ -75,6 +77,34 @@ public class DBIdentityProvider implements IdentityProvider {
             return publicKeyFromString(
                 c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
         }
+    }
+
+	public List<PublicKey> publicKeysForContactIds(List<Long> ids){
+        Iterator<Long> iter = ids.iterator();
+        StringBuffer buffer = new StringBuffer();
+        while (iter.hasNext()) {
+            buffer.append(iter.next());
+            if(iter.hasNext()){
+                buffer.append(",");
+            }
+        }
+        String idList = buffer.toString();
+        Cursor c = mDb.getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{Contact.PUBLIC_KEY},
+            Contact._ID + " IN (" + idList + ")",
+            null,null,null,null);
+        c.moveToFirst();
+        ArrayList<PublicKey> result = new ArrayList<PublicKey>();
+        while(!c.isAfterLast()){
+            result.add(
+                publicKeyFromString(
+                    c.getString(
+                        c.getColumnIndexOrThrow(
+                            Contact.PUBLIC_KEY))));
+            c.moveToNext();
+        }
+        return result;
     }
 
     public String personIdForPublicKey(PublicKey key){
@@ -90,6 +120,23 @@ public class DBIdentityProvider implements IdentityProvider {
                 "Could not compute SHA1 of public key.");
 		}
 		return me.substring(0, 10);
+    }
+
+
+	public Long contactIdForPersonId(String id){
+        Cursor c = mDb.getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{ Contact._ID },
+            Contact.PERSON_ID + " = ?",
+            new String[]{id},
+            null,null,null);
+        c.moveToFirst();
+        if(c.isAfterLast()){
+            return null;
+        }
+        else{
+            return c.getLong(c.getColumnIndexOrThrow(Contact._ID));
+        }
     }
 
 
@@ -164,6 +211,11 @@ public class DBIdentityProvider implements IdentityProvider {
             }
         }
 	}
+
+
+    public void finish(){
+        mDb.close();
+    }
 
 
 }

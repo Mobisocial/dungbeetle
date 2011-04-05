@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.widget.Toast;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -48,6 +50,12 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
 	}
 
+    private Uri uriWithId(Uri uri, long id){
+        Uri.Builder b = uri.buildUpon();
+        b.appendPath(String.valueOf(id));
+        return b.build();
+    }
+
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 
@@ -62,10 +70,9 @@ public class DungBeetleContentProvider extends ContentProvider {
             try{
                 mHelper.addToFeed(
                     appId,
-                    mIdent.userPersonId(),
                     "friend",
-                    values.getAsString("type"),
-                    new JSONObject(values.getAsString("json")));
+                    values.getAsString(Object.TYPE),
+                    new JSONObject(values.getAsString(Object.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
                 return Uri.parse(uri.toString());
@@ -79,11 +86,11 @@ public class DungBeetleContentProvider extends ContentProvider {
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToOutgoing(
                     appId,
-                    mIdent.userPersonId(),
-                    values.getAsString("to_person_id"),
-                    values.getAsString("type"),
+                    values.getAsString(Object.DESTINATION),
+                    values.getAsString(Object.TYPE),
                     obj);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
+                getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
@@ -92,33 +99,28 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         else if(match(uri, "contacts")){
             if(!appId.equals(SUPER_APP_ID)) return null;
-            mHelper.insertContact(values);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/contacts"), null);
-            return Uri.parse(uri.toString());
-        }
-        else if(match(uri, "subscriptions")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
-            mHelper.insertSubscription(values);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscriptions"), null);
-            return Uri.parse(uri.toString());
+            long id = mHelper.insertContact(values);
+            getContext().getContentResolver().notifyChange(
+                Uri.parse(CONTENT_URI + "/contacts"), null);
+            return uriWithId(uri, id);
         }
         else if(match(uri, "subscribers")){
             if(!appId.equals(SUPER_APP_ID)) return null;
-            mHelper.insertSubscriber(values);
+            long id = mHelper.insertSubscriber(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
-            return Uri.parse(uri.toString());
+            return uriWithId(uri, id);
         }
         else if(match(uri, "groups")){
             if(!appId.equals(SUPER_APP_ID)) return null;
-            mHelper.insertGroup(values);
+            long id = mHelper.insertGroup(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
-            return Uri.parse(uri.toString());
+            return uriWithId(uri, id);
         }
         else if(match(uri, "group_members")){
             if(!appId.equals(SUPER_APP_ID)) return null;
-            mHelper.insertGroupMember(values);
+            long id = mHelper.insertGroupMember(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
-            return Uri.parse(uri.toString());
+            return uriWithId(uri, id);
         }
         else{
             return null;
@@ -147,7 +149,9 @@ public class DungBeetleContentProvider extends ContentProvider {
         if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
-            String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
+            String select = isMe ? DBHelper.andClauses(
+                selection, 
+                Object.CONTACT_ID + "=" + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeed(appId,
                                          feedName,
                                          projection,
@@ -161,7 +165,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "feeds", ".+", "head")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
-            String select = isMe ? DBHelper.andClauses(selection, "person_id='" + mIdent.userPersonId() + "'") : selection;
+            String select = isMe ? DBHelper.andClauses(
+                selection, Object.CONTACT_ID + "=" + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeedLatest(appId,
                                                feedName,
                                                projection,
@@ -192,7 +197,6 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         else if(match(uri, "contacts") || 
                 match(uri, "subscribers") || 
-                match(uri, "subscriptions") ||
                 match(uri, "groups") ||
                 match(uri, "group_members")){
 

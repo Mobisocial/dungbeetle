@@ -1,24 +1,23 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.os.Handler;
 import android.app.Notification;
-import android.os.IBinder;
-import android.util.Log;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.widget.Toast;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import java.util.List;
-import org.json.JSONObject;
-import android.os.Binder;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.Binder;
+import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
-
+import android.util.Log;
+import android.widget.Toast;
+import java.util.List;
+import org.json.JSONObject;
 
 
 public class DungBeetleService extends Service {
@@ -47,6 +46,25 @@ public class DungBeetleService extends Service {
         if(type.equals("invite")){
             handleAppInvitation(obj);
         }
+        else if(type.equals("send_file")){
+            String mimeType = obj.optString("mimeType");
+            String uri = obj.optString("uri");
+            Intent i = new Intent();
+            i.setAction(Intent.ACTION_VIEW);
+            i.addCategory(Intent.CATEGORY_DEFAULT);
+            i.setType(mimeType);
+            i.setData(Uri.parse(uri));
+            i.putExtra(Intent.EXTRA_TEXT, uri);
+            Notification notification = new Notification(
+                R.drawable.icon, "New Shared File...", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, i, 0);
+            notification.setLatestEventInfo(
+                this, "New Shared File",
+                mimeType + "  " + uri,
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
         else if(type.equals("instant_message")){
             String msg = obj.optString("text");
             Intent launch = new Intent();
@@ -55,7 +73,8 @@ public class DungBeetleService extends Service {
             launch.setComponent(new ComponentName(
                                     getPackageName(),
                                     DungBeetleActivity.class.getName()));
-            Notification notification = new Notification(R.drawable.icon, "New IM", System.currentTimeMillis());
+            Notification notification = new Notification(
+                R.drawable.icon, "New IM", System.currentTimeMillis());
             PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
             notification.setLatestEventInfo(this, "New IM", "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
@@ -87,9 +106,13 @@ public class DungBeetleService extends Service {
                                         info.name));
             }    
         }        
-        Notification notification = new Notification(R.drawable.icon, "New Invitation", System.currentTimeMillis());
+        Notification notification = new Notification(
+            R.drawable.icon, "New Invitation", System.currentTimeMillis());
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
-        notification.setLatestEventInfo(this, "Invitation received", "Click to launch application.", contentIntent);
+        notification.setLatestEventInfo(
+            this, "Invitation received", 
+            "Click to launch application.", 
+            contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         mNotificationManager.notify(0, notification);
     }
