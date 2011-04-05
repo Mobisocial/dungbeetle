@@ -84,7 +84,6 @@ public class DungBeetleService extends Service {
 
 
     private void handleAppInvitation(JSONObject obj){
-        String webUrl = obj.optString("webUrl");
         String packageName = obj.optString("packageName");
         String arg = obj.optString("arg");
         Intent launch = new Intent();
@@ -92,20 +91,25 @@ public class DungBeetleService extends Service {
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
         launch.putExtra("creator", false);
-        if(webUrl != null){
+        if(obj.has("webUrl")){
+        	String webUrl = obj.optString("webUrl");
             launch.setData(Uri.parse(webUrl));
         }
         else{
             launch.setPackage(packageName);
             final PackageManager mgr = getPackageManager();
             List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved.size() > 0) {
-                ActivityInfo info = resolved.get(0).activityInfo;
-                launch.setComponent(new ComponentName(
-                                        info.packageName,
-                                        info.name));
-            }    
-        }        
+            if (resolved.size() == 0) {
+                Toast.makeText(this, "Could not find application to handle invite", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Wouldn't it be cool if the app auto installed? Yeah. It will be cool.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ActivityInfo info = resolved.get(0).activityInfo;
+            launch.setComponent(new ComponentName(
+                                    info.packageName,
+                                    info.name));
+        }
+
         Notification notification = new Notification(
             R.drawable.icon, "New Invitation", System.currentTimeMillis());
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
