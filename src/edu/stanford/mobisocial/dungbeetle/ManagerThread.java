@@ -1,11 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
+import java.util.regex.Matcher;
 import org.json.JSONException;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
@@ -19,7 +23,6 @@ import edu.stanford.mobisocial.bumblebee.IncomingMessage;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.bumblebee.MessengerService;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.json.JSONObject;
 import android.database.ContentObserver;
 import android.net.Uri;
@@ -36,12 +39,6 @@ public class ManagerThread extends Thread {
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
-
-    private LinkedBlockingQueue<JSONObject> receiveQueue = 
-        new LinkedBlockingQueue<JSONObject>();
-
-    private LinkedBlockingQueue<JSONObject> sendQueue = 
-        new LinkedBlockingQueue<JSONObject>();
 
     public ManagerThread(final Context context, 
                          final Handler toastHandler, 
@@ -91,23 +88,24 @@ public class ManagerThread extends Thread {
 
 
     private void handleIncomingMessage(IncomingMessage incoming){
-        String contents = incoming.contents();
-        Log.i(TAG, "Message contents: " + contents);
+        String contents = localize(incoming.contents());
         String personId = incoming.from();
-        Log.i(TAG, "Message from: " + personId);
         try{
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
-            long contactId = mIdent.contactIdForPersonId(personId);
-            mHelper.addObjectByJson(contactId, obj);
-            mContext.getContentResolver().notifyChange(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), 
-                null);
-
-            if(feedName.equals("direct")){
-                Message m = mDirectMessageHandler.obtainMessage();
-                m.obj = incoming;
-                mDirectMessageHandler.sendMessage(m);
+            Maybe<Contact> contact = mHelper.contactForPersonId(personId);
+            if(contact.isKnown()){
+                mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj);
+                mContext.getContentResolver().notifyChange(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
+                if(feedName.equals("direct")){
+                    Message m = mDirectMessageHandler.obtainMessage();
+                    m.obj = incoming;
+                    mDirectMessageHandler.sendMessage(m);
+                }
+            }
+            else{
+                Log.i(TAG, "Message from unknown contact. " + contents);
             }
 
         }
@@ -115,6 +113,44 @@ public class ManagerThread extends Thread {
             Log.e(TAG, e.toString());
         }
     }
+
+    /**
+     * Replace global contact and object references 
+     * with their local analogs.
+     */
+    private String localize(String s){
+        return mContactLocalizer.apply(s);
+    }
+
+
+    /**
+     * Replace local contact and object ids 
+     * with their global analogs.
+     */
+    private String globalize(String s){
+        return mContactGlobalizer.apply(s);
+    }
+
+
+    // Note, doing a query on each replacement is not friendly : (
+    // Should use a contact cache here.
+
+    private StringSearchAndReplacer mContactGlobalizer = new StringSearchAndReplacer("@l\\(([0-9]+)\\)"){
+            protected String replace(Matcher m){
+                Long id = Long.valueOf(m.group(1));
+                Maybe<Contact> c = mHelper.contactForContactId(id);
+                return c.otherwise(Contact.NA()).personId;
+            }
+        };
+
+
+    private StringSearchAndReplacer mContactLocalizer = new StringSearchAndReplacer("@g\\((.+)\\)"){
+            protected String replace(Matcher m){
+                String personId = m.group(1);
+                Maybe<Contact> c = mHelper.contactForPersonId(personId);
+                return String.valueOf(c.otherwise(Contact.NA()).id);
+            }
+        };
 
 
     @Override
@@ -130,12 +166,10 @@ public class ManagerThread extends Thread {
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
                 while(!objs.isAfterLast()){
-                    String to = objs.getString(
-                        objs.getColumnIndexOrThrow(Object.DESTINATION));
+                    String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
                     if(to != null){
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
                         Log.i(TAG, "Sending direct message " + m);
-                        Log.i(TAG, "Sending to " + to);
                         if(m.toPublicKeys().isEmpty()){
                             Log.e(TAG, "Empty addressees!");
                         }
@@ -143,6 +177,7 @@ public class ManagerThread extends Thread {
                     }
                     else{
                         OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        Log.i(TAG, "Sending feed object " + m);
                         if(m.toPublicKeys().isEmpty()){
                             Log.e(TAG, "Empty addressees!");
                         }
@@ -179,7 +214,7 @@ public class ManagerThread extends Thread {
                 subs.moveToNext();
             }
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
+            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(Object.JSON)));
         }
     }
 
@@ -191,7 +226,7 @@ public class ManagerThread extends Thread {
             Long[] ids = new Long[tos.length];
             for(int i = 0; i < tos.length; i++) ids[i] = Long.valueOf(tos[i]);
             mPubKeys = mIdent.publicKeysForContactIds(Arrays.asList(ids));
-            mBody = objs.getString(objs.getColumnIndexOrThrow(Object.JSON));
+            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(Object.JSON)));
         }
     }
 

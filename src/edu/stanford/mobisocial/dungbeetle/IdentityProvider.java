@@ -12,5 +12,4 @@ public interface IdentityProvider {
 	public PublicKey publicKeyForPersonId(String id);
 	public List<PublicKey> publicKeysForContactIds(List<Long> ids);
 	public String personIdForPublicKey(PublicKey key);
-	public Long contactIdForPersonId(String personId);
 }
