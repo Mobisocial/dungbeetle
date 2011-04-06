@@ -47,7 +47,7 @@ public class Helpers {
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
         values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, InviteObj.TYPE);
+        values.put(Object.TYPE, "invite_app_session");
         c.getContentResolver().insert(url, values);
     }
 
