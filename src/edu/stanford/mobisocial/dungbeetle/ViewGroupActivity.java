@@ -83,10 +83,10 @@ public class ViewGroupActivity extends ListActivity implements OnItemClickListen
     
     public boolean showGroupPicker(final Contact contact) {
         Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups_membership/" + contact.personId), 
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups_membership/" + contact.id), 
             new String[]{"_id", "group_id"}, 
             null, null, null);
-        Log.i("DBHelper", "person " + contact.personId);
+        Log.i("DBHelper", "person " + contact.id);
         
         HashMap groupMemberships = new HashMap();
         
@@ -131,7 +131,7 @@ public class ViewGroupActivity extends ListActivity implements OnItemClickListen
 
             		ContentValues values = new ContentValues();
                      values.put("group_id", (String) items[item]);
-                     values.put("person_id", contact.personId);
+                     values.put("person_id", contact.id);
   	               
                      
 	            	if(isChecked) 

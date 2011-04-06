@@ -187,12 +187,12 @@ public class DungBeetleContentProvider extends ContentProvider {
             return c;
         }
         else if(match(uri, "group_members", ".+")) {
-        	if(!appId.equals(SUPER_APP_ID)) return null;
-        	
-        	String group_id = segs.get(1);
-        	Cursor c = mHelper.queryGroupMembers(group_id);
-        	c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/group_members/" +group_id));
-        	return c;
+            	if(!appId.equals(SUPER_APP_ID)) return null;
+            	
+            	String group_id = segs.get(1);
+            	Cursor c = mHelper.queryGroupMembers(group_id);
+            	c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/group_members/" +group_id));
+            	return c;
         	
         }
         else if(match(uri, "contacts") || 

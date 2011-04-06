@@ -175,7 +175,7 @@ public class DungBeetleService extends Service {
             System.currentTimeMillis());
         PendingIntent contentIntent = PendingIntent.getActivity(
             this, 0,
-            new Intent(this, Setup.class), 0);
+            new Intent(this, DungBeetleActivity.class), 0);
 
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
