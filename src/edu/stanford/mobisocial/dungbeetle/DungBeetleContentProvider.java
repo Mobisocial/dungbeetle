@@ -59,8 +59,11 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 
+        Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
+
         final String appId = getCallingActivityId();
         if(appId == null){
+            Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
 
@@ -75,6 +78,21 @@ public class DungBeetleContentProvider extends ContentProvider {
                     new JSONObject(values.getAsString(Object.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
+                return Uri.parse(uri.toString());
+            }
+            catch(JSONException e){
+                return null;
+            }
+        }
+        else if(match(uri, "feeds", ".+")){
+            String feedName = segs.get(1);
+            try{
+                mHelper.addToFeed(
+                    appId,
+                    feedName,
+                    values.getAsString(Object.TYPE),
+                    new JSONObject(values.getAsString(Object.JSON)));
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/" + feedName), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
@@ -140,8 +158,11 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
 
+        Log.d(TAG, "Processing query: " + uri);
+
         final String appId = getCallingActivityId();
         if(appId == null){
+            Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
 
@@ -214,6 +235,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             return c;
         }
         else{
+            Log.d(TAG, "Unrecognized query: " + uri);
             return null;
         }
     }

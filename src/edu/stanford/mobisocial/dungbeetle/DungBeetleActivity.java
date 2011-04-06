@@ -16,7 +16,7 @@ import android.widget.Button;
 import android.widget.TabHost;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
-import edu.stanford.mobisocial.nfc.Nfc;
+import mobisocial.nfc.Nfc;
 import java.security.PublicKey;
 import java.util.Date;
 import org.json.JSONException;
@@ -45,7 +45,7 @@ public class DungBeetleActivity extends TabActivity
                         getPackageName(),PackageManager.GET_META_DATA);
                     if(pInfo.versionCode < versionCode){
                         Toast.makeText(DungBeetleActivity.this,
-                                       "Newer version," + versionName + 
+                                       "Newer version, " + versionName + 
                                        ", found!", Toast.LENGTH_SHORT).show();
                         notifyApkDownload(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_APK_FILE);
                     }
@@ -73,7 +73,8 @@ public class DungBeetleActivity extends TabActivity
     }
 
     private void notifyApkDownload(String url){
-        final Intent intent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(url));
+        final Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.parse(url), "application/vnd.android.package-archive");
         Notification notification = new Notification(
             R.drawable.icon, 
             "Update available.", System.currentTimeMillis());

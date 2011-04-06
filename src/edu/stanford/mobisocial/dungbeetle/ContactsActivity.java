@@ -342,7 +342,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     @Override
     public void finish() {
         super.finish();
-        mBitmaps.recycle();
     }
 
 }

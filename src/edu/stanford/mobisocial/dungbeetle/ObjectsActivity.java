@@ -154,8 +154,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     @Override
     public void finish() {
         super.finish();
-        mIdent.finish();
-        mBitmaps.recycle();
+        mIdent.close();
     }
 
 

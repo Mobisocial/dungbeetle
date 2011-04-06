@@ -106,7 +106,7 @@ public class ManagerThread extends Thread {
 
             if(feedName.equals("direct")){
                 Message m = mDirectMessageHandler.obtainMessage();
-                m.obj = obj;
+                m.obj = incoming;
                 mDirectMessageHandler.sendMessage(m);
             }
 
