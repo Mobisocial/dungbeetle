@@ -16,14 +16,18 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.bumblebee.IncomingMessage;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 
 public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private ManagerThread mManagerThread;
+    private DBIdentityProvider mIdent;
 
 	private Handler mToastHandler = new Handler(){
             @Override
@@ -37,17 +41,139 @@ public class DungBeetleService extends Service {
 	private Handler mDirectMessageHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
-                JSONObject obj = (JSONObject)msg.obj;
+                IncomingMessage obj = (IncomingMessage)msg.obj;
                 handleIncomingDirectMessage(obj);
             }
         };
 
-    private void handleIncomingDirectMessage(JSONObject obj){
-        String type = obj.optString("type");
-        if(type.equals(InviteObj.TYPE)){
-            handleAppInvitation(obj);
+    private List<DirectMessageHandler> mHandlers = new ArrayList<DirectMessageHandler>();
+
+    abstract class DirectMessageHandler{
+        abstract boolean willHandle(String fromId, JSONObject msg);
+        abstract void handle(String fromId, JSONObject msg);
+    }
+
+    class InviteToSharedAppHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("invite_app_session");
         }
-        else if(type.equals("send_file")){
+        void handle(String fromId, JSONObject obj){
+            String packageName = obj.optString(InviteObj.PACKAGE_NAME);
+            String arg = obj.optString(InviteObj.ARG);
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+            launch.putExtra("creator", false);
+            launch.setPackage(packageName);
+            final PackageManager mgr = getPackageManager();
+            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+            if (resolved.size() == 0) {
+                Toast.makeText(DungBeetleService.this, 
+                               "Could not find application to handle invite", 
+                               Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ActivityInfo info = resolved.get(0).activityInfo;
+            launch.setComponent(new ComponentName(
+                                    info.packageName,
+                                    info.name));
+            Notification notification = new Notification(
+                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                DungBeetleService.this, 0, launch, 0);
+            notification.setLatestEventInfo(
+                DungBeetleService.this, "Invitation received", 
+                "Click to launch application.", 
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+    class InviteToSharedAppFeedHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("invite_app_feed");
+        }
+        void handle(String fromId, JSONObject obj){
+            long contactId = mIdent.contactIdForPersonId(fromId);
+            /*
+              handle multiparty invitation,
+              add fromContactId to intent as "sender"
+              get particpant personids list out of obj
+            */
+            // String packageName = obj.optString(InviteObj.PACKAGE_NAME);
+            // String arg = obj.optString(InviteObj.ARG);
+            // Intent launch = new Intent();
+            // launch.setAction(Intent.ACTION_MAIN);
+            // launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            // launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+            // launch.putExtra("creator", false);
+            // launch.setPackage(packageName);
+            // final PackageManager mgr = getPackageManager();
+            // List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+            // if (resolved.size() == 0) {
+            //     Toast.makeText(DungBeetleService.this, 
+            //                    "Could not find application to handle invite", 
+            //                    Toast.LENGTH_SHORT).show();
+            //     return;
+            // }
+            // ActivityInfo info = resolved.get(0).activityInfo;
+            // launch.setComponent(new ComponentName(
+            //                         info.packageName,
+            //                         info.name));
+            // Notification notification = new Notification(
+            //     R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            // PendingIntent contentIntent = PendingIntent.getActivity(
+            //     DungBeetleService.this, 0, launch, 0);
+            // notification.setLatestEventInfo(
+            //     DungBeetleService.this, "Invitation received", 
+            //     "Click to launch application.", 
+            //     contentIntent);
+            // notification.flags = Notification.FLAG_AUTO_CANCEL;
+            // mNotificationManager.notify(0, notification);
+        }
+    }
+
+
+    class InviteToWebSessionHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("invite_web_session");
+        }
+        void handle(String fromId, JSONObject obj){
+            /*
+              handle multiparty invitation,
+              add fromContactId to intent as "sender"
+              get particpant personids list out of obj
+            */
+            String arg = obj.optString(InviteObj.ARG);
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+            launch.putExtra("creator", false);
+        	String webUrl = obj.optString(InviteObj.WEB_URL);
+            launch.setData(Uri.parse(webUrl));
+
+            Notification notification = new Notification(
+                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                DungBeetleService.this, 0, launch, 0);
+            notification.setLatestEventInfo(
+                DungBeetleService.this, "Invitation received", 
+                "Click to launch application.", 
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+
+    class SendFileHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("send_file");
+        }
+        void handle(String fromId, JSONObject obj){
             String mimeType = obj.optString("mimeType");
             String uri = obj.optString("uri");
             Intent i = new Intent();
@@ -58,15 +184,23 @@ public class DungBeetleService extends Service {
             i.putExtra(Intent.EXTRA_TEXT, uri);
             Notification notification = new Notification(
                 R.drawable.icon, "New Shared File...", System.currentTimeMillis());
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, i, 0);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                DungBeetleService.this, 0, i, 0);
             notification.setLatestEventInfo(
-                this, "New Shared File",
+                DungBeetleService.this, "New Shared File",
                 mimeType + "  " + uri,
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
         }
-        else if(type.equals("instant_message")){
+    }
+
+
+    class IMHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("instant_message");
+        }
+        void handle(String fromId, JSONObject obj){
             String msg = obj.optString("text");
             Intent launch = new Intent();
             launch.setAction(Intent.ACTION_MAIN);
@@ -76,55 +210,47 @@ public class DungBeetleService extends Service {
                                     DungBeetleActivity.class.getName()));
             Notification notification = new Notification(
                 R.drawable.icon, "New IM", System.currentTimeMillis());
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
-            notification.setLatestEventInfo(this, "New IM", "\"" + msg + "\"", contentIntent);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                DungBeetleService.this, 0, launch, 0);
+            notification.setLatestEventInfo(
+                DungBeetleService.this, "New IM", "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
         }
     }
 
-    private void handleAppInvitation(JSONObject obj){
-        String packageName = obj.optString(InviteObj.PACKAGE_NAME);
-        String arg = obj.optString(InviteObj.ARG);
-        Intent launch = new Intent();
-        launch.setAction(Intent.ACTION_MAIN);
-        launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
-        launch.putExtra("creator", false);
-        if(obj.has(InviteObj.WEB_URL)){
-        	String webUrl = obj.optString(InviteObj.WEB_URL);
-            launch.setData(Uri.parse(webUrl));
-        }
-        else{
-            launch.setPackage(packageName);
-            final PackageManager mgr = getPackageManager();
-            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved.size() == 0) {
-                Toast.makeText(this, "Could not find application to handle invite", Toast.LENGTH_SHORT).show();
-                Toast.makeText(this, "Wouldn't it be cool if the app auto installed? Yeah. It will be cool.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            ActivityInfo info = resolved.get(0).activityInfo;
-            launch.setComponent(new ComponentName(
-                                    info.packageName,
-                                    info.name));
-        }
 
-        Notification notification = new Notification(
-            R.drawable.icon, "New Invitation", System.currentTimeMillis());
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, launch, 0);
-        notification.setLatestEventInfo(
-            this, "Invitation received", 
-            "Click to launch application.", 
-            contentIntent);
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.notify(0, notification);
+    class SubscribeReqHandler extends DirectMessageHandler{
+        boolean willHandle(String fromId, JSONObject msg){ 
+            return msg.optString("type").equals("subscribe_req");
+        }
+        void handle(String fromId, JSONObject obj){
+            String feedName = obj.optString("feedName");
+            long contactId = mIdent.contactIdForPersonId(fromId);
+            Helpers.insertSubscriber(DungBeetleService.this, contactId, feedName);
+        }
+    }
+
+
+    private void handleIncomingDirectMessage(IncomingMessage incoming){
+        String contents = incoming.contents();
+        String personId = incoming.from();
+        try{
+            JSONObject obj = new JSONObject(contents);
+            for(DirectMessageHandler h : mHandlers){
+                if(h.willHandle(personId, obj)){
+                    h.handle(personId, obj);
+                    break;
+                }
+            }
+        }
+        catch(JSONException e){ throw new RuntimeException(e); }
     }
 
     @Override
     public void onCreate() {
+        mIdent = new DBIdentityProvider(new DBHelper(this));
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        showNotification();
         mManagerThread = new ManagerThread(this, mToastHandler, mDirectMessageHandler);
         mManagerThread.start();
         getContentResolver().registerContentObserver(
@@ -134,6 +260,11 @@ public class DungBeetleService extends Service {
                 public synchronized void onChange(boolean self) {
                     
                 }});
+        mHandlers.add(new SubscribeReqHandler());
+        mHandlers.add(new IMHandler());
+        mHandlers.add(new InviteToWebSessionHandler());
+        mHandlers.add(new InviteToSharedAppFeedHandler());
+        mHandlers.add(new SendFileHandler());
     }
 
 
@@ -148,6 +279,7 @@ public class DungBeetleService extends Service {
     public void onDestroy() {
         mNotificationManager.cancel(R.string.active);
         Toast.makeText(this, R.string.stopping, Toast.LENGTH_SHORT).show();
+        mIdent.close();
     }
 
     @Override
@@ -164,27 +296,4 @@ public class DungBeetleService extends Service {
         };
 
 
-    /**
-     * Show a notification while this service is running.
-     */
-    private void showNotification() {
-        CharSequence text = getText(R.string.start);
-        Notification notification = new Notification(
-            R.drawable.icon, 
-            text,
-            System.currentTimeMillis());
-        PendingIntent contentIntent = PendingIntent.getActivity(
-            this, 0,
-            new Intent(this, Setup.class), 0);
-
-        notification.flags |= Notification.FLAG_ONGOING_EVENT;
-
-        // Set the info for the views that show in the notification panel.
-        notification.setLatestEventInfo(this, getText(R.string.app_name),
-                                        text, contentIntent);
-
-        // Send the notification.
-        // We use a layout id because it is a unique number.  We use it later to cancel.
-        mNotificationManager.notify(R.string.active, notification);
-    }
 }

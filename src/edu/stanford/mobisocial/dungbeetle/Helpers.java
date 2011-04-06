@@ -4,6 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.util.Iterator;
 import java.util.Collection;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.ContentValues;
@@ -81,6 +82,27 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void sendMultiPartyInvite(Context c, 
+                                            Collection<Contact> contacts, 
+                                            String feedName){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("feedName", feedName);
+            JSONArray participants = new JSONArray();
+            Iterator<Contact> it = contacts.iterator();
+            while(it.hasNext()){
+                String localId = "@c" + it.next().id;
+                participants.put(participants.length(), localId);
+            }
+            obj.put("participants", participants);
+        }catch(JSONException e){}
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.DESTINATION, buildAddresses(contacts));
+        values.put(Object.TYPE, InviteObj.TYPE);
+        c.getContentResolver().insert(url, values);
+    }
 
     private static String buildAddresses(Collection<Contact> contacts){
         String to = "";

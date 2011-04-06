@@ -125,7 +125,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     @Override
     public void finish() {
         super.finish();
-        mBitmaps.recycle();
     }
 
 }

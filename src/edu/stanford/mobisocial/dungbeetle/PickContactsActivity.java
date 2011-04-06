@@ -36,7 +36,8 @@ public class PickContactsActivity extends TabActivity {
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
 	protected final BitmapManager mgr = new BitmapManager(10);
-
+    public static final String INTENT_ACTION_INVITE = 
+        "edu.stanford.mobisocial.dungbeetle.INVITE";
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -109,6 +110,10 @@ public class PickContactsActivity extends TabActivity {
             else if(txt != null) url = txt;
             Helpers.sendFile(this, mResultContacts, mIntent.getType(), url);
         } 
+        else if(mIntent.getAction().equals(INTENT_ACTION_INVITE)){
+            Helpers.sendMultiPartyInvite(
+                this, mResultContacts, mIntent.getStringExtra("feedName"));
+        }
         setResult(RESULT_OK, mIntent);
         finish();
     }
