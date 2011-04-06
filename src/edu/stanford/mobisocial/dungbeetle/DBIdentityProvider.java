@@ -123,23 +123,6 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 
-	public Long contactIdForPersonId(String id){
-        Cursor c = mDb.getReadableDatabase().query(
-            Contact.TABLE,
-            new String[]{ Contact._ID },
-            Contact.PERSON_ID + " = ?",
-            new String[]{id},
-            null,null,null);
-        c.moveToFirst();
-        if(c.isAfterLast()){
-            return null;
-        }
-        else{
-            return c.getLong(c.getColumnIndexOrThrow(Contact._ID));
-        }
-    }
-
-
     public static KeyPair generateKeyPair(){
         try {
             // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair

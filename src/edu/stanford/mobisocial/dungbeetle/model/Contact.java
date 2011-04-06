@@ -31,6 +31,11 @@ public class Contact implements Serializable{
         this.personId = personId;
     }
 
+
+    public static Contact NA(){
+        return new Contact(-1L, "NA", "NA", "NA");
+    }
+
     
     @Override
     public int hashCode(){

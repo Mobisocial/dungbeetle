@@ -1,6 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import java.util.ArrayList;
 import java.util.Arrays;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -13,6 +17,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.security.PublicKey;
+import java.util.Iterator;
+import java.util.List;
 import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
@@ -468,6 +474,67 @@ public class DBHelper extends SQLiteOpenHelper {
     			" SELECT C._id, C.name, C.public_key, C.person_id, C.email FROM contacts C, group_members G WHERE G.group_id = ? AND C._id = G.person_id",
     			new String[] {group_id});
     }
+
+	public Maybe<Contact> contactForPersonId(String personId){
+        List<Contact> cs = contactsForPersonIds(Collections.singletonList(personId));
+        if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
+        else return Maybe.unknown();
+    }
+
+	public Maybe<Contact> contactForContactId(Long id){
+        List<Contact> cs = contactsForContactIds(Collections.singletonList(id));
+        if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
+        else return Maybe.unknown();
+    }
+
+	public List<Contact> contactsForContactIds(Collection<Long> contactIds){
+        Iterator<Long> iter = contactIds.iterator();
+        StringBuffer buffer = new StringBuffer();
+        while (iter.hasNext()) {
+            buffer.append(iter.next());
+            if(iter.hasNext()){
+                buffer.append(",");
+            }
+        }
+        String idList = buffer.toString();
+        Cursor c = getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{ Contact._ID },
+            Contact._ID + " in (" + idList + ")",
+            null,null,null,null);
+        c.moveToFirst();
+        ArrayList<Contact> result = new ArrayList<Contact>();
+        while(!c.isAfterLast()){
+            result.add(new Contact(c));
+            c.moveToNext();
+        }
+        return result;
+    }
+
+	public List<Contact> contactsForPersonIds(Collection<String> personIds){
+        Iterator<String> iter = personIds.iterator();
+        StringBuffer buffer = new StringBuffer();
+        while (iter.hasNext()) {
+            buffer.append("'" + iter.next() + "'");
+            if(iter.hasNext()){
+                buffer.append(",");
+            }
+        }
+        String idList = buffer.toString();
+        Cursor c = getReadableDatabase().query(
+            Contact.TABLE,
+            new String[]{ Contact._ID },
+            Contact.PERSON_ID + " in (" + idList + ")",
+            null,null,null,null);
+        c.moveToFirst();
+        ArrayList<Contact> result = new ArrayList<Contact>();
+        while(!c.isAfterLast()){
+            result.add(new Contact(c));
+            c.moveToNext();
+        }
+        return result;
+    }
+
 
     public static String joinWithSpaces(String... strings) {
         return Util.join(Arrays.asList(strings), " ");
