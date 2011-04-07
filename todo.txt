@@ -6,5 +6,8 @@ how do apps refer to other feed objects?
 add 'last_sent' field to objects
 NAT for object and contact ids -- revokable per app
 get rid of code duplication in ViewGroupActivity
+local -> global -> local works, but user has to get actual
+  contactids out of localized ones...
+HMAC the body of the messages!
 
 

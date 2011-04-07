@@ -110,9 +110,12 @@ public class PickContactsActivity extends TabActivity {
             else if(txt != null) url = txt;
             Helpers.sendFile(this, mResultContacts, mIntent.getType(), url);
         } 
-        else if(mIntent.getAction().equals(INTENT_ACTION_INVITE)){
-            Helpers.sendMultiPartyInvite(
-                this, mResultContacts, mIntent.getStringExtra("feedName"));
+        else if(mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
+                mIntent.getStringExtra("type").equals("invite_app_feed")){
+            Helpers.sendAppFeedInvite(this, 
+                                      mResultContacts, 
+                                      mIntent.getStringExtra("sharedFeedName"),
+                                      mIntent.getStringExtra("packageName"));
         }
         setResult(RESULT_OK, mIntent);
         finish();
