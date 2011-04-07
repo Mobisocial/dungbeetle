@@ -93,7 +93,8 @@ public class DBIdentityProvider implements IdentityProvider {
             Contact.TABLE,
             new String[]{Contact.PUBLIC_KEY},
             Contact._ID + " IN (" + idList + ")",
-            null,null,null,null);
+            null,null,
+            null,null);
         c.moveToFirst();
         ArrayList<PublicKey> result = new ArrayList<PublicKey>();
         while(!c.isAfterLast()){

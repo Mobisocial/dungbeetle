@@ -5,7 +5,7 @@ import android.database.Cursor;
 public class Contact implements Serializable{
 
     public static final String TABLE = "contacts";
-    public static final long MY_ID = -1;
+    public static final long MY_ID = -666;
     public static final String _ID = "_id";
     public static final String NAME = "name";
     public static final String PUBLIC_KEY = "public_key";

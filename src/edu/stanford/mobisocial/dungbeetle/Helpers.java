@@ -82,26 +82,31 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void sendMultiPartyInvite(Context c, 
-                                            Collection<Contact> contacts, 
-                                            String feedName){
+    public static void sendAppFeedInvite(Context c, 
+                                         Collection<Contact> contacts, 
+                                         String feedName,
+                                         String packageName){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
-        JSONObject obj = new JSONObject();
         try{
-            obj.put("feedName", feedName);
+            JSONObject obj = new JSONObject();
+            obj.put("packageName", packageName);
+            obj.put("sharedFeedName", feedName);
             JSONArray participants = new JSONArray();
             Iterator<Contact> it = contacts.iterator();
             while(it.hasNext()){
-                String localId = "@c" + it.next().id;
+                String localId = "@l" + it.next().id;
                 participants.put(participants.length(), localId);
             }
+            // Need to add ourself to participants
+            participants.put(participants.length(), "@l" + Contact.MY_ID);
+
             obj.put("participants", participants);
+            values.put(Object.JSON, obj.toString());
+            values.put(Object.DESTINATION, buildAddresses(contacts));
+            values.put(Object.TYPE, "invite_app_feed");
+            c.getContentResolver().insert(url, values);
         }catch(JSONException e){}
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, InviteObj.TYPE);
-        c.getContentResolver().insert(url, values);
     }
 
     private static String buildAddresses(Collection<Contact> contacts){

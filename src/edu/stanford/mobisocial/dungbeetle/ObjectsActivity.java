@@ -138,8 +138,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 
                 if(contact != null){
                     TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                    String email = contact.email == null ? "NA" : contact.email;
-                    email = obj.optString("name");
+                    //String email = contact.email == null ? "NA" : contact.email;
+                    //email = obj.optString("name");
                     
                     nameText.setText(contact.name);
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);

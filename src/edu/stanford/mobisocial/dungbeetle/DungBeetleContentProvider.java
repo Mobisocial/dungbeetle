@@ -123,7 +123,8 @@ public class DungBeetleContentProvider extends ContentProvider {
             return uriWithId(uri, id);
         }
         else if(match(uri, "subscribers")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            // Question: Should this be restricted?
+            // if(!appId.equals(SUPER_APP_ID)) return null;
             long id = mHelper.insertSubscriber(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
             return uriWithId(uri, id);

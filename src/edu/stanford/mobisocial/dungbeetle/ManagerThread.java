@@ -1,34 +1,33 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.content.Context;
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
+import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
+import edu.stanford.mobisocial.bumblebee.IncomingMessage;
+import edu.stanford.mobisocial.bumblebee.MessageListener;
+import edu.stanford.mobisocial.bumblebee.MessengerService;
+import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
+import edu.stanford.mobisocial.bumblebee.StateListener;
+import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
+import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import android.net.NetworkInfo;
-import android.net.ConnectivityManager;
-import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
-import java.util.regex.Matcher;
-import org.json.JSONException;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
-import android.database.Cursor;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
-import android.os.Message;
-import edu.stanford.mobisocial.bumblebee.StateListener;
-import edu.stanford.mobisocial.bumblebee.IncomingMessage;
-import edu.stanford.mobisocial.bumblebee.MessageListener;
-import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
-import edu.stanford.mobisocial.bumblebee.MessengerService;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
 import org.json.JSONObject;
-import android.database.ContentObserver;
-import android.net.Uri;
-import android.content.Context;
-import android.util.Log;
-import android.os.Handler;
 
 public class ManagerThread extends Thread {
     public static final String TAG = "ManagerThread";
@@ -80,16 +79,22 @@ public class ManagerThread extends Thread {
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
 		mContext.getContentResolver().registerContentObserver(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me"), true, mOco);
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), true, mOco);
 
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out"), true, mOco);
     }
 
 
-    private void handleIncomingMessage(IncomingMessage incoming){
-        String contents = localize(incoming.contents());
-        String personId = incoming.from();
+    // FYI: Invoked on XMPP reader thread
+    private void handleIncomingMessage(final IncomingMessage incoming){
+        final String personId = incoming.from();
+        final String contents = localize(incoming.contents());
+        final IncomingMessage localizedMsg = new IncomingMessage(){
+                public String contents(){ return contents; }
+                public String from(){ return personId; }
+            };
+        Log.i(TAG, "Localized contents: " + contents);
         try{
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
@@ -100,7 +105,7 @@ public class ManagerThread extends Thread {
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
                 if(feedName.equals("direct") || feedName.equals("friend")){
                     Message m = mDirectMessageHandler.obtainMessage();
-                    m.obj = incoming;
+                    m.obj = localizedMsg;
                     mDirectMessageHandler.sendMessage(m);
                 }
             }
@@ -109,10 +114,11 @@ public class ManagerThread extends Thread {
             }
 
         }
-        catch(JSONException e){
-            Log.e(TAG, e.toString());
+        catch(Exception e){
+            Log.e(TAG, "Error handling incoming message: " + e.toString());
         }
     }
+
 
     /**
      * Replace global contact and object references 
@@ -135,16 +141,22 @@ public class ManagerThread extends Thread {
     // Note, doing a query on each replacement is not friendly : (
     // Should use a contact cache here.
 
-    private StringSearchAndReplacer mContactGlobalizer = new StringSearchAndReplacer("@l\\(([0-9]+)\\)"){
+    private StringSearchAndReplacer mContactGlobalizer = new StringSearchAndReplacer("\"@l([\\-0-9]+)\""){
             protected String replace(Matcher m){
                 Long id = Long.valueOf(m.group(1));
-                Maybe<Contact> c = mHelper.contactForContactId(id);
-                return c.otherwise(Contact.NA()).personId;
+                String personId;
+                if(id.equals(Contact.MY_ID)){
+                    personId = mIdent.userPersonId();
+                }
+                else{
+                    Maybe<Contact> c = mHelper.contactForContactId(id);
+                    personId = c.otherwise(Contact.NA()).personId;
+                }
+                return "\"@g" + personId + "\"";
             }
         };
 
-
-    private StringSearchAndReplacer mContactLocalizer = new StringSearchAndReplacer("@g\\((.+)\\)"){
+    private StringSearchAndReplacer mContactLocalizer = new StringSearchAndReplacer("\"@g([^\"]+)\""){
             protected String replace(Matcher m){
                 String personId = m.group(1);
                 Maybe<Contact> c = mHelper.contactForPersonId(personId);
@@ -162,9 +174,10 @@ public class ManagerThread extends Thread {
             if(mOco.changed){
                 Log.i(TAG, "Noticed change...");
                 mOco.clearChanged();
-                Cursor objs = mHelper.queryRecentlyAdded();
+                Cursor objs = mHelper.queryUnsentObjects();
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
+                ArrayList<Long> sent = new ArrayList<Long>();
                 while(!objs.isAfterLast()){
                     String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
                     if(to != null){
@@ -183,8 +196,10 @@ public class ManagerThread extends Thread {
                         }
                         mMessenger.sendMessage(m);
                     }
+                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
                     objs.moveToNext();
                 }
+                mHelper.markObjectsAsSent(sent);
             }
             try {
                 Thread.sleep(1000);
@@ -256,7 +271,8 @@ public class ManagerThread extends Thread {
         public boolean changed;
         public ObjectContentObserver(Handler h)  {
             super(h);
-            changed = false;
+            // Default to true so we do the initial check.
+            changed = true; 
         }
         @Override
         public synchronized void onChange(boolean self) {

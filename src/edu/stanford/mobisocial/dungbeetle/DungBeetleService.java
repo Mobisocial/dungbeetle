@@ -32,6 +32,7 @@ public class DungBeetleService extends Service {
 	private ManagerThread mManagerThread, mFeedManagerThread;
     private DBIdentityProvider mIdent;
     private DBHelper mHelper;
+    public static final String TAG = "DungBeetleService";
 
 	private Handler mToastHandler = new Handler(){
             @Override
@@ -110,46 +111,53 @@ public class DungBeetleService extends Service {
             return msg.optString("type").equals("invite_app_feed");
         }
         void handle(Contact from, JSONObject obj){
-            String packageName = obj.optString(InviteObj.PACKAGE_NAME);
-            String arg = obj.optString(InviteObj.ARG);
-            String feedName = obj.optString(InviteObj.FEED_NAME);
-            JSONArray ids = obj.optJSONArray(InviteObj.PARTICIPANTS);
-            Long[] idArray = new Long[ids.length()];
-            for(int i = 0; i < ids.length(); i++) idArray[i] = ids.optLong(i);
-            Intent launch = new Intent();
-            launch.setAction(Intent.ACTION_MAIN);
-            launch.addCategory(Intent.CATEGORY_LAUNCHER);
-            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
-            launch.putExtra("creator", false);
-            launch.putExtra("sender", from.id);
-            launch.putExtra("feedName", feedName);
-            launch.putExtra("participants", idArray);
-            launch.setPackage(packageName);
-            final PackageManager mgr = getPackageManager();
-            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved.size() == 0) {
-                Toast.makeText(
+            try{
+                String packageName = obj.getString(InviteObj.PACKAGE_NAME);
+                String feedName = obj.getString("sharedFeedName");
+                JSONArray ids = obj.getJSONArray(InviteObj.PARTICIPANTS);
+                Intent launch = new Intent();
+                launch.setAction(Intent.ACTION_MAIN);
+                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                launch.putExtra("type", "invite_app_feed");
+                launch.putExtra("creator", false);
+                launch.putExtra("sender", from.id);
+                launch.putExtra("sharedFeedName", feedName);
+                long[] idArray = new long[ids.length()];
+                for(int i = 0; i < ids.length(); i++) {
+                    Log.i(TAG, "Passing off " + ids.getLong(i));
+                    idArray[i] = ids.getLong(i);
+                }
+                launch.putExtra("participants", idArray);
+                launch.setPackage(packageName);
+                final PackageManager mgr = getPackageManager();
+                List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+                if (resolved.size() == 0) {
+                    Toast.makeText(
+                        DungBeetleService.this, 
+                        "Could not find application to handle invite.", 
+                        Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                ActivityInfo info = resolved.get(0).activityInfo;
+                launch.setComponent(new ComponentName(
+                                        info.packageName,
+                                        info.name));
+                Notification notification = new Notification(
+                    R.drawable.icon, "New Invitation from " + from.email, 
+                    System.currentTimeMillis());
+                PendingIntent contentIntent = PendingIntent.getActivity(
+                    DungBeetleService.this, 0, launch, 0);
+                notification.setLatestEventInfo(
                     DungBeetleService.this, 
-                    "Could not find application to handle invite.", 
-                    Toast.LENGTH_SHORT).show();
-                return;
+                    "Invitation received from " + from.email, 
+                    "Click to launch application: " + packageName, 
+                    contentIntent);
+                notification.flags = Notification.FLAG_AUTO_CANCEL;
+                mNotificationManager.notify(0, notification);
             }
-            ActivityInfo info = resolved.get(0).activityInfo;
-            launch.setComponent(new ComponentName(
-                                    info.packageName,
-                                    info.name));
-            Notification notification = new Notification(
-                R.drawable.icon, "New Invitation from " + from.email, 
-                System.currentTimeMillis());
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                DungBeetleService.this, 0, launch, 0);
-            notification.setLatestEventInfo(
-                DungBeetleService.this, 
-                "Invitation received from " + from.email, 
-                "Click to launch application: " + packageName, 
-                contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(0, notification);
+            catch(JSONException e){
+                Log.e(TAG, e.getMessage());
+            }
         }
     }
 
@@ -222,14 +230,14 @@ public class DungBeetleService extends Service {
                                     getPackageName(),
                                     DungBeetleActivity.class.getName()));
             Notification notification = new Notification(
-                R.drawable.icon, "New IM", System.currentTimeMillis());
+                R.drawable.icon, "IM from " + from.email, System.currentTimeMillis());
             PendingIntent contentIntent = PendingIntent.getActivity(
                 DungBeetleService.this, 0, launch, 0);
 
             String msg = obj.optString("text");
 
             notification.setLatestEventInfo(
-                DungBeetleService.this, "New IM from " + from.email,
+                DungBeetleService.this, "IM from " + from.email,
                 "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
@@ -242,11 +250,10 @@ public class DungBeetleService extends Service {
             return msg.optString("type").equals("subscribe_req");
         }
         void handle(Contact from, JSONObject obj){
-            String feedName = obj.optString("feedName");
             Helpers.insertSubscriber(
                 DungBeetleService.this, 
                 from.id,
-                feedName);
+                obj.optString("subscribeToFeed"));
         }
     }
 
@@ -269,9 +276,6 @@ public class DungBeetleService extends Service {
             JSONObject obj = new JSONObject(contents);
             for(DirectMessageHandler h : mHandlers){
                 if(h.willHandle(c.otherwise(Contact.NA()), obj)){
-                    Toast.makeText(
-                        DungBeetleService.this, 
-                        "Handling: " + obj.toString(), Toast.LENGTH_LONG).show();                    
                     h.handle(c.otherwise(Contact.NA()), obj);
                     break;
                 }
@@ -305,7 +309,7 @@ public class DungBeetleService extends Service {
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         mManagerThread = new ManagerThread(this, mToastHandler, mDirectMessageHandler);
         mManagerThread.start();
-
+        
         //mFeedManagerThread = new ManagerThread(this, mToastHandler, mFriendFeedMessageHandler);
         //mFeedManagerThread.start();
         

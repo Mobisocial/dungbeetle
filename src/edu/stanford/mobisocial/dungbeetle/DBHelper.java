@@ -32,7 +32,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 16;
+	public static final int VERSION = 18;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -117,7 +117,9 @@ public class DBHelper extends SQLiteOpenHelper {
                     Object.CONTACT_ID, "INTEGER",
                     Object.DESTINATION, "TEXT",
                     Object.JSON, "TEXT",
-                    Object.TIMESTAMP, "INTEGER");
+                    Object.TIMESTAMP, "INTEGER",
+                    Object.SENT, "INTEGER DEFAULT 0"
+                    );
         createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
         createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
         createIndex(db, "INDEX", "objects_by_creator_id", Object.TABLE, Object.CONTACT_ID);
@@ -135,8 +137,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Subscriber._ID, "INTEGER PRIMARY KEY",
                     Subscriber.CONTACT_ID, "INTEGER",
                     Subscriber.FEED_NAME, "TEXT");
-        createIndex(db, "UNIQUE INDEX", "subscribers_by_contact_id", Subscriber.TABLE, 
-                    Subscriber.CONTACT_ID);
+        createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
 
 
         createTable(db, "groups",
@@ -456,23 +457,33 @@ public class DBHelper extends SQLiteOpenHelper {
             null);
     }
 
-    public Cursor queryRecentlyAdded() {
+    public Cursor queryUnsentObjects() {
         return getReadableDatabase().query(
             Object.TABLE,
-            new String[]{ Object._ID, Object.JSON, 
-                          Object.DESTINATION, Object.FEED_NAME },
-            Object.CONTACT_ID + "=?",
-            new String[]{ String.valueOf(Contact.MY_ID) },
+            new String[]{ Object._ID, Object.JSON,
+                          Object.DESTINATION,
+                          Object.FEED_NAME },
+            Object.CONTACT_ID + "=? AND " + Object.SENT + "=?",
+            new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0) },
             null,
             null,
-            "timestamp DESC",
-            "1");
+            "timestamp DESC");
+    }
+
+
+    public void markObjectsAsSent(Collection<Long> ids) {
+        ContentValues cv = new ContentValues();
+        cv.put(Object.SENT, 1);
+        getWritableDatabase().update(
+            Object.TABLE, cv,
+            Object._ID + " in (" + Util.joinLongs(ids,",") + ")",
+            null);
     }
     
     public Cursor queryGroupsMembership(String personId) {
     	return getReadableDatabase().rawQuery(
-    			" SELECT _id,group_id FROM group_members WHERE person_id = ?", 
-    			new String[] {personId});
+            " SELECT _id,group_id FROM group_members WHERE person_id = ?", 
+            new String[] {personId});
     }
     
     public Cursor queryGroupMembers(String group_id) {
@@ -494,18 +505,10 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 	public List<Contact> contactsForContactIds(Collection<Long> contactIds){
-        Iterator<Long> iter = contactIds.iterator();
-        StringBuffer buffer = new StringBuffer();
-        while (iter.hasNext()) {
-            buffer.append(iter.next());
-            if(iter.hasNext()){
-                buffer.append(",");
-            }
-        }
-        String idList = buffer.toString();
+        String idList = Util.joinLongs(contactIds, ",");
         Cursor c = getReadableDatabase().query(
             Contact.TABLE,
-            new String[]{ Contact._ID },
+            null,
             Contact._ID + " in (" + idList + ")",
             null,null,null,null);
         c.moveToFirst();
@@ -529,7 +532,7 @@ public class DBHelper extends SQLiteOpenHelper {
         String idList = buffer.toString();
         Cursor c = getReadableDatabase().query(
             Contact.TABLE,
-            new String[]{ Contact._ID },
+            null,
             Contact.PERSON_ID + " in (" + idList + ")",
             null,null,null,null);
         c.moveToFirst();

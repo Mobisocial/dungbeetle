@@ -26,7 +26,7 @@ public class ProfileActivity extends Activity{
             	public void onClick(View v)
             	{
             		helper.setMyName(profile_name.getText().toString());
-            		Helpers.updateStatus(ProfileActivity.this, profile_name.getText().toString());
+            		Helpers.updateProfile(ProfileActivity.this, profile_name.getText().toString());
             	}
         });
         

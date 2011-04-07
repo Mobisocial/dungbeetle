@@ -80,4 +80,15 @@ public class Util {
         }
         return buffer.toString();
     }
+
+    public static String joinLongs(Collection<Long> s, String delimiter) {
+        if (s.isEmpty()) return "";
+        Iterator<Long> iter = s.iterator();
+        StringBuffer buffer = new StringBuffer(iter.next().toString());
+        while (iter.hasNext()) {
+            buffer.append(delimiter);
+            buffer.append(iter.next());
+        }
+        return buffer.toString();
+    }
 }
