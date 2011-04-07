@@ -271,7 +271,8 @@ public class ManagerThread extends Thread {
         public boolean changed;
         public ObjectContentObserver(Handler h)  {
             super(h);
-            changed = false;
+            // Default to true so we do the initial check.
+            changed = true; 
         }
         @Override
         public synchronized void onChange(boolean self) {
