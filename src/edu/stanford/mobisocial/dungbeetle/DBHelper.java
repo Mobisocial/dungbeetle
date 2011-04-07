@@ -200,6 +200,12 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put("name", name);
         getWritableDatabase().update("my_info", cv, null, null);
     }
+
+    void setContactName(String id, String name) {
+        ContentValues cv = new ContentValues();
+        cv.put(Contact.NAME, name);
+        getWritableDatabase().update(Contact.TABLE, cv, "_id=?", new String[]{id});
+    }
     
     String getMyName(){
         Cursor c = getReadableDatabase().rawQuery(
