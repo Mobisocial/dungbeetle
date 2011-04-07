@@ -137,4 +137,15 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
 
+    public static void addDynamicGroup(final Context c, final Uri uri){
+        String name = uri.getQueryParameter("name");
+        String session = uri.getQueryParameter("sess");
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/dynamic_groups");
+        ContentValues values = new ContentValues();
+        values.put("uri", uri.toString());
+        values.put("session", session);
+        values.put("name", name);
+        c.getContentResolver().insert(url, values);
+    }
+
 }

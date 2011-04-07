@@ -104,6 +104,19 @@
 	      android:configChanges="keyboardHidden">
     </activity>
 
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity"
+	      android:label="New Group Session"
+	      android:screenOrientation="portrait">
+
+      <intent-filter>
+	<action android:name="android.intent.action.VIEW" />
+	<category android:name="android.intent.category.DEFAULT" />
+	<category android:name="android.intent.category.BROWSABLE" />
+	<data android:scheme="dungbeetle-group-session"/>
+      </intent-filter>
+
+    </activity>
+
 
   </application>
 </manifest> 

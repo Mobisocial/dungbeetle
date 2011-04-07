@@ -321,6 +321,19 @@ public class DBHelper extends SQLiteOpenHelper {
             return -1;
         }
     }
+
+    long insertDynamicGroup(ContentValues cv) {
+    	try{
+    		validate(cv.getAsString("session"));
+    		validate(cv.getAsString("name"));
+    		validate(cv.getAsString("uri"));
+    		return getWritableDatabase().insertOrThrow("dynamic_groups", null, cv);
+    	}
+    	catch(Exception e){
+    		e.printStackTrace(System.err);
+    		return -1;
+    	}
+    }
     
     long insertGroup(ContentValues cv) {
     	try{
@@ -364,8 +377,9 @@ public class DBHelper extends SQLiteOpenHelper {
     	}
     }
 
-    private void validate(String val){
+    private String validate(String val){
         assert (val != null) && val.length() > 0;
+        return val;
     }
 
     private long getFeedMaxSequenceId(long contactId, String feedName){

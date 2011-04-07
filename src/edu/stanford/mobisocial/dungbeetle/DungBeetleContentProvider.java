@@ -141,6 +141,12 @@ public class DungBeetleContentProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
             return uriWithId(uri, id);
         }
+        else if(match(uri, "dynamic_groups")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
+            long id = mHelper.insertDynamicGroup(values);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+            return uriWithId(uri, id);
+        }
         else{
             return null;
         }
