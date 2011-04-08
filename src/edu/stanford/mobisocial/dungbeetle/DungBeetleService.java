@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
@@ -29,8 +28,7 @@ import org.json.JSONObject;
 
 public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
-	private ManagerThread mManagerThread, mFeedManagerThread;
-    private DBIdentityProvider mIdent;
+	private MessagingManagerThread mManagerThread;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
 
@@ -43,7 +41,7 @@ public class DungBeetleService extends Service {
             }
         };
 
-	private Handler mDirectMessageHandler = new Handler(){
+	private Handler mMessageHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
                 IncomingMessage obj = (IncomingMessage)msg.obj;
@@ -51,23 +49,14 @@ public class DungBeetleService extends Service {
             }
         };
 
-    private Handler mFriendFeedMessageHandler = new Handler(){
-            @Override
-            public void handleMessage(Message msg) {
-                IncomingMessage obj = (IncomingMessage)msg.obj;
-                handleIncomingFriendFeedMessage(obj);
-            }
-    };
+    private List<MessageHandler> mHandlers = new ArrayList<MessageHandler>();
 
-    private List<DirectMessageHandler> mHandlers = new ArrayList<DirectMessageHandler>();
-    private List<DirectMessageHandler> mFeedHandlers = new ArrayList<DirectMessageHandler>();
-
-    abstract class DirectMessageHandler{
+    abstract class MessageHandler{
         abstract boolean willHandle(Contact from, JSONObject msg);
         abstract void handle(Contact from, JSONObject msg);
     }
 
-    class InviteToSharedAppHandler extends DirectMessageHandler{
+    class InviteToSharedAppHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("invite_app_session");
         }
@@ -106,7 +95,7 @@ public class DungBeetleService extends Service {
         }
     }
 
-    class InviteToSharedAppFeedHandler extends DirectMessageHandler{
+    class InviteToSharedAppFeedHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("invite_app_feed");
         }
@@ -162,7 +151,7 @@ public class DungBeetleService extends Service {
     }
 
 
-    class InviteToWebSessionHandler extends DirectMessageHandler{
+    class InviteToWebSessionHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("invite_web_session");
         }
@@ -191,7 +180,7 @@ public class DungBeetleService extends Service {
     }
 
 
-    class SendFileHandler extends DirectMessageHandler{
+    class SendFileHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("send_file");
         }
@@ -218,7 +207,7 @@ public class DungBeetleService extends Service {
     }
 
 
-    class IMHandler extends DirectMessageHandler{
+    class IMHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("instant_message");
         }
@@ -245,7 +234,7 @@ public class DungBeetleService extends Service {
     }
 
 
-    class SubscribeReqHandler extends DirectMessageHandler{
+    class SubscribeReqHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
             return msg.optString("type").equals("subscribe_req");
         }
@@ -257,7 +246,7 @@ public class DungBeetleService extends Service {
         }
     }
 
-    class ProfileHandler extends DirectMessageHandler{
+    class ProfileHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){
             return msg.optString("type").equals("profile");
         }
@@ -274,7 +263,7 @@ public class DungBeetleService extends Service {
         final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
         try{
             JSONObject obj = new JSONObject(contents);
-            for(DirectMessageHandler h : mHandlers){
+            for(MessageHandler h : mHandlers){
                 if(h.willHandle(c.otherwise(Contact.NA()), obj)){
                     h.handle(c.otherwise(Contact.NA()), obj);
                     break;
@@ -284,42 +273,19 @@ public class DungBeetleService extends Service {
         catch(JSONException e){ throw new RuntimeException(e); }
     }
 
-    private void handleIncomingFriendFeedMessage(IncomingMessage incoming){
-        String contents = incoming.contents();
-        final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
-        try{
-            JSONObject obj = new JSONObject(contents);
-            for(DirectMessageHandler h : mFeedHandlers){
-                if(h.willHandle(c.otherwise(Contact.NA()), obj)){
-                    Toast.makeText(
-                        DungBeetleService.this,
-                        "Handling: " + obj.toString(), Toast.LENGTH_LONG).show();
-                    h.handle(c.otherwise(Contact.NA()), obj);
-                    break;
-                }
-            }
-        }
-        catch(JSONException e){ throw new RuntimeException(e);}
-    }
 
     @Override
     public void onCreate() {
         mHelper = new DBHelper(this);
-        mIdent = new DBIdentityProvider(mHelper);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        mManagerThread = new ManagerThread(this, mToastHandler, mDirectMessageHandler);
+        mManagerThread = new MessagingManagerThread(this, mToastHandler, mMessageHandler);
         mManagerThread.start();
-        
-        //mFeedManagerThread = new ManagerThread(this, mToastHandler, mFriendFeedMessageHandler);
-        //mFeedManagerThread.start();
-        
         mHandlers.add(new SubscribeReqHandler());
         mHandlers.add(new IMHandler());
         mHandlers.add(new InviteToWebSessionHandler());
         mHandlers.add(new InviteToSharedAppHandler());
         mHandlers.add(new InviteToSharedAppFeedHandler());
         mHandlers.add(new SendFileHandler());
-        
         mHandlers.add(new ProfileHandler());
     }
 

@@ -155,6 +155,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             values.put(Group.DYN_UPDATE_URI, uri.toString());
             long id = mHelper.insertGroup(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return uriWithId(uri, id);
         }
         else{

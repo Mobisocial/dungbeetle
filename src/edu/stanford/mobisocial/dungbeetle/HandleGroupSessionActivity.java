@@ -56,6 +56,7 @@ public class HandleGroupSessionActivity extends Activity {
 
     private void loadGroup(Uri uri){
         Helpers.addDynamicGroup(this, uri);
+
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);

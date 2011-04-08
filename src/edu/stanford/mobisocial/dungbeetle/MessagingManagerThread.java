@@ -29,21 +29,21 @@ import java.util.List;
 import java.util.regex.Matcher;
 import org.json.JSONObject;
 
-public class ManagerThread extends Thread {
-    public static final String TAG = "ManagerThread";
+public class MessagingManagerThread extends Thread {
+    public static final String TAG = "MessagingManagerThread";
     private Handler mToastHandler;
-    private Handler mDirectMessageHandler;
+    private Handler mMessageHandler;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
-    public ManagerThread(final Context context, 
-                         final Handler toastHandler, 
-                         final Handler directMessageHandler){
+    public MessagingManagerThread(final Context context, 
+                                  final Handler toastHandler, 
+                                  final Handler directMessageHandler){
         mToastHandler = toastHandler;
-        mDirectMessageHandler = directMessageHandler;
+        mMessageHandler = directMessageHandler;
         mContext = context;
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
@@ -104,9 +104,9 @@ public class ManagerThread extends Thread {
                 mContext.getContentResolver().notifyChange(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
                 if(feedName.equals("direct") || feedName.equals("friend")){
-                    Message m = mDirectMessageHandler.obtainMessage();
+                    Message m = mMessageHandler.obtainMessage();
                     m.obj = localizedMsg;
-                    mDirectMessageHandler.sendMessage(m);
+                    mMessageHandler.sendMessage(m);
                 }
             }
             else{

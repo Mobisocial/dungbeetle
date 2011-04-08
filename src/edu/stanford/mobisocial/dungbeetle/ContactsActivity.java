@@ -81,9 +81,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-
         Cursor cursor = (Cursor)mContacts.getItem(position);
-
         final Contact c = new Contact(cursor);
         final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application", "Manage Groups" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
