@@ -33,7 +33,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 21;
+	public static final int VERSION = 22;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -153,7 +153,9 @@ public class DBHelper extends SQLiteOpenHelper {
         			GroupMember.GROUP_ID, "INTEGER",
         			GroupMember.CONTACT_ID, "INTEGER",
                     GroupMember.GLOBAL_CONTACT_ID, "TEXT");
-        createIndex(db, "INDEX", "group_members_by_group_id", GroupMember.TABLE, GroupMember.GROUP_ID);
+        createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
+                    GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
+
 
         generateAndStorePersonalInfo(db);
 
@@ -303,6 +305,10 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     long insertContact(ContentValues cv) {
+        return insertContact(getWritableDatabase(), cv);
+    }
+
+    long insertContact(SQLiteDatabase db, ContentValues cv) {
         try{
             Log.i(TAG, "Inserting contact: " + cv);
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
@@ -344,8 +350,12 @@ public class DBHelper extends SQLiteOpenHelper {
     }
     
     long insertGroupMember(ContentValues cv) {
+        return insertGroupMember(getWritableDatabase(), cv);
+    }
+
+    long insertGroupMember(SQLiteDatabase db, ContentValues cv) {
     	try{
-    		return getWritableDatabase().insertOrThrow(GroupMember.TABLE, null, cv);
+    		return db.insertOrThrow(GroupMember.TABLE, null, cv);
     	}
     	catch(Exception e){
     		e.printStackTrace(System.err);

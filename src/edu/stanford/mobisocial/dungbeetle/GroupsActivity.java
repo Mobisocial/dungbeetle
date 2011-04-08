@@ -148,7 +148,8 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         IdentityProvider ident = new DBIdentityProvider(mHelper);
-                        Uri uri = GroupProviders.newSessionUri(ident, input.getText().toString());
+                        Uri uri = GroupProviders.defaultNewSessionUri(
+                            ident, input.getText().toString());
                         ((DungBeetleActivity)getParent()).writeGroupToTag(uri);
                     }
                 });

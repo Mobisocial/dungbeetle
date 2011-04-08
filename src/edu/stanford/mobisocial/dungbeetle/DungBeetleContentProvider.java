@@ -1,12 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.database.sqlite.SQLiteDatabase;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.os.Binder;
 import android.util.Log;
+import java.security.PublicKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.List;
@@ -22,6 +25,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	static final String TAG = "DungBeetleContentProvider";
 	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
+    private IdentityProvider mIdent;
 
 	public DungBeetleContentProvider() {}
 
@@ -152,13 +156,53 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "dynamic_groups")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             Uri gUri = Uri.parse(values.getAsString("uri"));
+            GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
             ContentValues cv = new ContentValues();
-            cv.put(Group.NAME, GroupProviders.groupName(gUri));
+            cv.put(Group.NAME, gp.groupName(gUri));
             cv.put(Group.DYN_UPDATE_URI, gUri.toString());
             long id = mHelper.insertGroup(cv);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return uriWithId(uri, id);
+        }
+        else if(match(uri, "dynamic_group_member")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
+            SQLiteDatabase db = mHelper.getWritableDatabase();
+            try{
+                db.beginTransaction();
+                ContentValues cv = new ContentValues();
+                String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
+                PublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+                String personId = mIdent.personIdForPublicKey(k);
+                if(!personId.equals(mIdent.userPersonId())){
+                    cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
+                    cv.put(Contact.NAME, values.getAsString(Contact.NAME));
+                    cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
+                    long cid = mHelper.insertContact(db, cv);
+                    if(cid > -1){
+                        ContentValues gv = new ContentValues();
+                        gv.put(GroupMember.GLOBAL_CONTACT_ID, 
+                               values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
+                        gv.put(GroupMember.GROUP_ID, 
+                               values.getAsLong(GroupMember.GROUP_ID));
+                        gv.put(GroupMember.CONTACT_ID, cid);
+                        long gid = mHelper.insertGroupMember(db, gv);
+                        getContext().getContentResolver().notifyChange(
+                            Uri.parse(CONTENT_URI + "/group_members"), null);
+                        getContext().getContentResolver().notifyChange(
+                            Uri.parse(CONTENT_URI + "/contacts"), null);
+                        if(gid > -1) db.setTransactionSuccessful();
+                    }
+                    return uriWithId(uri, cid);
+                }
+                else{
+                    Log.i(TAG, "Omitting self.");
+                    return uriWithId(uri, Contact.MY_ID);
+                }
+            }
+            finally{
+                db.endTransaction();
+            }
         }
         else{
             return null;
@@ -170,6 +214,7 @@ public class DungBeetleContentProvider extends ContentProvider {
     public boolean onCreate() {
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
+        mIdent = new DBIdentityProvider(mHelper);
         return mHelper.getWritableDatabase() == null;
     }
 

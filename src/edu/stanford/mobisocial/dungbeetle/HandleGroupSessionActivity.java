@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +19,7 @@ import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 public class HandleGroupSessionActivity extends Activity {
 	private TextView mNameText;
     public static final String SCHEME = "dungbeetle-group-session";
+    public static final String TAG = "HandleGroupSessionActivity";
 	private NotificationManager mNotificationManager;
 
 	public void onCreate(Bundle savedInstanceState) {
@@ -29,7 +31,9 @@ public class HandleGroupSessionActivity extends Activity {
 		if(scheme != null && scheme.equals(SCHEME)){
 			final Uri uri = intent.getData();
 			if(uri != null){
-                String groupName = GroupProviders.groupName(uri);
+                Log.i(TAG, "Read uri: " + uri);
+                GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
+                String groupName = gp.groupName(uri);
                 mNameText = (TextView)findViewById(R.id.text);
                 mNameText.setText("Would you like to join the group '" + groupName + "'?");
                 Button b1 = (Button)findViewById(R.id.yes_button);
