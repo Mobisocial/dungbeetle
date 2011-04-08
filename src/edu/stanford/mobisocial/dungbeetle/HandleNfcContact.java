@@ -38,7 +38,7 @@ public class HandleNfcContact extends Activity {
             mPubKey = DBIdentityProvider.publicKeyFromString(mPubKeyStr);
 
             TextView nameView = (TextView)findViewById(R.id.name_text);
-            nameView.setText(mEmail);
+            nameView.setText(mName);
 
             ImageView portraitView = (ImageView)findViewById(R.id.image);
             //portraitView.setImageResource(R.drawable.ellipsis);

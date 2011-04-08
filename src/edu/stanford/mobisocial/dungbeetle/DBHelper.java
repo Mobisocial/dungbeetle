@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +33,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 18;
+	public static final int VERSION = 20;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -142,15 +143,16 @@ public class DBHelper extends SQLiteOpenHelper {
 
         createTable(db, "groups",
         			Group._ID, "INTEGER PRIMARY KEY",
-        			Group.GROUP_ID, "TEXT",
-        			Group.FEED_NAME, "TEXT");
-        createIndex(db, "UNIQUE INDEX", "groups_by_group_id", "groups", "group_id");
+        			Group.NAME, "TEXT",
+                    Group.DYN_UPDATE_URI, "TEXT"
+                    );
 
         
         createTable(db, "group_members",
         			"_id", "INTEGER PRIMARY KEY",
-        			"group_id", "TEXT",
-        			"person_id", "TEXT");
+        			"group_id", "INTEGER",
+        			"contact_id", "INTEGER");
+        createIndex(db, "INDEX", "group_members_by_group_id", GroupMember.TABLE, GroupMember.GROUP_ID);
 
         generateAndStorePersonalInfo(db);
 
@@ -200,6 +202,12 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put("name", name);
         getWritableDatabase().update("my_info", cv, null, null);
+    }
+
+    void setContactName(String id, String name) {
+        ContentValues cv = new ContentValues();
+        cv.put(Contact.NAME, name);
+        getWritableDatabase().update(Contact.TABLE, cv, "_id=?", new String[]{id});
     }
     
     String getMyName(){
@@ -322,26 +330,10 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    long insertDynamicGroup(ContentValues cv) {
-    	try{
-    		validate(cv.getAsString("session"));
-    		validate(cv.getAsString("name"));
-    		validate(cv.getAsString("uri"));
-    		return getWritableDatabase().insertOrThrow("dynamic_groups", null, cv);
-    	}
-    	catch(Exception e){
-    		e.printStackTrace(System.err);
-    		return -1;
-    	}
-    }
-    
     long insertGroup(ContentValues cv) {
     	try{
-    		String groupId = cv.getAsString("group_id");
-    		validate(groupId);
-    		String feedName = cv.getAsString("feed_name");
-    		validate(feedName);
-    		return getWritableDatabase().insertOrThrow("groups", null, cv);
+    		validate(cv.getAsString(Group.NAME));
+    		return getWritableDatabase().insertOrThrow(Group.TABLE, null, cv);
     	}
     	catch(Exception e){
     		e.printStackTrace(System.err);
@@ -351,11 +343,7 @@ public class DBHelper extends SQLiteOpenHelper {
     
     long insertGroupMember(ContentValues cv) {
     	try{
-    		String groupId = cv.getAsString("group_id");
-    		validate(groupId);
-    		String personId = cv.getAsString("person_id");
-    		validate(personId);
-    		return getWritableDatabase().insertOrThrow("group_members", null, cv);
+    		return getWritableDatabase().insertOrThrow(GroupMember.TABLE, null, cv);
     	}
     	catch(Exception e){
     		e.printStackTrace(System.err);
@@ -363,20 +351,6 @@ public class DBHelper extends SQLiteOpenHelper {
     	}
     }
     
-    long deleteGroupMember(ContentValues cv) {
-    	try{
-    		String groupId = cv.getAsString("group_id");
-    		validate(groupId);
-    		String personId = cv.getAsString("person_id");
-    		validate(personId);
-    		return getWritableDatabase().delete("group_members", "group_id='"+groupId+"' AND person_id='"+personId+"'", null);    		
-    	}
-    	catch(Exception e){
-    		e.printStackTrace(System.err);
-    		return -1;
-    	}
-    }
-
     private String validate(String val){
         assert (val != null) && val.length() > 0;
         return val;
@@ -488,16 +462,23 @@ public class DBHelper extends SQLiteOpenHelper {
             null);
     }
     
-    public Cursor queryGroupsMembership(String personId) {
-    	return getReadableDatabase().rawQuery(
-            " SELECT _id,group_id FROM group_members WHERE person_id = ?", 
-            new String[] {personId});
+    public Cursor queryGroupsMembership(Long contactId) {
+        return getReadableDatabase().query(
+            GroupMember.TABLE,
+            new String[]{ GroupMember._ID, GroupMember.GROUP_ID },
+            GroupMember.CONTACT_ID + "=?",
+            new String[]{ String.valueOf(contactId) },
+            null,
+            null,
+            null);
     }
     
-    public Cursor queryGroupMembers(String group_id) {
+    public Cursor queryGroupMembers(Long group_id) {
     	return getReadableDatabase().rawQuery(
-            " SELECT C._id, C.name, C.public_key, C.person_id, C.email FROM contacts C, group_members G WHERE G.group_id = ? AND C.person_id = G.person_id",
-            new String[] {group_id});
+            " SELECT C._id, C.name, C.public_key, C.person_id, C.email " + 
+            " FROM contacts C, group_members G WHERE " + 
+            "G.group_id = ? AND C._id = G.contact_id",
+            new String[] { String.valueOf(group_id) });
     }
 
 	public Maybe<Contact> contactForPersonId(String personId){

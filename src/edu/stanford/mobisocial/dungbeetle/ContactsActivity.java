@@ -1,15 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,14 +13,13 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -37,6 +30,9 @@ import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -45,113 +41,43 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	protected final BitmapManager mBitmaps = new BitmapManager(10);
 	private NotificationManager mNotificationManager;
 
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
-		Intent intent = getIntent();
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact._ID, 
-                         Contact.NAME, 
-                         Contact.EMAIL, 
-                         Contact.PERSON_ID,
-                         Contact.PUBLIC_KEY}, 
-            null, null, null);
-		mContacts = new ContactListCursorAdapter(this, c);
-		setListAdapter(mContacts);
+        Intent intent = getIntent();
+        if(intent.hasExtra("group_id")){
+            Long group_id = intent.getLongExtra("group_id", -1);
+            Cursor c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members/" + group_id),
+                new String[]{Contact._ID, 
+                             Contact.NAME, 
+                             Contact.EMAIL, 
+                             Contact.PERSON_ID,
+                             Contact.PUBLIC_KEY},
+                null, null, null);
+            mContacts = new ContactListCursorAdapter(this, c);
+        }
+        else{
+            Cursor c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
+                new String[]{Contact._ID, 
+                             Contact.NAME, 
+                             Contact.EMAIL, 
+                             Contact.PERSON_ID,
+                             Contact.PUBLIC_KEY}, 
+                null, null, null);
+            mContacts = new ContactListCursorAdapter(this, c);
+        }
 
+		setListAdapter(mContacts);
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
         registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 	}
 
-    /*@Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        //if (v.getId()==R.id.list) {
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
-        //menu.setHeaderTitle(((Friend)mContacts.get(info.position)).getUserName());
-        menu.setHeaderTitle("Menu");
-        //String[] menuItems = getResources().getStringArray(R.array.menu);
-        //for (int i = 0; i<menuItems.length; i++) {
-        menu.add(Menu.NONE, 0, 0, "Manage groups");
-        //}
-        // }
-    }*/
-    
-    public boolean showGroupPicker(final Contact contact) {
-        Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups_membership/" + contact.personId), 
-            new String[]{"_id", "group_id"}, 
-            null, null, null);
-        Log.i("DBHelper", "person " + contact.personId);
-        
-        HashMap groupMemberships = new HashMap();
-        
-        if(c != null && c.moveToFirst()){
-        	int group_id_col = c.getColumnIndexOrThrow("group_id");
-        	do {
-        		groupMemberships.put(c.getString(group_id_col), 1);
-        	}while(c.moveToNext());
-        }
-        
-        c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
-            new String[]{"_id", "group_id", "feed_name"}, 
-            null, null, null);
-
-        
-        CharSequence[] groups = new CharSequence[c.getCount()];
-        boolean[] tempSelected = new boolean[c.getCount()];
-        Log.i("DBHelper", c.getCount() + " groups");
-        if(c.moveToFirst()) {
-                int group_id_col = c.getColumnIndexOrThrow("group_id");
-                int i = 0;
-                do{
-                    groups[i] = c.getString(group_id_col);
-                    if(groupMemberships.containsKey(c.getString(group_id_col)))
-                    {
-                    	tempSelected[i] = true;
-                    }
-                    i++; 
-                }while(c.moveToNext());
-            }
-        final CharSequence[] items = groups;
-        
-        final boolean[] selected = tempSelected;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Pick Groups");
-        
-        builder.setMultiChoiceItems(items, selected, new DialogInterface.OnMultiChoiceClickListener() {
-	            public void onClick(DialogInterface dialog, int item, boolean isChecked) {
-	            	DBHelper helper = new DBHelper(ContactsActivity.this);
-
-            		ContentValues values = new ContentValues();
-                     values.put("group_id", (String) items[item]);
-                     values.put("person_id", contact.personId);
-  	               
-                     
-	            	if(isChecked) 
-	            	{
-	                     helper.insertGroupMember(values);
-	            	}
-	            	else
-	            	{
-	            		helper.deleteGroupMember(values);
-	            	}
-	            	
-	            }
-	        });
-        builder.setPositiveButton("Done",
-                                  new DialogInterface.OnClickListener() {
-                                      public void onClick(DialogInterface dialog, int whichButton) {}
-                                  });
-        AlertDialog alert = builder.create();
-        alert.show();
-        return true;
-    }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
@@ -172,7 +98,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                         startApplicationWithContact(c);
                         break;
                     case 2:
-                    	showGroupPicker(c);
+                    	UIHelpers.showGroupPicker(ContactsActivity.this, c);
                     	break;
                     }
                 }

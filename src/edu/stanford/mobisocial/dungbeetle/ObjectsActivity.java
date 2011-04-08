@@ -59,7 +59,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 String value = input.getText().toString();
-                                Helpers.updateStatus(ObjectsActivity.this, value, helper.getMyName());
+                                Helpers.updateStatus(ObjectsActivity.this, value);
                             }
                         });
                     alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -138,8 +138,10 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 
                 if(contact != null){
                     TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                    String email = contact.email == null ? "NA" : contact.email;
-                    nameText.setText(email);
+                    //String email = contact.email == null ? "NA" : contact.email;
+                    //email = obj.optString("name");
+                    
+                    nameText.setText(contact.name);
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));

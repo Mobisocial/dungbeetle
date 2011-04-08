@@ -124,12 +124,11 @@ public class Helpers {
         return to;
     }
 
-    public static void updateStatus(final Context c, final String status, final String name){
+    public static void updateStatus(final Context c, final String status){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
-        	obj.put("name", name);
             obj.put("text", status);
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
@@ -138,14 +137,24 @@ public class Helpers {
     }
 
     public static void addDynamicGroup(final Context c, final Uri uri){
-        String name = uri.getQueryParameter("name");
-        String session = uri.getQueryParameter("sess");
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/dynamic_groups");
         ContentValues values = new ContentValues();
         values.put("uri", uri.toString());
-        values.put("session", session);
-        values.put("name", name);
         c.getContentResolver().insert(url, values);
     }
+
+    public static void updateProfile(final Context c, final String name){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("name", name);
+        }catch(JSONException e){}
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.TYPE, "profile");
+        c.getContentResolver().insert(url, values);
+    }
+
+
 
 }

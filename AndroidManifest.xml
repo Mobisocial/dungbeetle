@@ -96,7 +96,6 @@
     <activity android:name="FriendsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
     <activity android:name="GroupsActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity> 
     <activity android:name="ViewContactActivity"  android:label="@string/app_name" android:screenOrientation="portrait"></activity>
-    <activity android:name="ViewGroupActivity"	android:label="@string/app_name" android:screenOrientation="portrait"></activity>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity" 
 	      android:label="@string/app_name"

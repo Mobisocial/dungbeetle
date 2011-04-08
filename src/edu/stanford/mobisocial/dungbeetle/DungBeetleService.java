@@ -29,7 +29,7 @@ import org.json.JSONObject;
 
 public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
-	private ManagerThread mManagerThread;
+	private ManagerThread mManagerThread, mFeedManagerThread;
     private DBIdentityProvider mIdent;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
@@ -51,7 +51,16 @@ public class DungBeetleService extends Service {
             }
         };
 
+    private Handler mFriendFeedMessageHandler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                IncomingMessage obj = (IncomingMessage)msg.obj;
+                handleIncomingFriendFeedMessage(obj);
+            }
+    };
+
     private List<DirectMessageHandler> mHandlers = new ArrayList<DirectMessageHandler>();
+    private List<DirectMessageHandler> mFeedHandlers = new ArrayList<DirectMessageHandler>();
 
     abstract class DirectMessageHandler{
         abstract boolean willHandle(Contact from, JSONObject msg);
@@ -248,6 +257,17 @@ public class DungBeetleService extends Service {
         }
     }
 
+    class ProfileHandler extends DirectMessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){
+            return msg.optString("type").equals("profile");
+        }
+        void handle(Contact from, JSONObject obj){
+            String name = obj.optString("name");
+            String id = Long.toString(from.id);
+            mHelper.setContactName(id, name);
+        }
+    }
+
 
     private void handleIncomingDirectMessage(IncomingMessage incoming){
         String contents = incoming.contents();
@@ -264,6 +284,24 @@ public class DungBeetleService extends Service {
         catch(JSONException e){ throw new RuntimeException(e); }
     }
 
+    private void handleIncomingFriendFeedMessage(IncomingMessage incoming){
+        String contents = incoming.contents();
+        final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
+        try{
+            JSONObject obj = new JSONObject(contents);
+            for(DirectMessageHandler h : mFeedHandlers){
+                if(h.willHandle(c.otherwise(Contact.NA()), obj)){
+                    Toast.makeText(
+                        DungBeetleService.this,
+                        "Handling: " + obj.toString(), Toast.LENGTH_LONG).show();
+                    h.handle(c.otherwise(Contact.NA()), obj);
+                    break;
+                }
+            }
+        }
+        catch(JSONException e){ throw new RuntimeException(e);}
+    }
+
     @Override
     public void onCreate() {
         mHelper = new DBHelper(this);
@@ -271,12 +309,18 @@ public class DungBeetleService extends Service {
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         mManagerThread = new ManagerThread(this, mToastHandler, mDirectMessageHandler);
         mManagerThread.start();
+        
+        //mFeedManagerThread = new ManagerThread(this, mToastHandler, mFriendFeedMessageHandler);
+        //mFeedManagerThread.start();
+        
         mHandlers.add(new SubscribeReqHandler());
         mHandlers.add(new IMHandler());
         mHandlers.add(new InviteToWebSessionHandler());
         mHandlers.add(new InviteToSharedAppHandler());
         mHandlers.add(new InviteToSharedAppFeedHandler());
         mHandlers.add(new SendFileHandler());
+        
+        mHandlers.add(new ProfileHandler());
     }
 
 
@@ -308,4 +352,27 @@ public class DungBeetleService extends Service {
         };
 
 
+    /**
+     * Show a notification while this service is running.
+     */
+    private void showNotification() {
+        CharSequence text = getText(R.string.start);
+        Notification notification = new Notification(
+            R.drawable.icon, 
+            text,
+            System.currentTimeMillis());
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this, 0,
+            new Intent(this, DungBeetleActivity.class), 0);
+
+        notification.flags |= Notification.FLAG_ONGOING_EVENT;
+
+        // Set the info for the views that show in the notification panel.
+        notification.setLatestEventInfo(this, getText(R.string.app_name),
+                                        text, contentIntent);
+
+        // Send the notification.
+        // We use a layout id because it is a unique number.  We use it later to cancel.
+        mNotificationManager.notify(R.string.active, notification);
+    }
 }

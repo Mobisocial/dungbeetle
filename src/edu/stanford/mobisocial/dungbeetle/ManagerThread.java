@@ -103,7 +103,7 @@ public class ManagerThread extends Thread {
                 mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj);
                 mContext.getContentResolver().notifyChange(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
-                if(feedName.equals("direct")){
+                if(feedName.equals("direct") || feedName.equals("friend")){
                     Message m = mDirectMessageHandler.obtainMessage();
                     m.obj = localizedMsg;
                     mDirectMessageHandler.sendMessage(m);
