@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.ContentValues;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,7 +32,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
         Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
             new String[]{ Group._ID, Group.NAME }, 
             null, null, null);
 		mGroups = new GroupListCursorAdapter(this, c);

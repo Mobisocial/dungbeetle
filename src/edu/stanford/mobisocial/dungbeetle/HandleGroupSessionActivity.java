@@ -28,7 +28,7 @@ public class HandleGroupSessionActivity extends Activity {
 		final String scheme=intent.getScheme();
 		if(scheme != null && scheme.equals(SCHEME)){
 			final Uri uri=intent.getData();
-			if(uri!=null){
+			if(uri != null){
                 String name = uri.getQueryParameter("name");
                 mNameText = (TextView)findViewById(R.id.name_text);
                 mNameText.setText("Would you like to join the group '" + name + "'?");
@@ -59,15 +59,18 @@ public class HandleGroupSessionActivity extends Activity {
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        launch.setComponent(new ComponentName(
-                                getPackageName(),
-                                DungBeetleActivity.class.getName()));
+        launch.setComponent(
+            new ComponentName(
+                getPackageName(),
+                DungBeetleActivity.class.getName()));
         Notification notification = new Notification(
             R.drawable.icon, "Added new group.", System.currentTimeMillis());
         PendingIntent contentIntent = PendingIntent.getActivity(
             this, 0, launch, 0);
-        notification.setLatestEventInfo(this, "New Group",
-                                        "Click to view.", contentIntent);
+        notification.setLatestEventInfo(
+            this, "New Group",
+            "Click to view.", 
+            contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         mNotificationManager.notify(0, notification);
     }

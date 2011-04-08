@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import android.widget.Toast;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.os.Binder;
@@ -21,9 +20,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
-
     private DBHelper mHelper;
-    private DBIdentityProvider mIdent;
 
 	public DungBeetleContentProvider() {}
 
@@ -34,6 +31,15 @@ public class DungBeetleContentProvider extends ContentProvider {
 
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
+        final String appId = getCallingActivityId();
+        if(appId == null){
+            Log.d(TAG, "No AppId for calling activity. Ignoring query.");
+            return 0;
+        }
+        if(!appId.equals(SUPER_APP_ID)) return 0;
+        List<String> segs = uri.getPathSegments();
+        mHelper.getWritableDatabase().delete(segs.get(0), selection, selectionArgs);
+        getContext().getContentResolver().notifyChange(uri, null);
 		return 0;
 	}
 
@@ -161,7 +167,6 @@ public class DungBeetleContentProvider extends ContentProvider {
     public boolean onCreate() {
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
-        mIdent = new DBIdentityProvider(mHelper);
         return mHelper.getWritableDatabase() == null;
     }
 
@@ -216,11 +221,10 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(getContext().getContentResolver(), uri);
             return c;
         }
-
-        else if(match(uri, "group_members", ".+")) {
+        else if(match(uri, "group_contacts", ".+")) {
             if(!appId.equals(SUPER_APP_ID)) return null;
             Long group_id = Long.valueOf(segs.get(1));
-            Cursor c = mHelper.queryGroupMembers(group_id);
+            Cursor c = mHelper.queryGroupContacts(group_id);
             c.setNotificationUri(getContext().getContentResolver(), uri);
             return c;
         }

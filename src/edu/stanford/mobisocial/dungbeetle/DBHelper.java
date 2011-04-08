@@ -69,8 +69,8 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Subscriber.TABLE);
-        db.execSQL("DROP TABLE IF EXISTS groups");
-        db.execSQL("DROP TABLE IF EXISTS group_members");
+        db.execSQL("DROP TABLE IF EXISTS " + Group.TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + GroupMember.TABLE);
         onCreate(db);
     }
 
@@ -141,17 +141,17 @@ public class DBHelper extends SQLiteOpenHelper {
         createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
 
 
-        createTable(db, "groups",
+        createTable(db, Group.TABLE,
         			Group._ID, "INTEGER PRIMARY KEY",
         			Group.NAME, "TEXT",
                     Group.DYN_UPDATE_URI, "TEXT"
                     );
 
         
-        createTable(db, "group_members",
-        			"_id", "INTEGER PRIMARY KEY",
-        			"group_id", "INTEGER",
-        			"contact_id", "INTEGER");
+        createTable(db, GroupMember.TABLE,
+        			GroupMember._ID, "INTEGER PRIMARY KEY",
+        			GroupMember.GROUP_ID, "INTEGER",
+        			GroupMember.CONTACT_ID, "INTEGER");
         createIndex(db, "INDEX", "group_members_by_group_id", GroupMember.TABLE, GroupMember.GROUP_ID);
 
         generateAndStorePersonalInfo(db);
@@ -473,7 +473,7 @@ public class DBHelper extends SQLiteOpenHelper {
             null);
     }
     
-    public Cursor queryGroupMembers(Long group_id) {
+    public Cursor queryGroupContacts(Long group_id) {
     	return getReadableDatabase().rawQuery(
             " SELECT C._id, C.name, C.public_key, C.person_id, C.email " + 
             " FROM contacts C, group_members G WHERE " + 

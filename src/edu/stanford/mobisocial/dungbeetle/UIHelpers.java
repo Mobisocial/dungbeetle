@@ -53,20 +53,20 @@ public class UIHelpers {
             groupNames, tempSelected, 
             new DialogInterface.OnMultiChoiceClickListener() {
                 public void onClick(DialogInterface dialog, int item, boolean isChecked) {
+                    Long groupId = groupIds[item];
+                    Long contactId = contact.id;
                     if(isChecked) {
                         ContentValues values = new ContentValues();
-                        values.put(GroupMember.GROUP_ID, groupIds[item]);
-                        values.put(GroupMember.CONTACT_ID, contact.id);
+                        values.put(GroupMember.GROUP_ID, groupId);
+                        values.put(GroupMember.CONTACT_ID, contactId);
                         context.getContentResolver().insert(
                             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"), values);
                     }
                     else {
                         context.getContentResolver().delete(
-                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"), 
+                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
                             GroupMember.GROUP_ID + "=? AND " + GroupMember.CONTACT_ID + "=?",
-                            new String[]{ 
-                                
-                            });
+                            new String[]{ String.valueOf(groupId), String.valueOf(contactId)});
                     }
                 }
             });
