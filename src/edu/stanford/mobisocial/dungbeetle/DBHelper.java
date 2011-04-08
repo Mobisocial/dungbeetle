@@ -33,7 +33,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 20;
+	public static final int VERSION = 21;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -151,7 +151,8 @@ public class DBHelper extends SQLiteOpenHelper {
         createTable(db, GroupMember.TABLE,
         			GroupMember._ID, "INTEGER PRIMARY KEY",
         			GroupMember.GROUP_ID, "INTEGER",
-        			GroupMember.CONTACT_ID, "INTEGER");
+        			GroupMember.CONTACT_ID, "INTEGER",
+                    GroupMember.GLOBAL_CONTACT_ID, "TEXT");
         createIndex(db, "INDEX", "group_members_by_group_id", GroupMember.TABLE, GroupMember.GROUP_ID);
 
         generateAndStorePersonalInfo(db);
@@ -276,7 +277,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json) {
+    long addObjectByJson(long contactId, JSONObject json){
         try{
             long seqId = json.optLong("sequenceId");
             long timestamp = json.getLong("timestamp");
@@ -291,6 +292,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(Object.SEQUENCE_ID, seqId);
             cv.put(Object.JSON, json.toString());
             cv.put(Object.TIMESTAMP, timestamp);
+            cv.put(Object.SENT, 1);
             getWritableDatabase().insertOrThrow("objects", null, cv);
             return seqId;
         }
@@ -456,7 +458,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return getReadableDatabase().query(
             Group.TABLE,
             null,
-            Group.DYN_UPDATE_URI + " != NULL",
+            Group.DYN_UPDATE_URI + " is not NULL",
             new String[]{ },
             null,
             null,
@@ -468,12 +470,13 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(Object.SENT, 1);
         getWritableDatabase().update(
-            Object.TABLE, cv,
+            Object.TABLE, 
+            cv,
             Object._ID + " in (" + Util.joinLongs(ids,",") + ")",
             null);
     }
     
-    public Cursor queryGroupsMembership(Long contactId) {
+    public Cursor queryGroupsMembership(long contactId) {
         return getReadableDatabase().query(
             GroupMember.TABLE,
             new String[]{ GroupMember._ID, GroupMember.GROUP_ID },
@@ -484,12 +487,12 @@ public class DBHelper extends SQLiteOpenHelper {
             null);
     }
     
-    public Cursor queryGroupContacts(Long group_id) {
+    public Cursor queryGroupContacts(long groupId) {
     	return getReadableDatabase().rawQuery(
             " SELECT C._id, C.name, C.public_key, C.person_id, C.email " + 
             " FROM contacts C, group_members G WHERE " + 
             "G.group_id = ? AND C._id = G.contact_id",
-            new String[] { String.valueOf(group_id) });
+            new String[] { String.valueOf(groupId) });
     }
 
 	public Maybe<Contact> contactForPersonId(String personId){

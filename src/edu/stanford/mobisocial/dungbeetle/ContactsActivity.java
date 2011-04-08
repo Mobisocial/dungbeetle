@@ -90,10 +90,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 public void onClick(DialogInterface dialog, int item) {
                     switch(item){
                     case 0:
-                        sendMessageToContact(c);
+                        UIHelpers.sendMessageToContact(ContactsActivity.this, 
+                                                       Collections.singletonList(c));
                         break;
                     case 1:
-                        startApplicationWithContact(c);
+                        UIHelpers.startApplicationWithContact(ContactsActivity.this, 
+                                                              Collections.singletonList(c));
                         break;
                     case 2:
                     	UIHelpers.showGroupPicker(ContactsActivity.this, c);
@@ -103,92 +105,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             });
         AlertDialog alert = builder.create();
         alert.show();
-    }
-
-    private void sendMessageToContact(final Contact contact){
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setMessage("Enter message:");
-        final EditText input = new EditText(this);
-        alert.setView(input);
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    DBHelper helper = new DBHelper(ContactsActivity.this);
-                    Helpers.sendIM(
-                        ContactsActivity.this, 
-                        Collections.singletonList(contact),
-                        input.getText().toString());
-                }
-            });
-        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                }
-            });
-        alert.show();
-    }
-
-    private void startApplicationWithContact(final Contact contact){
-        final PackageManager mgr = getPackageManager();
-        Intent i = new Intent("android.intent.action.CONFIGURE");
-        i.addCategory("android.intent.category.P2P");
-        final List<ResolveInfo> infos = mgr.queryBroadcastReceivers(i, 0);
-        if(infos.size() > 0){
-            ArrayList<String> names = new ArrayList<String>();
-            for(ResolveInfo info : infos){
-                names.add(info.loadLabel(mgr).toString());
-            }
-            final CharSequence[] items = names.toArray(new CharSequence[]{});
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Share application:");
-            builder.setItems(items, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int item) {
-                        final ResolveInfo info = infos.get(item);
-                        Intent i = new Intent();
-                        i.setClassName(info.activityInfo.packageName, 
-                                       info.activityInfo.name);
-                        i.setAction("android.intent.action.CONFIGURE");
-                        i.addCategory("android.intent.category.P2P");
-                        BroadcastReceiver rec = new BroadcastReceiver(){
-                                public void onReceive(Context c, Intent i){
-                                    Intent launch = new Intent();
-                                    launch.setAction(Intent.ACTION_MAIN);
-                                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                                    launch.setPackage(info.activityInfo.packageName);
-                                    List<ResolveInfo> resolved = 
-                                        mgr.queryIntentActivities(launch, 0);
-                                    if (resolved.size() > 0) {
-                                        ActivityInfo info = resolved.get(0).activityInfo;
-                                        String arg = getResultData();
-                                        launch.setComponent(new ComponentName(
-                                                                info.packageName,
-                                                                info.name));
-                                        launch.putExtra("creator", true);
-                                        launch.putExtra(
-                                            "android.intent.extra.APPLICATION_ARGUMENT",
-                                            arg);
-                                        startActivity(launch);
-                                        Helpers.sendApplicationInvite(
-                                            ContactsActivity.this,
-                                            Collections.singletonList(contact), 
-                                            info.packageName, arg);
-                                    }
-                                    else{
-                                        Toast.makeText(getApplicationContext(), 
-                                                       "Sorry, no response from applications.",
-                                                       Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            };
-                        sendOrderedBroadcast(i, null, rec, null, RESULT_OK, null, null);
-                    }
-                });
-            AlertDialog alert = builder.create();
-            alert.show();
-        }
-        else{
-            Toast.makeText(getApplicationContext(), 
-                           "Sorry, couldn't find any compatible apps.", 
-                           Toast.LENGTH_SHORT).show();
-        }
     }
 
 
@@ -226,16 +142,26 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         return true;
     }
 
+    private final static int SHARE_INFO = 0;
+    private final static int SET_EMAIL = 1;
+    private final static int FACEBOOK_BOOTSTRAP = 2;
+
+
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
-        menu.add(0, 0, 0, "Set email (debug)");
-        menu.add(0, 1, 0, "Facebook Bootstrap");
+        menu.add(0, SHARE_INFO, 0, "Exchange info");
+        menu.add(0, SET_EMAIL, 0, "Set email (debug)");
+        menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
         return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
-        case 0: {
+        case SHARE_INFO: {
+            ((DungBeetleActivity)getParent()).shareContactInfo();
+            return true;
+        }
+        case SET_EMAIL: {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setMessage("Enter email:");
             final EditText input = new EditText(this);
@@ -254,7 +180,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             alert.show();
             return true;
         }
-        case 1: {
+        case FACEBOOK_BOOTSTRAP: {
             Intent intent = new Intent(this, FacebookInterfaceActivity.class);
             startActivity(intent); 
             return true;

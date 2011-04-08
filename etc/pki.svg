@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="New document 1">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;">
+      <path
+         id="path3797"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+    <inkscape:perspective
+       id="perspective2902"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2918"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2940"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2993"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="302.02794"
+     inkscape:cy="860.1971"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1680"
+     inkscape:window-height="969"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <image
+       y="20.219328"
+       x="17.142862"
+       id="image2904"
+       height="71.428574"
+       width="71.428574"
+       xlink:href="file:///home/aemon/Desktop/dung_pres/phone.jpg" />
+    <path
+       style="fill:#ff0000;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 82.374334,61.869705 2.664,-2.664 -2.20069,-2.895653 -3.82227,0.115831 -1.85321,2.548174 2.43235,2.895653 0.1159,10.192699 1.50573,-1.042435 0.69496,0.115831 0.11589,-1.389913 -0.9266,-0.694957 1.04243,-1.158261 0,-1.389914 -1.27409,-0.347478 -0.23165,-1.274087 1.04243,-0.115831 0.23165,-1.389913 -0.81077,-0.579132 0,-0.579131 1.27408,-0.347478 z"
+       id="path2908" />
+    <path
+       style="fill:#00ff00;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 95.916934,62.545655 2.664,-2.664 -2.20069,-2.895653 -3.82227,0.115831 -1.85321,2.548174 2.43235,2.895653 0.1159,10.1927 1.50573,-1.042435 0.69496,0.115831 0.11589,-1.389913 -0.9266,-0.694957 1.04243,-1.158261 0,-1.389914 -1.27409,-0.347478 -0.23165,-1.274088 1.04243,-0.115831 0.23165,-1.389913 -0.81077,-0.579132 0,-0.579131 1.27408,-0.347478 z"
+       id="path2908-3" />
+    <image
+       y="31.647894"
+       x="454.91415"
+       id="image2904-0"
+       height="71.428574"
+       width="71.428574"
+       xlink:href="file:///home/aemon/Desktop/dung_pres/phone.jpg" />
+    <path
+       style="fill:#ff0000;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 520.14564,73.298274 2.664,-2.664 -2.20069,-2.895654 -3.82227,0.115831 -1.85321,2.548173 2.43235,2.89565 0.1159,10.1927 1.50573,-1.04243 0.69496,0.11583 0.11589,-1.38991 -0.9266,-0.69496 1.04243,-1.15826 0,-1.38992 -1.27409,-0.34747 -0.23165,-1.27409 1.04243,-0.11583 0.23165,-1.38992 -0.81077,-0.57913 0,-0.57913 1.27408,-0.34748 z"
+       id="path2908-9" />
+    <path
+       style="fill:#00ff00;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 533.68824,73.974224 2.664,-2.664 -2.20069,-2.895654 -3.82227,0.115831 -1.85321,2.548173 2.43235,2.89565 0.1159,10.1927 1.50573,-1.04243 0.69496,0.11583 0.11589,-1.38991 -0.9266,-0.69496 1.04243,-1.15826 0,-1.38992 -1.27409,-0.34747 -0.23165,-1.27409 1.04243,-0.11583 0.23165,-1.38992 -0.81077,-0.57913 0,-0.57913 1.27408,-0.34748 z"
+       id="path2908-3-2" />
+    <image
+       y="265.2193"
+       x="146.34274"
+       id="image2904-0-0"
+       height="71.428574"
+       width="71.428574"
+       xlink:href="file:///home/aemon/Desktop/dung_pres/phone.jpg" />
+    <path
+       style="fill:#ff0000;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 211.57422,306.8697 2.664,-2.664 -2.20069,-2.89565 -3.82227,0.11583 -1.85321,2.54817 2.43235,2.89565 0.1159,10.1927 1.50573,-1.04243 0.69496,0.11583 0.11589,-1.38991 -0.9266,-0.69496 1.04243,-1.15826 0,-1.38992 -1.27409,-0.34747 -0.23165,-1.27409 1.04243,-0.11583 0.23165,-1.38992 -0.81077,-0.57913 0,-0.57913 1.27408,-0.34748 z"
+       id="path2908-9-5" />
+    <path
+       style="fill:#00ff00;stroke:#000000;stroke-width:0.32431316px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 225.11682,307.54565 2.664,-2.664 -2.20069,-2.89565 -3.82227,0.11583 -1.85321,2.54817 2.43235,2.89565 0.1159,10.1927 1.50573,-1.04243 0.69496,0.11583 0.11589,-1.38991 -0.9266,-0.69496 1.04243,-1.15826 0,-1.38992 -1.27409,-0.34747 -0.23165,-1.27409 1.04243,-0.11583 0.23165,-1.38992 -0.81077,-0.57913 0,-0.57913 1.27408,-0.34748 z"
+       id="path2908-3-2-9" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Lend)"
+       d="M 217.85714,243.79075 C 274.26459,186.73597 317.52169,127.13596 430,80.93361"
+       id="path3017"
+       sodipodi:nodetypes="cc" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4239"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:arial;-inkscape-font-specification:arial"
+       transform="translate(-26.428571,-30.714286)"><flowRegion
+         id="flowRegion4241"><rect
+           id="rect4243"
+           width="135"
+           height="47.142857"
+           x="289.28571"
+           y="284.50504" /></flowRegion><flowPara
+         id="flowPara4245">Encrypt with B's public key, sign with C's private key.</flowPara></flowRoot>    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:arial;-inkscape-font-specification:arial"
+       x="80.714287"
+       y="110.21933"
+       id="text4247"><tspan
+         sodipodi:role="line"
+         id="tspan4249"
+         x="80.714287"
+         y="110.21933">A</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:arial;-inkscape-font-specification:arial"
+       x="518.57141"
+       y="125.93361"
+       id="text4251"><tspan
+         sodipodi:role="line"
+         id="tspan4253"
+         x="518.57141"
+         y="125.93361">B</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:arial;-inkscape-font-specification:arial"
+       x="136.42859"
+       y="264.50504"
+       id="text4255"><tspan
+         sodipodi:role="line"
+         id="tspan4257"
+         x="136.42859"
+         y="264.50504">C</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4259"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:arial;-inkscape-font-specification:arial"
+       transform="translate(-23.571429,-3.5714286)"><flowRegion
+         id="flowRegion4261"><rect
+           id="rect4263"
+           width="168.57143"
+           height="67.85714"
+           x="310"
+           y="13.790753" /></flowRegion><flowPara
+         id="flowPara4265">Verify signature with C's public key, decrypt with B's private key.</flowPara></flowRoot>  </g>
+</svg>

@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 
 
 public class HandleGroupSessionActivity extends Activity {
@@ -28,13 +29,14 @@ public class HandleGroupSessionActivity extends Activity {
 		if(scheme != null && scheme.equals(SCHEME)){
 			final Uri uri = intent.getData();
 			if(uri != null){
-                String name = uri.getQueryParameter("name");
-                mNameText = (TextView)findViewById(R.id.name_text);
-                mNameText.setText("Would you like to join the group '" + name + "'?");
+                String groupName = GroupProviders.groupName(uri);
+                mNameText = (TextView)findViewById(R.id.text);
+                mNameText.setText("Would you like to join the group '" + groupName + "'?");
                 Button b1 = (Button)findViewById(R.id.yes_button);
                 b1.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
                             loadGroup(uri);
+                            finish();
                         }
                     });
                 Button b2 = (Button)findViewById(R.id.no_button);
@@ -55,7 +57,6 @@ public class HandleGroupSessionActivity extends Activity {
 
     private void loadGroup(Uri uri){
         Helpers.addDynamicGroup(this, uri);
-
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);

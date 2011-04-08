@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.PrplGroupRefreshHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class GroupManagerThread extends Thread {
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
                       "/dynamic_groups"), true, mOco);
-        mHandlers.add(new PrplGroupHandler());
+        mHandlers.add(new PrplGroupRefreshHandler());
     }
 
     @Override
@@ -74,37 +75,26 @@ public class GroupManagerThread extends Thread {
         }
     };
 
-    private List<GroupHandler> mHandlers = new ArrayList<GroupHandler>();
+    private List<GroupRefreshHandler> mHandlers = new ArrayList<GroupRefreshHandler>();
 
     // FYI: Invoked in manager thread
     private void handleUpdate(final Group g){
         final Uri uri = Uri.parse(g.dynUpdateUri);
-        for(final GroupHandler h : mHandlers){
+        for(final GroupRefreshHandler h : mHandlers){
             if(h.willHandle(uri)){
                 new Thread(){public void run(){
-                    h.handle(g.id, uri);
+                    h.handle(g.id, uri, mContext, mIdent);
                 }}.start();
                 break;
             }
         }
     }
 
-    // These handlers should be stateless
-    abstract class GroupHandler{
-        abstract boolean willHandle(Uri uri);
-        abstract void handle(long id, Uri uri);
-    }
 
-    class PrplGroupHandler extends GroupHandler{
-        public boolean willHandle(Uri uri){
-            return uri.getAuthority().equals("suif.stanford.edu");
-        }
-        public void handle(long id, Uri uriIn){
-            Uri.Builder b = uriIn.buildUpon();
-            b.scheme("http");
-            Uri uri = b.build();
-            Log.i(TAG, "Doing dynamic group update for " + uri);
-        }
+    // These handlers should be stateless
+    public static abstract class GroupRefreshHandler{
+        public abstract boolean willHandle(Uri uri);
+        public abstract void handle(long id, Uri uri, Context context, IdentityProvider ident);
     }
 
 }

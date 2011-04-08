@@ -10,9 +10,7 @@ import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
-import android.view.View.OnClickListener;
-import android.view.View;
-import android.widget.Button;
+import android.util.Log;
 import android.widget.TabHost;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
@@ -50,8 +48,7 @@ public class DungBeetleActivity extends TabActivity
                         notifyApkDownload(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_APK_FILE);
                     }
                     else if(pInfo.versionCode == versionCode){
-                        Toast.makeText(DungBeetleActivity.this, 
-                                       "Up to date.", Toast.LENGTH_SHORT).show();
+                        Log.i(TAG, "Up to date.");
                     }
                     else {
                         Toast.makeText(DungBeetleActivity.this, 
@@ -133,14 +130,6 @@ public class DungBeetleActivity extends TabActivity
         
         tabHost.setCurrentTab(0);
 
-
-        Button button = (Button)findViewById(R.id.share_info_button);
-        button.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    shareContactInfo();
-                }
-            });
-
         mNfc = new Nfc(this);
         mNfc.addNdefHandler(new Nfc.NdefHandler(){
                 public int handleNdef(final NdefMessage[] messages){
@@ -153,7 +142,27 @@ public class DungBeetleActivity extends TabActivity
                 }
             });
 
-
+        mNfc.setOnTagWriteListener(new Nfc.OnTagWriteListener(){
+                public void onTagWrite(final int status){
+                    DungBeetleActivity.this.runOnUiThread(new Runnable(){
+                            public void run(){
+                                if(status == WRITE_OK){
+                                    Toast.makeText(DungBeetleActivity.this, "Wrote successfully!",
+                                                   Toast.LENGTH_SHORT).show();
+                                }
+                                else if(status == WRITE_ERROR_READ_ONLY){
+                                    Toast.makeText(DungBeetleActivity.this, "Can't write read-only tag!",
+                                                   Toast.LENGTH_SHORT).show();
+                                }
+                                else{
+                                    Toast.makeText(DungBeetleActivity.this, "Failed to write!",
+                                                   Toast.LENGTH_SHORT).show();
+                                }
+                                mNfc.clearSharing();
+                            }
+                        }); 
+                }
+            });
     }
 
     protected void doHandleNdef(NdefMessage[] messages){
@@ -173,8 +182,19 @@ public class DungBeetleActivity extends TabActivity
         startActivity(intent);
     }
 
+    public void writeGroupToTag(Uri uri){
+        NdefRecord urlRecord = new NdefRecord(
+            NdefRecord.TNF_ABSOLUTE_URI, 
+            NdefRecord.RTD_URI, new byte[] {},
+            uri.toString().getBytes());
+        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
+        mNfc.enableTagWriteMode(ndef);
+        Toast.makeText(this, 
+                       "Touch a tag to write the group...", 
+                       Toast.LENGTH_SHORT).show();
+    }
 
-    protected void shareContactInfo(){
+    public void shareContactInfo(){
         DBHelper helper = new DBHelper(this);
         IdentityProvider ident = new DBIdentityProvider(helper);
         String name = ident.userName();

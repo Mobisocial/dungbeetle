@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -151,9 +152,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "dynamic_groups")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             Uri gUri = Uri.parse(values.getAsString("uri"));
-            values.put(Group.NAME, gUri.getQueryParameter("name"));
-            values.put(Group.DYN_UPDATE_URI, uri.toString());
-            long id = mHelper.insertGroup(values);
+            ContentValues cv = new ContentValues();
+            cv.put(Group.NAME, GroupProviders.groupName(gUri));
+            cv.put(Group.DYN_UPDATE_URI, gUri.toString());
+            long id = mHelper.insertGroup(cv);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return uriWithId(uri, id);

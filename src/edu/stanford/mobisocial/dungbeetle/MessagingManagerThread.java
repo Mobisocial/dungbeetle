@@ -71,10 +71,10 @@ public class MessagingManagerThread extends Thread {
 		mMessenger = new XMPPMessengerService(wrapIdent(mIdent), status);
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
-                    toastInMainThread("Connected to message transport!");
+                    Log.i(TAG, "Connected to message transport!");
                 }
                 public void onNotReady() {
-                    toastInMainThread("Message transport not available.");
+                    Log.i(TAG, "Message transport not available.");
                 }
             });
 		mMessenger.addMessageListener(new MessageListener() {
@@ -355,7 +355,7 @@ public class MessagingManagerThread extends Thread {
             launch.setPackage(packageName);
             final PackageManager mgr = mContext.getPackageManager();
             List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved.size() == 0) {
+            if (resolved == null || resolved.size() == 0) {
                 Toast.makeText(mContext, 
                                "Could not find application to handle invite", 
                                Toast.LENGTH_SHORT).show();

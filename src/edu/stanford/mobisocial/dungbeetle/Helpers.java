@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -13,6 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.content.Context;
 
 public class Helpers {
+    public static final String TAG = "Helpers";
 
     public static void insertSubscriber(final Context c, 
                                         Long contactId, 
@@ -24,6 +28,16 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void deleteGroup(final Context c, 
+                                   Long groupId){
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
+            GroupMember.GROUP_ID + "=?",
+            new String[]{ String.valueOf(groupId)});
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
+            Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+    }
 
     public static Uri insertContact(final Context c, String pubKeyStr, 
                                     String name, String email){
@@ -33,6 +47,18 @@ public class Helpers {
         values.put(Contact.EMAIL, email);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
         return c.getContentResolver().insert(url, values);
+    }
+
+    public static void insertGroupMember(final Context c, 
+                                         final long groupId, 
+                                         final long contactId, 
+                                         final String idInGroup){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members");
+        ContentValues values = new ContentValues();
+        values.put(GroupMember.GROUP_ID, groupId);
+        values.put(GroupMember.CONTACT_ID, contactId);
+        values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
+        c.getContentResolver().insert(url, values);
     }
     
     public static void sendApplicationInvite(final Context c, 
@@ -61,7 +87,10 @@ public class Helpers {
             obj.put("text", msg);
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
-        values.put(Object.DESTINATION, buildAddresses(contacts));
+        Log.i(TAG, "Num contacts: " + contacts.size());
+        String to = buildAddresses(contacts);
+        Log.i(TAG, "To " + to);
+        values.put(Object.DESTINATION, to);
         values.put(Object.TYPE, "instant_message");
         c.getContentResolver().insert(url, values);
     }

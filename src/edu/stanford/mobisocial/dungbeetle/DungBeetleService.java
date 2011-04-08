@@ -10,7 +10,8 @@ import android.widget.Toast;
 
 public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
-	private MessagingManagerThread mManagerThread;
+	private MessagingManagerThread mMessagingManagerThread;
+	private GroupManagerThread mGroupManagerThread;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
 
@@ -19,8 +20,10 @@ public class DungBeetleService extends Service {
     public void onCreate() {
         mHelper = new DBHelper(this);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        mManagerThread = new MessagingManagerThread(this);
-        mManagerThread.start();
+        mMessagingManagerThread = new MessagingManagerThread(this);
+        mMessagingManagerThread.start();
+        mGroupManagerThread = new GroupManagerThread(this);
+        mGroupManagerThread.start();
     }
 
 

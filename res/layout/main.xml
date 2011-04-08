@@ -23,22 +23,6 @@
 	  android:layout_height="fill_parent"
 	  android:layout_weight="0.5"
 	  android:padding="5dp" />
-      <LinearLayout
-	  android:orientation="horizontal"
-	  android:layout_width="fill_parent"
-	  android:layout_height="wrap_content"
-	  android:background="#222222"
-	  android:gravity="center_vertical|left">
-
-	<Button
-	    android:id="@+id/share_info_button"
-	    android:layout_width="fill_parent"
-	    android:layout_height="50dip"
-	    android:text="Share My Info"
-	    /> 
-
-      </LinearLayout>
-
     </LinearLayout>
   </TabHost>
 </LinearLayout>

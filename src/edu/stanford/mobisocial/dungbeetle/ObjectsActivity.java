@@ -32,6 +32,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	protected final BitmapManager mBitmaps = new BitmapManager(10);
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
+	private DBHelper mHelper;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -44,10 +45,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
- 
-        mIdent = new DBIdentityProvider(new DBHelper(this));
-        
-        final DBHelper helper = new DBHelper(ObjectsActivity.this);
+
+        mHelper = new DBHelper(ObjectsActivity.this); 
+        mIdent = new DBIdentityProvider(mHelper);
 
 		Button button = (Button)findViewById(R.id.add_object_button);
 		button.setOnClickListener(new OnClickListener() {
