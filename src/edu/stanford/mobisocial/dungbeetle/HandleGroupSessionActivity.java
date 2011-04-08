@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,7 +26,7 @@ public class HandleGroupSessionActivity extends Activity {
 		Intent intent = getIntent();
 		final String scheme=intent.getScheme();
 		if(scheme != null && scheme.equals(SCHEME)){
-			final Uri uri=intent.getData();
+			final Uri uri = intent.getData();
 			if(uri != null){
                 String name = uri.getQueryParameter("name");
                 mNameText = (TextView)findViewById(R.id.name_text);

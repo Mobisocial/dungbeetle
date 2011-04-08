@@ -452,6 +452,17 @@ public class DBHelper extends SQLiteOpenHelper {
             "timestamp DESC");
     }
 
+    public Cursor queryDynamicGroups() {
+        return getReadableDatabase().query(
+            Group.TABLE,
+            null,
+            Group.DYN_UPDATE_URI + " != NULL",
+            new String[]{ },
+            null,
+            null,
+            null);
+    }
+
 
     public void markObjectsAsSent(Collection<Long> ids) {
         ContentValues cv = new ContentValues();

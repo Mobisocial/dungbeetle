@@ -1,13 +1,21 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
@@ -17,6 +25,7 @@ import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -27,24 +36,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
-    private Handler mToastHandler;
-    private Handler mMessageHandler;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
+    private Handler mMainThreadHandler;
+	private NotificationManager mNotificationManager;
 
-    public MessagingManagerThread(final Context context, 
-                                  final Handler toastHandler, 
-                                  final Handler directMessageHandler){
-        mToastHandler = toastHandler;
-        mMessageHandler = directMessageHandler;
+
+
+    public MessagingManagerThread(final Context context){
+        mNotificationManager = (NotificationManager)
+            context.getSystemService(context.NOTIFICATION_SERVICE);
         mContext = context;
+        mMainThreadHandler = new Handler(context.getMainLooper());
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
         ConnectionStatus status = new ConnectionStatus(){
@@ -59,14 +71,10 @@ public class MessagingManagerThread extends Thread {
 		mMessenger = new XMPPMessengerService(wrapIdent(mIdent), status);
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
-                    Message m = mToastHandler.obtainMessage();
-                    m.obj = "Connected to message transport!";
-                    mToastHandler.sendMessage(m);
+                    toastInMainThread("Connected to message transport!");
                 }
                 public void onNotReady() {
-                    Message m = mToastHandler.obtainMessage();
-                    m.obj = "Message transport not available.";
-                    mToastHandler.sendMessage(m);
+                    toastInMainThread("Message transport not available.");
                 }
             });
 		mMessenger.addMessageListener(new MessageListener() {
@@ -76,6 +84,14 @@ public class MessagingManagerThread extends Thread {
                 }
             });
 
+        mHandlers.add(new SubscribeReqHandler());
+        mHandlers.add(new IMHandler());
+        mHandlers.add(new InviteToWebSessionHandler());
+        mHandlers.add(new InviteToSharedAppHandler());
+        mHandlers.add(new InviteToSharedAppFeedHandler());
+        mHandlers.add(new SendFileHandler());
+        mHandlers.add(new ProfileHandler());
+
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
 		mContext.getContentResolver().registerContentObserver(
@@ -83,6 +99,13 @@ public class MessagingManagerThread extends Thread {
 
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out"), true, mOco);
+    }
+
+    private void toastInMainThread(final String msg){
+        mMainThreadHandler.post(new Runnable(){
+                public void run(){
+                    Toast.makeText(mContext, msg,Toast.LENGTH_SHORT).show();
+                }});
     }
 
 
@@ -102,11 +125,14 @@ public class MessagingManagerThread extends Thread {
             if(contact.isKnown()){
                 mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj);
                 mContext.getContentResolver().notifyChange(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName), null);
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
+                              "/feeds/" + feedName), null);
                 if(feedName.equals("direct") || feedName.equals("friend")){
-                    Message m = mMessageHandler.obtainMessage();
-                    m.obj = localizedMsg;
-                    mMessageHandler.sendMessage(m);
+                    mMainThreadHandler.post(new Runnable(){
+                            public void run(){
+                                handleSpecialMessage(localizedMsg);
+                            }
+                        });
                 }
             }
             else{
@@ -171,36 +197,42 @@ public class MessagingManagerThread extends Thread {
         Log.i(TAG, "Starting messenger...");
         mMessenger.init();
         while(!interrupted()) {
-            if(mOco.changed){
-                Log.i(TAG, "Noticed change...");
-                mOco.clearChanged();
-                Cursor objs = mHelper.queryUnsentObjects();
-                Log.i(TAG, objs.getCount() + " objects...");
-                objs.moveToFirst();
-                ArrayList<Long> sent = new ArrayList<Long>();
-                while(!objs.isAfterLast()){
-                    String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
-                    if(to != null){
-                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
-                        Log.i(TAG, "Sending direct message " + m);
-                        if(m.toPublicKeys().isEmpty()){
-                            Log.e(TAG, "Empty addressees!");
+            try{
+                if(mOco.changed){
+                    Log.i(TAG, "Noticed change...");
+                    mOco.clearChanged();
+                    Cursor objs = mHelper.queryUnsentObjects();
+                    Log.i(TAG, objs.getCount() + " objects...");
+                    objs.moveToFirst();
+                    ArrayList<Long> sent = new ArrayList<Long>();
+                    while(!objs.isAfterLast()){
+                        String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
+                        if(to != null){
+                            OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                            Log.i(TAG, "Sending direct message " + m);
+                            if(m.toPublicKeys().isEmpty()){
+                                Log.e(TAG, "Empty addressees!");
+                            }
+                            mMessenger.sendMessage(m);
                         }
-                        mMessenger.sendMessage(m);
-                    }
-                    else{
-                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
-                        Log.i(TAG, "Sending feed object " + m);
-                        if(m.toPublicKeys().isEmpty()){
-                            Log.e(TAG, "Empty addressees!");
+                        else{
+                            OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                            Log.i(TAG, "Sending feed object " + m);
+                            if(m.toPublicKeys().isEmpty()){
+                                Log.e(TAG, "Empty addressees!");
+                            }
+                            mMessenger.sendMessage(m);
                         }
-                        mMessenger.sendMessage(m);
+                        sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
+                        objs.moveToNext();
                     }
-                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
-                    objs.moveToNext();
+                    mHelper.markObjectsAsSent(sent);
                 }
-                mHelper.markObjectsAsSent(sent);
             }
+            catch(Exception e){
+                Log.wtf(TAG, e);
+            }
+
             try {
                 Thread.sleep(1000);
             } catch(InterruptedException e) {}
@@ -279,18 +311,234 @@ public class MessagingManagerThread extends Thread {
             changed = true;
             notify();
         }
-        public synchronized void waitForChange() {
-            if(changed)
-                return;
-            try {
-                wait();
-                changed = false;
-            } catch(InterruptedException e) {}
-        }
         public synchronized void clearChanged() {
             changed = false;
         }
     };
 
+    private List<MessageHandler> mHandlers = new ArrayList<MessageHandler>();
+
+    // FYI: Must be invoked from main app thread. See above.
+    private void handleSpecialMessage(IncomingMessage incoming){
+        String contents = incoming.contents();
+        final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
+        try{
+            JSONObject obj = new JSONObject(contents);
+            for(MessageHandler h : mHandlers){
+                if(h.willHandle(c.otherwise(Contact.NA()), obj)){
+                    h.handle(c.otherwise(Contact.NA()), obj);
+                    break;
+                }
+            }
+        }
+        catch(JSONException e){ throw new RuntimeException(e); }
+    }
+
+
+    abstract class MessageHandler{
+        abstract boolean willHandle(Contact from, JSONObject msg);
+        abstract void handle(Contact from, JSONObject msg);
+    }
+
+    class InviteToSharedAppHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("invite_app_session");
+        }
+        void handle(Contact from, JSONObject obj){
+            String packageName = obj.optString(InviteObj.PACKAGE_NAME);
+            String arg = obj.optString(InviteObj.ARG);
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+            launch.putExtra("creator", false);
+            launch.setPackage(packageName);
+            final PackageManager mgr = mContext.getPackageManager();
+            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+            if (resolved.size() == 0) {
+                Toast.makeText(mContext, 
+                               "Could not find application to handle invite", 
+                               Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ActivityInfo info = resolved.get(0).activityInfo;
+            launch.setComponent(new ComponentName(
+                                    info.packageName,
+                                    info.name));
+            Notification notification = new Notification(
+                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                mContext, 0, launch, 0);
+            notification.setLatestEventInfo(
+                mContext, 
+                "Invitation received from " + from.email, 
+                "Click to launch application.", 
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+    class InviteToSharedAppFeedHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("invite_app_feed");
+        }
+        void handle(Contact from, JSONObject obj){
+            try{
+                String packageName = obj.getString(InviteObj.PACKAGE_NAME);
+                String feedName = obj.getString("sharedFeedName");
+                JSONArray ids = obj.getJSONArray(InviteObj.PARTICIPANTS);
+                Intent launch = new Intent();
+                launch.setAction(Intent.ACTION_MAIN);
+                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                launch.putExtra("type", "invite_app_feed");
+                launch.putExtra("creator", false);
+                launch.putExtra("sender", from.id);
+                launch.putExtra("sharedFeedName", feedName);
+                long[] idArray = new long[ids.length()];
+                for(int i = 0; i < ids.length(); i++) {
+                    Log.i(TAG, "Passing off " + ids.getLong(i));
+                    idArray[i] = ids.getLong(i);
+                }
+                launch.putExtra("participants", idArray);
+                launch.setPackage(packageName);
+                final PackageManager mgr = mContext.getPackageManager();
+                List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
+                if (resolved.size() == 0) {
+                    Toast.makeText(
+                        mContext, 
+                        "Could not find application to handle invite.", 
+                        Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                ActivityInfo info = resolved.get(0).activityInfo;
+                launch.setComponent(new ComponentName(
+                                        info.packageName,
+                                        info.name));
+                Notification notification = new Notification(
+                    R.drawable.icon, "New Invitation from " + from.email, 
+                    System.currentTimeMillis());
+                PendingIntent contentIntent = PendingIntent.getActivity(
+                    mContext, 0, launch, 0);
+                notification.setLatestEventInfo(
+                    mContext, 
+                    "Invitation received from " + from.email, 
+                    "Click to launch application: " + packageName, 
+                    contentIntent);
+                notification.flags = Notification.FLAG_AUTO_CANCEL;
+                mNotificationManager.notify(0, notification);
+            }
+            catch(JSONException e){
+                Log.e(TAG, e.getMessage());
+            }
+        }
+    }
+
+
+    class InviteToWebSessionHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("invite_web_session");
+        }
+        void handle(Contact from, JSONObject obj){
+
+            String arg = obj.optString(InviteObj.ARG);
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+            launch.putExtra("creator", false);
+        	String webUrl = obj.optString(InviteObj.WEB_URL);
+            launch.setData(Uri.parse(webUrl));
+
+            Notification notification = new Notification(
+                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                mContext, 0, launch, 0);
+            notification.setLatestEventInfo(
+                mContext, "Invitation received", 
+                "Click to launch application.", 
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+
+    class SendFileHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("send_file");
+        }
+        void handle(Contact from, JSONObject obj){
+            String mimeType = obj.optString("mimeType");
+            String uri = obj.optString("uri");
+            Intent i = new Intent();
+            i.setAction(Intent.ACTION_VIEW);
+            i.addCategory(Intent.CATEGORY_DEFAULT);
+            i.setType(mimeType);
+            i.setData(Uri.parse(uri));
+            i.putExtra(Intent.EXTRA_TEXT, uri);
+            Notification notification = new Notification(
+                R.drawable.icon, "New Shared File...", System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                mContext, 0, i, 0);
+            notification.setLatestEventInfo(
+                mContext, "New Shared File",
+                mimeType + "  " + uri,
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+
+    class IMHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("instant_message");
+        }
+        void handle(Contact from, JSONObject obj){
+            Intent launch = new Intent();
+            launch.setAction(Intent.ACTION_MAIN);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            launch.setComponent(new ComponentName(
+                                    mContext.getPackageName(),
+                                    DungBeetleActivity.class.getName()));
+            Notification notification = new Notification(
+                R.drawable.icon, "IM from " + from.email, System.currentTimeMillis());
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                mContext, 0, launch, 0);
+
+            String msg = obj.optString("text");
+
+            notification.setLatestEventInfo(
+                mContext, "IM from " + from.email,
+                "\"" + msg + "\"", contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(0, notification);
+        }
+    }
+
+
+    class SubscribeReqHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){ 
+            return msg.optString("type").equals("subscribe_req");
+        }
+        void handle(Contact from, JSONObject obj){
+            Helpers.insertSubscriber(
+                mContext, 
+                from.id,
+                obj.optString("subscribeToFeed"));
+        }
+    }
+
+    class ProfileHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){
+            return msg.optString("type").equals("profile");
+        }
+        void handle(Contact from, JSONObject obj){
+            String name = obj.optString("name");
+            String id = Long.toString(from.id);
+            mHelper.setContactName(id, name);
+        }
+    }
 
 }
