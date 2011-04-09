@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
@@ -17,9 +18,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpParams;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,6 +87,7 @@ public class GroupProviders{
             builder.appendPath("index.php");
             builder.appendQueryParameter("session", Util.MD5("session" + Math.random()));
             builder.appendQueryParameter("groupName", groupName);
+            builder.appendQueryParameter("key", Base64.encodeToString(Util.newAESKey(), false));
             Uri uri = builder.build();
             return uri;
         }
@@ -89,57 +98,77 @@ public class GroupProviders{
 
         public void handle(final long groupId, final Uri uriIn, 
                            final Context context, final IdentityProvider ident){
-            Uri.Builder b = uriIn.buildUpon();
-            b.appendQueryParameter(
-                "public_key", 
-                DBIdentityProvider.publicKeyToString(ident.userPublicKey()));
-            b.appendQueryParameter("email", ident.userEmail());
-            b.scheme("http");
-            Uri uri = b.build();
-            Log.i(TAG, "Doing dynamic group update for " + uri);
-            StringBuffer sb = new StringBuffer();
-            DefaultHttpClient client = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(uri.toString());
-            try {
-                HttpResponse execute = client.execute(httpGet);
-                InputStream content = execute.getEntity().getContent();
-                BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                String s = "";
-                while ((s = buffer.readLine()) != null) {
-                    sb.append(s);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
-            String response = sb.toString();
-            Log.i(TAG, "Got response: " + response);
             try{
-                JSONArray arr = new JSONArray(response);
-                for(int i = 0; i < arr.length(); i++){
-                    String objStr = arr.getString(i);
-                    JSONObject o = new JSONObject(objStr);
-                    final String pubKeyStr = o.getString("public_key");
-                    final String email = o.getString("email");
-                    final String profile = o.getString("profile");
-                    final String groupSession = o.getString("group_session");
-                    final String idInGroup = o.getString("group_id");
-                    (new Handler(context.getMainLooper())).post(new Runnable(){
-                            public void run(){
-                                ContentValues values = new ContentValues();
-                                values.put(Contact.PUBLIC_KEY, pubKeyStr);
-                                values.put(Contact.NAME, email);
-                                values.put(Contact.EMAIL, email);
-                                values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
-                                values.put(GroupMember.GROUP_ID, groupId);
-                                Uri url = Uri.parse(
-                                    DungBeetleContentProvider.CONTENT_URI + 
-                                    "/dynamic_group_member");
-                                context.getContentResolver().insert(url, values);
-                            }
-                        });
+                final byte[] key = Base64.decode(uriIn.getQueryParameter("key"));
+
+                // Build uri we will send to server
+                Uri.Builder b = new Uri.Builder();
+                b.scheme("http");
+                b.authority("suif.stanford.edu");
+                b.path("dungbeetle/index.php");
+                Uri uri = b.build();
+
+                Log.i(TAG, "Doing dynamic group update for " + uri);
+                StringBuffer sb = new StringBuffer();
+                DefaultHttpClient client = new DefaultHttpClient();
+                HttpPost httpPost = new HttpPost(uri.toString());
+
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());
+                String encryptedPubKey = Util.encryptAES(pubKey,key);
+                nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
+                nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
+                nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
+                nameValuePairs.add(new BasicNameValuePair("session", uriIn.getQueryParameter("session")));
+                httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                try {
+                    HttpResponse execute = client.execute(httpPost);
+                    InputStream content = execute.getEntity().getContent();
+                    BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                    String s = "";
+                    while ((s = buffer.readLine()) != null) {
+                        sb.append(s);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch(JSONException e){Log.e(TAG, e.getStackTrace().toString());}
+
+                String response = sb.toString();
+                try{
+                    JSONArray arr = new JSONArray(response);
+                    for(int i = 0; i < arr.length(); i++){
+                        String objStr = arr.getString(i);
+                        JSONObject o = new JSONObject(objStr);
+                        String encryptedPubK = o.getString("public_key");
+                        final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
+                        final String email = Util.decryptAES(o.getString("email"), key);
+                        final String profile = Util.decryptAES(o.getString("profile"), key);
+                        final String groupSession = o.getString("group_session");
+                        final String idInGroup = o.getString("group_id");
+                        (new Handler(context.getMainLooper())).post(new Runnable(){
+                                public void run(){
+                                    ContentValues values = new ContentValues();
+                                    values.put(Contact.PUBLIC_KEY, pubKeyStr);
+                                    values.put(Contact.NAME, email);
+                                    values.put(Contact.EMAIL, email);
+                                    values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
+                                    values.put(GroupMember.GROUP_ID, groupId);
+                                    Uri url = Uri.parse(
+                                        DungBeetleContentProvider.CONTENT_URI + 
+                                        "/dynamic_group_member");
+                                    context.getContentResolver().insert(url, values);
+                                }
+                            });
+                    }
+                }
+                catch(JSONException e){
+                    Log.e(TAG, "JSON error.", e);
+                }
+            }
+            catch(Exception e){
+                Log.e(TAG, "Error in group provider.", e);
+            }
         }
     }
 }
