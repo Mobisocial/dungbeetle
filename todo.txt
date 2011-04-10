@@ -9,5 +9,3 @@ get rid of code duplication in ViewGroupActivity
 local -> global -> local works, but user has to get actual
   contactids out of localized ones...
 HMAC the body of the messages!
-
-

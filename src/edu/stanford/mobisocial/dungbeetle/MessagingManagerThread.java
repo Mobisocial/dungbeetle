@@ -35,6 +35,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,6 +50,7 @@ public class MessagingManagerThread extends Thread {
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
 	private NotificationManager mNotificationManager;
+	private int notifyCounter = 0;
 
 
 
@@ -106,6 +108,11 @@ public class MessagingManagerThread extends Thread {
                 public void run(){
                     Toast.makeText(mContext, msg,Toast.LENGTH_SHORT).show();
                 }});
+    }
+
+    private int nextNotifyId(){
+        notifyCounter += 1;
+        return notifyCounter;
     }
 
 
@@ -347,11 +354,13 @@ public class MessagingManagerThread extends Thread {
         void handle(Contact from, JSONObject obj){
             String packageName = obj.optString(InviteObj.PACKAGE_NAME);
             String arg = obj.optString(InviteObj.ARG);
+            Log.i(TAG, "Received invite with arg: " + arg);
             Intent launch = new Intent();
             launch.setAction(Intent.ACTION_MAIN);
             launch.addCategory(Intent.CATEGORY_LAUNCHER);
             launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
             launch.putExtra("creator", false);
+            launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             launch.setPackage(packageName);
             final PackageManager mgr = mContext.getPackageManager();
             List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
@@ -371,11 +380,11 @@ public class MessagingManagerThread extends Thread {
                 mContext, 0, launch, 0);
             notification.setLatestEventInfo(
                 mContext, 
-                "Invitation received from " + from.email, 
+                "Invitation received from " + from.email,
                 "Click to launch application.", 
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(0, notification);
+            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -395,6 +404,7 @@ public class MessagingManagerThread extends Thread {
                 launch.putExtra("creator", false);
                 launch.putExtra("sender", from.id);
                 launch.putExtra("sharedFeedName", feedName);
+                launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 long[] idArray = new long[ids.length()];
                 for(int i = 0; i < ids.length(); i++) {
                     Log.i(TAG, "Passing off " + ids.getLong(i));
@@ -426,14 +436,13 @@ public class MessagingManagerThread extends Thread {
                     "Click to launch application: " + packageName, 
                     contentIntent);
                 notification.flags = Notification.FLAG_AUTO_CANCEL;
-                mNotificationManager.notify(0, notification);
+                mNotificationManager.notify(nextNotifyId(), notification);
             }
             catch(JSONException e){
                 Log.e(TAG, e.getMessage());
             }
         }
     }
-
 
     class InviteToWebSessionHandler extends MessageHandler{
         boolean willHandle(Contact from, JSONObject msg){ 
@@ -447,6 +456,7 @@ public class MessagingManagerThread extends Thread {
             launch.addCategory(Intent.CATEGORY_LAUNCHER);
             launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
             launch.putExtra("creator", false);
+            launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         	String webUrl = obj.optString(InviteObj.WEB_URL);
             launch.setData(Uri.parse(webUrl));
 
@@ -459,7 +469,7 @@ public class MessagingManagerThread extends Thread {
                 "Click to launch application.", 
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(0, notification);
+            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -486,7 +496,7 @@ public class MessagingManagerThread extends Thread {
                 mimeType + "  " + uri,
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(0, notification);
+            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -513,7 +523,7 @@ public class MessagingManagerThread extends Thread {
                 mContext, "IM from " + from.email,
                 "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(0, notification);
+            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 

@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -24,6 +25,8 @@ import java.util.List;
 
 
 public class UIHelpers {
+
+    public static final String TAG = "UIHelpers";
 
     public static void sendMessageToContact(final Context context, 
                                             final Collection<Contact> contacts){
@@ -87,6 +90,7 @@ public class UIHelpers {
                                             "android.intent.extra.APPLICATION_ARGUMENT",
                                             arg);
                                         context.startActivity(launch);
+                                        Log.i(TAG, "Sending arg: " + arg);
                                         Helpers.sendApplicationInvite(
                                             context,
                                             contacts, 
