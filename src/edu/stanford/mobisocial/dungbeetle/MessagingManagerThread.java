@@ -373,7 +373,7 @@ public class MessagingManagerThread extends Thread {
                 mContext, 0, launch, 0);
             notification.setLatestEventInfo(
                 mContext, 
-                "Invitation received from " + from.email, 
+                "Invitation received from " + from.name, 
                 "Click to launch application.", 
                 contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
@@ -418,13 +418,13 @@ public class MessagingManagerThread extends Thread {
                                         info.packageName,
                                         info.name));
                 Notification notification = new Notification(
-                    R.drawable.icon, "New Invitation from " + from.email, 
+                    R.drawable.icon, "New Invitation from " + from.name, 
                     System.currentTimeMillis());
                 PendingIntent contentIntent = PendingIntent.getActivity(
                     mContext, 0, launch, 0);
                 notification.setLatestEventInfo(
                     mContext, 
-                    "Invitation received from " + from.email, 
+                    "Invitation received from " + from.name, 
                     "Click to launch application: " + packageName, 
                     contentIntent);
                 notification.flags = Notification.FLAG_AUTO_CANCEL;
@@ -505,14 +505,14 @@ public class MessagingManagerThread extends Thread {
                                     mContext.getPackageName(),
                                     DungBeetleActivity.class.getName()));
             Notification notification = new Notification(
-                R.drawable.icon, "IM from " + from.email, System.currentTimeMillis());
+                R.drawable.icon, "IM from " + from.name, System.currentTimeMillis());
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, 0);
 
             String msg = obj.optString("text");
 
             notification.setLatestEventInfo(
-                mContext, "IM from " + from.email,
+                mContext, "IM from " + from.name,
                 "\"" + msg + "\"", contentIntent);
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, notification);
