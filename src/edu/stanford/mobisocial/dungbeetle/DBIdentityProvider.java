@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,15 +28,15 @@ public class DBIdentityProvider implements IdentityProvider {
 
 	public DBIdentityProvider(SQLiteOpenHelper db) {
         mDb = db;
-		Cursor c = db.getReadableDatabase().rawQuery("SELECT * FROM my_info", new String[] {});
+		Cursor c = db.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         if(c.isAfterLast()){
             throw new IllegalStateException("Missing my_info entry!");
         }
         else{
-            mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow("public_key")));
-            mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow("private_key")));
-            mName = c.getString(c.getColumnIndexOrThrow("name"));
+            mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY)));
+            mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
+            mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
             mPubKeyTag = personIdForPublicKey(mPubKey);
         }
     }
@@ -45,7 +46,7 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public String userEmail(){
-		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT email FROM my_info", new String[] {});
+		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT " + MyInfo.EMAIL + " FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         return c.getString(c.getColumnIndexOrThrow("email"));
     }
@@ -163,38 +164,6 @@ public class DBIdentityProvider implements IdentityProvider {
             throw new IllegalStateException("Error loading public key: " + e);
         }
     }
-
-
-	private static PublicKey getMyPubKey(SQLiteOpenHelper db) {
-		Cursor c = db.getReadableDatabase().rawQuery("SELECT public_key FROM my_info", new String[] {});
-		c.moveToFirst();
-        if(c.isAfterLast()){
-            throw new IllegalStateException("Missing my_info entry!");
-        }
-        else{
-            String pubKeyStr = c.getString(0);
-            Log.d(TAG, "Loaded public key: " + pubKeyStr);
-            return publicKeyFromString(pubKeyStr);
-        }
-	}
-
-	private static PrivateKey getMyPrivKey(SQLiteOpenHelper db) {
-		Cursor c = db.getReadableDatabase().rawQuery("SELECT private_key FROM my_info", new String[] {});
-		c.moveToFirst();
-        if(c.isAfterLast()){
-            throw new IllegalStateException("Missing my_info entry!");
-        }
-        else{
-            try{
-                String privKeyStr = c.getString(0);
-                Log.d(TAG, "Loaded private key: " + privKeyStr);
-                return privateKeyFromString(privKeyStr);
-            }
-            catch(Exception e){
-                throw new IllegalStateException("Error loading private key: " + e);
-            }
-        }
-	}
 
 
     public void close(){

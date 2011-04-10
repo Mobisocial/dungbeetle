@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Contact Manager Service</string>
+    <string name="app_name">DungBeetle</string>
     <string name="start">Running...</string>
     <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>

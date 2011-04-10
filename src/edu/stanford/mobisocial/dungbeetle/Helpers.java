@@ -31,12 +31,16 @@ public class Helpers {
     public static void deleteGroup(final Context c, 
                                    Long groupId){
         c.getContentResolver().delete(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
-            GroupMember.GROUP_ID + "=?",
-            new String[]{ String.valueOf(groupId)});
-        c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
             Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+    }
+
+    public static void deleteContact(final Context c, 
+                                   Long contactId){
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
+            Contact._ID + "=?",
+            new String[]{ String.valueOf(contactId)});
     }
 
     public static Uri insertContact(final Context c, String pubKeyStr, 

@@ -35,7 +35,6 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.regex.Matcher;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -53,7 +52,7 @@ public class MessagingManagerThread extends Thread {
     private Handler mMainThreadHandler;
 	private NotificationManager mNotificationManager;
 	private int notifyCounter = 0;
-
+    private final long[] VIBRATE = new long[] {0, 280, 150, 100, 150, 150, 50, 250};
 
 
     public MessagingManagerThread(final Context context){
@@ -378,8 +377,9 @@ public class MessagingManagerThread extends Thread {
                                     info.name));
             Notification notification = new Notification(
                 R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, 0);
+                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
             notification.setLatestEventInfo(
                 mContext, 
                 "Invitation received from " + from.name, 
@@ -430,8 +430,9 @@ public class MessagingManagerThread extends Thread {
                 Notification notification = new Notification(
                     R.drawable.icon, "New Invitation from " + from.name, 
                     System.currentTimeMillis());
+                notification.vibrate = VIBRATE;
                 PendingIntent contentIntent = PendingIntent.getActivity(
-                    mContext, 0, launch, 0);
+                    mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
                 notification.setLatestEventInfo(
                     mContext, 
                     "Invitation received from " + from.name, 
@@ -464,8 +465,9 @@ public class MessagingManagerThread extends Thread {
 
             Notification notification = new Notification(
                 R.drawable.icon, "New Invitation", System.currentTimeMillis());
+            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, 0);
+                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
             notification.setLatestEventInfo(
                 mContext, "Invitation received", 
                 "Click to launch application.", 
@@ -491,8 +493,9 @@ public class MessagingManagerThread extends Thread {
             i.putExtra(Intent.EXTRA_TEXT, uri);
             Notification notification = new Notification(
                 R.drawable.icon, "New Shared File...", System.currentTimeMillis());
+            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, i, 0);
+                mContext, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
             notification.setLatestEventInfo(
                 mContext, "New Shared File",
                 mimeType + "  " + uri,
@@ -516,8 +519,9 @@ public class MessagingManagerThread extends Thread {
                                     DungBeetleActivity.class.getName()));
             Notification notification = new Notification(
                 R.drawable.icon, "IM from " + from.name, System.currentTimeMillis());
+            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, 0);
+                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
 
             String msg = obj.optString("text");
 

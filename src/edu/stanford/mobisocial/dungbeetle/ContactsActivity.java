@@ -88,7 +88,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         final Contact c = new Contact(cursor);
         menu.setHeaderTitle(c.name);
         
-        String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups" };
+        String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups", "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
@@ -113,6 +113,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 break;
             case 2:
             	UIHelpers.showGroupPicker(ContactsActivity.this, c);
+            	break;
+            case 3:
+                Helpers.deleteContact(this, c.id);
             	break;
         }
         return true;

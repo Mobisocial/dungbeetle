@@ -70,12 +70,12 @@ public class DungBeetleActivity extends TabActivity
     }
 
     private void notifyApkDownload(String url){
-        final Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.parse(url), "application/vnd.android.package-archive");
+        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         Notification notification = new Notification(
             R.drawable.icon, 
             "Update available.", System.currentTimeMillis());
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         notification.setLatestEventInfo(
             this, 
             "Update available.", 

@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.os.Binder;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.security.PublicKey;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -187,12 +188,20 @@ public class DungBeetleContentProvider extends ContentProvider {
                         gv.put(GroupMember.GROUP_ID, 
                                values.getAsLong(GroupMember.GROUP_ID));
                         gv.put(GroupMember.CONTACT_ID, cid);
-                        long gid = mHelper.insertGroupMember(db, gv);
+                        mHelper.insertGroupMember(db, gv);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/group_members"), null);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/contacts"), null);
-                        if(gid > -1) db.setTransactionSuccessful();
+
+                        ContentValues sv = new ContentValues();
+                        sv.put(Subscriber.CONTACT_ID, cid);
+                        sv.put(Subscriber.FEED_NAME, "friend");
+                        mHelper.insertSubscriber(db, sv);
+                        getContext().getContentResolver().notifyChange(
+                            Uri.parse(CONTENT_URI + "/subscribers"), null);
+
+                        db.setTransactionSuccessful();
                     }
                     return uriWithId(uri, cid);
                 }

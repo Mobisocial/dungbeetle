@@ -12,8 +12,9 @@ public class ProfileActivity extends Activity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile);
 		final DBHelper helper = new DBHelper(ProfileActivity.this);
+        final IdentityProvider ident = new DBIdentityProvider(helper);
         final EditText profile_name = (EditText) findViewById(R.id.profile_name);
-        profile_name.setText(helper.getMyName());
+        profile_name.setText(ident.userName());
         Button save_button = (Button) findViewById(R.id.save_profile_button);
         save_button.setOnClickListener(new OnClickListener(){
             	public void onClick(View v)

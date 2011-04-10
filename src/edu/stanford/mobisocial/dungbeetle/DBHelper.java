@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 22;
+	public static final int VERSION = 24;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -63,15 +64,31 @@ public class DBHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-              + newVersion + ", which will destroy all old data");
-        db.execSQL("DROP TABLE IF EXISTS my_info");
+        Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+        if(oldVersion <= 23){
+            Log.w(TAG, "Schema too old to migrate, dropping all."); 
+            dropAll(db);
+            onCreate(db);
+        }
+        else if(oldVersion < newVersion) {
+            throw new RuntimeException("No migration specified from " + oldVersion + " to " + newVersion + "!");
+        }
+        else if(newVersion < oldVersion) {
+            throw new RuntimeException("WTF! Old database has higher version number than new database! " + 
+                                       oldVersion + ", " + newVersion + ", respectively.");
+        }
+        else {
+            Log.w(TAG, "No schema changes to migrate!"); 
+        }
+    }
+
+    private void dropAll(SQLiteDatabase db){
+        db.execSQL("DROP TABLE IF EXISTS " + MyInfo.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Subscriber.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Group.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + GroupMember.TABLE);
-        onCreate(db);
     }
 
     private void createTable(SQLiteDatabase db, String tableName, String... cols){
@@ -102,11 +119,12 @@ public class DBHelper extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		db.beginTransaction();
 
-        createTable(db, "my_info", 
-                    "public_key", "TEXT",
-                    "private_key", "TEXT",
-                    "name", "TEXT",
-                    "email", "TEXT"
+        createTable(db, MyInfo.TABLE, 
+                    MyInfo._ID, "INTEGER PRIMARY KEY",
+                    MyInfo.PUBLIC_KEY, "TEXT",
+                    MyInfo.PRIVATE_KEY, "TEXT",
+                    MyInfo.NAME, "TEXT",
+                    MyInfo.EMAIL, "TEXT"
                     );
 
         createTable(db, Object.TABLE,
@@ -136,7 +154,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
 		createTable(db, Subscriber.TABLE,
                     Subscriber._ID, "INTEGER PRIMARY KEY",
-                    Subscriber.CONTACT_ID, "INTEGER",
+                    Subscriber.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
                     Subscriber.FEED_NAME, "TEXT");
         createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
 
@@ -150,8 +168,8 @@ public class DBHelper extends SQLiteOpenHelper {
         
         createTable(db, GroupMember.TABLE,
         			GroupMember._ID, "INTEGER PRIMARY KEY",
-        			GroupMember.GROUP_ID, "INTEGER",
-        			GroupMember.CONTACT_ID, "INTEGER",
+        			GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
+        			GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
                     GroupMember.GLOBAL_CONTACT_ID, "TEXT");
         createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
                     GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
@@ -175,13 +193,13 @@ public class DBHelper extends SQLiteOpenHelper {
         String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
         String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
         ContentValues cv = new ContentValues();
-        cv.put("public_key", pubKeyStr);
-        cv.put("private_key", privKeyStr);
-        cv.put("name", name);
-        cv.put("email", email);
-        db.insertOrThrow("my_info", null, cv);
+        cv.put(MyInfo.PUBLIC_KEY, pubKeyStr);
+        cv.put(MyInfo.PRIVATE_KEY, privKeyStr);
+        cv.put(MyInfo.NAME, name);
+        cv.put(MyInfo.EMAIL, email);
+        db.insertOrThrow(MyInfo.TABLE, null, cv);
         Log.d(TAG, "Generated public key: " + pubKeyStr);
-        Log.d(TAG, "Generated priv key: " + privKeyStr);
+        Log.d(TAG, "Generated priv key: **************");
     }
 
     private String getUserEmail(){
@@ -197,14 +215,14 @@ public class DBHelper extends SQLiteOpenHelper {
 
     void setMyEmail(String email) {
         ContentValues cv = new ContentValues();
-        cv.put("email", email);
-        getWritableDatabase().update("my_info", cv, null, null);
+        cv.put(MyInfo.EMAIL, email);
+        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
     }
 
     void setMyName(String name) {
         ContentValues cv = new ContentValues();
-        cv.put("name", name);
-        getWritableDatabase().update("my_info", cv, null, null);
+        cv.put(MyInfo.NAME, name);
+        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
     }
 
     void setContactName(String id, String name) {
@@ -213,20 +231,6 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update(Contact.TABLE, cv, "_id=?", new String[]{id});
     }
     
-    String getMyName(){
-        Cursor c = getReadableDatabase().rawQuery(
-            "SELECT name FROM my_info",
-            null);
-        c.moveToFirst();
-        if(!c.isAfterLast()){
-        	
-            String name = c.getString(0);
-            Log.i(TAG, "Found my name: " + name);
-            return name;
-        }
-        return "NA";
-    }
-
     long addToOutgoing(String appId, String to, String type, JSONObject json) {
         try{
             long timestamp = new Date().getTime();
@@ -304,6 +308,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+
     long insertContact(ContentValues cv) {
         return insertContact(getWritableDatabase(), cv);
     }
@@ -327,10 +332,14 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     long insertSubscriber(ContentValues cv) {
+        return insertSubscriber(getWritableDatabase(), cv);
+    }
+
+    long insertSubscriber(SQLiteDatabase db, ContentValues cv) {
         try{
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return getWritableDatabase().insertOrThrow(Subscriber.TABLE, null, cv);
+            return db.insertOrThrow(Subscriber.TABLE, null, cv);
         }
         catch(Exception e){
             e.printStackTrace(System.err);
