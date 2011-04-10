@@ -65,21 +65,23 @@ public class DBHelper extends SQLiteOpenHelper {
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
+
+        if(newVersion < oldVersion) {
+            throw new RuntimeException("WTF! Old database has higher version number than new database! " + 
+                                       oldVersion + ", " + newVersion + ", respectively.");
+        }
+
+        if(newVersion == oldVersion){
+            Log.w(TAG, "No schema changes to migrate!"); 
+            return;
+        }
+
         if(oldVersion <= 23){
             Log.w(TAG, "Schema too old to migrate, dropping all."); 
             dropAll(db);
             onCreate(db);
         }
-        else if(oldVersion < newVersion) {
-            throw new RuntimeException("No migration specified from " + oldVersion + " to " + newVersion + "!");
-        }
-        else if(newVersion < oldVersion) {
-            throw new RuntimeException("WTF! Old database has higher version number than new database! " + 
-                                       oldVersion + ", " + newVersion + ", respectively.");
-        }
-        else {
-            Log.w(TAG, "No schema changes to migrate!"); 
-        }
+
     }
 
     private void dropAll(SQLiteDatabase db){
