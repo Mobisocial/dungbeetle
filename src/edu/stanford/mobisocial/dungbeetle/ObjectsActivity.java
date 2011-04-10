@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.content.Intent;
+
 
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
@@ -37,11 +39,30 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
-        Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-            null, 
-            Object.TYPE + "=?", new String[]{ "status" }, 
-            Object.TIMESTAMP + " DESC");
+
+        Cursor c;
+        
+        Intent intent = getIntent();
+        if(intent.hasExtra("contact_id")) {
+            String contact_id = Long.toString(intent.getLongExtra("contact_id", -1));
+
+            
+            c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
+                Object.TIMESTAMP + " DESC");
+		}
+		
+        
+		else {
+            c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
+                null, 
+                Object.TYPE + "=?", new String[]{ "status" }, 
+                Object.TIMESTAMP + " DESC");
+		}
+		
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
@@ -49,25 +70,32 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         mHelper = new DBHelper(ObjectsActivity.this); 
         mIdent = new DBIdentityProvider(mHelper);
 
-		Button button = (Button)findViewById(R.id.add_object_button);
-		button.setOnClickListener(new OnClickListener() {
-				public void onClick(View v) {
-                    AlertDialog.Builder alert = new AlertDialog.Builder(ObjectsActivity.this);
-                    alert.setMessage("Please enter your new status message:");
-                    final EditText input = new EditText(ObjectsActivity.this);
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                String value = input.getText().toString();
-                                Helpers.updateStatus(ObjectsActivity.this, value);
-                            }
-                        });
-                    alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {}
-                        });
-                    alert.show();
-				}
-			});
+        if(!intent.hasExtra("contact_id") && !intent.hasExtra("group_id"))
+        {
+		    Button button = (Button)findViewById(R.id.add_object_button);
+		    button.setOnClickListener(new OnClickListener() {
+				    public void onClick(View v) {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(ObjectsActivity.this);
+                        alert.setMessage("Please enter your new status message:");
+                        final EditText input = new EditText(ObjectsActivity.this);
+                        alert.setView(input);
+                        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    String value = input.getText().toString();
+                                    Helpers.updateStatus(ObjectsActivity.this, value);
+                                }
+                            });
+                        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {}
+                            });
+                        alert.show();
+				    }
+			    });
+	    }
+	    else
+	    {
+	        findViewById(R.id.add_object_button).setVisibility(View.GONE);
+	    }
 	}
 
 

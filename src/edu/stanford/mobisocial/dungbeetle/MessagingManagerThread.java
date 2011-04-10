@@ -40,6 +40,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ContentValues;
+
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
     private Context mContext;
@@ -537,7 +539,12 @@ public class MessagingManagerThread extends Thread {
         void handle(Contact from, JSONObject obj){
             String name = obj.optString("name");
             String id = Long.toString(from.id);
-            mHelper.setContactName(id, name);
+            
+                    Log.i(TAG, "Updating " + id + " name="+name);
+            ContentValues values = new ContentValues();
+            values.put(Contact.NAME, name);
+            mContext.getContentResolver().update(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
         }
     }
 

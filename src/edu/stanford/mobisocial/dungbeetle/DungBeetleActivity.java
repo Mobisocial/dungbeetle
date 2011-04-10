@@ -163,6 +163,7 @@ public class DungBeetleActivity extends TabActivity
                         }); 
                 }
             });
+        shareContactInfo();
     }
 
     protected void doHandleNdef(NdefMessage[] messages){
@@ -180,6 +181,7 @@ public class DungBeetleActivity extends TabActivity
         Intent intent = new Intent().setClass(this, HandleNfcContact.class);
         intent.setData(myUri);
         startActivity(intent);
+        shareContactInfo();
     }
 
     public void writeGroupToTag(Uri uri){
@@ -213,7 +215,7 @@ public class DungBeetleActivity extends TabActivity
             uri.toString().getBytes());
         NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
         mNfc.share(ndef);
-        Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
         helper.close();
     }
 

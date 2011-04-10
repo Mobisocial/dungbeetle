@@ -23,6 +23,10 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import java.util.Collection;
+import android.view.ContextMenu;
+import android.view.View;
+import android.view.ContextMenu.ContextMenuInfo;
+
 
 
 public class GroupsActivity extends ListActivity implements OnItemClickListener{
@@ -41,43 +45,60 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
+		registerForContextMenu(getListView());
 	}
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+
+        Cursor cursor = (Cursor)mGroups.getItem(info.position);
+        final Group g = new Group(cursor);
+        menu.setHeaderTitle(g.name);
+        
+        String[] menuItems = new String[]{ "Send Message", "Start Application", "Delete" };
+        for (int i = 0; i<menuItems.length; i++) {
+            menu.add(Menu.NONE, i, i, menuItems[i]);
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        int menuItemIndex = item.getItemId();
+
+        Cursor cursor = (Cursor)mGroups.getItem(info.position);
+        final Group g = new Group(cursor);
+        final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
+
+        switch(menuItemIndex) {
+            case 0:
+                UIHelpers.sendMessageToContact(
+                    GroupsActivity.this, 
+                    contactsInGroup);
+                break;
+            case 1:
+                UIHelpers.startApplicationWithContact(
+                    GroupsActivity.this, 
+                    contactsInGroup);
+                break;
+            case 2:
+                Helpers.deleteGroup(GroupsActivity.this, g.id);
+                break;
+        }
+        return true;
+    }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id){
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
-        final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
-        final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application", "View Contacts", "Delete" };
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Actions");
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int item) {
-                    switch(item){
-                    case 0:
-                        UIHelpers.sendMessageToContact(
-                            GroupsActivity.this, 
-                            contactsInGroup);
-                        break;
-                    case 1:
-                        UIHelpers.startApplicationWithContact(
-                            GroupsActivity.this, 
-                            contactsInGroup);
-                        break;
-                    case 2:
-                        Intent viewGroupIntent = new Intent(GroupsActivity.this, ContactsActivity.class);
-                        viewGroupIntent.putExtra("group_id", g.id);
-                        startActivity(viewGroupIntent);
-                    	break;
-                    case 3:
-                        Helpers.deleteGroup(GroupsActivity.this, g.id);
-                        break;
-                    }
-                }
-            });
-        AlertDialog alert = builder.create();
-        alert.show();
+
+        Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
+        viewGroupIntent.putExtra("group_id", g.id);
+        viewGroupIntent.putExtra("group_name", g.name);
+        startActivity(viewGroupIntent);
+
     }
 
 
