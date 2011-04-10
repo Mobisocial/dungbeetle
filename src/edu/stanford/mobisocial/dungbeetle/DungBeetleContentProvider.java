@@ -132,6 +132,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             long id = mHelper.insertContact(values);
             getContext().getContentResolver().notifyChange(
                 Uri.parse(CONTENT_URI + "/contacts"), null);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/contacts"), null);
             return uriWithId(uri, id);
         }
         else if(match(uri, "subscribers")){
@@ -304,7 +305,16 @@ public class DungBeetleContentProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
-        return 0;
+        final String appId = getCallingActivityId();
+        if(appId == null){
+            Log.d(TAG, "No AppId for calling activity. Ignoring query.");
+            return 0;
+        }
+        if(!appId.equals(SUPER_APP_ID)) return 0;
+        List<String> segs = uri.getPathSegments();
+        mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
+        getContext().getContentResolver().notifyChange(uri, null);
+		return 0;
     }
 
     // For unit tests

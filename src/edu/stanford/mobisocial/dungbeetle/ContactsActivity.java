@@ -33,6 +33,9 @@ import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import android.view.ContextMenu;
+import android.view.View;
+import android.view.ContextMenu.ContextMenuInfo;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -78,33 +81,54 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		lv.setOnItemClickListener(this);
 	}
 
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+
+        Cursor cursor = (Cursor)mContacts.getItem(info.position);
+        final Contact c = new Contact(cursor);
+        menu.setHeaderTitle(c.name);
+        
+        String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups" };
+        for (int i = 0; i<menuItems.length; i++) {
+            menu.add(Menu.NONE, i, i, menuItems[i]);
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        int menuItemIndex = item.getItemId();
+
+        Cursor cursor = (Cursor)mContacts.getItem(info.position);
+        final Contact c = new Contact(cursor);
+
+        switch(menuItemIndex) {
+            case 0:
+                UIHelpers.sendMessageToContact(ContactsActivity.this, 
+                                               Collections.singletonList(c));
+                break;
+            case 1:
+                UIHelpers.startApplicationWithContact(ContactsActivity.this, 
+                                                      Collections.singletonList(c));
+                break;
+            case 2:
+            	UIHelpers.showGroupPicker(ContactsActivity.this, c);
+            	break;
+        }
+        return true;
+    }
+
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
         final Contact c = new Contact(cursor);
-        final CharSequence[] items = new CharSequence[]{ "Send Message", "Start Application", "Manage Groups" };
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Actions");
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int item) {
-                    switch(item){
-                    case 0:
-                        UIHelpers.sendMessageToContact(ContactsActivity.this, 
-                                                       Collections.singletonList(c));
-                        break;
-                    case 1:
-                        UIHelpers.startApplicationWithContact(ContactsActivity.this, 
-                                                              Collections.singletonList(c));
-                        break;
-                    case 2:
-                    	UIHelpers.showGroupPicker(ContactsActivity.this, c);
-                    	break;
-                    }
-                }
-            });
-        AlertDialog alert = builder.create();
-        alert.show();
+
+        Intent viewContactIntent = new Intent(ContactsActivity.this, ViewContactTabActivity.class);
+        viewContactIntent.putExtra("contact_id", c.id);
+        viewContactIntent.putExtra("contact_name", c.name);
+        startActivity(viewContactIntent);
+
     }
 
 

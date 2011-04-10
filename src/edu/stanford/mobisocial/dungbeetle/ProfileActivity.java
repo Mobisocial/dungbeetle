@@ -20,6 +20,7 @@ public class ProfileActivity extends Activity{
             	{
             		helper.setMyName(profile_name.getText().toString());
             		Helpers.updateProfile(ProfileActivity.this, profile_name.getText().toString());
+            		((DungBeetleActivity)getParent()).shareContactInfo();
             	}
             });
         helper.close();
