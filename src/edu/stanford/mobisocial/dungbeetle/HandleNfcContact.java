@@ -4,7 +4,6 @@ import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import android.widget.ImageView;
 import android.widget.TextView;
 import java.security.PublicKey;
-import android.content.ContentValues;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Intent;
@@ -16,7 +15,6 @@ import android.widget.Toast;
 
 
 public class HandleNfcContact extends Activity {
-    
     private String mName;
     private String mEmail;
     private String mPubKeyStr;
@@ -43,7 +41,7 @@ public class HandleNfcContact extends Activity {
             ImageView portraitView = (ImageView)findViewById(R.id.image);
             //portraitView.setImageResource(R.drawable.ellipsis);
             if(uri != null){
-                mgr.lazyLoadImage(portraitView, Gravatar.gravatarUri(mEmail));
+                mgr.lazyLoadImage(portraitView, Gravatar.gravatarUri(mEmail, 100));
             }
 		}
 		else{

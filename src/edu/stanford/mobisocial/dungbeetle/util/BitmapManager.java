@@ -1,7 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.util;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.ImageView;
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -9,11 +9,13 @@ import android.os.Message;
 import java.util.*;
 import java.net.*;
 import java.io.*;
+import edu.stanford.mobisocial.dungbeetle.R;
 
 
 public class BitmapManager{
 
 	private final float hashTableLoadFactor = 0.75f;
+	public static final String TAG = "BitmapManager";
 	final Map<String, Bitmap> cache;
 	final int cacheSize;
 
@@ -50,6 +52,10 @@ public class BitmapManager{
 		}.start();
 	}
 
+	protected boolean hasBitmap(String url){
+        return cache.get(url) != null;
+    }
+
 	public Bitmap getBitmap(String url){
 		Bitmap bm = cache.get(url);
 		if(bm != null) {
@@ -71,8 +77,8 @@ public class BitmapManager{
 				return newBm;
 			}
 			catch(IOException e){
-				System.err.println("Failed to get bitmap:" + url);
-				return null;
+				System.err.println();
+                return null;
 			}
 		}
 	}
@@ -87,13 +93,17 @@ public class BitmapManager{
 	}
 
 	public void lazyLoadImage(final ImageView im, final Uri uri){
-		//im.setImageResource(R.drawable.ellipsis);
+        if(hasBitmap(uri.toString())) {
+            im.setImageBitmap(getBitmap(uri.toString()));
+            return;
+        }
+        im.setImageResource(R.drawable.anonymous);
 		getBitmap(uri.toString(), new Handler(){
 				public void handleMessage(Message msg){
 					super.handleMessage(msg);
 					Bitmap bm = (Bitmap)msg.obj;
 					if(bm != null){
-						im.setImageBitmap(bm);
+                        im.setImageBitmap(bm);
 					}
 				}
 			});

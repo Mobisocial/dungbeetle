@@ -8,12 +8,8 @@ import java.util.HashSet;
 import java.util.Set;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import java.util.ArrayList;
 import android.content.Context;
-import android.content.IntentFilter;
-import android.content.BroadcastReceiver;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.widget.ArrayAdapter;
 import android.widget.TabHost;
 import android.app.TabActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -35,7 +31,7 @@ public class PickContactsActivity extends TabActivity {
 	private ContactListCursorAdapter mContacts;
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
-	protected final BitmapManager mgr = new BitmapManager(10);
+	protected final BitmapManager mgr = new BitmapManager(20);
     public static final String INTENT_ACTION_INVITE = 
         "edu.stanford.mobisocial.dungbeetle.INVITE";
 

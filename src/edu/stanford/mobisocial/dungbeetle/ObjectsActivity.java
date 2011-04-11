@@ -31,7 +31,7 @@ import android.content.Intent;
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
 
-	protected final BitmapManager mBitmaps = new BitmapManager(10);
+	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;

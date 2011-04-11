@@ -41,7 +41,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 	private ContactListCursorAdapter mContacts;
     public static final String SHARE_SCHEME = "db-share-contact";
-	protected final BitmapManager mBitmaps = new BitmapManager(10);
+	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
 
 
