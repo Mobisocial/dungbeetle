@@ -57,11 +57,20 @@ public class ProfileActivity extends Activity{
                 }catch(JSONException e){}
             }
             else {
-                Contact contact = getContact(contact_id);
-                name = contact.name;
-                email = contact.email;
-                about = "about";
-
+                if(contact_id == Contact.MY_ID) {
+                    DBHelper helper = new DBHelper(ProfileActivity.this);
+                    IdentityProvider ident = new DBIdentityProvider(helper);
+                    
+                    name = ident.userName();
+                    email = ident.userEmail();
+                    about = "about";
+                }
+                else {
+                    Contact contact = getContact(contact_id);
+                    name = contact.name;
+                    email = contact.email;
+                    about = "about";
+                }
             }  
 	    
 
