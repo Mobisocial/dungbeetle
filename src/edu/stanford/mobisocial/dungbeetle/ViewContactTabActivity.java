@@ -53,8 +53,8 @@ public class ViewContactTabActivity extends TabActivity
             null).setContent(intent);
         tabHost.addTab(spec);
 
-        intent = new Intent().setClass(this, ContactsActivity.class);
-        //intent.putExtra("group_id", group_id);
+        intent = new Intent().setClass(this, ProfileActivity.class);
+        intent.putExtra("contact_id", contact_id);
         
         spec = tabHost.newTabSpec("contacts").setIndicator(
             "Profile",

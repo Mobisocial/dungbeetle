@@ -176,12 +176,14 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void updateProfile(final Context c, final String name){
+    public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
             obj.put("name", name);
+            obj.put("about", about);
+            
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, "profile");

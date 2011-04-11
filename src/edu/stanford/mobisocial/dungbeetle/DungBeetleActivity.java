@@ -19,6 +19,7 @@ import java.security.PublicKey;
 import java.util.Date;
 import org.json.JSONException;
 import org.json.JSONObject;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 
 public class DungBeetleActivity extends TabActivity
@@ -102,6 +103,7 @@ public class DungBeetleActivity extends TabActivity
         TabHost.TabSpec spec;  
         Intent intent;  
 
+
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ContactsActivity.class);
         spec = tabHost.newTabSpec("contacts").setIndicator(
@@ -116,8 +118,10 @@ public class DungBeetleActivity extends TabActivity
         tabHost.addTab(spec);
 		
         // Do the same for the other tabs
+        
         intent = new Intent().setClass(this, ProfileActivity.class);
-        spec = tabHost.newTabSpec("profile").setIndicator("Profile",
+        intent.putExtra("contact_id", Contact.MY_ID);
+        spec = tabHost.newTabSpec("view_profile").setIndicator("Profile",
                                                           null)
             .setContent(intent);
         tabHost.addTab(spec);
