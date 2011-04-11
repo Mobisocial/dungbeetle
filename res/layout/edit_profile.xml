@@ -9,9 +9,13 @@
         android:text="My Name"
         />
     <EditText
-        android:id="@+id/profile_name"
+        android:id="@+id/edit_profile_name"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"/>
+    <EditText
+        android:id="@+id/edit_profile_about"
+        android:layout_width="fill_parent"
+        android:layout_height="45sp"/>
         
     <Button
 	    android:id="@+id/save_profile_button"
