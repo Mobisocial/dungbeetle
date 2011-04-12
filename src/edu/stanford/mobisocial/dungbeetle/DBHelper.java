@@ -230,7 +230,7 @@ public class DBHelper extends SQLiteOpenHelper {
     void setContactName(String id, String name) {
         ContentValues cv = new ContentValues();
         cv.put(Contact.NAME, name);
-        getWritableDatabase().update(Contact.TABLE, cv, "_id=?", new String[]{id});
+        getWritableDatabase().update(Contact.TABLE, cv, Contact._ID + "=?", new String[]{ id });
     }
     
     long addToOutgoing(String appId, String to, String type, JSONObject json) {
@@ -275,7 +275,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(Object.SEQUENCE_ID, nextSeqId);
             cv.put(Object.JSON, json.toString());
             cv.put(Object.TIMESTAMP, timestamp);
-            getWritableDatabase().insertOrThrow("objects", null, cv);
+            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
             return nextSeqId;
         }
         catch(Exception e){
@@ -301,7 +301,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(Object.JSON, json.toString());
             cv.put(Object.TIMESTAMP, timestamp);
             cv.put(Object.SENT, 1);
-            getWritableDatabase().insertOrThrow("objects", null, cv);
+            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
             return seqId;
         }
         catch(Exception e){
@@ -405,7 +405,7 @@ public class DBHelper extends SQLiteOpenHelper {
                             ){
         String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
         select = andClauses(select, Object.APP_ID + "='" + appId + "'");
-        return getReadableDatabase().query("objects", projection, 
+        return getReadableDatabase().query(Object.TABLE, projection, 
                                            select, selectionArgs, 
                                            null, null, sortOrder, null);
     }
