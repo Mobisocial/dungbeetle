@@ -168,7 +168,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
                     qa.addActionItem(send_im);
                     qa.addActionItem(start_app);
-                    qa.setAnimStyle(QuickAction.ANIM_AUTO);
+                    qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                     qa.show();
                 }

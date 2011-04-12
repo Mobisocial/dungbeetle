@@ -23,7 +23,6 @@
 	android:layout_height="0dip"
 	android:layout_weight="1"
 	android:gravity="center_vertical"
-	android:textStyle="bold"
         />
   </LinearLayout>
   <ImageView

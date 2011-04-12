@@ -45,7 +45,7 @@ public class ViewContactTabActivity extends TabActivity
 
         if(intent.hasExtra("group_name")) {
             String group_name = intent.getStringExtra("group_name");
-            setTitle("Group > " + group_name + " > Members > " + contact_name);
+            setTitle("Groups > " + group_name + " > Members > " + contact_name);
         }
 
         else {

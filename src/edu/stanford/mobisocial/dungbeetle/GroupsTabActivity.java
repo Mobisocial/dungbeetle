@@ -43,7 +43,7 @@ public class GroupsTabActivity extends TabActivity
         Long group_id = intent.getLongExtra("group_id", -1);
         String group_name = intent.getStringExtra("group_name");
 
-        setTitle("Group > " + group_name);
+        setTitle("Groups > " + group_name);
             
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ObjectsActivity.class);

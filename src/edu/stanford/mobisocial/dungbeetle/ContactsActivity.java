@@ -223,7 +223,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     qa.addActionItem(send_im);
                     qa.addActionItem(start_app);
                     qa.addActionItem(manage_groups);
-                    qa.setAnimStyle(QuickAction.ANIM_AUTO);
+                    qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                     qa.show();
                 }
