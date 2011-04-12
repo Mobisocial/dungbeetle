@@ -17,6 +17,7 @@ import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -35,7 +36,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;
-
+	public static final int REQUEST_STATUS = 98424;
+	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
+	
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
@@ -76,20 +79,10 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		    Button button = (Button)findViewById(R.id.add_object_button);
 		    button.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
-                        AlertDialog.Builder alert = new AlertDialog.Builder(ObjectsActivity.this);
-                        alert.setMessage("Please enter your new status message:");
-                        final EditText input = new EditText(ObjectsActivity.this);
-                        alert.setView(input);
-                        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    String value = input.getText().toString();
-                                    Helpers.updateStatus(ObjectsActivity.this, value);
-                                }
-                            });
-                        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {}
-                            });
-                        alert.show();
+				    	Intent update = new Intent(ACTION_UPDATE_STATUS);
+				    	
+                        Intent chooser = Intent.createChooser(update, "Update status");
+                        startActivityForResult(chooser, REQUEST_STATUS);
 				    }
 			    });
 	    }
@@ -187,6 +180,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         mIdent.close();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if (requestCode == REQUEST_STATUS) {
+    		if (resultCode == RESULT_OK) {
+    			String update = data.getStringExtra(Intent.EXTRA_TEXT);
+    			Helpers.updateStatus(ObjectsActivity.this, update);
+    		}
+    	}
+    }
 
 }
 
