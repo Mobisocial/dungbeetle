@@ -11,8 +11,10 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +30,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import java.util.ArrayList;
@@ -37,6 +41,10 @@ import android.view.ContextMenu;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -107,23 +115,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
         final Contact c = new Contact(cursor);
 
-        /*switch(menuItemIndex) {
-            case 0:
-                UIHelpers.sendMessageToContact(ContactsActivity.this, 
-                                               Collections.singletonList(c));
-                break;
-            case 1:
-                UIHelpers.startApplicationWithContact(ContactsActivity.this, 
-                                                      Collections.singletonList(c));
-                break;
-            case 2:
-            	    UIHelpers.showGroupPicker(ContactsActivity.this, c);
-            	break;
-            case 3:
-                Helpers.deleteContact(this, c.id);
-            	break;
-        }*/
-
+ 
         switch(menuItemIndex) {
             case 0:
                 Helpers.deleteContact(this, c.id);
@@ -175,12 +167,45 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
+            TextView presenceText = (TextView) v.findViewById(R.id.presence_text);
+            
+            final Contact c = new Contact(cursor);
+            
+            Cursor presenceC = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
+                new String[]{ "presence" , Long.toString(c.id)}, 
+                Object.TIMESTAMP + " DESC");
+
+            Handler handler = new Handler();
+            PresenceContentObserver presenceContentObserver = new PresenceContentObserver(handler);
+            presenceContentObserver.initialize(presenceText, c.id);                
+
+            getContentResolver().registerContentObserver(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
+                true, 
+                presenceContentObserver);
+
+            int myPresence = Presence.AVAILABLE;
+
+            if(presenceC.moveToFirst()) {
+                String jsonSrc = presenceC.getString(presenceC.getColumnIndexOrThrow(Object.JSON));
+
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    myPresence = Integer.parseInt(obj.optString("presence"));
+                }catch(JSONException e){}
+            }
+
+            presenceText.setText(Presence.presences[myPresence]);
+            presenceText.setTextColor(Presence.colors[myPresence]);
+
             String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
 
-            final Contact c = new Contact(cursor);
 
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
@@ -287,6 +312,54 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     @Override
     public void finish() {
         super.finish();
+    }
+
+    private class PresenceContentObserver extends ContentObserver {
+
+        long contact_id;
+        TextView presenceText;
+
+        public PresenceContentObserver(Handler h) {
+            super(h);
+            contact_id = 0;
+        }
+
+        void initialize(TextView view, long id) {
+            presenceText = view;
+            contact_id = id;
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+            return true;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+
+            Cursor presenceC = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
+                new String[]{ "presence" , Long.toString(contact_id)}, 
+                Object.TIMESTAMP + " DESC");
+
+            int myPresence = Presence.AVAILABLE;
+
+            if(presenceC.moveToFirst()) {
+                String jsonSrc = presenceC.getString(presenceC.getColumnIndexOrThrow(Object.JSON));
+
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    myPresence = Integer.parseInt(obj.optString("presence"));
+                }catch(JSONException e){}
+            }
+
+            presenceText.setText(Presence.presences[myPresence]);
+            presenceText.setTextColor(Presence.colors[myPresence]);
+        }
+
     }
 
 }

@@ -167,6 +167,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+
                 }
 
             }catch(JSONException e){}
