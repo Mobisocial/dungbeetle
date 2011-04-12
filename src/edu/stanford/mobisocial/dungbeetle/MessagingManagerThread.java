@@ -28,6 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import java.security.PrivateKey;
@@ -51,6 +52,7 @@ public class MessagingManagerThread extends Thread {
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
 	private NotificationManager mNotificationManager;
+	private PresenceAwareNotify presenceAwareNotify = new PresenceAwareNotify();
 	private int notifyCounter = 0;
     private final long[] VIBRATE = new long[] {0, 280, 150, 100, 150, 150, 50, 250};
 
@@ -377,18 +379,24 @@ public class MessagingManagerThread extends Thread {
             launch.setComponent(new ComponentName(
                                     info.packageName,
                                     info.name));
-            Notification notification = new Notification(
-                R.drawable.icon, "New Invitation", System.currentTimeMillis());
-            notification.vibrate = VIBRATE;
+//            Notification notification = new Notification(
+//                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-            notification.setLatestEventInfo(
-                mContext, 
+//            notification.setLatestEventInfo(
+//                mContext, 
+//               "Invitation received from " + from.name, 
+//                "Click to launch application.", 
+//                contentIntent);
+//            notification.flags = Notification.FLAG_AUTO_CANCEL;
+//            mNotificationManager.notify(nextNotifyId(), notification);
+
+            presenceAwareNotify.notify(
+                "New Invitation",
                 "Invitation received from " + from.name, 
                 "Click to launch application.", 
                 contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -429,19 +437,25 @@ public class MessagingManagerThread extends Thread {
                 launch.setComponent(new ComponentName(
                                         info.packageName,
                                         info.name));
-                Notification notification = new Notification(
-                    R.drawable.icon, "New Invitation from " + from.name, 
-                    System.currentTimeMillis());
-                notification.vibrate = VIBRATE;
+//                Notification notification = new Notification(
+//                    R.drawable.icon, "New Invitation from " + from.name, 
+//                    System.currentTimeMillis());
+//                notification.vibrate = VIBRATE;
                 PendingIntent contentIntent = PendingIntent.getActivity(
                     mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-                notification.setLatestEventInfo(
-                    mContext, 
+//                notification.setLatestEventInfo(
+//                    mContext, 
+//                    "Invitation received from " + from.name, 
+//                    "Click to launch application: " + packageName, 
+//                    contentIntent);
+//                notification.flags = Notification.FLAG_AUTO_CANCEL;
+//                mNotificationManager.notify(nextNotifyId(), notification);
+
+                presenceAwareNotify.notify(
+                    "New Invitation from " + from.name, 
                     "Invitation received from " + from.name, 
                     "Click to launch application: " + packageName, 
                     contentIntent);
-                notification.flags = Notification.FLAG_AUTO_CANCEL;
-                mNotificationManager.notify(nextNotifyId(), notification);
             }
             catch(JSONException e){
                 Log.e(TAG, e.getMessage());
@@ -465,17 +479,23 @@ public class MessagingManagerThread extends Thread {
         	String webUrl = obj.optString(InviteObj.WEB_URL);
             launch.setData(Uri.parse(webUrl));
 
-            Notification notification = new Notification(
-                R.drawable.icon, "New Invitation", System.currentTimeMillis());
-            notification.vibrate = VIBRATE;
+//            Notification notification = new Notification(
+//                R.drawable.icon, "New Invitation", System.currentTimeMillis());
+//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-            notification.setLatestEventInfo(
-                mContext, "Invitation received", 
+//            notification.setLatestEventInfo(
+//                mContext, "Invitation received", 
+//                "Click to launch application.", 
+//                contentIntent);
+//            notification.flags = Notification.FLAG_AUTO_CANCEL;
+//            mNotificationManager.notify(nextNotifyId(), notification);
+
+            presenceAwareNotify.notify(
+                "New Invitation",
+                "Invitation received", 
                 "Click to launch application.", 
                 contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -493,17 +513,23 @@ public class MessagingManagerThread extends Thread {
             i.setType(mimeType);
             i.setData(Uri.parse(uri));
             i.putExtra(Intent.EXTRA_TEXT, uri);
-            Notification notification = new Notification(
-                R.drawable.icon, "New Shared File...", System.currentTimeMillis());
-            notification.vibrate = VIBRATE;
+//            Notification notification = new Notification(
+//                R.drawable.icon, "New Shared File...", System.currentTimeMillis());
+//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
-            notification.setLatestEventInfo(
-                mContext, "New Shared File",
+//            notification.setLatestEventInfo(
+//                mContext, "New Shared File",
+//                mimeType + "  " + uri,
+//                contentIntent);
+//            notification.flags = Notification.FLAG_AUTO_CANCEL;
+//            mNotificationManager.notify(nextNotifyId(), notification);
+
+            presenceAwareNotify.notify(
+                "New Shared File...",
+                "New Shared File",
                 mimeType + "  " + uri,
                 contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
@@ -519,19 +545,25 @@ public class MessagingManagerThread extends Thread {
             launch.setComponent(new ComponentName(
                                     mContext.getPackageName(),
                                     DungBeetleActivity.class.getName()));
-            Notification notification = new Notification(
-                R.drawable.icon, "IM from " + from.name, System.currentTimeMillis());
-            notification.vibrate = VIBRATE;
+//            Notification notification = new Notification(
+//                R.drawable.icon, "IM from " + from.name, System.currentTimeMillis());
+//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
 
             String msg = obj.optString("text");
 
-            notification.setLatestEventInfo(
-                mContext, "IM from " + from.name,
-                "\"" + msg + "\"", contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(nextNotifyId(), notification);
+//            notification.setLatestEventInfo(
+//                mContext, "IM from " + from.name,
+//                "\"" + msg + "\"", contentIntent);
+//            notification.flags = Notification.FLAG_AUTO_CANCEL;
+//            mNotificationManager.notify(nextNotifyId(), notification);
+
+            presenceAwareNotify.notify(
+                "IM from " + from.name,
+                "IM from " + from.name,
+                "\"" + msg + "\"", 
+                contentIntent);
         }
     }
 
@@ -592,6 +624,44 @@ public class MessagingManagerThread extends Thread {
             values.put(Contact.STATUS, status);
             mContext.getContentResolver().update(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
+        }
+    }
+
+    private class PresenceAwareNotify {
+
+        public PresenceAwareNotify() {
+
+        }
+        
+        public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
+            Notification notification = new Notification(
+                R.drawable.icon, notificationTitle, System.currentTimeMillis());
+
+            Cursor c = mContext.getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+                null, 
+                Object.TYPE + "=?", 
+                new String[]{ "presence"}, 
+                Object.TIMESTAMP + " DESC");
+
+            if(c.moveToFirst()) {
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    int myPresence = Integer.parseInt(obj.optString("presence"));
+                    if(myPresence == Presence.AVAILABLE || myPresence == Presence.AWAY) {
+                        notification.vibrate = VIBRATE;
+                    }
+                }catch(JSONException e){}
+            }
+            notification.setLatestEventInfo(
+                mContext, 
+                notificationMsg, 
+                notificationSubMsg, 
+                contentIntent);
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            mNotificationManager.notify(nextNotifyId(), notification);
         }
     }
 
