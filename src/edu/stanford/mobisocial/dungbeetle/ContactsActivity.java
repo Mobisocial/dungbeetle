@@ -63,22 +63,14 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Long group_id = intent.getLongExtra("group_id", -1);
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + group_id),
-                new String[]{Contact._ID, 
-                             Contact.NAME, 
-                             Contact.EMAIL, 
-                             Contact.PERSON_ID,
-                             Contact.PUBLIC_KEY},
+                null,
                 null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
         else{
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-                new String[]{Contact._ID, 
-                             Contact.NAME, 
-                             Contact.EMAIL, 
-                             Contact.PERSON_ID,
-                             Contact.PUBLIC_KEY}, 
+                null, 
                 null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
@@ -169,37 +161,13 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
             TextView presenceText = (TextView) v.findViewById(R.id.presence_text);
             
-            final Contact c = new Contact(cursor);
+            int presence = cursor.getInt(cursor.getColumnIndexOrThrow(Contact.PRESENCE));
             
-            Cursor presenceC = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-                null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
-                new String[]{ "presence" , Long.toString(c.id)}, 
-                Object.TIMESTAMP + " DESC");
+            final Contact c = new Contact(cursor);
+           
 
-            Handler handler = new Handler();
-            PresenceContentObserver presenceContentObserver = new PresenceContentObserver(handler);
-            presenceContentObserver.initialize(presenceText, c.id);                
-
-            getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
-                true, 
-                presenceContentObserver);
-
-            int myPresence = Presence.AVAILABLE;
-
-            if(presenceC.moveToFirst()) {
-                String jsonSrc = presenceC.getString(presenceC.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    myPresence = Integer.parseInt(obj.optString("presence"));
-                }catch(JSONException e){}
-            }
-
-            presenceText.setText(Presence.presences[myPresence]);
-            presenceText.setTextColor(Presence.colors[myPresence]);
+            presenceText.setText(Presence.presences[presence]);
+            presenceText.setTextColor(Presence.colors[presence]);
 
             String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
@@ -314,53 +282,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         super.finish();
     }
 
-    private class PresenceContentObserver extends ContentObserver {
-
-        long contact_id;
-        TextView presenceText;
-
-        public PresenceContentObserver(Handler h) {
-            super(h);
-            contact_id = 0;
-        }
-
-        void initialize(TextView view, long id) {
-            presenceText = view;
-            contact_id = id;
-        }
-
-        @Override
-        public boolean deliverSelfNotifications() {
-            return true;
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-
-            Cursor presenceC = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-                null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
-                new String[]{ "presence" , Long.toString(contact_id)}, 
-                Object.TIMESTAMP + " DESC");
-
-            int myPresence = Presence.AVAILABLE;
-
-            if(presenceC.moveToFirst()) {
-                String jsonSrc = presenceC.getString(presenceC.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    myPresence = Integer.parseInt(obj.optString("presence"));
-                }catch(JSONException e){}
-            }
-
-            presenceText.setText(Presence.presences[myPresence]);
-            presenceText.setTextColor(Presence.colors[myPresence]);
-        }
-
-    }
 
 }
 
