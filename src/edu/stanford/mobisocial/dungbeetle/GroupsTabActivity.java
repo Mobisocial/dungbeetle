@@ -47,6 +47,7 @@ public class GroupsTabActivity extends TabActivity
             
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ObjectsActivity.class);
+        intent.putExtra("group_id", group_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",
             null).setContent(intent);
@@ -54,6 +55,7 @@ public class GroupsTabActivity extends TabActivity
 
         intent = new Intent().setClass(this, ContactsActivity.class);
         intent.putExtra("group_id", group_id);
+        intent.putExtra("group_name", group_name);
         
         spec = tabHost.newTabSpec("contacts").setIndicator(
             "Members",

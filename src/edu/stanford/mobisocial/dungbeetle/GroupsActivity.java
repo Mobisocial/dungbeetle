@@ -17,6 +17,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -100,56 +101,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
 
-        final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
-
-
-
-        final ActionItem view_profile = new ActionItem();
-        view_profile.setTitle("Profile");
-        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
-        view_profile.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
-                viewGroupIntent.putExtra("group_id", g.id);
-                viewGroupIntent.putExtra("group_name", g.name);
-                startActivity(viewGroupIntent);
-            }
-        });
-        
-        final ActionItem send_im = new ActionItem();
-        send_im.setTitle("Send IM");
-        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
-        send_im.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                UIHelpers.sendMessageToContact(
-                    GroupsActivity.this, 
-                    contactsInGroup);
-            }
-        });
-        
-        final ActionItem start_app = new ActionItem();
-        start_app.setTitle("Start App");
-        //production.setIcon(getResources().getDrawable(R.drawable.production));
-        start_app.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                UIHelpers.startApplicationWithContact(
-                    GroupsActivity.this, 
-                    contactsInGroup);
-            }
-        });
-
-        
-        QuickAction qa = new QuickAction(view);
-
-        qa.addActionItem(view_profile);
-        qa.addActionItem(send_im);
-        qa.addActionItem(start_app);
-        qa.setAnimStyle(QuickAction.ANIM_AUTO);
-
-        qa.show();
+        Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
+        viewGroupIntent.putExtra("group_id", g.id);
+        viewGroupIntent.putExtra("group_name", g.name);
+        startActivity(viewGroupIntent);
 
     }
 
@@ -167,11 +122,57 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         }
         @Override
         public void bindView(View v, Context context, Cursor c) {
+
+            
+            final Group g = new Group(c);
+            final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
+        
             String name = c.getString(c.getColumnIndexOrThrow(Group.NAME));
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             if (nameText != null) {
                 nameText.setText(name);
             }           
+
+            ImageView more = (ImageView) v.findViewById(R.id.more);
+
+            more.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    
+                    final ActionItem send_im = new ActionItem();
+                    send_im.setTitle("Send IM");
+                    //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+                    send_im.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            UIHelpers.sendMessageToContact(
+                                GroupsActivity.this, 
+                                contactsInGroup);
+                        }
+                    });
+                    
+                    final ActionItem start_app = new ActionItem();
+                    start_app.setTitle("Start App");
+                    //production.setIcon(getResources().getDrawable(R.drawable.production));
+                    start_app.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            UIHelpers.startApplicationWithContact(
+                                GroupsActivity.this, 
+                                contactsInGroup);
+                        }
+                    });
+
+                    
+                    QuickAction qa = new QuickAction(v);
+
+                    qa.addActionItem(send_im);
+                    qa.addActionItem(start_app);
+                    qa.setAnimStyle(QuickAction.ANIM_AUTO);
+
+                    qa.show();
+                }
+            });
         }
     }
 
