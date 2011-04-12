@@ -33,6 +33,9 @@ public class Helpers {
         c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
             Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
+            GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
     }
 
     public static void deleteContact(final Context c, 

@@ -25,6 +25,7 @@ import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import java.util.Collection;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 
 
 
@@ -55,7 +56,8 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         final Group g = new Group(cursor);
         menu.setHeaderTitle(g.name);
         
-        String[] menuItems = new String[]{ "Send Message", "Start Application", "Delete" };
+        //String[] menuItems = new String[]{ "Send Message", "Start Application", "Delete" };
+        String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
@@ -70,7 +72,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         final Group g = new Group(cursor);
         final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
 
-        switch(menuItemIndex) {
+        /*switch(menuItemIndex) {
             case 0:
                 UIHelpers.sendMessageToContact(
                     GroupsActivity.this, 
@@ -84,6 +86,11 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             case 2:
                 Helpers.deleteGroup(GroupsActivity.this, g.id);
                 break;
+        }*/
+        switch(menuItemIndex) {
+            case 0:
+                Helpers.deleteGroup(GroupsActivity.this, g.id);
+                break;
         }
         return true;
     }
@@ -93,10 +100,56 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
 
-        Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
-        viewGroupIntent.putExtra("group_id", g.id);
-        viewGroupIntent.putExtra("group_name", g.name);
-        startActivity(viewGroupIntent);
+        final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
+
+
+
+        final ActionItem view_profile = new ActionItem();
+        view_profile.setTitle("Profile");
+        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+        view_profile.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
+                viewGroupIntent.putExtra("group_id", g.id);
+                viewGroupIntent.putExtra("group_name", g.name);
+                startActivity(viewGroupIntent);
+            }
+        });
+        
+        final ActionItem send_im = new ActionItem();
+        send_im.setTitle("Send IM");
+        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+        send_im.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UIHelpers.sendMessageToContact(
+                    GroupsActivity.this, 
+                    contactsInGroup);
+            }
+        });
+        
+        final ActionItem start_app = new ActionItem();
+        start_app.setTitle("Start App");
+        //production.setIcon(getResources().getDrawable(R.drawable.production));
+        start_app.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UIHelpers.startApplicationWithContact(
+                    GroupsActivity.this, 
+                    contactsInGroup);
+            }
+        });
+
+        
+        QuickAction qa = new QuickAction(view);
+
+        qa.addActionItem(view_profile);
+        qa.addActionItem(send_im);
+        qa.addActionItem(start_app);
+        qa.setAnimStyle(QuickAction.ANIM_AUTO);
+
+        qa.show();
 
     }
 

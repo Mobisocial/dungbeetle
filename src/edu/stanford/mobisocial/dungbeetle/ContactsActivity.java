@@ -36,6 +36,7 @@ import java.util.List;
 import android.view.ContextMenu;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -44,6 +45,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
 
+ 
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -79,6 +81,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         lv.setTextFilterEnabled(true);
         registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
+
+		
 	}
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -88,7 +92,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         final Contact c = new Contact(cursor);
         menu.setHeaderTitle(c.name);
         
-        String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups", "Delete" };
+        //String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups", "Delete" };
+        String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
@@ -102,7 +107,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
         final Contact c = new Contact(cursor);
 
-        switch(menuItemIndex) {
+        /*switch(menuItemIndex) {
             case 0:
                 UIHelpers.sendMessageToContact(ContactsActivity.this, 
                                                Collections.singletonList(c));
@@ -112,9 +117,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                                       Collections.singletonList(c));
                 break;
             case 2:
-            	UIHelpers.showGroupPicker(ContactsActivity.this, c);
+            	    UIHelpers.showGroupPicker(ContactsActivity.this, c);
             	break;
             case 3:
+                Helpers.deleteContact(this, c.id);
+            	break;
+        }*/
+
+        switch(menuItemIndex) {
+            case 0:
                 Helpers.deleteContact(this, c.id);
             	break;
         }
@@ -127,10 +138,61 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         Cursor cursor = (Cursor)mContacts.getItem(position);
         final Contact c = new Contact(cursor);
 
-        Intent viewContactIntent = new Intent(ContactsActivity.this, ViewContactTabActivity.class);
-        viewContactIntent.putExtra("contact_id", c.id);
-        viewContactIntent.putExtra("contact_name", c.name);
-        startActivity(viewContactIntent);
+
+        final ActionItem view_profile = new ActionItem();
+        view_profile.setTitle("Profile");
+        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+        view_profile.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent viewContactIntent = new Intent(ContactsActivity.this, ViewContactTabActivity.class);
+                viewContactIntent.putExtra("contact_id", c.id);
+                viewContactIntent.putExtra("contact_name", c.name);
+                startActivity(viewContactIntent);
+            }
+        });
+        
+        final ActionItem send_im = new ActionItem();
+        send_im.setTitle("Send IM");
+        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+        send_im.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UIHelpers.sendMessageToContact(ContactsActivity.this, Collections.singletonList(c));
+            }
+        });
+        
+        final ActionItem start_app = new ActionItem();
+        start_app.setTitle("Start App");
+        //production.setIcon(getResources().getDrawable(R.drawable.production));
+        start_app.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UIHelpers.startApplicationWithContact(ContactsActivity.this, Collections.singletonList(c));
+            }
+        });
+        
+        final ActionItem manage_groups = new ActionItem();
+        manage_groups.setTitle("Groups");
+        //production.setIcon(getResources().getDrawable(R.drawable.production));
+        manage_groups.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UIHelpers.showGroupPicker(ContactsActivity.this, c);
+            }
+        });
+
+        
+        QuickAction qa = new QuickAction(view);
+
+        qa.addActionItem(view_profile);
+        qa.addActionItem(send_im);
+        qa.addActionItem(start_app);
+        qa.addActionItem(manage_groups);
+        qa.setAnimStyle(QuickAction.ANIM_AUTO);
+
+        qa.show();
+
 
     }
 
