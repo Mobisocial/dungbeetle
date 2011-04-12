@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	      android:layout_width="fill_parent"
 	      android:layout_height="?android:attr/listPreferredItemHeight"
-	      android:padding="6dip">
+	      android:paddingTop="6dip"
+	      android:paddingBottom="6dip">
   <ImageView
       android:id="@+id/icon"
       android:layout_width="80dip"
@@ -21,6 +22,7 @@
 	android:layout_height="0dip"
 	android:layout_weight="1"
 	android:gravity="center_vertical"
+	android:textStyle="bold"
         />
     <TextView
 	android:id="@+id/body_text"

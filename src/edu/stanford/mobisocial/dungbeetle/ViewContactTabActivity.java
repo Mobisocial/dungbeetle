@@ -43,8 +43,15 @@ public class ViewContactTabActivity extends TabActivity
         Long contact_id = intent.getLongExtra("contact_id", -1);
         String contact_name = intent.getStringExtra("contact_name");
 
-        setTitle("Contact > " + contact_name);
-            
+        if(intent.hasExtra("group_name")) {
+            String group_name = intent.getStringExtra("group_name");
+            setTitle("Group > " + group_name + " > Members > " + contact_name);
+        }
+
+        else {
+            setTitle("Contact > " + contact_name);
+        }
+                
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ObjectsActivity.class);
         intent.putExtra("contact_id", contact_id);
