@@ -14,6 +14,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 import android.util.Log;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.AdapterView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +25,7 @@ import android.content.Intent;
 import android.os.Handler;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 
@@ -39,12 +44,51 @@ public class ProfileActivity extends Activity{
         Cursor c;
         
         if(!intent.hasExtra("edit")) {
+            setContentView(R.layout.view_profile);
+            TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
+            TextView profile_email = (TextView) findViewById(R.id.view_profile_email);
+            TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
 
+            Spinner presence = (Spinner)this.findViewById(R.id.presence);
+            
             String email = "";
             String name = "";
             String about = "";
         
             long contact_id = intent.getLongExtra("contact_id", -1);
+
+            if(contact_id == Contact.MY_ID) {
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    Presence.presences);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                presence.setAdapter(adapter);
+
+                c = getContentResolver().query(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+                    null, 
+                    Object.TYPE + "=?", 
+                    new String[]{ "presence"}, 
+                    Object.TIMESTAMP + " DESC");
+
+                if(c.moveToFirst()) {
+                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+                    try{
+                        JSONObject obj = new JSONObject(jsonSrc);
+                        int myPresence = Integer.parseInt(obj.optString("presence"));
+                        presence.setSelection(myPresence);
+                    }catch(JSONException e){}
+                }
+
+                
+                presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener());
+            }
+            else {
+                presence.setVisibility(View.GONE);
+            }
+
 
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
@@ -92,11 +136,6 @@ public class ProfileActivity extends Activity{
                 }
             }  
 	    
-
-		    setContentView(R.layout.view_profile);
-            TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
-            TextView profile_email = (TextView) findViewById(R.id.view_profile_email);
-            TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
 
             profile_name.setText(name);
             profile_email.setText(email);
@@ -203,6 +242,18 @@ public class ProfileActivity extends Activity{
         else{
             Contact contact = new Contact(c);
             return contact;
+        }
+    }
+
+
+    private class PresenceOnItemSelectedListener implements OnItemSelectedListener {
+
+        public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+            Helpers.updatePresence(ProfileActivity.this, pos);
+        }
+
+        public void onNothingSelected(AdapterView parent) {
+          // Do nothing.
         }
     }
 

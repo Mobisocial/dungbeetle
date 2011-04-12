@@ -11,8 +11,10 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +30,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import java.util.ArrayList;
@@ -37,6 +41,10 @@ import android.view.ContextMenu;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -55,22 +63,14 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Long group_id = intent.getLongExtra("group_id", -1);
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + group_id),
-                new String[]{Contact._ID, 
-                             Contact.NAME, 
-                             Contact.EMAIL, 
-                             Contact.PERSON_ID,
-                             Contact.PUBLIC_KEY},
+                null,
                 null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
         else{
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-                new String[]{Contact._ID, 
-                             Contact.NAME, 
-                             Contact.EMAIL, 
-                             Contact.PERSON_ID,
-                             Contact.PUBLIC_KEY}, 
+                null, 
                 null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
@@ -107,23 +107,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
         final Contact c = new Contact(cursor);
 
-        /*switch(menuItemIndex) {
-            case 0:
-                UIHelpers.sendMessageToContact(ContactsActivity.this, 
-                                               Collections.singletonList(c));
-                break;
-            case 1:
-                UIHelpers.startApplicationWithContact(ContactsActivity.this, 
-                                                      Collections.singletonList(c));
-                break;
-            case 2:
-            	    UIHelpers.showGroupPicker(ContactsActivity.this, c);
-            	break;
-            case 3:
-                Helpers.deleteContact(this, c.id);
-            	break;
-        }*/
-
+ 
         switch(menuItemIndex) {
             case 0:
                 Helpers.deleteContact(this, c.id);
@@ -175,12 +159,21 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
+            TextView presenceText = (TextView) v.findViewById(R.id.presence_text);
+            
+            int presence = cursor.getInt(cursor.getColumnIndexOrThrow(Contact.PRESENCE));
+            
+            final Contact c = new Contact(cursor);
+           
+
+            presenceText.setText(Presence.presences[presence]);
+            presenceText.setTextColor(Presence.colors[presence]);
+
             String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
 
-            final Contact c = new Contact(cursor);
 
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
@@ -288,6 +281,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void finish() {
         super.finish();
     }
+
 
 }
 

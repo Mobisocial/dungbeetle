@@ -94,6 +94,8 @@ public class MessagingManagerThread extends Thread {
         mHandlers.add(new InviteToSharedAppFeedHandler());
         mHandlers.add(new SendFileHandler());
         mHandlers.add(new ProfileHandler());
+        mHandlers.add(new PresenceHandler());
+        //mHandlers.add(new StatusHandler());
 
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
@@ -557,6 +559,37 @@ public class MessagingManagerThread extends Thread {
                     Log.i(TAG, "Updating " + id + " name="+name);
             ContentValues values = new ContentValues();
             values.put(Contact.NAME, name);
+            mContext.getContentResolver().update(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
+        }
+    }
+
+    class PresenceHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){
+            return msg.optString("type").equals("presence");
+        }
+        void handle(Contact from, JSONObject obj){
+            int presence = Integer.parseInt(obj.optString("presence"));
+            String id = Long.toString(from.id);
+            
+            ContentValues values = new ContentValues();
+            values.put(Contact.PRESENCE, presence);
+            mContext.getContentResolver().update(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
+        }
+    }
+
+    //figure out what to name this stuff
+    class StatusHandler extends MessageHandler{
+        boolean willHandle(Contact from, JSONObject msg){
+            return msg.optString("type").equals("status");
+        }
+        void handle(Contact from, JSONObject obj){
+            String status = obj.optString("status");
+            String id = Long.toString(from.id);
+            
+            ContentValues values = new ContentValues();
+            values.put(Contact.STATUS, status);
             mContext.getContentResolver().update(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
         }
