@@ -23,6 +23,16 @@
       </intent-filter>
     </activity>
 
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
+	      android:label="Dungbeetle Status"
+	      android:screenOrientation="portrait">
+	      
+	      <intent-filter>
+                <action android:name="mobisocial.db.action.UPDATE_STATUS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+    </activity>
+
     <activity android:name="edu.stanford.mobisocial.dungbeetle.ContactsActivity"
 	      android:label="@string/app_name"
 	      android:screenOrientation="portrait">
