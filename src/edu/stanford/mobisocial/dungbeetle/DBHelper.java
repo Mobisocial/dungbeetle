@@ -18,6 +18,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import java.security.PublicKey;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +35,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 24;
+	public static final int VERSION = 25;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -66,20 +67,19 @@ public class DBHelper extends SQLiteOpenHelper {
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
 
-        if(newVersion < oldVersion) {
-            throw new RuntimeException("WTF! Old database has higher version number than new database! " + 
-                                       oldVersion + ", " + newVersion + ", respectively.");
-        }
-
-        if(newVersion == oldVersion){
-            Log.w(TAG, "No schema changes to migrate!"); 
-            return;
-        }
-
         if(oldVersion <= 23){
             Log.w(TAG, "Schema too old to migrate, dropping all."); 
             dropAll(db);
             onCreate(db);
+            return;
+        }
+
+        if(oldVersion <= 24) {
+            Log.w(TAG, "Adding columns 'presence' and 'status' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.STATUS + " TEXT");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PRESENCE + " INTEGER DEFAULT " + Presence.AVAILABLE);
+            
+            db.setVersion(VERSION);
         }
 
     }
@@ -150,7 +150,9 @@ public class DBHelper extends SQLiteOpenHelper {
                     Contact.NAME, "TEXT",
                     Contact.PUBLIC_KEY, "TEXT",
                     Contact.PERSON_ID, "TEXT",
-                    Contact.EMAIL, "TEXT");
+                    Contact.EMAIL, "TEXT",
+                    Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
+                    Contact.STATUS, "TEXT");
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 

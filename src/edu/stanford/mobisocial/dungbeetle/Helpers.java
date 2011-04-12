@@ -5,6 +5,7 @@ import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import java.util.Iterator;
 import java.util.Collection;
 import org.json.JSONArray;
@@ -169,6 +170,18 @@ public class Helpers {
         }catch(JSONException e){}
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, "status");
+        c.getContentResolver().insert(url, values); 
+    }
+
+    public static void updatePresence(final Context c, final int presence){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("presence", presence);
+        }catch(JSONException e){}
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.TYPE, "presence");
         c.getContentResolver().insert(url, values); 
     }
 

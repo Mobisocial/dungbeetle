@@ -240,7 +240,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                 IdentityProvider ident = new DBIdentityProvider(mHelper);
                 
                 Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-                intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s"));
+                intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
                 startActivity(intent);
             return true;
         }*/

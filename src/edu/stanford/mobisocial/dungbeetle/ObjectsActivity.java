@@ -110,7 +110,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     Contact.MY_ID,
                     mIdent.userPersonId(),
                     mIdent.userName(), 
-                    mIdent.userEmail());
+                    mIdent.userEmail(),
+                    0,
+                    "");
                 mContactCache.put(id, contact);
                 return contact;
             }
@@ -167,6 +169,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+
                 }
 
             }catch(JSONException e){}
