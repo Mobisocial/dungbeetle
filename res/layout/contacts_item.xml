@@ -6,8 +6,8 @@
 	      android:paddingBottom="6dip">
   <ImageView
       android:id="@+id/icon"
-      android:layout_width="80dip"
-      android:layout_height="fill_parent"
+      android:layout_width="50dip"
+      android:layout_height="50dip"
       android:layout_marginRight="6dip"
       android:src="@drawable/anonymous" 
       android:scaleType="fitCenter"

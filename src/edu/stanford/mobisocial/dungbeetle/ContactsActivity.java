@@ -78,6 +78,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		setListAdapter(mContacts);
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
+        lv.setFastScrollEnabled(true);
         registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 

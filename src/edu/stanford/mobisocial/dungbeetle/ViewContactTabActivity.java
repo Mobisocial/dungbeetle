@@ -49,7 +49,7 @@ public class ViewContactTabActivity extends TabActivity
         }
 
         else {
-            setTitle("Contact > " + contact_name);
+            setTitle("Contacts > " + contact_name);
         }
                 
         // Create an Intent to launch an Activity for the tab (to be reused)

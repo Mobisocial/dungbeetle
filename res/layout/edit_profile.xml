@@ -12,10 +12,16 @@
         android:id="@+id/edit_profile_name"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"/>
+    <TextView  
+        android:layout_width="fill_parent" 
+        android:layout_height="wrap_content" 
+        android:text="About Me"
+        />
     <EditText
         android:id="@+id/edit_profile_about"
         android:layout_width="fill_parent"
-        android:layout_height="45sp"/>
+        android:layout_height="200sp"
+        android:gravity="top"/>
         
     <Button
 	    android:id="@+id/save_profile_button"

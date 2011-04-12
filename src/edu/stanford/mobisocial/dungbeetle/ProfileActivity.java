@@ -18,12 +18,16 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
+import android.os.Handler;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 
 public class ProfileActivity extends Activity{
+
+    private Handler handler = new Handler();
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -35,9 +39,9 @@ public class ProfileActivity extends Activity{
         
         if(!intent.hasExtra("edit")) {
 
-            String email = "email";
-            String name = "name";
-            String about = "about";
+            String email = "";
+            String name = "";
+            String about = "";
         
             long contact_id = intent.getLongExtra("contact_id", -1);
 
@@ -46,8 +50,19 @@ public class ProfileActivity extends Activity{
                 null, 
                 Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(contact_id)}, 
                 Object.TIMESTAMP + " DESC");
-            c.registerContentObserver(new ProfileContentObserver());
 
+            ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
+            profileContentObserver.setContactId(contact_id);                
+
+            getContentResolver().registerContentObserver(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
+                true, 
+                profileContentObserver);
+
+            Contact contact = getContact(contact_id);
+            DBHelper helper = new DBHelper(ProfileActivity.this);
+            IdentityProvider ident = new DBIdentityProvider(helper);
+            
             if(c.moveToFirst()) {
 
                 String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
@@ -55,25 +70,25 @@ public class ProfileActivity extends Activity{
                 try{
                     JSONObject obj = new JSONObject(jsonSrc);
                     name = obj.optString("name");
-                    about = obj.optString("about");
-                    email = obj.optString("email");                        
+                    about = obj.optString("about"); 
+
+                    if(contact_id == Contact.MY_ID) {
+                        email = ident.userEmail();
+                    }
+                    else {
+                        email = contact.email;
+                    }
 
                 }catch(JSONException e){}
             }
             else {
                 if(contact_id == Contact.MY_ID) {
-                    DBHelper helper = new DBHelper(ProfileActivity.this);
-                    IdentityProvider ident = new DBIdentityProvider(helper);
-                    
                     name = ident.userName();
                     email = ident.userEmail();
-                    about = "about";
                 }
                 else {
-                    Contact contact = getContact(contact_id);
                     name = contact.name;
                     email = contact.email;
-                    about = "about";
                 }
             }  
 	    
@@ -89,7 +104,7 @@ public class ProfileActivity extends Activity{
 
             final ImageView icon = (ImageView) findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+            mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email, 80));
 		}
 
 		else {
@@ -101,6 +116,34 @@ public class ProfileActivity extends Activity{
             final EditText edit_profile_name = (EditText) findViewById(R.id.edit_profile_name);
             final EditText edit_profile_about = (EditText) findViewById(R.id.edit_profile_about);
             edit_profile_name.setText(ident.userName());
+
+            c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
+                Object.TIMESTAMP + " DESC");
+
+            if(c.moveToFirst()) {
+
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    String name = obj.optString("name");
+                    String about = obj.optString("about");
+                    
+                    edit_profile_name.setText(name);
+                    edit_profile_about.setText(about);                     
+
+                }catch(JSONException e){}
+            }
+
+            else {
+                edit_profile_name.setText(ident.userName());
+            }
+
+            
+            
             Button save_button = (Button) findViewById(R.id.save_profile_button);
             save_button.setOnClickListener(new OnClickListener(){
                 	public void onClick(View v)
@@ -169,14 +212,52 @@ public class ProfileActivity extends Activity{
 
     private class ProfileContentObserver extends ContentObserver {
 
-        public ProfileContentObserver() {
-            super(null);
+        long contact_id;
+
+        public ProfileContentObserver(Handler h) {
+            super(h);
+            contact_id = 0;
+        }
+
+        void setContactId(long id) {
+            contact_id = id;
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+            return true;
         }
 
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            Log.w("ProfileActivity", "something changed");
+
+            Cursor c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(contact_id)}, 
+                Object.TIMESTAMP + " DESC");
+
+            if(c.moveToFirst()) {
+
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    String name = obj.optString("name");
+                    String about = obj.optString("about");
+                    String email = obj.optString("email");   
+
+                    TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
+                    TextView profile_email = (TextView) findViewById(R.id.view_profile_email);
+                    TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
+
+                    profile_name.setText(name);
+                    profile_email.setText(email);
+                    profile_about.setText(about);                     
+
+                }catch(JSONException e){}
+            }
         }
 
     }

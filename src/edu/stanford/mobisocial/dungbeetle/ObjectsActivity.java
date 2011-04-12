@@ -66,6 +66,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
+		getListView().setFastScrollEnabled(true);
 
         mHelper = new DBHelper(ObjectsActivity.this); 
         mIdent = new DBIdentityProvider(mHelper);
