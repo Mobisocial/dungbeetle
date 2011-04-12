@@ -29,7 +29,7 @@ public class HandleNfcContact extends Activity {
 		Button saveButton = (Button)findViewById(R.id.save_contact_button);
 		Button cancelButton = (Button)findViewById(R.id.cancel_button);
 
-		if(uri != null && uri.getScheme().equals(ContactsActivity.SHARE_SCHEME)){
+		if(uri != null && uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME)){
             mName = uri.getQueryParameter("name");
             mEmail = uri.getQueryParameter("email");
             mPubKeyStr = uri.getQueryParameter("publicKey");

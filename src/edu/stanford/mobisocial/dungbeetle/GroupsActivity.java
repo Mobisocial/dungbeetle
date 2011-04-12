@@ -42,7 +42,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         mHelper = new DBHelper(this);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-            null, null, null, null);
+            null, null, null, Group.NAME + " ASC");
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);

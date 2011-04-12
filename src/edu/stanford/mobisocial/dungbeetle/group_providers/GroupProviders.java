@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.util.Log;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
@@ -77,7 +78,7 @@ public class GroupProviders{
 
         public Uri newSessionUri(IdentityProvider ident, String groupName){
             Uri.Builder builder = new Uri.Builder();
-            builder.scheme(HandleGroupSessionActivity.SCHEME);
+            builder.scheme(DungBeetleActivity.GROUP_SESSION_SCHEME);
             builder.authority("suif.stanford.edu");
             builder.appendPath("dungbeetle");
             builder.appendPath("index.php");
