@@ -379,18 +379,8 @@ public class MessagingManagerThread extends Thread {
             launch.setComponent(new ComponentName(
                                     info.packageName,
                                     info.name));
-//            Notification notification = new Notification(
-//                R.drawable.icon, "New Invitation", System.currentTimeMillis());
-//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-//            notification.setLatestEventInfo(
-//                mContext, 
-//               "Invitation received from " + from.name, 
-//                "Click to launch application.", 
-//                contentIntent);
-//            notification.flags = Notification.FLAG_AUTO_CANCEL;
-//            mNotificationManager.notify(nextNotifyId(), notification);
 
             presenceAwareNotify.notify(
                 "New Invitation",
@@ -437,19 +427,8 @@ public class MessagingManagerThread extends Thread {
                 launch.setComponent(new ComponentName(
                                         info.packageName,
                                         info.name));
-//                Notification notification = new Notification(
-//                    R.drawable.icon, "New Invitation from " + from.name, 
-//                    System.currentTimeMillis());
-//                notification.vibrate = VIBRATE;
                 PendingIntent contentIntent = PendingIntent.getActivity(
                     mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-//                notification.setLatestEventInfo(
-//                    mContext, 
-//                    "Invitation received from " + from.name, 
-//                    "Click to launch application: " + packageName, 
-//                    contentIntent);
-//                notification.flags = Notification.FLAG_AUTO_CANCEL;
-//                mNotificationManager.notify(nextNotifyId(), notification);
 
                 presenceAwareNotify.notify(
                     "New Invitation from " + from.name, 
@@ -479,17 +458,8 @@ public class MessagingManagerThread extends Thread {
         	String webUrl = obj.optString(InviteObj.WEB_URL);
             launch.setData(Uri.parse(webUrl));
 
-//            Notification notification = new Notification(
-//                R.drawable.icon, "New Invitation", System.currentTimeMillis());
-//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-//            notification.setLatestEventInfo(
-//                mContext, "Invitation received", 
-//                "Click to launch application.", 
-//                contentIntent);
-//            notification.flags = Notification.FLAG_AUTO_CANCEL;
-//            mNotificationManager.notify(nextNotifyId(), notification);
 
             presenceAwareNotify.notify(
                 "New Invitation",
@@ -513,17 +483,9 @@ public class MessagingManagerThread extends Thread {
             i.setType(mimeType);
             i.setData(Uri.parse(uri));
             i.putExtra(Intent.EXTRA_TEXT, uri);
-//            Notification notification = new Notification(
-//                R.drawable.icon, "New Shared File...", System.currentTimeMillis());
-//            notification.vibrate = VIBRATE;
+
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
-//            notification.setLatestEventInfo(
-//                mContext, "New Shared File",
-//                mimeType + "  " + uri,
-//                contentIntent);
-//            notification.flags = Notification.FLAG_AUTO_CANCEL;
-//            mNotificationManager.notify(nextNotifyId(), notification);
 
             presenceAwareNotify.notify(
                 "New Shared File...",
@@ -545,19 +507,10 @@ public class MessagingManagerThread extends Thread {
             launch.setComponent(new ComponentName(
                                     mContext.getPackageName(),
                                     DungBeetleActivity.class.getName()));
-//            Notification notification = new Notification(
-//                R.drawable.icon, "IM from " + from.name, System.currentTimeMillis());
-//            notification.vibrate = VIBRATE;
             PendingIntent contentIntent = PendingIntent.getActivity(
                 mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
 
             String msg = obj.optString("text");
-
-//            notification.setLatestEventInfo(
-//                mContext, "IM from " + from.name,
-//                "\"" + msg + "\"", contentIntent);
-//            notification.flags = Notification.FLAG_AUTO_CANCEL;
-//            mNotificationManager.notify(nextNotifyId(), notification);
 
             presenceAwareNotify.notify(
                 "IM from " + from.name,
