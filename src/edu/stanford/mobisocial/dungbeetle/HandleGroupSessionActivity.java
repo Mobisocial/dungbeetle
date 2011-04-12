@@ -18,7 +18,6 @@ import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 
 public class HandleGroupSessionActivity extends Activity {
 	private TextView mNameText;
-    public static final String SCHEME = "dungbeetle-group-session";
     public static final String TAG = "HandleGroupSessionActivity";
 	private NotificationManager mNotificationManager;
 
@@ -28,7 +27,7 @@ public class HandleGroupSessionActivity extends Activity {
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		Intent intent = getIntent();
 		final String scheme=intent.getScheme();
-		if(scheme != null && scheme.equals(SCHEME)){
+		if(scheme != null && scheme.equals(DungBeetleActivity.GROUP_SESSION_SCHEME)){
 			final Uri uri = intent.getData();
 			if(uri != null){
                 Log.i(TAG, "Read uri: " + uri);

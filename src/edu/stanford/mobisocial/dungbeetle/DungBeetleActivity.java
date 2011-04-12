@@ -26,6 +26,8 @@ public class DungBeetleActivity extends TabActivity
 {
 
     public static final String TAG = "DungBeetleActivity";
+    public static final String SHARE_SCHEME = "db-share-contact";
+    public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
     public static final String AUTO_UPDATE_URL_BASE = "http://mobisocial.stanford.edu/files";
     public static final String AUTO_UPDATE_METADATA_FILE = "dungbeetle_version.json";
     public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";
@@ -45,7 +47,8 @@ public class DungBeetleActivity extends TabActivity
                     if(pInfo.versionCode < versionCode){
                         Toast.makeText(DungBeetleActivity.this,
                                        "Newer version, " + versionName + 
-                                       ", found!", Toast.LENGTH_SHORT).show();
+                                       ", found. See notification.", 
+                                       Toast.LENGTH_SHORT).show();
                         notifyApkDownload(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_APK_FILE);
                     }
                     else if(pInfo.versionCode == versionCode){
@@ -60,12 +63,9 @@ public class DungBeetleActivity extends TabActivity
                 } catch (PackageManager.NameNotFoundException e) {
                     e.printStackTrace();
                 }
-
             }
             catch(JSONException e){
-                Toast.makeText(DungBeetleActivity.this, 
-                               "Failed to load auto-update info.",
-                               Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Failed to load auto-update info.", e);
             }
         }
     }
@@ -122,7 +122,7 @@ public class DungBeetleActivity extends TabActivity
         intent = new Intent().setClass(this, ProfileActivity.class);
         intent.putExtra("contact_id", Contact.MY_ID);
         spec = tabHost.newTabSpec("view_profile").setIndicator("Profile",
-                                                          null)
+                                                               null)
             .setContent(intent);
         tabHost.addTab(spec);
 
@@ -167,7 +167,7 @@ public class DungBeetleActivity extends TabActivity
                         }); 
                 }
             });
-        shareContactInfo();
+        pushContactInfoViaNfc();
     }
 
     protected void doHandleNdef(NdefMessage[] messages){
@@ -177,15 +177,29 @@ public class DungBeetleActivity extends TabActivity
             return;
         }
         String uriStr = new String(messages[0].getRecords()[0].getPayload());
-        Uri myUri = Uri.parse(uriStr);
-        if(myUri == null || !myUri.getScheme().equals(ContactsActivity.SHARE_SCHEME)){
-            Toast.makeText(this, "Received record without valid Uri!", Toast.LENGTH_SHORT).show();
-            return;
+        Uri uri = Uri.parse(uriStr);
+
+        if(uri == null){
+            Toast.makeText(this, "Null uri!", Toast.LENGTH_SHORT).show();
         }
-        Intent intent = new Intent().setClass(this, HandleNfcContact.class);
-        intent.setData(myUri);
-        startActivity(intent);
-        shareContactInfo();
+        else{
+            if(uri.getScheme().equals(SHARE_SCHEME)){
+                Intent intent = new Intent().setClass(this, HandleNfcContact.class);
+                intent.setData(uri);
+                startActivity(intent);
+            }
+            else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)){
+                Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
+                intent.setData(uri);
+                startActivity(intent);
+            }
+            else{
+                Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        // Re-push the contact info ndef
+        pushContactInfoViaNfc();
     }
 
     public void writeGroupToTag(Uri uri){
@@ -200,14 +214,14 @@ public class DungBeetleActivity extends TabActivity
                        Toast.LENGTH_SHORT).show();
     }
 
-    public void shareContactInfo(){
+    public void pushContactInfoViaNfc(){
         DBHelper helper = new DBHelper(this);
         IdentityProvider ident = new DBIdentityProvider(helper);
         String name = ident.userName();
         String email = ident.userEmail();
         PublicKey pubKey = ident.userPublicKey();
         Uri.Builder builder = new Uri.Builder();
-        builder.scheme(ContactsActivity.SHARE_SCHEME);
+        builder.scheme(SHARE_SCHEME);
         builder.authority("dungbeetle");
         builder.appendQueryParameter("name", name);
         builder.appendQueryParameter("email", email);

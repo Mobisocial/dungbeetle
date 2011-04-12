@@ -41,7 +41,6 @@ import android.view.View.OnClickListener;
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 	private ContactListCursorAdapter mContacts;
-    public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
 
@@ -61,7 +60,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                              Contact.EMAIL, 
                              Contact.PERSON_ID,
                              Contact.PUBLIC_KEY},
-                null, null, null);
+                null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
         else{
@@ -72,7 +71,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                              Contact.EMAIL, 
                              Contact.PERSON_ID,
                              Contact.PUBLIC_KEY}, 
-                null, null, null);
+                null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
 
@@ -247,7 +246,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
         case SHARE_INFO: {
-            ((DungBeetleActivity)getParent()).shareContactInfo();
+            ((DungBeetleActivity)getParent()).pushContactInfoViaNfc();
             return true;
         }
         case SET_EMAIL: {
