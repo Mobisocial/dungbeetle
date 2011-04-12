@@ -245,15 +245,12 @@ public class ProfileActivity extends Activity{
                 try{
                     JSONObject obj = new JSONObject(jsonSrc);
                     String name = obj.optString("name");
-                    String about = obj.optString("about");
-                    String email = obj.optString("email");   
+                    String about = obj.optString("about");  
 
                     TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
-                    TextView profile_email = (TextView) findViewById(R.id.view_profile_email);
                     TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
 
                     profile_name.setText(name);
-                    profile_email.setText(email);
                     profile_about.setText(about);                     
 
                 }catch(JSONException e){}
