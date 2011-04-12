@@ -31,8 +31,9 @@ public class ProfileActivity extends Activity{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        
-	    final BitmapManager mBitmaps = new BitmapManager(10);
+        final DBHelper helper = new DBHelper(ProfileActivity.this);
+        final IdentityProvider ident = new DBIdentityProvider(helper);        
+	    final BitmapManager mBitmaps = new BitmapManager(1);
 
         Intent intent = getIntent();
         Cursor c;
@@ -48,7 +49,8 @@ public class ProfileActivity extends Activity{
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
                 null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(contact_id)}, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
+                new String[]{ "profile" , Long.toString(contact_id)}, 
                 Object.TIMESTAMP + " DESC");
 
             ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
@@ -60,8 +62,6 @@ public class ProfileActivity extends Activity{
                 profileContentObserver);
 
             Contact contact = getContact(contact_id);
-            DBHelper helper = new DBHelper(ProfileActivity.this);
-            IdentityProvider ident = new DBIdentityProvider(helper);
             
             if(c.moveToFirst()) {
 
@@ -108,11 +108,7 @@ public class ProfileActivity extends Activity{
 		}
 
 		else {
-                
-        
             setContentView(R.layout.edit_profile);
-		    final DBHelper helper = new DBHelper(ProfileActivity.this);
-            final IdentityProvider ident = new DBIdentityProvider(helper);
             final EditText edit_profile_name = (EditText) findViewById(R.id.edit_profile_name);
             final EditText edit_profile_about = (EditText) findViewById(R.id.edit_profile_about);
             edit_profile_name.setText(ident.userName());
@@ -156,8 +152,8 @@ public class ProfileActivity extends Activity{
                 		finish();
                 	}
                 });
-            helper.close();
         }
+        helper.close();
     }
 
     public boolean onCreateOptionsMenu(Menu menu){
@@ -180,13 +176,13 @@ public class ProfileActivity extends Activity{
 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
-            case EDIT: {
-                Intent intent = new Intent(this, ProfileActivity.class);
-                intent.putExtra("edit", 1);
-                startActivity(intent); 
-                return true;
-            }
-            default: return false;
+        case EDIT: {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            intent.putExtra("edit", 1);
+            startActivity(intent); 
+            return true;
+        }
+        default: return false;
         }
     }
 
