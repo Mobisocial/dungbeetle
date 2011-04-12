@@ -9,8 +9,11 @@ import android.widget.TextView;
 import android.widget.EditText;
 import android.net.Uri;
 import android.database.Cursor;
+import android.database.ContentObserver;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,6 +46,7 @@ public class ProfileActivity extends Activity{
                 null, 
                 Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(contact_id)}, 
                 Object.TIMESTAMP + " DESC");
+            c.registerContentObserver(new ProfileContentObserver());
 
             if(c.moveToFirst()) {
 
@@ -161,5 +165,19 @@ public class ProfileActivity extends Activity{
             Contact contact = new Contact(c);
             return contact;
         }
+    }
+
+    private class ProfileContentObserver extends ContentObserver {
+
+        public ProfileContentObserver() {
+            super(null);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+            Log.w("ProfileActivity", "something changed");
+        }
+
     }
 }

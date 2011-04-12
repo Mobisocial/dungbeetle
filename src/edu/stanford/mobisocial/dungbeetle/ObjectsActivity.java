@@ -51,7 +51,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
                 null, 
                 Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
-                Object.TIMESTAMP + " DESC");
+                Object._ID + " DESC");
 		}
 		
         
@@ -60,7 +60,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
                 null, 
                 Object.TYPE + "=?", new String[]{ "status" }, 
-                Object.TIMESTAMP + " DESC");
+                Object._ID + " DESC");
 		}
 		
 		mObjects = new ObjectListCursorAdapter(this, c);
