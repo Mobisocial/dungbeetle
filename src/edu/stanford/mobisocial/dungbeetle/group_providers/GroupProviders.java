@@ -127,14 +127,15 @@ public class GroupProviders{
                     while ((s = buffer.readLine()) != null) {
                         sb.append(s);
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     e.printStackTrace();
                 }
 
                 String response = sb.toString();
-                try{
-                    JSONArray arr = new JSONArray(response);
-                    for(int i = 0; i < arr.length(); i++){
+                JSONArray arr = new JSONArray(response);
+                for(int i = 0; i < arr.length(); i++) {
+                    try {
                         String objStr = arr.getString(i);
                         JSONObject o = new JSONObject(objStr);
                         String encryptedPubK = o.getString("public_key");
@@ -158,9 +159,9 @@ public class GroupProviders{
                                 }
                             });
                     }
-                }
-                catch(JSONException e){
-                    Log.e(TAG, "JSON error.", e);
+                    catch(Exception e){
+                        Log.e(TAG, "Error processing dynamic group contact.", e);
+                    }
                 }
             }
             catch(Exception e){

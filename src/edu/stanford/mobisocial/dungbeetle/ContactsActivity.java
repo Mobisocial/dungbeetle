@@ -62,7 +62,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         if(intent.hasExtra("group_id")){
             Long group_id = intent.getLongExtra("group_id", -1);
             Cursor c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + group_id),
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
+                          "/group_contacts/" + group_id),
                 null,
                 null, null, Contact.NAME + " ASC");
             mContacts = new ContactListCursorAdapter(this, c);

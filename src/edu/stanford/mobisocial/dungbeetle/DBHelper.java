@@ -307,7 +307,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return seqId;
         }
         catch(Exception e){
-            e.printStackTrace(System.err);
+            Log.e(TAG, e.getMessage());
             return -1;
         }
     }
@@ -330,7 +330,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return getWritableDatabase().insertOrThrow(Contact.TABLE, null, cv);
         }
         catch(Exception e){
-            e.printStackTrace(System.err);
+            Log.e(TAG, e.getMessage());
             return -1;
         }
     }
@@ -346,7 +346,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return db.insertOrThrow(Subscriber.TABLE, null, cv);
         }
         catch(Exception e){
-            e.printStackTrace(System.err);
+            Log.e(TAG, e.getMessage());
             return -1;
         }
     }
@@ -357,7 +357,7 @@ public class DBHelper extends SQLiteOpenHelper {
     		return getWritableDatabase().insertOrThrow(Group.TABLE, null, cv);
     	}
     	catch(Exception e){
-    		e.printStackTrace(System.err);
+            Log.e(TAG, e.getMessage());
     		return -1;
     	}
     }
