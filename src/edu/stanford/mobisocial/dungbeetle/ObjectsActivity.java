@@ -56,6 +56,17 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
                 Object._ID + " DESC");
 		}
+
+        else if(intent.hasExtra("group_id")) {
+            String contact_id = Long.toString(intent.getLongExtra("contact_id", -1));
+
+            
+            c = getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
+                null, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
+                Object._ID + " DESC");
+		}
 		
         
 		else {

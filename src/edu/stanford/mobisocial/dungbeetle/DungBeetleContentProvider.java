@@ -183,7 +183,11 @@ public class DungBeetleContentProvider extends ContentProvider {
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
                     long cid = mHelper.insertContact(db, cv);
-                    if(cid > -1){
+                    if(cid > -1){ 
+
+                        // TODO: even if the contact exists, we still want to 
+                        // make them part of the group
+
                         ContentValues gv = new ContentValues();
                         gv.put(GroupMember.GLOBAL_CONTACT_ID, 
                                values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
@@ -198,12 +202,23 @@ public class DungBeetleContentProvider extends ContentProvider {
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
+
+                        // Do we want to auto-subscribe them to our friend feed?
                         ContentValues sv = new ContentValues();
                         sv.put(Subscriber.CONTACT_ID, cid);
                         sv.put(Subscriber.FEED_NAME, "friend");
                         mHelper.insertSubscriber(db, sv);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/subscribers"), null);
+
+
+                        // sv = new ContentValues();
+                        // sv.put(Subscriber.CONTACT_ID, cid);
+                        // sv.put(Subscriber.FEED_NAME, groupFeed);
+                        // mHelper.insertSubscriber(db, sv);
+                        // getContext().getContentResolver().notifyChange(
+                        //     Uri.parse(CONTENT_URI + "/subscribers"), null);
+
 
                         db.setTransactionSuccessful();
                     }
