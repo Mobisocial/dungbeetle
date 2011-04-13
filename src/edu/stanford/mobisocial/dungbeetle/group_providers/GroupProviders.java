@@ -55,11 +55,15 @@ public class GroupProviders{
 
     public static abstract class GroupProvider implements GroupRefreshHandler{
         abstract public String groupName(Uri uri);
+        abstract public String feedName(Uri uri);
         abstract public Uri newSessionUri(IdentityProvider ident, String groupName);
     }
 
     public static class NullGroupProvider extends GroupProvider{
         public String groupName(Uri uri){
+            return "NA";
+        }
+        public String feedName(Uri uri){
             return "NA";
         }
         public Uri newSessionUri(IdentityProvider ident, String groupName){
@@ -74,6 +78,10 @@ public class GroupProviders{
         
         public String groupName(Uri uri){
             return uri.getQueryParameter("groupName");
+        }
+
+        public String feedName(Uri uri){
+            return uri.getQueryParameter("session");
         }
 
         public Uri newSessionUri(IdentityProvider ident, String groupName){

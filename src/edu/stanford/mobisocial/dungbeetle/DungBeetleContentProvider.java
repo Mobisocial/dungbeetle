@@ -162,6 +162,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
             ContentValues cv = new ContentValues();
             cv.put(Group.NAME, gp.groupName(gUri));
+            cv.put(Group.FEED_NAME, gp.feedName(gUri));
             cv.put(Group.DYN_UPDATE_URI, gUri.toString());
             long id = mHelper.insertGroup(cv);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
@@ -194,6 +195,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                             Uri.parse(CONTENT_URI + "/group_members"), null);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/contacts"), null);
+                        getContext().getContentResolver().notifyChange(
+                            Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
                         ContentValues sv = new ContentValues();
                         sv.put(Subscriber.CONTACT_ID, cid);

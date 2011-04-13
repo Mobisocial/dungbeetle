@@ -35,7 +35,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 25;
+	public static final int VERSION = 26;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -45,9 +45,9 @@ public class DBHelper extends SQLiteOpenHelper {
 		    new SQLiteDatabase.CursorFactory() {
 		    	@Override
 		    	public Cursor newCursor(
-                    SQLiteDatabase db, 
-                    SQLiteCursorDriver masterQuery, 
-                    String editTable, 
+                    SQLiteDatabase db,
+                    SQLiteCursorDriver masterQuery,
+                    String editTable,
                     SQLiteQuery query) {
 		    		return new SQLiteCursor(db, masterQuery, editTable, query);
 		    	}
@@ -78,10 +78,14 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding columns 'presence' and 'status' to contact table.");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.STATUS + " TEXT");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PRESENCE + " INTEGER DEFAULT " + Presence.AVAILABLE);
-            
-            db.setVersion(VERSION);
         }
 
+        if(oldVersion <= 25) {
+            Log.w(TAG, "Adding columns 'presence' and 'status' to contact table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.FEED_NAME + " TEXT");
+        }
+
+        db.setVersion(VERSION);
     }
 
     private void dropAll(SQLiteDatabase db){
@@ -166,6 +170,7 @@ public class DBHelper extends SQLiteOpenHelper {
         createTable(db, Group.TABLE,
         			Group._ID, "INTEGER PRIMARY KEY",
         			Group.NAME, "TEXT",
+                    Group.FEED_NAME, "TEXT",
                     Group.DYN_UPDATE_URI, "TEXT"
                     );
 

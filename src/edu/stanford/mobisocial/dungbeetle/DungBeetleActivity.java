@@ -162,7 +162,7 @@ public class DungBeetleActivity extends TabActivity
                                     Toast.makeText(DungBeetleActivity.this, "Failed to write!",
                                                    Toast.LENGTH_SHORT).show();
                                 }
-                                mNfc.clearSharing();
+                                pushContactInfoViaNfc();
                             }
                         }); 
                 }
