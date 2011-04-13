@@ -42,7 +42,7 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 
-
+import org.apache.http.util.EncodingUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -160,20 +160,34 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
-            TextView presenceText = (TextView) v.findViewById(R.id.presence_text);
+            TextView statusText = (TextView) v.findViewById(R.id.status_text);
+            statusText.setText(cursor.getString(cursor.getColumnIndexOrThrow(Contact.STATUS)));
             
             int presence = cursor.getInt(cursor.getColumnIndexOrThrow(Contact.PRESENCE));
             
             final Contact c = new Contact(cursor);
            
 
-            presenceText.setText(Presence.presences[presence]);
-            presenceText.setTextColor(Presence.colors[presence]);
+            //presenceText.setText(Presence.presences[presence]);
+            //presenceText.setTextColor(Presence.colors[presence]);
 
             String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+
+            final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
+            switch(presence) {
+                case Presence.AVAILABLE:
+                    presenceIcon.setImageResource(R.drawable.available);
+                    break;
+                case Presence.BUSY:
+                    presenceIcon.setImageResource(R.drawable.busy);
+                    break;
+                case Presence.AWAY:
+                    presenceIcon.setImageResource(R.drawable.away);
+                    break;
+            }
 
 
             final ImageView more = (ImageView)v.findViewById(R.id.more);

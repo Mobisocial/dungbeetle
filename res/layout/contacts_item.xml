@@ -17,16 +17,29 @@
       android:layout_width="0dip"
       android:layout_weight="2"
       android:layout_height="fill_parent">
+
+    <LinearLayout
+	      android:layout_width="fill_parent"
+	      android:layout_height="wrap_content">
+
+        <ImageView
+          android:id="@+id/presence_icon"
+          android:layout_width="20dip"
+          android:layout_height="20dip"
+          android:src="@drawable/available" 
+          android:scaleType="fitCenter"
+          />
+	      
+        <TextView
+	        android:id="@+id/name_text"
+	        android:layout_width="wrap_content"
+	        android:layout_height="20dip"
+	        android:gravity="center_vertical"
+	        android:textStyle="bold"
+            />
+    </LinearLayout>
     <TextView
-	android:id="@+id/name_text"
-	android:layout_width="fill_parent"
-	android:layout_height="0dip"
-	android:layout_weight="1"
-	android:gravity="center_vertical"
-	android:textStyle="bold"
-        />
-    <TextView
-	android:id="@+id/presence_text"
+	android:id="@+id/status_text"
 	android:layout_width="fill_parent"
 	android:layout_height="0dip"
 	android:layout_weight="1"

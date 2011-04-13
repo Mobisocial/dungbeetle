@@ -38,7 +38,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.contacts);
+		setContentView(R.layout.groups);
         mHelper = new DBHelper(this);
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
@@ -116,7 +116,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         @Override
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
-            View v = inflater.inflate(R.layout.contacts_item, parent, false);
+            View v = inflater.inflate(R.layout.groups_item, parent, false);
             bindView(v, context, c);
             return v;
         }

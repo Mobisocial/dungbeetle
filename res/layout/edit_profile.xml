@@ -11,7 +11,8 @@
     <EditText
         android:id="@+id/edit_profile_name"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"/>
     <TextView  
         android:layout_width="fill_parent" 
         android:layout_height="wrap_content" 
@@ -21,7 +22,8 @@
         android:id="@+id/edit_profile_about"
         android:layout_width="fill_parent"
         android:layout_height="200sp"
-        android:gravity="top"/>
+        android:gravity="top"
+        android:inputType="textCapSentences"/>
         
     <Button
 	    android:id="@+id/save_profile_button"
