@@ -97,7 +97,7 @@ public class MessagingManagerThread extends Thread {
         mHandlers.add(new SendFileHandler());
         mHandlers.add(new ProfileHandler());
         mHandlers.add(new PresenceHandler());
-        //mHandlers.add(new StatusHandler());
+        mHandlers.add(new StatusHandler());
 
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
