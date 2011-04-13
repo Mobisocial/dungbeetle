@@ -570,7 +570,7 @@ public class MessagingManagerThread extends Thread {
             return msg.optString("type").equals("status");
         }
         void handle(Contact from, JSONObject obj){
-            String status = obj.optString("status");
+            String status = obj.optString("text");
             String id = Long.toString(from.id);
             
             ContentValues values = new ContentValues();
