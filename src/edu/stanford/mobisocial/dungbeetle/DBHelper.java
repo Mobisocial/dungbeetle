@@ -575,6 +575,18 @@ public class DBHelper extends SQLiteOpenHelper {
         return result;
     }
 
+	public Maybe<Group> groupForGroupId(long groupId){
+        Cursor c = getReadableDatabase().query(
+            Group.TABLE,
+            null,
+            Group._ID + "=?",
+            new String[]{String.valueOf(groupId)},
+            null,null,null);
+        c.moveToFirst();
+        if(c.isAfterLast()) return Maybe.unknown();
+        else return Maybe.definitely(new Group(c));
+    }
+
 
     public static String joinWithSpaces(String... strings) {
         return Util.join(Arrays.asList(strings), " ");

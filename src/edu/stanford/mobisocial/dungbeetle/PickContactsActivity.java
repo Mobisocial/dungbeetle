@@ -42,12 +42,7 @@ public class PickContactsActivity extends TabActivity {
 
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact._ID, 
-                         Contact.NAME, 
-                         Contact.EMAIL, 
-                         Contact.PERSON_ID,
-                         Contact.PUBLIC_KEY}, 
-            null, null, null);
+            null, null, null, null);
 		mContacts = new ContactListCursorAdapter(this, c);
 
         ListView contactsV = (ListView) findViewById(R.id.contacts_list);
