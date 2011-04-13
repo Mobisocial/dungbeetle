@@ -512,7 +512,7 @@ public class DBHelper extends SQLiteOpenHelper {
     
     public Cursor queryGroupContacts(long groupId) {
     	return getReadableDatabase().rawQuery(
-            " SELECT C._id, C.name, C.public_key, C.person_id, C.email " + 
+            " SELECT C._id, C.name, C.public_key, C.person_id, C.email, C.presence, C.status " + 
             " FROM contacts C, group_members G WHERE " + 
             "G.group_id = ? AND C._id = G.contact_id",
             new String[] { String.valueOf(groupId) });
