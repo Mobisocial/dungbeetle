@@ -36,7 +36,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;
-	public static final int REQUEST_STATUS = 98424;
+	private static final int REQUEST_STATUS = 98424;
 	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
 	
     public void onCreate(Bundle savedInstanceState) {
@@ -91,7 +91,6 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		    button.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
 				    	Intent update = new Intent(ACTION_UPDATE_STATUS);
-				    	
                         Intent chooser = Intent.createChooser(update, "Update status");
                         startActivityForResult(chooser, REQUEST_STATUS);
 				    }
