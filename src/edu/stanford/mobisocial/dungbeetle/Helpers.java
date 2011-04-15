@@ -161,8 +161,8 @@ public class Helpers {
         return to;
     }
 
-    public static void updateStatus(final Context c, final String status){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+    public static void updateStatus(final Context c, final String feedName, final String status){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{

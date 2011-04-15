@@ -182,11 +182,17 @@ public class DungBeetleContentProvider extends ContentProvider {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
-                    long cid = mHelper.insertContact(db, cv);
-                    if(cid > -1){ 
 
-                        // TODO: even if the contact exists, we still want to 
-                        // make them part of the group
+                    long cid = -1;
+                    Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
+                    if(contact.id > -1){ 
+                        cid = contact.id;
+                    }
+                    else{
+                        cid = mHelper.insertContact(db, cv);
+                    }
+
+                    if(cid > -1){ 
 
                         ContentValues gv = new ContentValues();
                         gv.put(GroupMember.GLOBAL_CONTACT_ID, 
@@ -202,22 +208,14 @@ public class DungBeetleContentProvider extends ContentProvider {
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
-
-                        // Do we want to auto-subscribe them to our friend feed?
+                        // Add subscription to this private group feed
                         ContentValues sv = new ContentValues();
+                        sv = new ContentValues();
                         sv.put(Subscriber.CONTACT_ID, cid);
-                        sv.put(Subscriber.FEED_NAME, "friend");
+                        sv.put(Subscriber.FEED_NAME, values.getAsString(Group.FEED_NAME));
                         mHelper.insertSubscriber(db, sv);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/subscribers"), null);
-
-
-                        // sv = new ContentValues();
-                        // sv.put(Subscriber.CONTACT_ID, cid);
-                        // sv.put(Subscriber.FEED_NAME, groupFeed);
-                        // mHelper.insertSubscriber(db, sv);
-                        // getContext().getContentResolver().notifyChange(
-                        //     Uri.parse(CONTENT_URI + "/subscribers"), null);
 
 
                         db.setTransactionSuccessful();
