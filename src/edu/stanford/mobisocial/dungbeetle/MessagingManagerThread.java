@@ -15,6 +15,8 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
@@ -29,6 +31,8 @@ import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
+import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import java.security.PrivateKey;
@@ -51,14 +55,8 @@ public class MessagingManagerThread extends Thread {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
-	private NotificationManager mNotificationManager;
-	private PresenceAwareNotify presenceAwareNotify = new PresenceAwareNotify();
-	private int notifyCounter = 0;
-    private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
 
     public MessagingManagerThread(final Context context){
-        mNotificationManager = (NotificationManager)
-            context.getSystemService(context.NOTIFICATION_SERVICE);
         mContext = context;
         mMainThreadHandler = new Handler(context.getMainLooper());
         mHelper = new DBHelper(context);
@@ -86,17 +84,7 @@ public class MessagingManagerThread extends Thread {
                     Log.i(TAG, "Got incoming message " + incoming);
                     handleIncomingMessage(incoming);
                 }
-            });
-
-        mHandlers.add(new SubscribeReqHandler());
-        mHandlers.add(new IMHandler());
-        mHandlers.add(new InviteToWebSessionHandler());
-        mHandlers.add(new InviteToSharedAppHandler());
-        mHandlers.add(new InviteToSharedAppFeedHandler());
-        mHandlers.add(new SendFileHandler());
-        mHandlers.add(new ProfileHandler());
-        mHandlers.add(new PresenceHandler());
-        mHandlers.add(new StatusHandler());
+            });        
 
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
@@ -113,12 +101,6 @@ public class MessagingManagerThread extends Thread {
                     Toast.makeText(mContext, msg,Toast.LENGTH_SHORT).show();
                 }});
     }
-
-    private int nextNotifyId(){
-        notifyCounter += 1;
-        return notifyCounter;
-    }
-
 
     // FYI: Invoked on XMPP reader thread
     private void handleIncomingMessage(final IncomingMessage incoming){
@@ -326,295 +308,19 @@ public class MessagingManagerThread extends Thread {
             changed = false;
         }
     };
-
-    private List<MessageHandler> mHandlers = new ArrayList<MessageHandler>();
-
     // FYI: Must be invoked from main app thread. See above.
     private void handleSpecialMessage(IncomingMessage incoming){
         String contents = incoming.contents();
         final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
         try{
             JSONObject obj = new JSONObject(contents);
-            for(MessageHandler h : mHandlers){
+            for(MessageHandler h : HandlerManager.getDefaults(mContext)){
                 if(h.willHandle(c.otherwise(Contact.NA()), obj)){
-                    h.handle(c.otherwise(Contact.NA()), obj);
+                    h.handleReceived(c.otherwise(Contact.NA()), obj);
                     break;
                 }
             }
         }
         catch(JSONException e){ throw new RuntimeException(e); }
     }
-
-
-    abstract class MessageHandler{
-        abstract boolean willHandle(Contact from, JSONObject msg);
-        abstract void handle(Contact from, JSONObject msg);
-    }
-
-    class InviteToSharedAppHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("invite_app_session");
-        }
-        void handle(Contact from, JSONObject obj){
-            String packageName = obj.optString(InviteObj.PACKAGE_NAME);
-            String arg = obj.optString(InviteObj.ARG);
-            Log.i(TAG, "Received invite with arg: " + arg);
-            Intent launch = new Intent();
-            launch.setAction(Intent.ACTION_MAIN);
-            launch.addCategory(Intent.CATEGORY_LAUNCHER);
-            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
-            launch.putExtra("creator", false);
-            launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            launch.setPackage(packageName);
-            final PackageManager mgr = mContext.getPackageManager();
-            List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-            if (resolved == null || resolved.size() == 0) {
-                Toast.makeText(mContext, 
-                               "Could not find application to handle invite", 
-                               Toast.LENGTH_SHORT).show();
-                return;
-            }
-            ActivityInfo info = resolved.get(0).activityInfo;
-            launch.setComponent(new ComponentName(
-                                    info.packageName,
-                                    info.name));
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
-            presenceAwareNotify.notify(
-                "New Invitation",
-                "Invitation received from " + from.name, 
-                "Click to launch application.", 
-                contentIntent);
-        }
-    }
-
-    class InviteToSharedAppFeedHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("invite_app_feed");
-        }
-        void handle(Contact from, JSONObject obj){
-            try{
-                String packageName = obj.getString(InviteObj.PACKAGE_NAME);
-                String feedName = obj.getString("sharedFeedName");
-                JSONArray ids = obj.getJSONArray(InviteObj.PARTICIPANTS);
-                Intent launch = new Intent();
-                launch.setAction(Intent.ACTION_MAIN);
-                launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                launch.putExtra("type", "invite_app_feed");
-                launch.putExtra("creator", false);
-                launch.putExtra("sender", from.id);
-                launch.putExtra("sharedFeedName", feedName);
-                launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                long[] idArray = new long[ids.length()];
-                for(int i = 0; i < ids.length(); i++) {
-                    Log.i(TAG, "Passing off " + ids.getLong(i));
-                    idArray[i] = ids.getLong(i);
-                }
-                launch.putExtra("participants", idArray);
-                launch.setPackage(packageName);
-                final PackageManager mgr = mContext.getPackageManager();
-                List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
-                if (resolved.size() == 0) {
-                    Toast.makeText(
-                        mContext, 
-                        "Could not find application to handle invite.", 
-                        Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                ActivityInfo info = resolved.get(0).activityInfo;
-                launch.setComponent(new ComponentName(
-                                        info.packageName,
-                                        info.name));
-                PendingIntent contentIntent = PendingIntent.getActivity(
-                    mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
-                presenceAwareNotify.notify(
-                    "New Invitation from " + from.name, 
-                    "Invitation received from " + from.name, 
-                    "Click to launch application: " + packageName, 
-                    contentIntent);
-            }
-            catch(JSONException e){
-                Log.e(TAG, e.getMessage());
-            }
-        }
-    }
-
-    class InviteToWebSessionHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("invite_web_session");
-        }
-        void handle(Contact from, JSONObject obj){
-
-            String arg = obj.optString(InviteObj.ARG);
-            Intent launch = new Intent();
-            launch.setAction(Intent.ACTION_MAIN);
-            launch.addCategory(Intent.CATEGORY_LAUNCHER);
-            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
-            launch.putExtra("creator", false);
-            launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        	String webUrl = obj.optString(InviteObj.WEB_URL);
-            launch.setData(Uri.parse(webUrl));
-
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
-            presenceAwareNotify.notify(
-                "New Invitation",
-                "Invitation received", 
-                "Click to launch application.", 
-                contentIntent);
-        }
-    }
-
-
-    class SendFileHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("send_file");
-        }
-        void handle(Contact from, JSONObject obj){
-            String mimeType = obj.optString("mimeType");
-            String uri = obj.optString("uri");
-            Intent i = new Intent();
-            i.setAction(Intent.ACTION_VIEW);
-            i.addCategory(Intent.CATEGORY_DEFAULT);
-            i.setType(mimeType);
-            i.setData(Uri.parse(uri));
-            i.putExtra(Intent.EXTRA_TEXT, uri);
-
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
-
-            presenceAwareNotify.notify(
-                "New Shared File...",
-                "New Shared File",
-                mimeType + "  " + uri,
-                contentIntent);
-        }
-    }
-
-
-    class IMHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("instant_message");
-        }
-        void handle(Contact from, JSONObject obj){
-            Intent launch = new Intent();
-            launch.setAction(Intent.ACTION_MAIN);
-            launch.addCategory(Intent.CATEGORY_LAUNCHER);
-            launch.setComponent(new ComponentName(
-                                    mContext.getPackageName(),
-                                    DungBeetleActivity.class.getName()));
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
-            String msg = obj.optString("text");
-
-            presenceAwareNotify.notify(
-                "IM from " + from.name,
-                "IM from " + from.name,
-                "\"" + msg + "\"", 
-                contentIntent);
-        }
-    }
-
-
-    class SubscribeReqHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){ 
-            return msg.optString("type").equals("subscribe_req");
-        }
-        void handle(Contact from, JSONObject obj){
-            Helpers.insertSubscriber(
-                mContext, 
-                from.id,
-                obj.optString("subscribeToFeed"));
-        }
-    }
-
-    class ProfileHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){
-            return msg.optString("type").equals("profile");
-        }
-        void handle(Contact from, JSONObject obj){
-            String name = obj.optString("name");
-            String id = Long.toString(from.id);
-            
-                    Log.i(TAG, "Updating " + id + " name="+name);
-            ContentValues values = new ContentValues();
-            values.put(Contact.NAME, name);
-            mContext.getContentResolver().update(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
-        }
-    }
-
-    class PresenceHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){
-            return msg.optString("type").equals("presence");
-        }
-        void handle(Contact from, JSONObject obj){
-            int presence = Integer.parseInt(obj.optString("presence"));
-            String id = Long.toString(from.id);
-            
-            ContentValues values = new ContentValues();
-            values.put(Contact.PRESENCE, presence);
-            mContext.getContentResolver().update(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
-        }
-    }
-
-    //figure out what to name this stuff
-    class StatusHandler extends MessageHandler{
-        boolean willHandle(Contact from, JSONObject msg){
-            return msg.optString("type").equals("status");
-        }
-        void handle(Contact from, JSONObject obj){
-            String status = obj.optString("text");
-            String id = Long.toString(from.id);
-            
-            ContentValues values = new ContentValues();
-            values.put(Contact.STATUS, status);
-            mContext.getContentResolver().update(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), values, "_id=?", new String[]{id});
-        }
-    }
-
-    private class PresenceAwareNotify {
-
-        public PresenceAwareNotify() {
-
-        }
-        
-        public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
-            Notification notification = new Notification(
-                R.drawable.icon, notificationTitle, System.currentTimeMillis());
-
-            Cursor c = mContext.getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-                null, 
-                Object.TYPE + "=?", 
-                new String[]{ "presence"}, 
-                Object.TIMESTAMP + " DESC");
-
-            if(c.moveToFirst()) {
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    int myPresence = Integer.parseInt(obj.optString("presence"));
-                    if(myPresence == Presence.AVAILABLE || myPresence == Presence.AWAY) {
-                        notification.vibrate = VIBRATE;
-                    }
-                }catch(JSONException e){}
-            }
-            notification.setLatestEventInfo(
-                mContext, 
-                notificationMsg, 
-                notificationSubMsg, 
-                contentIntent);
-            notification.flags = Notification.FLAG_AUTO_CANCEL;
-            mNotificationManager.notify(nextNotifyId(), notification);
-        }
-    }
-
 }

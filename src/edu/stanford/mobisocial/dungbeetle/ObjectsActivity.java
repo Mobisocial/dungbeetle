@@ -22,9 +22,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.objects.ObjectReceiver;
-import edu.stanford.mobisocial.dungbeetle.objects.ObjectReceiverManager;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusUpdate;
+import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
+import edu.stanford.mobisocial.dungbeetle.objects.Renderable;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 
@@ -182,30 +182,22 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
 
             }
-            
-            // TODO: update child view
-            LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View frame = inflater.inflate(R.layout.status_entry, (ViewGroup)v.findViewById(R.id.contact_frame));
+
             try {
             	JSONObject content = new JSONObject(jsonSrc);
-            	for (ObjectReceiver receiver : getReceivers()) {
-            		if (receiver.handlesObject(content)) {
-            			receiver.render(frame, content);
-            			return;
+            	for (MessageHandler receiver : HandlerManager.getDefaults(ObjectsActivity.this)) {
+            		if (receiver.willHandle(null, content) && receiver instanceof Renderable) {
+            			Toast.makeText(ObjectsActivity.this, "rendering!!", Toast.LENGTH_SHORT).show();
+                        LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        View frame = inflater.inflate(R.layout.status_entry, (ViewGroup)v.findViewById(R.id.contact_frame));
+            			((Renderable)receiver).renderToFeed(frame, content);
+            			break;
             		}
             	}
             } catch (JSONException e) {
             	Log.e("db", "error opening json");
             }
         }
-    }
-    
-    private List<ObjectReceiver> mObjectReceivers = null;
-    private List<ObjectReceiver> getReceivers() {
-    	if (mObjectReceivers == null) {
-    		mObjectReceivers = ObjectReceiverManager.getDefaults();
-    	}
-    	return mObjectReceivers;
     }
     
     @Override

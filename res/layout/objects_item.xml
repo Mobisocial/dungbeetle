@@ -5,12 +5,13 @@
 	      android:paddingTop="6dip"
 	      android:paddingBottom="6dip"
 	      android:gravity="top"
+	      android:id="@+id/contact_frame"
 	      >
 
 <!-- Contact -->
 <LinearLayout android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
-	android:id="@+id/contact_frame">
+	>
   <ImageView
       android:id="@+id/icon"
       android:layout_width="50dip"
