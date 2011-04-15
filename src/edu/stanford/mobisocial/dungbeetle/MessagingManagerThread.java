@@ -54,8 +54,7 @@ public class MessagingManagerThread extends Thread {
 	private NotificationManager mNotificationManager;
 	private PresenceAwareNotify presenceAwareNotify = new PresenceAwareNotify();
 	private int notifyCounter = 0;
-    private final long[] VIBRATE = new long[] {0, 280, 150, 100, 150, 150, 50, 250};
-
+    private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
 
     public MessagingManagerThread(final Context context){
         mNotificationManager = (NotificationManager)

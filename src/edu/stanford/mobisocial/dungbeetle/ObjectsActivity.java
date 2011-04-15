@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 import android.view.View;
@@ -13,14 +14,20 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.ImageView;
+import android.widget.TableLayout.LayoutParams;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.objects.ObjectReceiver;
+import edu.stanford.mobisocial.dungbeetle.objects.ObjectReceiverManager;
+import edu.stanford.mobisocial.dungbeetle.objects.StatusUpdate;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,7 +41,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;
-	public static final int REQUEST_STATUS = 98424;
+	private static final int REQUEST_STATUS = 98424;
 	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
     private String feedName = "friend";
 	
@@ -77,7 +84,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                Object.TYPE + "=?", new String[]{ "status" }, 
+                null, null, 
                 Object._ID + " DESC");
 		}
 		
@@ -91,19 +98,18 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             button.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                         Intent update = new Intent(ACTION_UPDATE_STATUS);
-				    	
                         Intent chooser = Intent.createChooser(update, "Update status");
                         startActivityForResult(chooser, REQUEST_STATUS);
                     }
                 });
         }
-	    else{
+        else{
             findViewById(R.id.add_object_button).setVisibility(View.GONE);
         }
-	}
+    }
 
 
-	public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
 
 
     // Implement a little cache so we don't have to keep pulling the same
@@ -167,8 +173,6 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String text = obj.optString("text");
-                TextView bodyText = (TextView) v.findViewById(R.id.body_text);
-                bodyText.setText(text);
 
                 if(contact != null){
                     TextView nameText = (TextView) v.findViewById(R.id.name_text);
@@ -176,14 +180,35 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
-
                 }
-
-            }catch(JSONException e){}
+            }
+            catch(JSONException e){}
+            
+            // TODO: update child view
+            LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View frame = inflater.inflate(R.layout.status_entry, (ViewGroup)v.findViewById(R.id.contact_frame));
+            try {
+                JSONObject content = new JSONObject(jsonSrc);
+                for (ObjectReceiver receiver : getReceivers()) {
+                    if (receiver.handlesObject(content)) {
+                        receiver.render(frame, content);
+                        return;
+                    }
+                }
+            } catch (JSONException e) {
+                Log.e("db", "error opening json");
+            }
         }
     }
-
-
+    
+    private List<ObjectReceiver> mObjectReceivers = null;
+    private List<ObjectReceiver> getReceivers() {
+        if (mObjectReceivers == null) {
+            mObjectReceivers = ObjectReceiverManager.getDefaults();
+        }
+        return mObjectReceivers;
+    }
+    
     @Override
     public void finish() {
         super.finish();
@@ -192,13 +217,14 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == REQUEST_STATUS) {
-    		if (resultCode == RESULT_OK) {
-    			String update = data.getStringExtra(Intent.EXTRA_TEXT);
-    			Helpers.updateStatus(ObjectsActivity.this, feedName, update);
-    		}
-    	}
+        if (requestCode == REQUEST_STATUS) {
+            if (resultCode == RESULT_OK) {
+                String update = data.getStringExtra(Intent.EXTRA_TEXT);
+                Helpers.updateStatus(ObjectsActivity.this, feedName, update);
+            }
+        }
     }
+    
 
 }
 

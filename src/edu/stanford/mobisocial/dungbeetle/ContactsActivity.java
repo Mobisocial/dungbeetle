@@ -35,6 +35,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import android.view.ContextMenu;
@@ -51,8 +52,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
-
- 
+	private static final int REQUEST_SEND_IM = 470;
+	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
+	private Collection<Contact> mSelection;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -201,7 +203,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     send_im.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            UIHelpers.sendMessageToContact(ContactsActivity.this, Collections.singletonList(c));
+                        	mSelection = Collections.singletonList(c);
+                        	Intent update = new Intent(ACTION_SEND_IM);
+                            Intent chooser = Intent.createChooser(update, "Send IM");
+                            startActivityForResult(chooser, REQUEST_SEND_IM);
                         }
                     });
                     
@@ -297,7 +302,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         super.finish();
     }
 
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if (requestCode == REQUEST_SEND_IM) {
+    		if (resultCode == RESULT_OK) {
+    			String im = data.getStringExtra(Intent.EXTRA_TEXT);
+    			Helpers.sendIM(this, mSelection, im);
+    		}
+    	}
+    }
 }
 
 

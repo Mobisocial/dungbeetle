@@ -24,6 +24,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import java.util.Collection;
+import java.util.Collections;
+
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
@@ -35,6 +37,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     public static final String SHARE_SCHEME = "db-share-contact";
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private DBHelper mHelper;
+
+	private static final int REQUEST_SEND_IM = 470;
+	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
+	private Collection<Contact> mSelection;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -145,9 +151,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                     send_im.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            UIHelpers.sendMessageToContact(
-                                GroupsActivity.this, 
-                                contactsInGroup);
+                        	mSelection = contactsInGroup;
+                        	Intent update = new Intent(ACTION_SEND_IM);
+                            Intent chooser = Intent.createChooser(update, "Send IM");
+                            startActivityForResult(chooser, REQUEST_SEND_IM);
                         }
                     });
                     
@@ -254,6 +261,15 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         mHelper.close();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if (requestCode == REQUEST_SEND_IM) {
+    		if (resultCode == RESULT_OK) {
+    			String im = data.getStringExtra(Intent.EXTRA_TEXT);
+    			Helpers.sendIM(this, mSelection, im);
+    		}
+    	}
+    }
 }
 
 

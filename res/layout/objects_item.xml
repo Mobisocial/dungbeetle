@@ -6,6 +6,11 @@
 	      android:paddingBottom="6dip"
 	      android:gravity="top"
 	      >
+
+<!-- Contact -->
+<LinearLayout android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:id="@+id/contact_frame">
   <ImageView
       android:id="@+id/icon"
       android:layout_width="50dip"
@@ -13,25 +18,17 @@
       android:layout_marginRight="6dip"
       android:scaleType="fitCenter"
       />
-  <LinearLayout
-      android:orientation="vertical"
-      android:layout_width="0dip"
-      android:layout_weight="1"
-      android:layout_height="wrap_content">
-    <TextView
+
+ <TextView
 	android:id="@+id/name_text"
+	android:text="name here"
 	android:layout_width="fill_parent"
-	android:layout_height="0dip"
+	android:layout_height="50dip"
 	android:layout_weight="1"
 	android:gravity="center_vertical"
 	android:textStyle="bold"
         />
-    <TextView
-	android:id="@+id/body_text"
-	android:layout_width="fill_parent"
-	android:layout_height="0dip"
-	android:layout_weight="1"
-	android:gravity="center_vertical"
-        />
-  </LinearLayout>
+</LinearLayout>
+<!-- End Contact -->
+
 </LinearLayout>
