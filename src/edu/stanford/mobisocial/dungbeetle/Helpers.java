@@ -1,13 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +49,7 @@ public class Helpers {
     }
 
     public static void deleteContact(final Context c, 
-                                   Long contactId){
+                                     Long contactId){
         c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             Contact._ID + "=?",
@@ -60,6 +64,22 @@ public class Helpers {
         values.put(Contact.EMAIL, email);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
         return c.getContentResolver().insert(url, values);
+    }
+
+    public static Uri insertGroup(final Context c, 
+                                  String groupName, 
+                                  String dynUpdateUri, 
+                                  String feedNameIn){
+        String feedName = feedNameIn;
+        if(feedName == null){
+            feedName = UUID.randomUUID().toString();
+        }
+        ContentValues values = new ContentValues();
+        values.put(Group.NAME, groupName);
+        values.put(Group.DYN_UPDATE_URI, dynUpdateUri);
+        values.put(Group.FEED_NAME, feedName);
+        return c.getContentResolver().insert(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), values);
     }
 
     public static void insertGroupMember(final Context c, 
@@ -190,7 +210,6 @@ public class Helpers {
             }
             // Need to add ourself to participants
             participants.put(participants.length(), "@l" + Contact.MY_ID);
-
             obj.put("participants", participants);
             values.put(Object.JSON, obj.toString());
             values.put(Object.DESTINATION, buildAddresses(contacts));
@@ -199,23 +218,8 @@ public class Helpers {
         }catch(JSONException e){}
     }
 
-    private static String buildAddresses(Collection<Contact> contacts){
-        String to = "";
-        Iterator<Contact> it = contacts.iterator();
-        while(it.hasNext()){
-            Contact c = it.next();
-            if(it.hasNext()){
-                to += c.id + ",";
-            }
-            else{
-                to += c.id;
-            }
-        }
-        return to;
-    }
-
-    public static void updateStatus(final Context c, final String status){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+    public static void updateStatus(final Context c, final String feedName, final String status){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         ContentValues values = new ContentValues();
         JSONObject obj = new JSONObject();
         try{
@@ -245,6 +249,46 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+
+    /**
+     *  Handle a group invite. (user should have approved this action)
+     */
+    public static void addGroupFromInvite(final Context c,
+                                          final String groupName,
+                                          final String sharedFeedName,
+                                          final long inviterContactId,
+                                          final long[] participants
+                                          ){
+        ContentValues values = new ContentValues();
+        values.put("groupName", groupName);
+        values.put("sharedFeedName", sharedFeedName);
+        values.put("inviterContactId", inviterContactId);
+        values.put("participants", Util.join(participants, ","));
+
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
+                            "/groups_by_invitation");
+        c.getContentResolver().insert(url, values);
+    }
+
+
+    /**
+     *  Add contacts to the group g. Send an invite to each contact
+     *  to join the private group feed.
+     */
+    public static void sendGroupInvite(final Context c,
+                                       final long[] participants,
+                                       final Group g){
+        ContentValues values = new ContentValues();
+        values.put("participants", Util.join(participants, ","));        
+        values.put("groupName", g.name);
+        values.put("sharedFeedName", g.feedName);
+        values.put("groupId", g.id);
+
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
+                            "/group_invitations");
+        c.getContentResolver().insert(url, values);
+    }
+
     public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
@@ -257,6 +301,21 @@ public class Helpers {
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, "profile");
         c.getContentResolver().insert(url, values);
+    }
+
+    private static String buildAddresses(Collection<Contact> contacts){
+        String to = "";
+        Iterator<Contact> it = contacts.iterator();
+        while(it.hasNext()){
+            Contact c = it.next();
+            if(it.hasNext()){
+                to += c.id + ",";
+            }
+            else{
+                to += c.id;
+            }
+        }
+        return to;
     }
 
 

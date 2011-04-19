@@ -7,9 +7,19 @@ public abstract class Maybe<T> implements Iterable<T> {
     public abstract boolean isKnown();
     public abstract T otherwise(T defaultValue);
     public abstract Maybe<T> otherwise(Maybe<T> maybeDefaultValue);
+    public abstract T get() throws NoValError;
+
+    public static class NoValError extends java.lang.Exception{
+    }
     
     public static <T> Maybe<T> unknown() {
         return new Maybe<T>() {
+
+            @Override
+            public T get() throws NoValError{
+                throw new NoValError();
+            }
+
             @Override
             public boolean isKnown() {
                 return false;
@@ -56,6 +66,11 @@ public abstract class Maybe<T> implements Iterable<T> {
 
         public DefiniteValue(T theValue) {
             this.theValue = theValue;
+        }
+
+        @Override
+        public T get()  throws NoValError{
+            return theValue;
         }
 
         @Override

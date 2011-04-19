@@ -120,6 +120,14 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(s);
     } 
 
+    private void addUniqueConstraint(SQLiteDatabase db, String tableName, String name, String... cols){
+        assert cols.length > 0;
+        String s = "ALTER TABLE " + tableName + " ADD CONSTRAINT " + name + " UNIQUE (";
+        s += Util.join(Arrays.asList(cols), ",");
+        s += ")";
+        db.execSQL(s);
+    } 
+
     
 	@Override
 	public void onCreate(SQLiteDatabase db) {
@@ -165,6 +173,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Subscriber.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
                     Subscriber.FEED_NAME, "TEXT");
         createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
+        addUniqueConstraint(db, Subscriber.TABLE, "unique_feed_contact_id", Subscriber.CONTACT_ID, Subscriber.FEED_NAME);
 
 
         createTable(db, Group.TABLE,
@@ -173,6 +182,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.FEED_NAME, "TEXT",
                     Group.DYN_UPDATE_URI, "TEXT"
                     );
+        addUniqueConstraint(db, Group.TABLE, "unique_feed_name", Group.FEED_NAME);
 
         
         createTable(db, GroupMember.TABLE,
@@ -239,8 +249,14 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put(Contact.NAME, name);
         getWritableDatabase().update(Contact.TABLE, cv, Contact._ID + "=?", new String[]{ id });
     }
+
+    long addToOutgoing(String appId, String to, String type, JSONObject json){
+        return addToOutgoing(getWritableDatabase(), 
+                             appId, to, type, json);
+    }
     
-    long addToOutgoing(String appId, String to, String type, JSONObject json) {
+    long addToOutgoing(
+        SQLiteDatabase db, String appId, String to, String type, JSONObject json) {
         try{
             long timestamp = new Date().getTime();
             json.put("type", type);
@@ -256,7 +272,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(Object.JSON, json.toString());
             cv.put(Object.SEQUENCE_ID, 0);
             cv.put(Object.TIMESTAMP, timestamp);
-            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
+            db.insertOrThrow(Object.TABLE, null, cv);
             return 0;
         }
         catch(Exception e){
@@ -356,10 +372,15 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+
     long insertGroup(ContentValues cv) {
+        return insertGroup(getWritableDatabase(), cv);
+    }
+
+    long insertGroup(SQLiteDatabase db, ContentValues cv) {
     	try{
     		validate(cv.getAsString(Group.NAME));
-    		return getWritableDatabase().insertOrThrow(Group.TABLE, null, cv);
+    		return db.insertOrThrow(Group.TABLE, null, cv);
     	}
     	catch(Exception e){
             Log.e(TAG, e.getMessage());
@@ -523,6 +544,7 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[] { String.valueOf(groupId) });
     }
 
+
 	public Maybe<Contact> contactForPersonId(String personId){
         List<Contact> cs = contactsForPersonIds(Collections.singletonList(personId));
         if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
@@ -581,6 +603,18 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             Group._ID + "=?",
             new String[]{String.valueOf(groupId)},
+            null,null,null);
+        c.moveToFirst();
+        if(c.isAfterLast()) return Maybe.unknown();
+        else return Maybe.definitely(new Group(c));
+    }
+
+	public Maybe<Group> groupByFeedName(String feedName){
+        Cursor c = getReadableDatabase().query(
+            Group.TABLE,
+            null,
+            Group.FEED_NAME + "=?",
+            new String[]{feedName},
             null,null,null);
         c.moveToFirst();
         if(c.isAfterLast()) return Maybe.unknown();

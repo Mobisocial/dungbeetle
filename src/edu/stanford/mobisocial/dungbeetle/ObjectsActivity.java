@@ -1,11 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 import android.view.View;
@@ -14,15 +14,22 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TableLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
+import edu.stanford.mobisocial.dungbeetle.objects.Renderable;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,42 +45,46 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private DBHelper mHelper;
 	private static final int REQUEST_STATUS = 98424;
 	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
+    private String feedName = "friend";
 	
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
 
         Cursor c;
+        mHelper = new DBHelper(ObjectsActivity.this); 
+        mIdent = new DBIdentityProvider(mHelper);
         
         Intent intent = getIntent();
-        if(intent.hasExtra("contact_id")) {
-            String contact_id = Long.toString(intent.getLongExtra("contact_id", -1));
-
-            
+        if(intent.hasExtra("contactId")) {
+            Long contactId = intent.getLongExtra("contact_id", -1);
             c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
+                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ 
+                    "status" , String.valueOf(contactId) }, 
                 Object._ID + " DESC");
 		}
-
         else if(intent.hasExtra("group_id")) {
-            String contact_id = Long.toString(intent.getLongExtra("contact_id", -1));
-
-            
-            c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
-                null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "status" , contact_id}, 
-                Object._ID + " DESC");
+            Long groupId = intent.getLongExtra("group_id", -1);
+            try{
+                Group group = mHelper.groupForGroupId(groupId).get();
+                feedName = group.feedName;
+                c = getContentResolver().query(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
+                    null, 
+                    Object.TYPE + "=?", new String[]{ "status" }, 
+                    Object._ID + " DESC");                
+            }
+            catch(Maybe.NoValError e){
+                c = new MatrixCursor(new String[]{});
+            }
 		}
-		
-        
 		else {
             c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"),
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                Object.TYPE + "=?", new String[]{ "status" }, 
+                null, null, 
                 Object._ID + " DESC");
 		}
 		
@@ -82,28 +93,23 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
 
-        mHelper = new DBHelper(ObjectsActivity.this); 
-        mIdent = new DBIdentityProvider(mHelper);
-
-        if(!intent.hasExtra("contact_id") && !intent.hasExtra("group_id"))
-        {
-		    Button button = (Button)findViewById(R.id.add_object_button);
-		    button.setOnClickListener(new OnClickListener() {
-				    public void onClick(View v) {
-				    	Intent update = new Intent(ACTION_UPDATE_STATUS);
+        if(!intent.hasExtra("contact_id")){
+            Button button = (Button)findViewById(R.id.add_object_button);
+            button.setOnClickListener(new OnClickListener() {
+                    public void onClick(View v) {
+                        Intent update = new Intent(ACTION_UPDATE_STATUS);
                         Intent chooser = Intent.createChooser(update, "Update status");
                         startActivityForResult(chooser, REQUEST_STATUS);
-				    }
-			    });
-	    }
-	    else
-	    {
-	        findViewById(R.id.add_object_button).setVisibility(View.GONE);
-	    }
-	}
+                    }
+                });
+        }
+        else{
+            findViewById(R.id.add_object_button).setVisibility(View.GONE);
+        }
+    }
 
 
-	public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
 
 
     // Implement a little cache so we don't have to keep pulling the same
@@ -167,26 +173,35 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String text = obj.optString("text");
-                TextView bodyText = (TextView) v.findViewById(R.id.body_text);
-                bodyText.setText(text);
 
                 if(contact != null){
                     TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                    //String email = contact.email == null ? "NA" : contact.email;
-                    //email = obj.optString("name");
-                    
                     nameText.setText(contact.name);
                     final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
-
                 }
+            }catch (JSONException e) {
+                Log.e("db", "error opening json");
+            }
 
-            }catch(JSONException e){}
+            try {
+            	JSONObject content = new JSONObject(jsonSrc);
+            	for (MessageHandler receiver : HandlerManager.getDefaults(ObjectsActivity.this)) {
+            		if (receiver.willHandle(null, content) && receiver instanceof Renderable) {
+            			Toast.makeText(ObjectsActivity.this, "rendering!!", Toast.LENGTH_SHORT).show();
+                        LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        View frame = inflater.inflate(R.layout.status_entry, (ViewGroup)v.findViewById(R.id.contact_frame));
+            			((Renderable)receiver).renderToFeed(frame, content);
+            			break;
+            		}
+            	}
+            } catch (JSONException e) {
+                Log.e("db", "error opening json");
+            }
         }
     }
-
-
+    
     @Override
     public void finish() {
         super.finish();
@@ -194,14 +209,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == REQUEST_STATUS) {
-    		if (resultCode == RESULT_OK) {
-    			String update = data.getStringExtra(Intent.EXTRA_TEXT);
-    			Helpers.updateStatus(ObjectsActivity.this, update);
-    		}
-    	}
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_STATUS) {
+            if (resultCode == RESULT_OK) {
+                String update = data.getStringExtra(Intent.EXTRA_TEXT);
+                Helpers.updateStatus(ObjectsActivity.this, feedName, update);
+            }
+        }
     }
+    
 
 }
 

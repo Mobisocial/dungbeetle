@@ -5,12 +5,16 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
+import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.security.PublicKey;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.List;
@@ -156,6 +160,108 @@ public class DungBeetleContentProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_contacts"), null);
             return uriWithId(uri, id);
         }
+
+
+        else if(match(uri, "group_invitations")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
+            long[] participants = Util.splitLongs(
+                values.getAsString("participants"),",");
+            String groupName = values.getAsString("groupName");
+            String sharedFeedName = values.getAsString("sharedFeedName");
+            Long groupId = values.getAsLong("groupId");
+            SQLiteDatabase db = mHelper.getWritableDatabase();
+            for(int i = 0; i < participants.length; i++){
+                long cid = participants[i];
+                ContentValues gmv = new ContentValues();
+                gmv.put(GroupMember.GROUP_ID, groupId);
+                gmv.put(GroupMember.CONTACT_ID, cid);
+                mHelper.insertGroupMember(db, gmv);
+            }
+            getContext().getContentResolver().notifyChange(
+                Uri.parse(CONTENT_URI + "/group_members"), null);
+            mHelper.addToOutgoing(
+                db,
+                appId,
+                values.getAsString("participants"),
+                InviteToGroupObj.TYPE,
+                InviteToGroupObj.json(participants, groupName, sharedFeedName));
+            return uriWithId(uri, groupId);
+        }
+
+        else if(match(uri, "groups_by_invitation")){
+            if(!appId.equals(SUPER_APP_ID)) return null;
+
+            long[] participants = Util.splitLongs(
+                values.getAsString("participants"),",");
+            String groupName = values.getAsString("groupName");
+            String sharedFeedName = values.getAsString("sharedFeedName");
+            Long inviterContactId = values.getAsLong("inviterContactId");
+
+            SQLiteDatabase db = mHelper.getWritableDatabase();
+            try{
+                db.beginTransaction();
+
+                long gid = -1;
+                Group group = mHelper.groupByFeedName(sharedFeedName)
+                    .otherwise(Group.NA());
+                if(group.id > -1){
+                    gid = group.id;
+                }
+                else{
+                    ContentValues gv = new ContentValues();
+                    gv.put(Group.NAME, groupName);
+                    gv.put(Group.DYN_UPDATE_URI, (String)null);
+                    gv.put(Group.FEED_NAME, sharedFeedName);
+                    gid = mHelper.insertGroup(db, gv);
+                    getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/groups"), null);
+                }
+
+                if(gid > -1){ 
+                    // Add subscription for invite sender
+                    // to this private group feed
+                    ContentValues sv = new ContentValues();
+                    sv = new ContentValues();
+                    sv.put(Subscriber.CONTACT_ID, inviterContactId);
+                    sv.put(Subscriber.FEED_NAME, sharedFeedName);
+                    mHelper.insertSubscriber(db, sv);
+                    getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/subscribers"), null);
+
+                    for(int i = 0; i < participants.length; i++) {
+                        long cid = participants[i];
+                        // Create group members
+                        ContentValues gmv = new ContentValues();
+                        gmv.put(GroupMember.GROUP_ID, 
+                                values.getAsLong(GroupMember.GROUP_ID));
+                        gmv.put(GroupMember.CONTACT_ID, cid);
+                        mHelper.insertGroupMember(db, gmv);
+                    }
+                    getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/group_members"), null);
+
+                    // Send subscribe requests
+                    mHelper.addToOutgoing(
+                        db,
+                        appId,
+                        values.getAsString("participants"),
+                        SubscribeReqObj.TYPE,
+                        SubscribeReqObj.json(sharedFeedName));
+
+
+                    db.setTransactionSuccessful();
+
+                }
+                else{
+                    return null;
+                }
+                return uriWithId(uri, gid);
+            }
+            finally{
+                db.endTransaction();
+            }
+        }
+
         else if(match(uri, "dynamic_groups")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             Uri gUri = Uri.parse(values.getAsString("uri"));
@@ -169,6 +275,8 @@ public class DungBeetleContentProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return uriWithId(uri, id);
         }
+
+
         else if(match(uri, "dynamic_group_member")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             SQLiteDatabase db = mHelper.getWritableDatabase();
@@ -182,11 +290,17 @@ public class DungBeetleContentProvider extends ContentProvider {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
-                    long cid = mHelper.insertContact(db, cv);
-                    if(cid > -1){ 
 
-                        // TODO: even if the contact exists, we still want to 
-                        // make them part of the group
+                    long cid = -1;
+                    Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
+                    if(contact.id > -1){ 
+                        cid = contact.id;
+                    }
+                    else{
+                        cid = mHelper.insertContact(db, cv);
+                    }
+
+                    if(cid > -1){ 
 
                         ContentValues gv = new ContentValues();
                         gv.put(GroupMember.GLOBAL_CONTACT_ID, 
@@ -202,22 +316,14 @@ public class DungBeetleContentProvider extends ContentProvider {
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
-
-                        // Do we want to auto-subscribe them to our friend feed?
+                        // Add subscription to this private group feed
                         ContentValues sv = new ContentValues();
+                        sv = new ContentValues();
                         sv.put(Subscriber.CONTACT_ID, cid);
-                        sv.put(Subscriber.FEED_NAME, "friend");
+                        sv.put(Subscriber.FEED_NAME, values.getAsString(Group.FEED_NAME));
                         mHelper.insertSubscriber(db, sv);
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/subscribers"), null);
-
-
-                        // sv = new ContentValues();
-                        // sv.put(Subscriber.CONTACT_ID, cid);
-                        // sv.put(Subscriber.FEED_NAME, groupFeed);
-                        // mHelper.insertSubscriber(db, sv);
-                        // getContext().getContentResolver().notifyChange(
-                        //     Uri.parse(CONTENT_URI + "/subscribers"), null);
 
 
                         db.setTransactionSuccessful();
@@ -293,8 +399,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         else if(match(uri, "groups_membership", ".+")) {
             if(!appId.equals(SUPER_APP_ID)) return null;
-        	Long contactId = Long.valueOf(segs.get(1));
-        	Cursor c = mHelper.queryGroupsMembership(contactId);
+            Long contactId = Long.valueOf(segs.get(1));
+            Cursor c = mHelper.queryGroupsMembership(contactId);
             c.setNotificationUri(getContext().getContentResolver(), uri);
             return c;
         }
@@ -342,15 +448,16 @@ public class DungBeetleContentProvider extends ContentProvider {
         List<String> segs = uri.getPathSegments();
         mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
         getContext().getContentResolver().notifyChange(uri, null);
-		return 0;
+        return 0;
     }
 
-    // For unit tests
+
+// For unit tests
     public DBHelper getDatabaseHelper(){
         return mHelper;
     }
 
-    // Helper for matching on url paths
+// Helper for matching on url paths
     private boolean match(Uri uri, String... regexes){
         List<String> segs = uri.getPathSegments();
         if(segs.size() == regexes.length){

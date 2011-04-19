@@ -10,18 +10,32 @@ public class Group{
     public static final String FEED_NAME = "feed_name";
     public static final String DYN_UPDATE_URI = "dyn_update_uri";
 
+    public final String feedName;
     public final String name;
     public final String dynUpdateUri;
     public final Long id;
 
     public Group(Cursor c){
-        id = c.getLong(c.getColumnIndexOrThrow(_ID));
-        name = c.getString(c.getColumnIndexOrThrow(NAME));
-        dynUpdateUri = c.getString(c.getColumnIndexOrThrow(DYN_UPDATE_URI));
+        this(c.getLong(c.getColumnIndexOrThrow(_ID)),
+             c.getString(c.getColumnIndexOrThrow(NAME)),
+             c.getString(c.getColumnIndexOrThrow(DYN_UPDATE_URI)),
+             c.getString(c.getColumnIndexOrThrow(FEED_NAME))
+             );
+    }
+
+    public Group(long id, String name, String dynUpdateUri, String feedName){
+        this.id = id;
+        this.name = name;
+        this.dynUpdateUri = dynUpdateUri;
+        this.feedName = feedName;
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
         return new ContactCollection(id, helper);
+    }
+
+    public static Group NA(){
+        return new Group(-1L, "NA", "NA", "NA");
     }
 
 }

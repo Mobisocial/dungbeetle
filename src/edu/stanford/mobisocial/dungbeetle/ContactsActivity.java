@@ -2,19 +2,13 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.NotificationManager;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.database.Cursor;
-import android.database.ContentObserver;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,25 +21,20 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import android.view.ContextMenu;
-import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
-
-import org.apache.http.util.EncodingUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -53,22 +42,32 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
 	private static final int REQUEST_SEND_IM = 470;
+	private static final int REQUEST_INVITE_TO_GROUP = 471;
 	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
 	private Collection<Contact> mSelection;
+	private DBHelper mHelper;
+    private Maybe<Group> mGroup;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        mHelper = new DBHelper(this);
         Intent intent = getIntent();
         if(intent.hasExtra("group_id")){
-            Long group_id = intent.getLongExtra("group_id", -1);
-            Cursor c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
-                          "/group_contacts/" + group_id),
-                null,
-                null, null, Contact.NAME + " ASC");
-            mContacts = new ContactListCursorAdapter(this, c);
+            Long groupId = intent.getLongExtra("group_id", -1);
+            try{
+                mGroup = mHelper.groupForGroupId(groupId);
+                Cursor c = getContentResolver().query(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
+                              "/group_contacts/" + mGroup.get().id),
+                    null,
+                    null, null, Contact.NAME + " ASC");
+                mContacts = new ContactListCursorAdapter(this, c);
+            }
+            catch(Maybe.NoValError e){
+                mContacts = new ContactListCursorAdapter(this, new MatrixCursor(new String[]{}));;
+            }
         }
         else{
             Cursor c = getContentResolver().query(
@@ -112,9 +111,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
  
         switch(menuItemIndex) {
-            case 0:
-                Helpers.deleteContact(this, c.id);
-            	break;
+        case 0:
+            Helpers.deleteContact(this, c.id);
+            break;
         }
         return true;
     }
@@ -180,67 +179,67 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             switch(presence) {
-                case Presence.AVAILABLE:
-                    presenceIcon.setImageResource(R.drawable.available);
-                    break;
-                case Presence.BUSY:
-                    presenceIcon.setImageResource(R.drawable.busy);
-                    break;
-                case Presence.AWAY:
-                    presenceIcon.setImageResource(R.drawable.away);
-                    break;
+            case Presence.AVAILABLE:
+                presenceIcon.setImageResource(R.drawable.available);
+                break;
+            case Presence.BUSY:
+                presenceIcon.setImageResource(R.drawable.busy);
+                break;
+            case Presence.AWAY:
+                presenceIcon.setImageResource(R.drawable.away);
+                break;
             }
 
 
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    final ActionItem send_im = new ActionItem();
-                    send_im.setTitle("Send IM");
-                    //chart.setIcon(getResources().getDrawable(R.drawable.chart));
-                    send_im.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                        	mSelection = Collections.singletonList(c);
-                        	Intent update = new Intent(ACTION_SEND_IM);
-                            Intent chooser = Intent.createChooser(update, "Send IM");
-                            startActivityForResult(chooser, REQUEST_SEND_IM);
-                        }
-                    });
+                    @Override
+                    public void onClick(View v) {
+                        final ActionItem send_im = new ActionItem();
+                        send_im.setTitle("Send IM");
+                        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+                        send_im.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    mSelection = Collections.singletonList(c);
+                                    Intent update = new Intent(ACTION_SEND_IM);
+                                    Intent chooser = Intent.createChooser(update, "Send IM");
+                                    startActivityForResult(chooser, REQUEST_SEND_IM);
+                                }
+                            });
                     
-                    final ActionItem start_app = new ActionItem();
-                    start_app.setTitle("Start App");
-                    //production.setIcon(getResources().getDrawable(R.drawable.production));
-                    start_app.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            UIHelpers.startApplicationWithContact(ContactsActivity.this, Collections.singletonList(c));
-                        }
-                    });
+                        final ActionItem start_app = new ActionItem();
+                        start_app.setTitle("Start App");
+                        //production.setIcon(getResources().getDrawable(R.drawable.production));
+                        start_app.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    UIHelpers.startApplicationWithContact(ContactsActivity.this, Collections.singletonList(c));
+                                }
+                            });
                     
-                    final ActionItem manage_groups = new ActionItem();
-                    manage_groups.setTitle("Groups");
-                    //production.setIcon(getResources().getDrawable(R.drawable.production));
-                    manage_groups.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            UIHelpers.showGroupPicker(ContactsActivity.this, c);
-                        }
-                    });
+                        final ActionItem manage_groups = new ActionItem();
+                        manage_groups.setTitle("Groups");
+                        //production.setIcon(getResources().getDrawable(R.drawable.production));
+                        manage_groups.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    UIHelpers.showGroupPicker(ContactsActivity.this, c);
+                                }
+                            });
 
                     
-                    QuickAction qa = new QuickAction(v);
+                        QuickAction qa = new QuickAction(v);
 
-                    qa.addActionItem(send_im);
-                    qa.addActionItem(start_app);
-                    qa.addActionItem(manage_groups);
-                    qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
+                        qa.addActionItem(send_im);
+                        qa.addActionItem(start_app);
+                        qa.addActionItem(manage_groups);
+                        qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
-                    qa.show();
-                }
-            });
+                        qa.show();
+                    }
+                });
         }
 
     }
@@ -253,13 +252,21 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final static int SHARE_INFO = 0;
     private final static int SET_EMAIL = 1;
     private final static int FACEBOOK_BOOTSTRAP = 2;
+    private final static int INVITE_TO_GROUP = 3;
 
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
-        menu.add(0, SHARE_INFO, 0, "Exchange info");
-        menu.add(0, SET_EMAIL, 0, "Set email (debug)");
-        menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
+        try{
+            Group g = mGroup.get();
+            if(g.feedName != null){
+                menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
+            }
+        } catch(Maybe.NoValError e){
+            menu.add(0, SHARE_INFO, 0, "Exchange info");
+            menu.add(0, SET_EMAIL, 0, "Set email (debug)");
+            menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
+        }
         return true;
     }
 
@@ -293,6 +300,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             startActivity(intent); 
             return true;
         }
+		case INVITE_TO_GROUP: {
+            Intent i = new Intent();
+            i.setAction(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+            this.startActivityForResult(i, REQUEST_INVITE_TO_GROUP);
+			return true;
+        }
         default: return false;
         }
     }
@@ -303,13 +316,21 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == REQUEST_SEND_IM) {
-    		if (resultCode == RESULT_OK) {
-    			String im = data.getStringExtra(Intent.EXTRA_TEXT);
-    			Helpers.sendIM(this, mSelection, im);
-    		}
-    	}
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_SEND_IM) {
+            if (resultCode == RESULT_OK) {
+                String im = data.getStringExtra(Intent.EXTRA_TEXT);
+                Helpers.sendIM(this, mSelection, im);
+            }
+        }
+        else if (requestCode == REQUEST_INVITE_TO_GROUP) {
+            if (resultCode == RESULT_OK) {
+                long[] contactIds = data.getLongArrayExtra("contacts");
+                try{
+                    Helpers.sendGroupInvite(this, contactIds, mGroup.get());
+                }catch(Maybe.NoValError e){}
+            }
+        }
     }
 }
 

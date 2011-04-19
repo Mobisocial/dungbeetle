@@ -12,6 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import java.io.BufferedReader;
@@ -120,12 +121,13 @@ public class GroupProviders{
                 HttpPost httpPost = new HttpPost(uri.toString());
 
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());
-                String encryptedPubKey = Util.encryptAES(pubKey,key);
+                final String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());
+                final String encryptedPubKey = Util.encryptAES(pubKey,key);
+                final String feedName = uriIn.getQueryParameter("session");
                 nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
                 nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
                 nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
-                nameValuePairs.add(new BasicNameValuePair("session", uriIn.getQueryParameter("session")));
+                nameValuePairs.add(new BasicNameValuePair("session", feedName));
                 httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                 try {
                     HttpResponse execute = client.execute(httpPost);
@@ -158,6 +160,7 @@ public class GroupProviders{
                                     values.put(Contact.PUBLIC_KEY, pubKeyStr);
                                     values.put(Contact.NAME, email);
                                     values.put(Contact.EMAIL, email);
+                                    values.put(Group.FEED_NAME, feedName);
                                     values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
                                     values.put(GroupMember.GROUP_ID, groupId);
                                     Uri url = Uri.parse(
