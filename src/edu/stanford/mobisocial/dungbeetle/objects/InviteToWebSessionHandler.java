@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 
 class InviteToWebSessionHandler extends MessageHandler {
 	public InviteToWebSessionHandler(Context context) {

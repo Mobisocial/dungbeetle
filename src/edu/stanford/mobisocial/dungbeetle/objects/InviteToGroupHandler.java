@@ -8,7 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 
 public class InviteToGroupHandler extends MessageHandler {
 	private static final String TAG = "InviteToGroupHandler";

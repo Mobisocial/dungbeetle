@@ -17,7 +17,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 
 public class InviteToSharedAppFeedHandler extends MessageHandler {
 	private static final String TAG = "InviteToSharedAppFeedHandler";

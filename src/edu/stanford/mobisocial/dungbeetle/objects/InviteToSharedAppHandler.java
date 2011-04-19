@@ -18,7 +18,7 @@ import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 
 
 class InviteToSharedAppHandler extends MessageHandler implements Renderable {

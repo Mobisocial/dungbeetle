@@ -4,7 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import java.util.ArrayList;
