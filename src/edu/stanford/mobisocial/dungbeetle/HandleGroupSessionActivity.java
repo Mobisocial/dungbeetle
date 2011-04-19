@@ -23,7 +23,7 @@ public class HandleGroupSessionActivity extends Activity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.handle_group_session);
+		setContentView(R.layout.handle_group);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		Intent intent = getIntent();
 		final String scheme=intent.getScheme();

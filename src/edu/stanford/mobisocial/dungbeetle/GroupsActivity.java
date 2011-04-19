@@ -62,8 +62,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
         menu.setHeaderTitle(g.name);
-        
-        //String[] menuItems = new String[]{ "Send Message", "Start Application", "Delete" };
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
@@ -78,26 +76,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
         final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
-
-        /*switch(menuItemIndex) {
-            case 0:
-                UIHelpers.sendMessageToContact(
-                    GroupsActivity.this, 
-                    contactsInGroup);
-                break;
-            case 1:
-                UIHelpers.startApplicationWithContact(
-                    GroupsActivity.this, 
-                    contactsInGroup);
-                break;
-            case 2:
-                Helpers.deleteGroup(GroupsActivity.this, g.id);
-                break;
-        }*/
         switch(menuItemIndex) {
-            case 0:
-                Helpers.deleteGroup(GroupsActivity.this, g.id);
-                break;
+        case 0:
+            Helpers.deleteGroup(GroupsActivity.this, g.id);
+            break;
         }
         return true;
     }
@@ -142,44 +124,44 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             ImageView more = (ImageView) v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
+                    @Override
+                    public void onClick(View v) {
                     
-                    final ActionItem send_im = new ActionItem();
-                    send_im.setTitle("Send IM");
-                    //chart.setIcon(getResources().getDrawable(R.drawable.chart));
-                    send_im.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                        	mSelection = contactsInGroup;
-                        	Intent update = new Intent(ACTION_SEND_IM);
-                            Intent chooser = Intent.createChooser(update, "Send IM");
-                            startActivityForResult(chooser, REQUEST_SEND_IM);
-                        }
-                    });
+                        final ActionItem send_im = new ActionItem();
+                        send_im.setTitle("Send IM");
+                        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
+                        send_im.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    mSelection = contactsInGroup;
+                                    Intent update = new Intent(ACTION_SEND_IM);
+                                    Intent chooser = Intent.createChooser(update, "Send IM");
+                                    startActivityForResult(chooser, REQUEST_SEND_IM);
+                                }
+                            });
                     
-                    final ActionItem start_app = new ActionItem();
-                    start_app.setTitle("Start App");
-                    //production.setIcon(getResources().getDrawable(R.drawable.production));
-                    start_app.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            UIHelpers.startApplicationWithContact(
-                                GroupsActivity.this, 
-                                contactsInGroup);
-                        }
-                    });
+                        final ActionItem start_app = new ActionItem();
+                        start_app.setTitle("Start App");
+                        //production.setIcon(getResources().getDrawable(R.drawable.production));
+                        start_app.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    UIHelpers.startApplicationWithContact(
+                                        GroupsActivity.this, 
+                                        contactsInGroup);
+                                }
+                            });
 
                     
-                    QuickAction qa = new QuickAction(v);
+                        QuickAction qa = new QuickAction(v);
 
-                    qa.addActionItem(send_im);
-                    qa.addActionItem(start_app);
-                    qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
+                        qa.addActionItem(send_im);
+                        qa.addActionItem(start_app);
+                        qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
-                    qa.show();
-                }
-            });
+                        qa.show();
+                    }
+                });
         }
     }
 
@@ -196,7 +178,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		menu.clear();
 		menu.add(0, ADD_GROUP, 0, "Add group");
 		menu.add(0, WRITE_GROUP_TO_TAG, 0, "Write dynamic group to tag");
-		//menu.add(0, 2, 0, "debug load");
 		return true;
 	}
 
@@ -209,10 +190,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             alert.setView(input);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        ContentValues values = new ContentValues();
-                        values.put(Group.NAME, input.getText().toString());
-                        GroupsActivity.this.getContentResolver().insert(
-                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), values);
+                        Helpers.insertGroup(GroupsActivity.this, 
+                                            input.getText().toString(),
+                                            null,
+                                            null);
                     }
                 });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -243,14 +224,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
             return true;
         }
-        /*case 2: {
-                IdentityProvider ident = new DBIdentityProvider(mHelper);
-                
-                Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-                intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
-                startActivity(intent);
-            return true;
-        }*/
 		default: return false;
 		}
 	}
@@ -262,7 +235,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if (requestCode == REQUEST_SEND_IM) {
     		if (resultCode == RESULT_OK) {
     			String im = data.getStringExtra(Intent.EXTRA_TEXT);

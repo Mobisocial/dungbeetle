@@ -5,9 +5,11 @@ import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,7 +42,7 @@ public class Helpers {
     }
 
     public static void deleteContact(final Context c, 
-                                   Long contactId){
+                                     Long contactId){
         c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             Contact._ID + "=?",
@@ -55,6 +57,22 @@ public class Helpers {
         values.put(Contact.EMAIL, email);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
         return c.getContentResolver().insert(url, values);
+    }
+
+    public static Uri insertGroup(final Context c, 
+                                  String groupName, 
+                                  String dynUpdateUri, 
+                                  String feedNameIn){
+        String feedName = feedNameIn;
+        if(feedName == null){
+            feedName = UUID.randomUUID().toString();
+        }
+        ContentValues values = new ContentValues();
+        values.put(Group.NAME, groupName);
+        values.put(Group.DYN_UPDATE_URI, dynUpdateUri);
+        values.put(Group.FEED_NAME, feedName);
+        return c.getContentResolver().insert(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), values);
     }
 
     public static void insertGroupMember(final Context c, 
@@ -137,28 +155,12 @@ public class Helpers {
             }
             // Need to add ourself to participants
             participants.put(participants.length(), "@l" + Contact.MY_ID);
-
             obj.put("participants", participants);
             values.put(Object.JSON, obj.toString());
             values.put(Object.DESTINATION, buildAddresses(contacts));
             values.put(Object.TYPE, "invite_app_feed");
             c.getContentResolver().insert(url, values);
         }catch(JSONException e){}
-    }
-
-    private static String buildAddresses(Collection<Contact> contacts){
-        String to = "";
-        Iterator<Contact> it = contacts.iterator();
-        while(it.hasNext()){
-            Contact c = it.next();
-            if(it.hasNext()){
-                to += c.id + ",";
-            }
-            else{
-                to += c.id;
-            }
-        }
-        return to;
     }
 
     public static void updateStatus(final Context c, final String feedName, final String status){
@@ -192,6 +194,67 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void addGroupFromInvite(final Context c,
+                                          final String groupName,
+                                          final String sharedFeedName,
+                                          final long inviterContactId,
+                                          final long[] participants
+                                          ){
+
+        Uri uri = insertGroup(c, groupName, null, sharedFeedName);
+        long gid = Long.valueOf(uri.getLastPathSegment());
+        if(gid > -1){
+            insertSubscriber(c, inviterContactId, sharedFeedName);
+            List<Long> parts = new ArrayList<Long>();
+            for(int i = 0; i < participants.length; i++) {
+                parts.add(participants[i]);
+            }
+            sendSubscribeRequests(c, parts, sharedFeedName);
+        }
+    }
+
+    public static void sendGroupInvite(Context c, 
+                                       Collection<Long> contactIds, 
+                                       Group g){
+        ContentValues values = new ContentValues();
+        try{
+            JSONObject obj = new JSONObject();
+            obj.put("groupName", g.name);
+            obj.put("sharedFeedName", g.feedName);
+            JSONArray participants = new JSONArray();
+            Iterator<Long> it = contactIds.iterator();
+            while(it.hasNext()){
+                String localId = "@l" + it.next();
+                participants.put(participants.length(), localId);
+            }
+            // Need to add ourself to participants
+            participants.put(participants.length(), "@l" + Contact.MY_ID);
+            obj.put("participants", participants);
+
+            values.put(Object.JSON, obj.toString());
+            values.put(Object.DESTINATION, buildAddressesByIds(contactIds));
+            values.put(Object.TYPE, "invite_group");
+
+            Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+            c.getContentResolver().insert(url, values);
+        }catch(JSONException e){}
+    }
+
+    public static void sendSubscribeRequests(Context c, 
+                                             Collection<Long> contactIds, 
+                                             String subscribeToFeed){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put("subscribeToFeed", subscribeToFeed);
+        }catch(JSONException e){}
+        values.put(Object.JSON, obj.toString());
+        values.put(Object.DESTINATION, buildAddressesByIds(contactIds));
+        values.put(Object.TYPE, "subscribe_req");
+        c.getContentResolver().insert(url, values);
+    }
+
     public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
@@ -204,6 +267,36 @@ public class Helpers {
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, "profile");
         c.getContentResolver().insert(url, values);
+    }
+
+    private static String buildAddresses(Collection<Contact> contacts){
+        String to = "";
+        Iterator<Contact> it = contacts.iterator();
+        while(it.hasNext()){
+            Contact c = it.next();
+            if(it.hasNext()){
+                to += c.id + ",";
+            }
+            else{
+                to += c.id;
+            }
+        }
+        return to;
+    }
+
+    private static String buildAddressesByIds(Collection<Long> contactIds){
+        String to = "";
+        Iterator<Long> it = contactIds.iterator();
+        while(it.hasNext()){
+            Long c = it.next();
+            if(it.hasNext()){
+                to += c + ",";
+            }
+            else{
+                to += c;
+            }
+        }
+        return to;
     }
 
 

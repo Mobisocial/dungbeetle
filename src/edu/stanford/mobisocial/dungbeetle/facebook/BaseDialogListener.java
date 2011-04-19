@@ -4,7 +4,6 @@ import com.facebook.android.*;
 import com.facebook.android.Facebook.DialogListener;
 
 
-
 /**
  * Skeleton base class for RequestListeners, providing default error 
  * handling. Applications should handle these error conditions.

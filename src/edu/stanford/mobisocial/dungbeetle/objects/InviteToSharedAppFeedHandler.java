@@ -20,7 +20,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 
 public class InviteToSharedAppFeedHandler extends MessageHandler {
-	private static final String TAG = "invitesharedapp";
+	private static final String TAG = "InviteToSharedAppFeedHandler";
 
 	public InviteToSharedAppFeedHandler(Context context) {
 		super(context);
@@ -46,7 +46,6 @@ public class InviteToSharedAppFeedHandler extends MessageHandler {
 			launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			long[] idArray = new long[ids.length()];
 			for (int i = 0; i < ids.length(); i++) {
-				Log.i(TAG, "Passing off " + ids.getLong(i));
 				idArray[i] = ids.getLong(i);
 			}
 			launch.putExtra("participants", idArray);

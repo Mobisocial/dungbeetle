@@ -28,6 +28,7 @@ public class DungBeetleActivity extends TabActivity
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
     public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
+    public static final String GROUP_SCHEME = "dungbeetle-group";
     public static final String AUTO_UPDATE_URL_BASE = "http://mobisocial.stanford.edu/files";
     public static final String AUTO_UPDATE_METADATA_FILE = "dungbeetle_version.json";
     public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";

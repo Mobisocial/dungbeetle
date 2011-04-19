@@ -13,6 +13,7 @@ public final class HandlerManager {
 		receivers.add(new InviteToWebSessionHandler(context));
 		receivers.add(new InviteToSharedAppHandler(context));
         receivers.add(new InviteToSharedAppFeedHandler(context));
+        receivers.add(new InviteToGroupHandler(context));
         receivers.add(new SendFileHandler(context));
         receivers.add(new ProfileHandler(context));
         receivers.add(new PresenceHandler(context));

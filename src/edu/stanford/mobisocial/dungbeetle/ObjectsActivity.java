@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.app.ListActivity;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -76,9 +77,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     Object._ID + " DESC");                
             }
             catch(Maybe.NoValError e){
-                c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
-                    null, "false=true", null, Object._ID + " DESC");                
+                c = new MatrixCursor(new String[]{});
             }
 		}
 		else {

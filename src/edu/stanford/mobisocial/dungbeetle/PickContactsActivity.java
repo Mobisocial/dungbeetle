@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.widget.ListView;
 import android.content.Intent;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -32,8 +33,12 @@ public class PickContactsActivity extends TabActivity {
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
 	protected final BitmapManager mgr = new BitmapManager(20);
+
     public static final String INTENT_ACTION_INVITE = 
         "edu.stanford.mobisocial.dungbeetle.INVITE";
+
+    public static final String INTENT_ACTION_PICK_CONTACTS = 
+        "edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS";
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -48,9 +53,9 @@ public class PickContactsActivity extends TabActivity {
         ListView contactsV = (ListView) findViewById(R.id.contacts_list);
         contactsV.setAdapter(mContacts);
         contactsV.setOnItemClickListener(new OnItemClickListener(){
-                public void onItemClick(AdapterView<?> parent, 
-                                        View view, 
-                                        int position, 
+                public void onItemClick(AdapterView<?> parent,
+                                        View view,
+                                        int position,
                                         long id){
                     Cursor cursor = (Cursor)mContacts.getItem(position);
                     Contact c = new Contact(cursor);
@@ -108,6 +113,17 @@ public class PickContactsActivity extends TabActivity {
                                       mIntent.getStringExtra("sharedFeedName"),
                                       mIntent.getStringExtra("packageName"));
         }
+        else if(mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)){
+            long[] ids = new long[mResultContacts.size()];
+            Iterator<Contact> it = mResultContacts.iterator();
+            int i = 0;
+            while(it.hasNext()){
+                Contact c = it.next();
+                ids[i] = c.id;
+                i++;
+            }
+            mIntent.putExtra("contacts", ids);
+        }
         setResult(RESULT_OK, mIntent);
         finish();
     }
@@ -129,14 +145,18 @@ public class PickContactsActivity extends TabActivity {
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            String name = c.getString(c.getColumnIndexOrThrow(Contact.NAME));
+            Contact contact = new Contact(c);
+            String name = contact.name;
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
-            String email = c.getString(c.getColumnIndexOrThrow(Contact.EMAIL));
+            String email = contact.email;
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
             mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+
+            final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
+            checkBox.setChecked(mResultContacts.contains(contact));
         }
 
     }

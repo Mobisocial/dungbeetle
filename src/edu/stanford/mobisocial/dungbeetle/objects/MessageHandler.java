@@ -17,7 +17,7 @@ public abstract class MessageHandler {
     public abstract boolean willHandle(Contact from, JSONObject msg);
 
     public abstract void handleReceived(Contact from, JSONObject msg);
-    
+
     protected PresenceAwareNotify getPresenceAwareNotify() {
     	return new PresenceAwareNotify(mContext);
     }
