@@ -20,6 +20,9 @@ import java.util.Date;
 import org.json.JSONException;
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import java.util.BitSet;
+import com.skjegstad.utils.BloomFilter;
+import android.util.Base64;
 
 
 public class DungBeetleActivity extends TabActivity
@@ -213,6 +216,17 @@ public class DungBeetleActivity extends TabActivity
                        "Touch a tag to write the group...", 
                        Toast.LENGTH_SHORT).show();
     }
+    
+
+    public static byte[] toByteArray(BitSet bits) {
+        byte[] bytes = new byte[bits.length()/8+1];
+        for(int i = 0; i < bits.length(); i++) {
+            if(bits.get(i)) {
+                bytes[bytes.length-i/8-1] |= 1<<(i%8);
+            }
+        }
+        return bytes;
+    }
 
     public void pushContactInfoViaNfc(){
         DBHelper helper = new DBHelper(this);
@@ -220,12 +234,36 @@ public class DungBeetleActivity extends TabActivity
         String name = ident.userName();
         String email = ident.userEmail();
         PublicKey pubKey = ident.userPublicKey();
+
+        
+        BloomFilter friendsFilter = Helpers.getFriendsBloomFilter(this);
+
         Uri.Builder builder = new Uri.Builder();
         builder.scheme(SHARE_SCHEME);
         builder.authority("dungbeetle");
         builder.appendQueryParameter("name", name);
         builder.appendQueryParameter("email", email);
         builder.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
+        
+        builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
+        builder.appendQueryParameter("bitSetSize", Integer.toString(friendsFilter.size()));
+        builder.appendQueryParameter("expectedNumberOfFilterElements", Integer.toString(friendsFilter.getExpectedNumberOfElements()));
+        builder.appendQueryParameter("actualNumberOfFilterElements", Integer.toString(friendsFilter.count()));
+
+        BloomFilter temp = new BloomFilter(friendsFilter.size(),
+            friendsFilter.getExpectedNumberOfElements(),
+            friendsFilter.count(),
+            friendsFilter.getBitSet());
+        if(temp.equals(friendsFilter))
+        {
+            Log.w("bloomfilter", "equal");
+        }
+        else
+        {
+            Log.w("bloomfilter", "not equal");
+        }
+            
+        
         Uri uri = builder.build();
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 

@@ -196,7 +196,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		menu.clear();
 		menu.add(0, ADD_GROUP, 0, "Add group");
 		menu.add(0, WRITE_GROUP_TO_TAG, 0, "Write dynamic group to tag");
-		//menu.add(0, 2, 0, "debug load");
+		menu.add(0, 2, 0, "debug load");
 		return true;
 	}
 
@@ -243,14 +243,14 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
             return true;
         }
-        /*case 2: {
+        case 2: {
                 IdentityProvider ident = new DBIdentityProvider(mHelper);
                 
                 Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
                 intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
                 startActivity(intent);
             return true;
-        }*/
+        }
 		default: return false;
 		}
 	}
