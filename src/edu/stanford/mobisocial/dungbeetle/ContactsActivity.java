@@ -326,12 +326,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         else if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");
-                List<Long> list = new ArrayList<Long>();
-                for (long value : contactIds) {
-                    list.add(value);
-                }
                 try{
-                    Helpers.sendGroupInvite(this, list, mGroup.get());
+                    Helpers.sendGroupInvite(this, contactIds, mGroup.get());
                 }catch(Maybe.NoValError e){}
             }
         }

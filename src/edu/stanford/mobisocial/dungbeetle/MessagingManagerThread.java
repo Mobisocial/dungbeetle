@@ -1,13 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -15,8 +7,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
+
 import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
@@ -27,10 +18,8 @@ import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
 import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -41,11 +30,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.ContentValues;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
