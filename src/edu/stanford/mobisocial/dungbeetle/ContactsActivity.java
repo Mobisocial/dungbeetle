@@ -28,10 +28,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
@@ -46,7 +44,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
 	private Collection<Contact> mSelection;
 	private DBHelper mHelper;
-    private Maybe<Group> mGroup;
+    private Maybe<Group> mGroup = Maybe.unknown();
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

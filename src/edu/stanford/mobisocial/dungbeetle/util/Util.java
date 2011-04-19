@@ -166,10 +166,8 @@ public class Util {
         Iterator<String> iter = s.iterator();
         StringBuffer buffer = new StringBuffer(iter.next());
         while (iter.hasNext()) {
+            buffer.append(delimiter);
             buffer.append(iter.next());
-            if(iter.hasNext()){
-                buffer.append(delimiter);
-            }
         }
         return buffer.toString();
     }
@@ -188,6 +186,16 @@ public class Util {
     public static String join(long[] s, String delimiter) {
         if (s.length == 0) return "";
         StringBuffer buffer = new StringBuffer(String.valueOf(s[0]));
+        for(int i = 0; i < s.length; i++){
+            buffer.append(delimiter);
+            buffer.append(s[i]);
+        }
+        return buffer.toString();
+    }
+
+    public static String join(String[] s, String delimiter) {
+        if (s.length == 0) return "";
+        StringBuffer buffer = new StringBuffer(s[0]);
         for(int i = 0; i < s.length; i++){
             buffer.append(delimiter);
             buffer.append(s[i]);

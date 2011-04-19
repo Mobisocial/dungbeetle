@@ -97,7 +97,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + GroupMember.TABLE);
     }
 
-    private void createTable(SQLiteDatabase db, String tableName, String... cols){
+    private void createTable(SQLiteDatabase db, String tableName, String[] uniqueCols, String... cols){
         assert cols.length % 2 == 0;
         String s = "CREATE TABLE " + tableName + " (";
         for(int i = 0; i < cols.length; i += 2){
@@ -108,6 +108,9 @@ public class DBHelper extends SQLiteOpenHelper {
             else{
                 s += " ";
             }
+        }
+        if(uniqueCols != null && uniqueCols.length > 0){
+            s+= ", UNIQUE (" + Util.join(uniqueCols, ",") + ")";
         }
         s += ")";
         Log.i(TAG, s);
@@ -120,20 +123,13 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(s);
     } 
 
-    private void addUniqueConstraint(SQLiteDatabase db, String tableName, String name, String... cols){
-        assert cols.length > 0;
-        String s = "ALTER TABLE " + tableName + " ADD CONSTRAINT " + name + " UNIQUE (";
-        s += Util.join(Arrays.asList(cols), ",");
-        s += ")";
-        db.execSQL(s);
-    } 
 
     
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		db.beginTransaction();
 
-        createTable(db, MyInfo.TABLE, 
+        createTable(db, MyInfo.TABLE, null,
                     MyInfo._ID, "INTEGER PRIMARY KEY",
                     MyInfo.PUBLIC_KEY, "TEXT",
                     MyInfo.PRIVATE_KEY, "TEXT",
@@ -141,7 +137,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     MyInfo.EMAIL, "TEXT"
                     );
 
-        createTable(db, Object.TABLE,
+        createTable(db, Object.TABLE, null,
                     Object._ID, "INTEGER PRIMARY KEY",
                     Object.TYPE, "TEXT",
                     Object.SEQUENCE_ID, "INTEGER",
@@ -157,7 +153,7 @@ public class DBHelper extends SQLiteOpenHelper {
         createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
         createIndex(db, "INDEX", "objects_by_creator_id", Object.TABLE, Object.CONTACT_ID);
 
-        createTable(db, Contact.TABLE,
+        createTable(db, Contact.TABLE, null,
                     Contact._ID, "INTEGER PRIMARY KEY",
                     Contact.NAME, "TEXT",
                     Contact.PUBLIC_KEY, "TEXT",
@@ -168,24 +164,20 @@ public class DBHelper extends SQLiteOpenHelper {
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
-		createTable(db, Subscriber.TABLE,
+		createTable(db, Subscriber.TABLE, new String[]{Subscriber.CONTACT_ID, Subscriber.FEED_NAME},
                     Subscriber._ID, "INTEGER PRIMARY KEY",
                     Subscriber.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
                     Subscriber.FEED_NAME, "TEXT");
         createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
-        addUniqueConstraint(db, Subscriber.TABLE, "unique_feed_contact_id", Subscriber.CONTACT_ID, Subscriber.FEED_NAME);
 
-
-        createTable(db, Group.TABLE,
+        createTable(db, Group.TABLE, null,
         			Group._ID, "INTEGER PRIMARY KEY",
         			Group.NAME, "TEXT",
                     Group.FEED_NAME, "TEXT",
                     Group.DYN_UPDATE_URI, "TEXT"
                     );
-        addUniqueConstraint(db, Group.TABLE, "unique_feed_name", Group.FEED_NAME);
-
         
-        createTable(db, GroupMember.TABLE,
+        createTable(db, GroupMember.TABLE, null,
         			GroupMember._ID, "INTEGER PRIMARY KEY",
         			GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
         			GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
@@ -620,7 +612,6 @@ public class DBHelper extends SQLiteOpenHelper {
         if(c.isAfterLast()) return Maybe.unknown();
         else return Maybe.definitely(new Group(c));
     }
-
 
     public static String joinWithSpaces(String... strings) {
         return Util.join(Arrays.asList(strings), " ");
