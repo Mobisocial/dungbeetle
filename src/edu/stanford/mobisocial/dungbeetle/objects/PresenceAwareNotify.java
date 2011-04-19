@@ -21,7 +21,7 @@ public class PresenceAwareNotify {
 	Context mContext;
     public PresenceAwareNotify(Context context) {
         mContext = context;
-        mNotificationManager = mNotificationManager = (NotificationManager)
+        mNotificationManager = (NotificationManager)
             context.getSystemService(context.NOTIFICATION_SERVICE);
     }
         
