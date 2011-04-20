@@ -45,6 +45,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 public class ProfileActivity extends Activity{
 
     private Handler handler = new Handler();
+    private boolean mEnablePresenceUpdates = false;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,6 +93,7 @@ public class ProfileActivity extends Activity{
                         JSONObject obj = new JSONObject(jsonSrc);
                         int myPresence = Integer.parseInt(obj.optString("presence"));
                         presence.setSelection(myPresence);
+                        mEnablePresenceUpdates = true;
                     }catch(JSONException e){}
                 }
 
@@ -348,11 +350,13 @@ public class ProfileActivity extends Activity{
     private class PresenceOnItemSelectedListener implements OnItemSelectedListener {
 
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-            Helpers.updatePresence(ProfileActivity.this, pos);
+            if(mEnablePresenceUpdates){ // fix bug where initial selection firing event
+                Helpers.updatePresence(ProfileActivity.this, pos);
+            }
         }
 
         public void onNothingSelected(AdapterView parent) {
-          // Do nothing.
+            // Do nothing.
         }
     }
 

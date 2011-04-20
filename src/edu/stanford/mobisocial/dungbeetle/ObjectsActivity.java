@@ -15,21 +15,17 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.ImageView;
-import android.widget.TableLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
-import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
-import edu.stanford.mobisocial.dungbeetle.objects.Renderable;
+import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,16 +41,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private DBHelper mHelper;
 	private static final int REQUEST_STATUS = 98424;
 	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
+	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
 	
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
-
         Cursor c;
         mHelper = new DBHelper(ObjectsActivity.this); 
         mIdent = new DBIdentityProvider(mHelper);
-        
         Intent intent = getIntent();
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
@@ -84,10 +79,9 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                null, null, 
+                Object.TYPE + "=?", new String[]{ "status" }, 
                 Object._ID + " DESC");
 		}
-		
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
@@ -109,16 +103,20 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+        Cursor c = (Cursor)mObjects.getItem(position);
+        String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+        Log.i(TAG, "Clicked object: " + jsonSrc);
+    }
 
 
     // Implement a little cache so we don't have to keep pulling the same
     // contacts. Would be nice to pre-warm this cache given a list of 
     // person ids...
     private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
-    private Contact getContact(Long id){
+    private Maybe<Contact> getContact(Long id){
         if(mContactCache.containsKey(id)){
-            return mContactCache.get(id);
+            return Maybe.definitely(mContactCache.get(id));
         }
         else{
             if(id.equals(Contact.MY_ID)){
@@ -130,7 +128,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     0,
                     "");
                 mContactCache.put(id, contact);
-                return contact;
+                return Maybe.definitely(contact);
             }
             else{
                 Cursor c = getContentResolver().query(
@@ -139,12 +137,12 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     new String[]{String.valueOf(id)}, null);
                 c.moveToFirst();
                 if(c.isAfterLast()){
-                    return null;
+                    return Maybe.unknown();
                 }
                 else{
                     Contact contact = new Contact(c);
                     mContactCache.put(id, contact);
-                    return contact;
+                    return Maybe.definitely(contact);
                 }
             }
         }
@@ -167,38 +165,27 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         @Override
         public void bindView(View v, Context context, Cursor c) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-            Long contactId = c.getLong(c.getColumnIndexOrThrow(
-                                           Object.CONTACT_ID));
-            Contact contact = getContact(contactId);
+            Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
             try{
-                JSONObject obj = new JSONObject(jsonSrc);
-                String text = obj.optString("text");
-
-                if(contact != null){
-                    TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                    nameText.setText(contact.name);
-                    final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                    icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                    mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+                Contact contact = getContact(contactId).get();
+                TextView nameText = (TextView) v.findViewById(R.id.name_text);
+                nameText.setText(contact.name);
+                final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+                icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+                try {
+                    ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+                    frame.removeAllViews();
+                    JSONObject content = new JSONObject(jsonSrc);
+                    FeedRenderer renderer = Objects.getFeedRenderer(content);
+                    if(renderer != null){
+                        renderer.render(ObjectsActivity.this, frame, content);
+                    }
+                } catch (JSONException e) {
+                    Log.e("db", "error opening json");
                 }
-            }catch (JSONException e) {
-                Log.e("db", "error opening json");
             }
-
-            try {
-            	JSONObject content = new JSONObject(jsonSrc);
-            	for (MessageHandler receiver : HandlerManager.getDefaults(ObjectsActivity.this)) {
-            		if (receiver.willHandle(null, content) && receiver instanceof Renderable) {
-            			Toast.makeText(ObjectsActivity.this, "rendering!!", Toast.LENGTH_SHORT).show();
-                        LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                        View frame = inflater.inflate(R.layout.status_entry, (ViewGroup)v.findViewById(R.id.contact_frame));
-            			((Renderable)receiver).renderToFeed(frame, content);
-            			break;
-            		}
-            	}
-            } catch (JSONException e) {
-                Log.e("db", "error opening json");
-            }
+            catch(Maybe.NoValError e){}
         }
     }
     
