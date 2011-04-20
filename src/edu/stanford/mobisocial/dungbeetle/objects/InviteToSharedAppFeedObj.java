@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import java.util.Collection;
 import java.util.Iterator;
@@ -101,13 +102,7 @@ public class InviteToSharedAppFeedObj implements IncomingMessageHandler, FeedRen
 	}
 
 
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
-
-	public void render(View frame, JSONObject object) {
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText("Invitation to an app");
-	}
+	public boolean willRender(JSONObject object) { return false; }
+	public void render(Context context, ViewGroup frame, JSONObject content){}
 
 }

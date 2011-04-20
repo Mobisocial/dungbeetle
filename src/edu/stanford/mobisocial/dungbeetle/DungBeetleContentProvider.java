@@ -14,7 +14,6 @@ import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.security.PublicKey;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.List;
@@ -175,7 +174,6 @@ public class DungBeetleContentProvider extends ContentProvider {
                 ContentValues gmv = new ContentValues();
                 gmv.put(GroupMember.CONTACT_ID, cid);
                 gmv.put(GroupMember.GROUP_ID, gid);
-                Log.i(TAG, "inserting group member " + cid + " into " + gid);
                 mHelper.insertGroupMember(db, gmv);
             }
             getContext().getContentResolver().notifyChange(

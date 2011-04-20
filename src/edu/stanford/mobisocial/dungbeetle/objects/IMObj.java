@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import org.json.JSONException;
 
@@ -49,9 +52,13 @@ public class IMObj implements IncomingMessageHandler, FeedRenderer {
 		return object.optString("type").equals(TYPE);
 	}
 
-	public void render(View frame, JSONObject object) {
-		String status = object.optString(TEXT);
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText(status);
-	}
+	public void render(Context context, ViewGroup frame, JSONObject content){
+        TextView valueTV = new TextView(context);
+        valueTV.setText("IM:" + content.optString(TEXT));
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
+    }
 }

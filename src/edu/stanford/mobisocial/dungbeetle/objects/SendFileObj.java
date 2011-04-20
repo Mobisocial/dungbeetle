@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -47,14 +48,7 @@ public class SendFileObj implements IncomingMessageHandler, FeedRenderer {
             "New Shared File", mimeType + "  " + uri, contentIntent);
 	}
 
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
-    
-    public void render(View frame, JSONObject content) {
-    	String status = "Shared file: " + content.optString(URI);
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText(status);
-    }
+	public boolean willRender(JSONObject object) { return false; }
+	public void render(Context context, ViewGroup frame, JSONObject content){}
 
 }

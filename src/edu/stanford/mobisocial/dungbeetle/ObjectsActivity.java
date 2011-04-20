@@ -163,23 +163,18 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
             try{
                 Contact contact = getContact(contactId).get();
-                if(contact != null){
-                    TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                    nameText.setText(contact.name);
-                    final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                    icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                    mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
-                }
+                TextView nameText = (TextView) v.findViewById(R.id.name_text);
+                nameText.setText(contact.name);
+                final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+                icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
                 try {
+                    ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+                    frame.removeAllViews();
                     JSONObject content = new JSONObject(jsonSrc);
                     FeedRenderer renderer = Objects.getFeedRenderer(content);
                     if(renderer != null){
-                        LayoutInflater inflater = (LayoutInflater)getSystemService(
-                            Context.LAYOUT_INFLATER_SERVICE);
-                        View frame = inflater.inflate(
-                            R.layout.status_entry, 
-                            (ViewGroup)v.findViewById(R.id.contact_frame));
-                        renderer.render(frame, content);
+                        renderer.render(ObjectsActivity.this, frame, content);
                     }
                 } catch (JSONException e) {
                     Log.e("db", "error opening json");

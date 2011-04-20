@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.content.Context;
-import android.view.View;
+import android.view.ViewGroup;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import org.json.JSONException;
@@ -31,10 +31,7 @@ public class SubscribeReqObj implements IncomingMessageHandler, FeedRenderer {
             obj.optString(SUBSCRIBE_TO_FEED));
     }
 
-	public boolean willRender(JSONObject object) {
-		return false;
-	}
-    
-    public void render(View frame, JSONObject content) {}
+	public boolean willRender(JSONObject object) { return false; }
+    public void render(Context context, ViewGroup frame, JSONObject content) {}
 
 }

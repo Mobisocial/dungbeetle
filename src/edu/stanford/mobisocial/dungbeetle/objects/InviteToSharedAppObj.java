@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.view.ViewGroup;
 
 import java.util.List;
 import org.json.JSONException;
@@ -75,13 +76,8 @@ public class InviteToSharedAppObj implements IncomingMessageHandler, FeedRendere
             contentIntent);
     }
     
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
+	public boolean willRender(JSONObject object) { return false; }
 
-	public void render(View frame, JSONObject object) {
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText("Invitation to an app");
-	}
+	public void render(Context context, ViewGroup frame, JSONObject content){}
 
 }

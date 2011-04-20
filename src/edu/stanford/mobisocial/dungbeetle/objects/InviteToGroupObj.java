@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -81,15 +82,7 @@ public class InviteToGroupObj implements IncomingMessageHandler, FeedRenderer {
 	}
 
 
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
-    
-    public void render(View frame, JSONObject content) {
-    	String status = "Invited to join: " + content.optString(GROUP_NAME);
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText(status);
-    }
-
+	public boolean willRender(JSONObject object) { return false; }
+	public void render(Context context, ViewGroup frame, JSONObject content){}
 
 }

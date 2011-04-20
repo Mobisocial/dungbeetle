@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.View;
+import android.view.ViewGroup;
 import org.json.JSONException;
 
 import org.json.JSONObject;
@@ -39,9 +40,8 @@ public class PresenceObj implements IncomingMessageHandler, FeedRenderer {
             values, "_id=?", new String[]{id});
     }
 
-	public boolean willRender(JSONObject object) {
-		return false;
-	}
+	public boolean willRender(JSONObject object) { return false; }
 
-	public void render(View frame, JSONObject object) {}
+	public void render(Context context, ViewGroup frame, JSONObject content){}
+
 }

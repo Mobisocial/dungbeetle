@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.json.JSONObject;
@@ -38,15 +39,8 @@ public class InviteToWebSessionObj implements IncomingMessageHandler, FeedRender
 				contentIntent);
 	}
 
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
-
-	public void render(View frame, JSONObject object) {
-		String status = object.optString(WEB_URL);
-        TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
-        bodyText.setText(status);
-	}
+	public boolean willRender(JSONObject object) { return false; }
+	public void render(Context context, ViewGroup frame, JSONObject content){}
 
 
 }
