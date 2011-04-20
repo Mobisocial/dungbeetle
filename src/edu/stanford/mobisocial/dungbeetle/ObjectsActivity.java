@@ -41,6 +41,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private DBHelper mHelper;
 	private static final int REQUEST_STATUS = 98424;
 	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
+	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
 	
     public void onCreate(Bundle savedInstanceState) {
@@ -78,7 +79,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                null, null, 
+                Object.TYPE + "=?", new String[]{ "status" }, 
                 Object._ID + " DESC");
 		}
 		mObjects = new ObjectListCursorAdapter(this, c);
@@ -102,7 +103,11 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){}
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+        Cursor c = (Cursor)mObjects.getItem(position);
+        String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+        Log.i(TAG, "Clicked object: " + jsonSrc);
+    }
 
 
     // Implement a little cache so we don't have to keep pulling the same
