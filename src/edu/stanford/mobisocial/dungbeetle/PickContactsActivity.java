@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.util.Log;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.database.Cursor;
@@ -33,6 +34,8 @@ public class PickContactsActivity extends TabActivity {
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
 	protected final BitmapManager mgr = new BitmapManager(20);
+
+    public static final String TAG = "PickContactsActivity";
 
     public static final String INTENT_ACTION_INVITE = 
         "edu.stanford.mobisocial.dungbeetle.INVITE";

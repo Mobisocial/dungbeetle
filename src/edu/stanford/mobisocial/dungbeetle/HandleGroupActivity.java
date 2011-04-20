@@ -40,7 +40,7 @@ public class HandleGroupActivity extends Activity {
 
         mNameText = (TextView)findViewById(R.id.text);
         mNameText.setText("Would you like to join the group '" + groupName + 
-                          "' with " + (participants.length - 1) + " others?");
+                          "' with " + (participants.length - 1) + " other(s)?");
         Button b1 = (Button)findViewById(R.id.yes_button);
         b1.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
@@ -51,7 +51,6 @@ public class HandleGroupActivity extends Activity {
                         feedName,
                         contactId,
                         participants);
-
 
                     // Notify group created
                     Intent launch = new Intent();
@@ -71,7 +70,6 @@ public class HandleGroupActivity extends Activity {
                         contentIntent);
                     notification.flags = Notification.FLAG_AUTO_CANCEL;
                     mNotificationManager.notify(0, notification);
-
 
                     finish();
                 }

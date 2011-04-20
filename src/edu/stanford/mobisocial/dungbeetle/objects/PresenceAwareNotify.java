@@ -11,8 +11,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.database.Cursor;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import android.net.Uri;
-import android.provider.ContactsContract.Presence;
 
 public class PresenceAwareNotify {
 	private int notifyCounter = 0;
@@ -29,27 +29,30 @@ public class PresenceAwareNotify {
         Notification notification = new Notification(
             R.drawable.icon, notificationTitle, System.currentTimeMillis());
 
+
+        notification.vibrate = VIBRATE;
+
+
+        // Disable vibrate if busy
         Cursor c = mContext.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
             null, 
             Object.TYPE + "=?", 
             new String[]{ "presence"}, 
             Object.TIMESTAMP + " DESC");
-
-        if(c.moveToFirst()) {
+        c.moveToFirst();
+        if(!c.isAfterLast()) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 int myPresence = Integer.parseInt(obj.optString("presence"));
-                if(myPresence == Presence.AVAILABLE || myPresence == Presence.AWAY) {
-                    notification.vibrate = VIBRATE;
+                if(myPresence == Presence.BUSY) {
+                    notification.vibrate = null;
                 }
             }catch(JSONException e){}
         }
-        else{
-            notification.vibrate = VIBRATE;
-        }
+
+
         notification.setLatestEventInfo(
             mContext, 
             notificationMsg, 

@@ -23,6 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
 import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -165,8 +166,13 @@ public class MessagingManagerThread extends Thread {
     private StringSearchAndReplacer mContactLocalizer = new StringSearchAndReplacer("\"@g([^\"]+)\""){
             protected String replace(Matcher m){
                 String personId = m.group(1);
-                Maybe<Contact> c = mHelper.contactForPersonId(personId);
-                return String.valueOf(c.otherwise(Contact.NA()).id);
+                if(personId.equals(mIdent.userPersonId())){
+                    return String.valueOf(Contact.MY_ID);
+                }
+                else{
+                    Maybe<Contact> c = mHelper.contactForPersonId(personId);
+                    return String.valueOf(c.otherwise(Contact.NA()).id);
+                }
             }
         };
 
@@ -249,10 +255,8 @@ public class MessagingManagerThread extends Thread {
         public OutgoingDirectObjectMsg(Cursor objs){
             String to = objs.getString(
                 objs.getColumnIndexOrThrow(Object.DESTINATION));
-            String[] tos = to.split(",");
-            Long[] ids = new Long[tos.length];
-            for(int i = 0; i < tos.length; i++) ids[i] = Long.valueOf(tos[i]);
-            mPubKeys = mIdent.publicKeysForContactIds(Arrays.asList(ids));
+            List<Long> ids = Util.splitLongsToList(to, ",");
+            mPubKeys = mIdent.publicKeysForContactIds(ids);
             mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(Object.JSON)));
         }
     }

@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,6 +43,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private static final int REQUEST_SEND_IM = 470;
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
 	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
+	public static final String TAG = "ContactsActivity";
 	private Collection<Contact> mSelection;
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
@@ -53,17 +55,19 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         mHelper = new DBHelper(this);
         Intent intent = getIntent();
         if(intent.hasExtra("group_id")){
-            Long groupId = intent.getLongExtra("group_id", -1);
+            long groupId = intent.getLongExtra("group_id", -1);
             try{
                 mGroup = mHelper.groupForGroupId(groupId);
+                long gid = mGroup.get().id;
                 Cursor c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
-                              "/group_contacts/" + mGroup.get().id),
+                              "/group_contacts/" + gid),
                     null,
                     null, null, Contact.NAME + " ASC");
                 mContacts = new ContactListCursorAdapter(this, c);
             }
             catch(Maybe.NoValError e){
+                Log.i(TAG, "fuck! not found!");
                 mContacts = new ContactListCursorAdapter(this, new MatrixCursor(new String[]{}));;
             }
         }
@@ -311,6 +315,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     @Override
     public void finish() {
         super.finish();
+        mHelper.close();
     }
 
     @Override
