@@ -18,6 +18,19 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.AdapterView;
+import android.content.Context;
+import java.io.File;
+import java.lang.Math;
+import android.provider.MediaStore;
+import android.os.Environment;
+import android.graphics.Bitmap;
+import android.provider.MediaStore.Images.Media;
+import android.graphics.Canvas;
+import android.graphics.Path;
+import android.graphics.Rect;
+import android.graphics.Matrix;
+import android.graphics.BitmapFactory;
+
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -206,10 +219,12 @@ public class ProfileActivity extends Activity{
     }
 
     private final static int EDIT = 0;
+    private final static int PICTURE = 1;
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, EDIT, 0, "Edit Profile");
+        menu.add(1, PICTURE, 2  , "Change Picture");
         return true;
     }
 
@@ -221,9 +236,93 @@ public class ProfileActivity extends Activity{
             startActivity(intent); 
             return true;
         }
+        case PICTURE: {
+            takePhoto();
+            return true;
+        }
         default: return false;
         }
     }
+
+    private Uri mImageCaptureUri;
+    
+    private static final int TAKE_PHOTO_CODE = 1;
+    
+    private void takePhoto(){
+        final Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(getTempFile(this)) ); 
+        
+        startActivityForResult(intent, TAKE_PHOTO_CODE);
+    }
+
+
+
+    private File getTempFile(Context context){
+        //it will return /sdcard/image.tmp
+        final File path = new File( Environment.getExternalStorageDirectory(), context.getPackageName() );
+        if(!path.exists()){
+            path.mkdir();
+        }
+        return new File(path, "image.tmp");
+    }
+
+
+
+    @Override
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            switch(requestCode){
+                case TAKE_PHOTO_CODE:
+                final File file = getTempFile(this);
+                try {
+                    BitmapFactory.Options options=new BitmapFactory.Options();
+                    options.inSampleSize = 8;
+                    Bitmap sourceBitmap=BitmapFactory.decodeFile(file.getPath(),options);
+
+                    
+                    //Bitmap sourceBitmap = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
+                    int width = sourceBitmap.getWidth();
+                    int height = sourceBitmap.getHeight();
+                    int cropSize = Math.min(width, height);
+                    Bitmap cropped = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(cropped);
+                    Path path = new Path();
+                    path.addRect(0, 0, cropSize, cropSize, Path.Direction.CW);
+                    canvas.clipPath(path);
+                    canvas.drawBitmap(
+                        sourceBitmap,
+                        new Rect(0, 0, width, height),
+                        new Rect(0, 0, cropSize, cropSize),
+                        null);
+
+                    int targetSize = 80;
+                    float scaleSize = ((float) targetSize) / cropSize;
+                    Matrix matrix = new Matrix();
+                    // resize the bit map
+                    matrix.postScale(scaleSize, scaleSize);
+                    matrix.postRotate(270);
+
+                    // recreate the new Bitmap
+                    Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, 
+                                      cropSize, cropSize, matrix, true);
+                    
+                    final ImageView icon = (ImageView) findViewById(R.id.icon);
+                    icon.setImageBitmap(resizedBitmap);
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+                    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
+                    byte[] b = baos.toByteArray(); 
+                    
+                // do whatever you want with the bitmap (Resize, Rename, Add To Gallery, etc)
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
+    }
+
 
     @Override
     public void finish() {
