@@ -24,7 +24,7 @@ public class InviteToGroupObj{
             }
             // Need to add ourself to participants
             parts.put(parts.length(), "@l" + Contact.MY_ID);
-            obj.put(PARTICIPANTS, participants);
+            obj.put(PARTICIPANTS, parts);
         }
         catch(JSONException e){}
         return obj;

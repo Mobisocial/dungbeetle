@@ -1,16 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -176,7 +173,7 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void sendFile(final Context c, final Collection<Contact> contacts, 
+    public static void sendFile(final Context c, final Collection<Contact> contacts,
                                 final String mimeType,
                                 final String uri){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
@@ -278,8 +275,9 @@ public class Helpers {
     public static void sendGroupInvite(final Context c,
                                        final long[] participants,
                                        final Group g){
+
         ContentValues values = new ContentValues();
-        values.put("participants", Util.join(participants, ","));        
+        values.put("participants", Util.join(participants, ","));
         values.put("groupName", g.name);
         values.put("sharedFeedName", g.feedName);
         values.put("groupId", g.id);

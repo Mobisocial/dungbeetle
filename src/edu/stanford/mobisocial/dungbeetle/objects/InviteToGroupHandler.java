@@ -48,7 +48,7 @@ public class InviteToGroupHandler extends MessageHandler {
             getPresenceAwareNotify().notify("Invitation from " + from.name,
                                             "Invitation from " + from.name, 
                                             "Join '" + groupName + "' with " + 
-                                            (idArray.length - 1) + " others.", 
+                                            (idArray.length - 1) + " other(s).", 
                                             contentIntent);
 
 		} catch (JSONException e) {

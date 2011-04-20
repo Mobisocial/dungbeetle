@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.util;
 import android.util.Log;
 import java.security.InvalidKeyException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.AbstractCollection;
 import java.util.Iterator;
@@ -8,6 +9,8 @@ import java.math.BigInteger;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
@@ -186,7 +189,7 @@ public class Util {
     public static String join(long[] s, String delimiter) {
         if (s.length == 0) return "";
         StringBuffer buffer = new StringBuffer(String.valueOf(s[0]));
-        for(int i = 0; i < s.length; i++){
+        for(int i = 1; i < s.length; i++){
             buffer.append(delimiter);
             buffer.append(s[i]);
         }
@@ -196,7 +199,7 @@ public class Util {
     public static String join(String[] s, String delimiter) {
         if (s.length == 0) return "";
         StringBuffer buffer = new StringBuffer(s[0]);
-        for(int i = 0; i < s.length; i++){
+        for(int i = 1; i < s.length; i++){
             buffer.append(delimiter);
             buffer.append(s[i]);
         }
@@ -208,6 +211,15 @@ public class Util {
         long[] result = new long[ss.length];
         for(int i = 0; i < ss.length; i++){
             result[i] = Long.valueOf(ss[i]);
+        }
+        return result;
+    }
+
+    public static List<Long> splitLongsToList(String s, String delimiter) {
+        String[] ss = s.split(delimiter);
+        List<Long> result = new ArrayList<Long>();
+        for(int i = 0; i < ss.length; i++){
+            result.add(Long.valueOf(ss[i]));
         }
         return result;
     }

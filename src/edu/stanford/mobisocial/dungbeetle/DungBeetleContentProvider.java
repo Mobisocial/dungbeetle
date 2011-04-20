@@ -168,25 +168,33 @@ public class DungBeetleContentProvider extends ContentProvider {
                 values.getAsString("participants"),",");
             String groupName = values.getAsString("groupName");
             String sharedFeedName = values.getAsString("sharedFeedName");
-            Long groupId = values.getAsLong("groupId");
+            long gid = values.getAsLong("groupId");
             SQLiteDatabase db = mHelper.getWritableDatabase();
             for(int i = 0; i < participants.length; i++){
                 long cid = participants[i];
                 ContentValues gmv = new ContentValues();
-                gmv.put(GroupMember.GROUP_ID, groupId);
                 gmv.put(GroupMember.CONTACT_ID, cid);
+                gmv.put(GroupMember.GROUP_ID, gid);
+                Log.i(TAG, "inserting group member " + cid + " into " + gid);
                 mHelper.insertGroupMember(db, gmv);
             }
             getContext().getContentResolver().notifyChange(
                 Uri.parse(CONTENT_URI + "/group_members"), null);
+            getContext().getContentResolver().notifyChange(
+                Uri.parse(CONTENT_URI + "/group_contacts"), null);
             mHelper.addToOutgoing(
                 db,
                 appId,
                 values.getAsString("participants"),
                 InviteToGroupObj.TYPE,
                 InviteToGroupObj.json(participants, groupName, sharedFeedName));
-            return uriWithId(uri, groupId);
+            getContext().getContentResolver().notifyChange(
+                Uri.parse(CONTENT_URI + "/out"), null);
+            return uriWithId(uri, gid);
         }
+
+
+
 
         else if(match(uri, "groups_by_invitation")){
             if(!appId.equals(SUPER_APP_ID)) return null;
@@ -230,15 +238,18 @@ public class DungBeetleContentProvider extends ContentProvider {
 
                     for(int i = 0; i < participants.length; i++) {
                         long cid = participants[i];
-                        // Create group members
-                        ContentValues gmv = new ContentValues();
-                        gmv.put(GroupMember.GROUP_ID, 
-                                values.getAsLong(GroupMember.GROUP_ID));
-                        gmv.put(GroupMember.CONTACT_ID, cid);
-                        mHelper.insertGroupMember(db, gmv);
+                        if(cid != Contact.MY_ID){
+                            // Create group members
+                            ContentValues gmv = new ContentValues();
+                            gmv.put(GroupMember.GROUP_ID, gid);
+                            gmv.put(GroupMember.CONTACT_ID, cid);
+                            mHelper.insertGroupMember(db, gmv);
+                        }
                     }
                     getContext().getContentResolver().notifyChange(
                         Uri.parse(CONTENT_URI + "/group_members"), null);
+                    getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
                     // Send subscribe requests
                     mHelper.addToOutgoing(
@@ -248,6 +259,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                         SubscribeReqObj.TYPE,
                         SubscribeReqObj.json(sharedFeedName));
 
+                    getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/out"), null);
 
                     db.setTransactionSuccessful();
 
@@ -256,6 +269,10 @@ public class DungBeetleContentProvider extends ContentProvider {
                     return null;
                 }
                 return uriWithId(uri, gid);
+            }
+            catch(Exception e){
+                Log.e(TAG, "Error handling group invitation", e);
+                return null;
             }
             finally{
                 db.endTransaction();
