@@ -19,6 +19,7 @@ public class PresenceAwareNotify {
 	private NotificationManager mNotificationManager;
 	private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
 	Context mContext;
+
     public PresenceAwareNotify(Context context) {
         mContext = context;
         mNotificationManager = (NotificationManager)

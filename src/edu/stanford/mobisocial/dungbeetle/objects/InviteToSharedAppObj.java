@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 
 import java.util.List;
+import org.json.JSONException;
 
 import org.json.JSONObject;
 
@@ -18,24 +19,32 @@ import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteObj;
 
 
-class InviteToSharedAppHandler extends MessageHandler implements Renderable {
-	private Context mContext;
-	
-	public InviteToSharedAppHandler(Context context) {
-		super(context);
-		mContext = context;
-	}
+public class InviteToSharedAppObj implements IncomingMessageHandler, FeedRenderer {
+	private static final String TAG = "InviteToSharedAppObj";
 
-	private static final String TAG = "messagehandler";
-    public boolean willHandle(Contact from, JSONObject msg){ 
-        return msg.optString("type").equals("invite_app_session");
+    public static final String TYPE = "invite_app_session";
+    public static final String ARG = "arg";
+    public static final String PACKAGE_NAME = "packageName";
+    public static final String PARTICIPANTS = "participants";
+    public static final String FEED_NAME = "feedName";
+
+    public static JSONObject json(String packageName, String arg){
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put(PACKAGE_NAME, packageName);
+            obj.put(ARG, arg);
+        }catch(JSONException e){}
+        return obj;
     }
-    public void handleReceived(Contact from, JSONObject obj){
-        String packageName = obj.optString(InviteObj.PACKAGE_NAME);
-        String arg = obj.optString(InviteObj.ARG);
+
+    public boolean willHandle(Contact from, JSONObject msg){ 
+        return msg.optString("type").equals(TYPE);
+    }
+    public void handleReceived(Context context, Contact from, JSONObject obj){
+        String packageName = obj.optString(PACKAGE_NAME);
+        String arg = obj.optString(ARG);
         Log.i(TAG, "Received invite with arg: " + arg);
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
@@ -44,10 +53,10 @@ class InviteToSharedAppHandler extends MessageHandler implements Renderable {
         launch.putExtra("creator", false);
         launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launch.setPackage(packageName);
-        final PackageManager mgr = mContext.getPackageManager();
+        final PackageManager mgr = context.getPackageManager();
         List<ResolveInfo> resolved = mgr.queryIntentActivities(launch, 0);
         if (resolved == null || resolved.size() == 0) {
-            Toast.makeText(mContext, 
+            Toast.makeText(context, 
                            "Could not find application to handle invite", 
                            Toast.LENGTH_SHORT).show();
             return;
@@ -57,17 +66,22 @@ class InviteToSharedAppHandler extends MessageHandler implements Renderable {
                                 info.packageName,
                                 info.name));
         PendingIntent contentIntent = PendingIntent.getActivity(
-            mContext, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
+            context, 0, launch, PendingIntent.FLAG_CANCEL_CURRENT);
 
-        getPresenceAwareNotify().notify(
+        (new PresenceAwareNotify(context)).notify(
             "New Invitation",
             "Invitation received from " + from.name, 
             "Click to launch application.", 
             contentIntent);
     }
     
-    public void renderToFeed(View frame, JSONObject content) {
+	public boolean willRender(JSONObject object) {
+		return object.optString("type").equals(TYPE);
+	}
+
+	public void render(View frame, JSONObject object) {
         TextView bodyText = (TextView)frame.findViewById(R.id.body_text);
         bodyText.setText("Invitation to an app");
-    }
+	}
+
 }

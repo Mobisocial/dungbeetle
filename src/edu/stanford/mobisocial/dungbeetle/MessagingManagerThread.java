@@ -20,8 +20,8 @@ import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.objects.HandlerManager;
-import edu.stanford.mobisocial.dungbeetle.objects.MessageHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.Objects;
+import edu.stanford.mobisocial.dungbeetle.objects.IncomingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
@@ -299,19 +299,27 @@ public class MessagingManagerThread extends Thread {
             changed = false;
         }
     };
+
+
     // FYI: Must be invoked from main app thread. See above.
     private void handleSpecialMessage(IncomingMessage incoming){
         String contents = incoming.contents();
-        final Maybe<Contact> c = mHelper.contactForPersonId(incoming.from());
         try{
-            JSONObject obj = new JSONObject(contents);
-            for(MessageHandler h : HandlerManager.getDefaults(mContext)){
-                if(h.willHandle(c.otherwise(Contact.NA()), obj)){
-                    h.handleReceived(c.otherwise(Contact.NA()), obj);
-                    break;
+            final Contact c = mHelper.contactForPersonId(incoming.from()).get();
+            try{
+                JSONObject obj = new JSONObject(contents);
+                final IncomingMessageHandler h = Objects.getIncomingMessageHandler(
+                    c, obj);
+                if(h != null){
+                    h.handleReceived(mContext, c, obj);
                 }
             }
+            catch(JSONException e){ throw new RuntimeException(e); }
         }
-        catch(JSONException e){ throw new RuntimeException(e); }
+        catch(Maybe.NoValError e){
+            Log.e(TAG, "Oops, no contact for message " + contents);
+        }
     }
+
+
 }
