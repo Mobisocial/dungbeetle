@@ -1,16 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.Activity;
 import android.app.ListActivity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.text.Editable;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
@@ -23,22 +19,18 @@ import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
-import edu.stanford.mobisocial.dungbeetle.objects.PictureObj.PhotoHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.PictureObj.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
@@ -114,10 +106,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             	.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                     	// TODO: QuickActions or similar UI.
-                    	final Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                        intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(getTempFile(ObjectsActivity.this)) ); 
-                        
-                        startActivityForResult(intent, TAKE_PHOTO_CODE);
+                    	doActivityForResult(ObjectsActivity.this, new PhotoTaker(ObjectsActivity.this));
                     }
                 });
         }
@@ -126,67 +115,19 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         }
     }
     
-    private File getTempFile(Context context){
-        //it will return /sdcard/image.tmp
-        final File path = new File( Environment.getExternalStorageDirectory(), context.getPackageName() );
-        if(!path.exists()){
-            path.mkdir();
-        }
-        return new File(path, "image.tmp");
+    private static int ACTIVITY_CALLOUT = 39472874;
+    private static ActivityCallout mCurrentCallout;
+    public static void doActivityForResult(Activity me, ActivityCallout callout) {
+    	mCurrentCallout = callout;
+    	Intent launch = callout.getStartIntent();
+    	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
     }
-
-    private static final int TAKE_PHOTO_CODE = 432;   
-
-    public void onPhotoReturned() {
-    	final File file;
-    	final File path = new File( Environment.getExternalStorageDirectory(), this.getPackageName() );
-        if(!path.exists()){
-            path.mkdir();
-        }
-        file = new File(path, "image.tmp");
-        try {
-            BitmapFactory.Options options=new BitmapFactory.Options();
-            options.inSampleSize = 8;
-            Bitmap sourceBitmap=BitmapFactory.decodeFile(file.getPath(),options);
-
-            
-            //Bitmap sourceBitmap = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
-            int width = sourceBitmap.getWidth();
-            int height = sourceBitmap.getHeight();
-            int cropSize = Math.min(width, height);
-            Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
-
-            int targetSize = 80;
-            float scaleSize = ((float) targetSize) / cropSize;
-            Matrix matrix = new Matrix();
-            // resize the bit map
-            matrix.postScale(scaleSize, scaleSize);
-            matrix.postRotate(270);
-
-            // recreate the new Bitmap
-            Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, 
-                              cropSize, cropSize, matrix, true);
-            
-            final ImageView icon = (ImageView) this.findViewById(R.id.icon);
-            icon.setImageBitmap(resizedBitmap);
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
-            byte[] data = baos.toByteArray(); 
-
-            ContentValues values = new ContentValues();
-            String encoded = Base64.encodeToString(data, Base64.DEFAULT);
-            JSONObject obj = ProfilePictureObj.json(encoded);
-            values.put(Object.JSON, obj.toString());
-            values.put(Object.TYPE, ProfilePictureObj.TYPE);
-
-            Helpers.sendToFeed(this, values);
-        } catch (Exception e) {
-        	
-        }
+    
+    public interface ActivityCallout {
+    	public Intent getStartIntent();
+    	public void handleResult(int resultCode, Intent data);
     }
-
-
+    
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
@@ -292,8 +233,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == TAKE_PHOTO_CODE) {
-    		onPhotoReturned();
+    	if (requestCode == ACTIVITY_CALLOUT) {
+    		mCurrentCallout.handleResult(resultCode, data);
     	}
     }
 }
