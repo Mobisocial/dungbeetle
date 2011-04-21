@@ -184,6 +184,14 @@ public class ProfileActivity extends Activity{
             if(picture != null) {
                 icon.setImageBitmap(BitmapFactory.decodeByteArray(picture, 0, picture.length));
             }
+
+            if(contact_id == Contact.MY_ID){
+                icon.setOnClickListener(new OnClickListener() {
+                        public void onClick(View v) {
+                            takePhoto();
+                        }
+                    });
+            }
 		}
 
 		else {
@@ -251,7 +259,6 @@ public class ProfileActivity extends Activity{
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, EDIT, 0, "Edit Profile");
-        menu.add(1, PICTURE, 2  , "Change Picture");
         return true;
     }
 
@@ -261,10 +268,6 @@ public class ProfileActivity extends Activity{
             Intent intent = new Intent(this, ProfileActivity.class);
             intent.putExtra("edit", 1);
             startActivity(intent); 
-            return true;
-        }
-        case PICTURE: {
-            takePhoto();
             return true;
         }
         default: return false;
@@ -312,16 +315,7 @@ public class ProfileActivity extends Activity{
                     int width = sourceBitmap.getWidth();
                     int height = sourceBitmap.getHeight();
                     int cropSize = Math.min(width, height);
-                    Bitmap cropped = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
-                    Canvas canvas = new Canvas(cropped);
-                    Path path = new Path();
-                    path.addRect(0, 0, cropSize, cropSize, Path.Direction.CW);
-                    canvas.clipPath(path);
-                    canvas.drawBitmap(
-                        sourceBitmap,
-                        new Rect(0, 0, width, height),
-                        new Rect(0, 0, cropSize, cropSize),
-                        null);
+                    Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
 
                     int targetSize = 80;
                     float scaleSize = ((float) targetSize) / cropSize;
