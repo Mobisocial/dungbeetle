@@ -28,6 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -122,12 +123,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     	Intent launch = callout.getStartIntent();
     	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
     }
-    
-    public interface ActivityCallout {
-    	public Intent getStartIntent();
-    	public void handleResult(int resultCode, Intent data);
-    }
-    
+
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
