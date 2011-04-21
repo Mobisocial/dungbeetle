@@ -49,7 +49,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private DBHelper mHelper;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
-	
+    private Uri feedUri;
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
@@ -57,42 +58,41 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         mHelper = new DBHelper(ObjectsActivity.this); 
         mIdent = new DBIdentityProvider(mHelper);
         Intent intent = getIntent();
+        
+        if(intent.hasExtra("group_id")) {
+        	try {
+	        	Long groupId = intent.getLongExtra("group_id", -1);
+	        	Group group = mHelper.groupForGroupId(groupId).get();
+	            feedName = group.feedName;
+        	} catch (Maybe.NoValError e) {
+        		Log.w(TAG, "Tried to view a group with bad group id");
+        	}
+        }
+        
+        feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
             c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
+                feedUri,
                 null, 
                 getFeedObjectClause() + " AND " + Object.CONTACT_ID + "=?", new String[]{ 
                     String.valueOf(contactId) }, 
                 Object._ID + " DESC");
 		}
-        else if(intent.hasExtra("group_id")) {
-            Long groupId = intent.getLongExtra("group_id", -1);
-            try{
-                Group group = mHelper.groupForGroupId(groupId).get();
-                feedName = group.feedName;
-                c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
-                    null, 
-                    getFeedObjectClause(), null, 
-                    Object._ID + " DESC");                
-            }
-            catch(Maybe.NoValError e){
-                c = new MatrixCursor(new String[]{});
-            }
-		}
-		else {
+        else {
             c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
+                feedUri,
                 null, 
                 getFeedObjectClause(), null, 
                 Object._ID + " DESC");
 		}
+
 		mObjects = new ObjectListCursorAdapter(this, c);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
 
+		// TODO: Get rid of this? All feeds are created equal! -BJD
         if(!intent.hasExtra("contact_id")){
             Button button = (Button)findViewById(R.id.add_object_button);
             button.setOnClickListener(new OnClickListener() {
@@ -111,7 +111,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     	doActivityForResult(ObjectsActivity.this, new PhotoTaker(ObjectsActivity.this, new PhotoTaker.ResultHandler() {
 							@Override
 							public void onResult(ContentValues values) {
-								Helpers.sendToFeed(ObjectsActivity.this, values);
+								Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
 							}
 						}));
                     }

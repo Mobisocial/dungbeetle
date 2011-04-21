@@ -208,10 +208,18 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
     
+    
+    /**
+     * Sends a message to the default user feed.
+     */
     public static void sendToFeed(Context c, ContentValues values) {
     	 Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
          c.getContentResolver().insert(url, values); 
     }
+    
+    public static void sendToFeed(Context c, ContentValues values, Uri feed) {
+        c.getContentResolver().insert(feed, values); 
+   }
 
     public static void updatePresence(final Context c, final int presence){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
