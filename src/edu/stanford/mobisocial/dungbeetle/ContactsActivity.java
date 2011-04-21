@@ -22,6 +22,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.BackupManager.BackupService;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -257,6 +259,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final static int SET_EMAIL = 1;
     private final static int FACEBOOK_BOOTSTRAP = 2;
     private final static int INVITE_TO_GROUP = 3;
+    private final static int LOAD_DB = 4;
+    private final static int SAVE_DB = 5;
 
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
@@ -267,7 +271,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
             }
         } catch(Maybe.NoValError e){
-            menu.add(0, SHARE_INFO, 0, "Exchange info");
+            menu.add(0, LOAD_DB, 0, "Load");
+            menu.add(0, SAVE_DB, 0, "Save");
             menu.add(0, SET_EMAIL, 0, "Set email (debug)");
             menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
         }
@@ -310,6 +315,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             this.startActivityForResult(i, REQUEST_INVITE_TO_GROUP);
 			return true;
         }
+		case SAVE_DB: {
+			// TODO: should be in DungBeetleActivity.
+			doSaveDb();
+			return true;
+		}
+		case LOAD_DB: {
+			doLoadDb();
+			return true;
+		}
         default: return false;
         }
     }
@@ -336,6 +350,28 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 }catch(Maybe.NoValError e){}
             }
         }
+    }
+    
+    private final void toast(final String text) {
+    	runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				Toast.makeText(ContactsActivity.this, text, Toast.LENGTH_SHORT).show();
+			}
+		});
+    	
+    }
+    
+    private void doLoadDb() {
+    	// Choose 
+    	BackupService backup = new BackupManager.LocalBackupService();
+    	backup.load();
+    }
+    
+    private void doSaveDb() {
+    	BackupService backup = new BackupManager.LocalBackupService();
+    	backup.store();
     }
 }
 
