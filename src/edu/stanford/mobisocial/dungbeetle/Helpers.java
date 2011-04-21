@@ -207,6 +207,11 @@ public class Helpers {
         values.put(Object.TYPE, ProfilePictureObj.TYPE);
         c.getContentResolver().insert(url, values); 
     }
+    
+    public static void sendToFeed(Context c, ContentValues values) {
+    	 Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+         c.getContentResolver().insert(url, values); 
+    }
 
     public static void updatePresence(final Context c, final int presence){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
