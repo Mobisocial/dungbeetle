@@ -271,8 +271,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
             }
         } catch(Maybe.NoValError e){
-            menu.add(0, LOAD_DB, 0, "Load");
-            menu.add(0, SAVE_DB, 0, "Save");
+            //menu.add(0, LOAD_DB, 0, "Load");
+            //menu.add(0, SAVE_DB, 0, "Save");
             menu.add(0, SET_EMAIL, 0, "Set email (debug)");
             menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
         }
