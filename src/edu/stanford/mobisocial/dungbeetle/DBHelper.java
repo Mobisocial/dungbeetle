@@ -35,7 +35,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 26;
+	public static final int VERSION = 27;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -85,6 +85,10 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.FEED_NAME + " TEXT");
         }
 
+        if(oldVersion <= 26) {
+            Log.w(TAG, "Adding column 'picture' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PICTURE + " BLOB");
+        }
         db.setVersion(VERSION);
     }
 
@@ -160,7 +164,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     Contact.PERSON_ID, "TEXT",
                     Contact.EMAIL, "TEXT",
                     Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
-                    Contact.STATUS, "TEXT");
+                    Contact.STATUS, "TEXT",
+                    Contact.PICTURE, "BLOB");
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
@@ -530,7 +535,7 @@ public class DBHelper extends SQLiteOpenHelper {
     
     public Cursor queryGroupContacts(long groupId) {
     	return getReadableDatabase().rawQuery(
-            " SELECT C._id, C.name, C.public_key, C.person_id, C.email, C.presence, C.status " + 
+            " SELECT C._id, C.name, C.public_key, C.person_id, C.email, C.presence, C.status, C.picture " + 
             " FROM contacts C, group_members G WHERE " + 
             "G.group_id = ? AND C._id = G.contact_id",
             new String[] { String.valueOf(groupId) });

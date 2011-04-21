@@ -32,6 +32,8 @@ import android.view.View.OnClickListener;
 
 
 
+
+
 public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";

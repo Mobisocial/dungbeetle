@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import java.io.Serializable;
 import android.database.Cursor;
 
+
 public class Contact implements Serializable{
 
     public static final String TABLE = "contacts";
@@ -13,6 +14,7 @@ public class Contact implements Serializable{
     public static final String EMAIL = "email";
     public static final String PRESENCE = "presence";
     public static final String STATUS = "status";
+    public static final String PICTURE = "picture";
 
     public final String name;
     public final String email;
@@ -20,6 +22,7 @@ public class Contact implements Serializable{
     public final Long id;
     public final int presence;
     public final String status;
+    public final byte[] picture;
 
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -28,6 +31,7 @@ public class Contact implements Serializable{
         email = c.getString(c.getColumnIndexOrThrow(EMAIL));
         presence = c.getInt(c.getColumnIndexOrThrow(PRESENCE));
         status = c.getString(c.getColumnIndexOrThrow(STATUS));
+        picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
     }
 
     public Contact(Long id, String personId, String name, String email, int presence, String status){
@@ -37,6 +41,7 @@ public class Contact implements Serializable{
         this.personId = personId;
         this.presence = presence;
         this.status = status;
+        this.picture = null;
     }
 
 

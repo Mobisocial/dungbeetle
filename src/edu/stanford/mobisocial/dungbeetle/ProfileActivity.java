@@ -30,8 +30,10 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Matrix;
 import android.graphics.BitmapFactory;
+import android.util.Base64;
 
 
+import java.io.ByteArrayOutputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
@@ -39,6 +41,8 @@ import android.os.Handler;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
+import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 
@@ -68,6 +72,7 @@ public class ProfileActivity extends Activity{
             String email = "";
             String name = "";
             String about = "";
+            byte picture[] = null;
         
             long contact_id = intent.getLongExtra("contact_id", -1);
 
@@ -83,7 +88,7 @@ public class ProfileActivity extends Activity{
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
                     null, 
                     Object.TYPE + "=?", 
-                    new String[]{ "presence"}, 
+                    new String[]{ PresenceObj.TYPE}, 
                     Object.TIMESTAMP + " DESC");
 
                 if(c.moveToFirst()) {
@@ -94,6 +99,23 @@ public class ProfileActivity extends Activity{
                         int myPresence = Integer.parseInt(obj.optString("presence"));
                         presence.setSelection(myPresence);
                         mEnablePresenceUpdates = true;
+                    }catch(JSONException e){}
+                }
+
+                c = getContentResolver().query(
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+                    null, 
+                    Object.TYPE + "=?", 
+                    new String[]{ ProfilePictureObj.TYPE}, 
+                    Object.TIMESTAMP + " DESC");
+
+                if(c.moveToFirst()) {
+                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+                    try{
+                        JSONObject obj = new JSONObject(jsonSrc);
+                        picture = Base64.decode(obj.optString(ProfilePictureObj.DATA), Base64.DEFAULT);
+                        
                     }catch(JSONException e){}
                 }
 
@@ -136,6 +158,7 @@ public class ProfileActivity extends Activity{
                     }
                     else {
                         email = contact.email;
+                        picture = contact.picture;
                     }
 
                 }catch(JSONException e){}
@@ -148,6 +171,7 @@ public class ProfileActivity extends Activity{
                 else {
                     name = contact.name;
                     email = contact.email;
+                    picture = contact.picture;
                 }
             }  
 	    
@@ -158,7 +182,12 @@ public class ProfileActivity extends Activity{
 
             final ImageView icon = (ImageView) findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email, 80));
+            if(picture == null) {
+                mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email, 80));
+            }
+            else {
+                icon.setImageBitmap(BitmapFactory.decodeByteArray(picture, 0, picture.length));
+            }
 		}
 
 		else {
@@ -315,6 +344,8 @@ public class ProfileActivity extends Activity{
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();  
                     resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
                     byte[] b = baos.toByteArray(); 
+
+                    Helpers.updatePicture(ProfileActivity.this, b);
                     
                 // do whatever you want with the bitmap (Resize, Rename, Add To Gallery, etc)
                 } catch (Exception e) {

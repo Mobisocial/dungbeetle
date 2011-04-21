@@ -46,6 +46,7 @@ public class HandleNfcContact extends Activity {
 		Button saveButton = (Button)findViewById(R.id.save_contact_button);
 		Button cancelButton = (Button)findViewById(R.id.cancel_button);
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
+		mutualFriendsButton.setVisibility(View.GONE);
 
 		if(uri != null && uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME)){
             mName = uri.getQueryParameter("name");
@@ -53,14 +54,14 @@ public class HandleNfcContact extends Activity {
             mPubKeyStr = uri.getQueryParameter("publicKey");
             mPubKey = DBIdentityProvider.publicKeyFromString(mPubKeyStr);
 
-            mFilterData = fromByteArray(Base64.decode(uri.getQueryParameter("filterData"), Base64.DEFAULT));
+            /*mFilterData = fromByteArray(Base64.decode(uri.getQueryParameter("filterData"), Base64.DEFAULT));
             mBitSetSize = Integer.parseInt(uri.getQueryParameter("bitSetSize"));
             mExpectedNumberOElements = Integer.parseInt(uri.getQueryParameter("expectedNumberOfFilterElements"));
             mActualNumberOfFilterElements = Integer.parseInt(uri.getQueryParameter("actualNumberOfFilterElements"));
 
             BloomFilter friendsFilter = new BloomFilter(mBitSetSize, mExpectedNumberOElements, mActualNumberOfFilterElements, mFilterData);
             final Contact[] friends = Helpers.checkFriends(this, friendsFilter);
-
+            
 
             final ListAdapter adapter = new ArrayAdapter<Contact>(getApplicationContext(), R.layout.mutual_friend_row, friends) {
 
@@ -132,7 +133,7 @@ public class HandleNfcContact extends Activity {
                     }
                 });
             }
-
+            */
 
             TextView nameView = (TextView)findViewById(R.id.name_text);
             nameView.setText(mName);

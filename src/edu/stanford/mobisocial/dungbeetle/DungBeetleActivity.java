@@ -246,24 +246,11 @@ public class DungBeetleActivity extends TabActivity
         builder.appendQueryParameter("email", email);
         builder.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
         
-        builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
+        /*builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
         builder.appendQueryParameter("bitSetSize", Integer.toString(friendsFilter.size()));
         builder.appendQueryParameter("expectedNumberOfFilterElements", Integer.toString(friendsFilter.getExpectedNumberOfElements()));
         builder.appendQueryParameter("actualNumberOfFilterElements", Integer.toString(friendsFilter.count()));
-
-        BloomFilter temp = new BloomFilter(friendsFilter.size(),
-            friendsFilter.getExpectedNumberOfElements(),
-            friendsFilter.count(),
-            friendsFilter.getBitSet());
-        if(temp.equals(friendsFilter))
-        {
-            Log.w("bloomfilter", "equal");
-        }
-        else
-        {
-            Log.w("bloomfilter", "not equal");
-        }
-            
+        */  
         
         Uri uri = builder.build();
         NdefRecord urlRecord = new NdefRecord(
