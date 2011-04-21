@@ -181,11 +181,7 @@ public class ProfileActivity extends Activity{
             profile_about.setText(about);
 
             final ImageView icon = (ImageView) findViewById(R.id.icon);
-            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            if(picture == null) {
-                mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email, 80));
-            }
-            else {
+            if(picture != null) {
                 icon.setImageBitmap(BitmapFactory.decodeByteArray(picture, 0, picture.length));
             }
 		}

@@ -17,6 +17,7 @@ import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -25,7 +26,6 @@ import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.HashMap;
 import java.util.Map;
@@ -173,8 +173,10 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 TextView nameText = (TextView) v.findViewById(R.id.name_text);
                 nameText.setText(contact.name);
                 final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(contact.email));
+                
+                if(contact.picture != null) {
+                    icon.setImageBitmap(BitmapFactory.decodeByteArray(contact.picture, 0, contact.picture.length));
+                }
                 try {
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();
