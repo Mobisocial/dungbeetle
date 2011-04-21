@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
@@ -14,16 +15,15 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
-import edu.stanford.mobisocial.dungbeetle.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -42,8 +42,6 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;
-	private static final int REQUEST_STATUS = 98424;
-	public static final String ACTION_UPDATE_STATUS = "mobisocial.db.action.UPDATE_STATUS";
 	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
 	
@@ -94,9 +92,10 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             Button button = (Button)findViewById(R.id.add_object_button);
             button.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
-                        Intent update = new Intent(ACTION_UPDATE_STATUS);
-                        Intent chooser = Intent.createChooser(update, "Update status");
-                        startActivityForResult(chooser, REQUEST_STATUS);
+                    	Editable editor = ((EditText)findViewById(R.id.status_text)).getText();
+                    	String update = editor.toString();
+                    	Helpers.updateStatus(ObjectsActivity.this, feedName, update);
+                    	editor.clear();
                     }
                 });
         }
@@ -198,16 +197,6 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     public void finish() {
         super.finish();
         mIdent.close();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_STATUS) {
-            if (resultCode == RESULT_OK) {
-                String update = data.getStringExtra(Intent.EXTRA_TEXT);
-                Helpers.updateStatus(ObjectsActivity.this, feedName, update);
-            }
-        }
     }
 
     public String getFeedObjectClause() {

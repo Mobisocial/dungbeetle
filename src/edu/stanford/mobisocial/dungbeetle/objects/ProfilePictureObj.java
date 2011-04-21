@@ -14,7 +14,6 @@ import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.R;
 
 import android.util.Base64;
 

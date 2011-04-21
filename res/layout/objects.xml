@@ -6,19 +6,29 @@
 	      >
 
 
-  <LinearLayout
+  <RelativeLayout
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       xmlns:android="http://schemas.android.com/apk/res/android"
-      android:orientation="horizontal"
       android:gravity="center">
+      
     <Button
 	android:id="@+id/add_object_button"
-	android:layout_width="fill_parent"
+	android:layout_width="wrap_content"
 	android:layout_height="50dip"
-	android:text="Update Status"
+	android:text="Update"
+	android:layout_alignParentRight="true"
 	/> 
-  </LinearLayout>
+    <EditText
+    android:id="@+id/status_text"
+    android:layout_width="fill_parent"
+	android:layout_height="50dip"
+	android:layout_toLeftOf="@id/add_object_button"
+	android:maxLines="1"
+	android:hint="What's up?"
+	/>
+    
+  </RelativeLayout>
 
   <ListView
       android:id="@+id/android:list"
