@@ -22,6 +22,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
+import edu.stanford.mobisocial.dungbeetle.objects.ProfileObj;
+import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -56,8 +58,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ 
-                    "status" , String.valueOf(contactId) }, 
+                getFeedObjectClause() + " AND " + Object.CONTACT_ID + "=?", new String[]{ 
+                    String.valueOf(contactId) }, 
                 Object._ID + " DESC");
 		}
         else if(intent.hasExtra("group_id")) {
@@ -68,7 +70,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                     null, 
-                    Object.TYPE + "=?", new String[]{ "status" }, 
+                    getFeedObjectClause(), null, 
                     Object._ID + " DESC");                
             }
             catch(Maybe.NoValError e){
@@ -79,7 +81,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName),
                 null, 
-                Object.TYPE + "=?", new String[]{ "status" }, 
+                getFeedObjectClause(), null, 
                 Object._ID + " DESC");
 		}
 		mObjects = new ObjectListCursorAdapter(this, c);
@@ -204,8 +206,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             }
         }
     }
-    
 
+    public String getFeedObjectClause() {
+    	String[] types = new String[] { StatusObj.TYPE, ProfileObj.TYPE };
+    	StringBuffer allowed = new StringBuffer();
+    	for (String type : types) {
+    		allowed.append(",'").append(type).append("'");
+    	}
+    	return Object.TYPE + " in (" + allowed.substring(1) + ")";
+    }
 }
 
 

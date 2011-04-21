@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import org.json.JSONException;
 
@@ -46,7 +48,18 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer {
             values, "_id=?", new String[] { id });
 	}
 
-	public boolean willRender(JSONObject object) { return false; }
-	public void render(Context context, ViewGroup frame, JSONObject content){}
+	public boolean willRender(JSONObject object) { 
+		return willHandle(null, object);
+	}
+
+	public void render(Context context, ViewGroup frame, JSONObject content) {
+		TextView valueTV = new TextView(context);
+        valueTV.setText("PROFILE PICTURE!!!");
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
+	}
 
 }
