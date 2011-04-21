@@ -27,7 +27,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collection;
 import java.util.Collections;
@@ -176,8 +176,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
             String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mBitmaps.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+            
+            if(c.picture != null) {
+                icon.setImageBitmap(BitmapFactory.decodeByteArray(c.picture, 0, c.picture.length));
+            }
 
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             switch(presence) {
