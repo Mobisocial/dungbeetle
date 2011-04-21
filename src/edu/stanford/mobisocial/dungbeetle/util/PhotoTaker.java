@@ -5,7 +5,6 @@ import java.io.File;
 
 import org.json.JSONObject;
 
-import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 
 import android.app.Activity;
@@ -23,10 +22,12 @@ import edu.stanford.mobisocial.dungbeetle.model.Object;
 import android.util.Base64;
 
 public class PhotoTaker implements ActivityCallout {
+		private final ResultHandler mResultHandler;
 		private final Context mContext;
 
-		public PhotoTaker(Context c) {
+		public PhotoTaker(Context c, ResultHandler handler) {
 			mContext = c;
+			mResultHandler = handler;
 		}
     	@Override
     	public Intent getStartIntent() {
@@ -83,10 +84,14 @@ public class PhotoTaker implements ActivityCallout {
                 values.put(Object.JSON, obj.toString());
                 values.put(Object.TYPE, ProfilePictureObj.TYPE);
 
-                Helpers.sendToFeed(mContext, values);
+                mResultHandler.onResult(values);
             } catch (Exception e) {
             	
             }
+    	}
+    	
+    	public interface ResultHandler {
+    		public void onResult(ContentValues values);
     	}
     	
     	private static File getTempFile(Context context){

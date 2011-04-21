@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.Activity;
 import android.app.ListActivity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.MatrixCursor;
@@ -25,12 +26,12 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
-import edu.stanford.mobisocial.dungbeetle.objects.PictureObj.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,7 +108,12 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             	.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                     	// TODO: QuickActions or similar UI.
-                    	doActivityForResult(ObjectsActivity.this, new PhotoTaker(ObjectsActivity.this));
+                    	doActivityForResult(ObjectsActivity.this, new PhotoTaker(ObjectsActivity.this, new PhotoTaker.ResultHandler() {
+							@Override
+							public void onResult(ContentValues values) {
+								Helpers.sendToFeed(ObjectsActivity.this, values);
+							}
+						}));
                     }
                 });
         }
