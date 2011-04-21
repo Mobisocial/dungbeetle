@@ -24,6 +24,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfileObj;
+import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -210,7 +211,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfileObj.TYPE };
+    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE };
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");

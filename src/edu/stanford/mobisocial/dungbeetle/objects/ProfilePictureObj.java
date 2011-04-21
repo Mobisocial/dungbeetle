@@ -1,15 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.view.Gravity;
-import android.view.View;
+
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import org.json.JSONException;
 
 import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -53,13 +53,13 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer {
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content) {
-		TextView valueTV = new TextView(context);
-        valueTV.setText("PROFILE PICTURE!!!");
-        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+		ImageView imageView = new ImageView(context);
+		byte[] data = Base64.decode(content.optString(DATA), Base64.DEFAULT);
+		imageView.setImageBitmap(BitmapFactory.decodeByteArray(data, 0, data.length));
+        imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
-        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-        frame.addView(valueTV);
+        frame.addView(imageView);
 	}
 
 }
