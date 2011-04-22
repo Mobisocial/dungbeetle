@@ -99,7 +99,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                     public void onClick(View v) {
                     	Editable editor = ((EditText)findViewById(R.id.status_text)).getText();
                     	String update = editor.toString();
-                    	Helpers.updateStatus(ObjectsActivity.this, feedName, update);
+                    	Helpers.sendToFeed(ObjectsActivity.this, StatusObj.getStatusObj(update), feedUri);
                     	editor.clear();
                     }
                 });

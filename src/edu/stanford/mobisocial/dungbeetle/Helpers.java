@@ -189,15 +189,6 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void updateStatus(final Context c, final String feedName, final String status){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
-        ContentValues values = new ContentValues();
-        JSONObject obj = StatusObj.json(status);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.TYPE, StatusObj.TYPE);
-        c.getContentResolver().insert(url, values); 
-    }
-
     public static void updatePicture(final Context c, final byte[] data) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
