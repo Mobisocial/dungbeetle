@@ -5,10 +5,12 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -28,6 +30,7 @@ import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -261,6 +264,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final static int INVITE_TO_GROUP = 3;
     private final static int LOAD_DB = 4;
     private final static int SAVE_DB = 5;
+    private final static int INVITE_EMAIL = 6;
 
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
@@ -271,6 +275,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
             }
         } catch(Maybe.NoValError e){
+        	//menu.add(0, INVITE_EMAIL, 0, "Invite over email");
             //menu.add(0, LOAD_DB, 0, "Load");
             //menu.add(0, SAVE_DB, 0, "Save");
             menu.add(0, SET_EMAIL, 0, "Set email (debug)");
@@ -324,6 +329,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 			doLoadDb();
 			return true;
 		}
+		case INVITE_EMAIL: {
+			doSendInviteEmail();
+			return true;
+		}
         default: return false;
         }
     }
@@ -372,6 +381,31 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private void doSaveDb() {
     	BackupService backup = new BackupManager.LocalBackupService();
     	backup.store();
+    }
+    
+    private void doSendInviteEmail() {
+    	String subject = "Meet me on DungBeetle!";
+    	StringBuilder email = new StringBuilder();
+    	Uri inviteUri = FriendRequest.getInvitationUri(this);
+    	Uri downloadUri = Uri.parse(DungBeetleActivity.AUTO_UPDATE_URL_BASE
+    			+ "/" + DungBeetleActivity.AUTO_UPDATE_APK_FILE);
+    	email.append("Meet me on DungBeetle for Android!<br/><br/>");
+    	email.append("If you don't already have DungBeetle, get it ");
+    	email.append("<a href=\"" + downloadUri + "\">here.</a><br/><br/>");
+    	email.append("Then, click ");
+    	email.append("<a href=\"" + inviteUri + "\">here</a>");
+    	email.append(" to connect with me.");
+
+    	Intent send = new Intent(Intent.ACTION_SEND);
+    	send.setType("text/html");
+    	send.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(email.toString()));
+    	send.putExtra(Intent.EXTRA_SUBJECT, subject);
+    	
+    	if (getPackageManager().queryIntentActivities(send, PackageManager.MATCH_DEFAULT_ONLY).size() == 0) {
+    		toast("No way to send an invitation");
+    	} else {
+    		startActivity(send);
+    	}
     }
 }
 
