@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import mobisocial.nfc.Nfc.NdefFactory;
+import mobisocial.nfc.NdefFactory;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;

@@ -13,7 +13,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.R;
 
 
-public class InviteToGroupObj implements IncomingMessageHandler, FeedRenderer {
+public class InviteToGroupObj implements IncomingMessageHandler {
 	private static final String TAG = "InviteToGroupObj";
 
     public static final String TYPE = "invite_group";
@@ -80,9 +80,4 @@ public class InviteToGroupObj implements IncomingMessageHandler, FeedRenderer {
 			Log.e(TAG, "Error handling message: ", e);
 		}
 	}
-
-
-	public boolean willRender(JSONObject object) { return false; }
-	public void render(Context context, ViewGroup frame, JSONObject content){}
-
 }

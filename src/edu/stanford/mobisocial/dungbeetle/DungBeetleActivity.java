@@ -13,7 +13,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TabHost;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
+import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
 import java.security.PublicKey;
 import java.util.Date;
@@ -139,7 +141,7 @@ public class DungBeetleActivity extends TabActivity
         tabHost.setCurrentTab(0);
 
         mNfc = new Nfc(this);
-        mNfc.addNdefHandler(new Nfc.NdefHandler(){
+        mNfc.addNdefHandler(new NdefHandler() {
                 public int handleNdef(final NdefMessage[] messages){
                     DungBeetleActivity.this.runOnUiThread(new Runnable(){
                             public void run(){
@@ -230,29 +232,15 @@ public class DungBeetleActivity extends TabActivity
     }
 
     public void pushContactInfoViaNfc(){
-        DBHelper helper = new DBHelper(this);
-        IdentityProvider ident = new DBIdentityProvider(helper);
-        String name = ident.userName();
-        String email = ident.userEmail();
-        PublicKey pubKey = ident.userPublicKey();
-
-        
-        BloomFilter friendsFilter = Helpers.getFriendsBloomFilter(this);
-
-        Uri.Builder builder = new Uri.Builder();
-        builder.scheme(SHARE_SCHEME);
-        builder.authority("dungbeetle");
-        builder.appendQueryParameter("name", name);
-        builder.appendQueryParameter("email", email);
-        builder.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
-        
-        /*builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
+    	
+    	/*
+    	BloomFilter friendsFilter = Helpers.getFriendsBloomFilter(this);
+    	builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
         builder.appendQueryParameter("bitSetSize", Integer.toString(friendsFilter.size()));
         builder.appendQueryParameter("expectedNumberOfFilterElements", Integer.toString(friendsFilter.getExpectedNumberOfElements()));
         builder.appendQueryParameter("actualNumberOfFilterElements", Integer.toString(friendsFilter.count()));
         */  
-        
-        Uri uri = builder.build();
+    	Uri uri = FriendRequest.getInvitationUri(this);
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
             NdefRecord.RTD_URI, new byte[] {},
@@ -260,7 +248,6 @@ public class DungBeetleActivity extends TabActivity
         NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
         mNfc.share(ndef);
         //Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
-        helper.close();
     }
 
     @Override
@@ -296,8 +283,6 @@ public class DungBeetleActivity extends TabActivity
     public void onDestroy(){
         super.onDestroy();
     }
-
-
 }
 
 
