@@ -32,6 +32,7 @@ public class WebContentHandler extends Activity {
 		Uri action = Uri.parse(content.getQueryParameter("content"));
 		Intent launch = new Intent(Intent.ACTION_VIEW);
 		launch.setData(action);
+		launch.setPackage(getPackageName());
 		startActivity(launch);
 		finish();
 	}
