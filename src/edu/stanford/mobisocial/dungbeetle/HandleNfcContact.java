@@ -136,6 +136,7 @@ public class HandleNfcContact extends Activity {
 		saveButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
                     FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
+                    Toast.makeText(HandleNfcContact.this, "Added " + mName + " as a friend.", Toast.LENGTH_SHORT).show();
                     finish();
 				}
 			});
