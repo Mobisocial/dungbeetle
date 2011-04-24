@@ -264,7 +264,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
             }
         } catch(Maybe.NoValError e){
-        	//menu.add(0, INVITE_EMAIL, 0, "Invite over email");
+        	menu.add(0, INVITE_EMAIL, 0, "Invite over email");
             //menu.add(0, LOAD_DB, 0, "Load");
             //menu.add(0, SAVE_DB, 0, "Save");
             menu.add(0, SET_EMAIL, 0, "Set email (debug)");
@@ -369,7 +369,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private void doSendInviteEmail() {
     	String subject = "Meet me on DungBeetle!";
     	StringBuilder email = new StringBuilder();
-    	Uri inviteUri = FriendRequest.getInvitationUri(this);
+    	Uri inviteUri = WebContentHandler.getWebFriendlyUri(FriendRequest.getInvitationUri(this));
     	Uri downloadUri = Uri.parse(DungBeetleActivity.AUTO_UPDATE_URL_BASE
     			+ "/" + DungBeetleActivity.AUTO_UPDATE_APK_FILE);
     	email.append("Meet me on DungBeetle for Android!<br/><br/>");

@@ -16,15 +16,14 @@ public class FriendRequest {
         String name = ident.userName();
         String email = ident.userEmail();
         PublicKey pubKey = ident.userPublicKey();
+        helper.close();
 
-        Uri.Builder builder = new Uri.Builder()
+        return new Uri.Builder()
         	.scheme(DungBeetleActivity.SHARE_SCHEME)
         	.authority("dungbeetle")
         	.appendQueryParameter("name", name)
         	.appendQueryParameter("email", email)
-        	.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
-        
-        helper.close();
-        return builder.build();
+        	.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey))
+        	.build();
 	}
 }
