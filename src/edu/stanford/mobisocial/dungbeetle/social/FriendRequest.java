@@ -5,6 +5,7 @@ import java.security.PublicKey;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import android.content.Context;
 import android.net.Uri;
@@ -25,5 +26,18 @@ public class FriendRequest {
         	.appendQueryParameter("email", email)
         	.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey))
         	.build();
+	}
+
+	public static void acceptFriendRequest(Context c, Uri friendRequest) {
+		String name = friendRequest.getQueryParameter("name");
+        String email= friendRequest.getQueryParameter("email");
+        String pubKeyStr = friendRequest.getQueryParameter("publicKey");
+        DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw exception
+        
+        Uri uri = Helpers.insertContact(c, 
+		                pubKeyStr, name, email);
+		long contactId = Long.valueOf(uri.getLastPathSegment());
+		Helpers.insertSubscriber(c, contactId, "friend");
+		
 	}
 }

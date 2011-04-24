@@ -1,10 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.widget.ImageView;
 import android.widget.TextView;
-import java.security.PublicKey;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Intent;
@@ -14,23 +13,10 @@ import android.widget.Button;
 import android.net.Uri;
 import android.widget.Toast;
 import java.util.BitSet;
-import com.skjegstad.utils.BloomFilter;
-import android.util.Base64;
-import android.widget.ListAdapter;
-import android.app.AlertDialog;
-import android.widget.ArrayAdapter;
-import android.graphics.drawable.Drawable;
-import android.view.ViewGroup;
-import android.view.LayoutInflater;
-import android.content.Context;
-import android.content.DialogInterface;
-
 
 public class HandleNfcContact extends Activity {
     private String mName;
     private String mEmail;
-    private String mPubKeyStr;
-    private PublicKey mPubKey;
     private BitSet mFilterData;
     private int mBitSetSize;
     private int mExpectedNumberOElements;
@@ -42,18 +28,15 @@ public class HandleNfcContact extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.handle_give);
 		Intent intent = getIntent();
-        Uri uri = intent.getData();
+        final Uri uri = intent.getData();
 		Button saveButton = (Button)findViewById(R.id.save_contact_button);
 		Button cancelButton = (Button)findViewById(R.id.cancel_button);
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
 		mutualFriendsButton.setVisibility(View.GONE);
 
 		if(uri != null && uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME)){
-            mName = uri.getQueryParameter("name");
-            mEmail = uri.getQueryParameter("email");
-            mPubKeyStr = uri.getQueryParameter("publicKey");
-            mPubKey = DBIdentityProvider.publicKeyFromString(mPubKeyStr);
-
+			mName = uri.getQueryParameter("name");
+	        mEmail = uri.getQueryParameter("email");
             /*mFilterData = fromByteArray(Base64.decode(uri.getQueryParameter("filterData"), Base64.DEFAULT));
             mBitSetSize = Integer.parseInt(uri.getQueryParameter("bitSetSize"));
             mExpectedNumberOElements = Integer.parseInt(uri.getQueryParameter("expectedNumberOfFilterElements"));
@@ -152,12 +135,7 @@ public class HandleNfcContact extends Activity {
 
 		saveButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-                    Uri uri = Helpers.insertContact(HandleNfcContact.this, 
-                                          mPubKeyStr, mName, mEmail);
-                    long contactId = Long.valueOf(uri.getLastPathSegment());
-                    Helpers.insertSubscriber(HandleNfcContact.this,
-                        contactId,
-                        "friend");
+                    FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
                     finish();
 				}
 			});
