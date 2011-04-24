@@ -1,7 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,7 +33,6 @@ import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import java.util.Collection;
 import java.util.Collections;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -44,7 +42,6 @@ import android.view.View.OnClickListener;
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
-	private NotificationManager mNotificationManager;
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
 	public static final String TAG = "ContactsActivity";
 
@@ -54,7 +51,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
-        mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         mHelper = new DBHelper(this);
         Intent intent = getIntent();
         if(intent.hasExtra("group_id")){
@@ -391,6 +387,5 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     	}
     }
 }
-
 
 
