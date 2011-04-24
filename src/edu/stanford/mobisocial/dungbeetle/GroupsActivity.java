@@ -40,10 +40,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private DBHelper mHelper;
 
-	private static final int REQUEST_SEND_IM = 470;
-	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
-	private Collection<Contact> mSelection;
-
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.groups);
@@ -131,20 +127,17 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                     
                         final ActionItem send_im = new ActionItem();
                         send_im.setTitle("Send IM");
-                        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
                         send_im.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    mSelection = contactsInGroup;
-                                    Intent update = new Intent(ACTION_SEND_IM);
-                                    Intent chooser = Intent.createChooser(update, "Send IM");
-                                    startActivityForResult(chooser, REQUEST_SEND_IM);
+                                    UIHelpers.sendIM(
+                                        GroupsActivity.this, 
+                                        contactsInGroup);
                                 }
                             });
                     
                         final ActionItem start_app = new ActionItem();
                         start_app.setTitle("Start App");
-                        //production.setIcon(getResources().getDrawable(R.drawable.production));
                         start_app.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
@@ -228,11 +221,11 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             return true;
         }
         case 2: {
-                IdentityProvider ident = new DBIdentityProvider(mHelper);
+            IdentityProvider ident = new DBIdentityProvider(mHelper);
                 
-                Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-                intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
-                startActivity(intent);
+            Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
+            intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
+            startActivity(intent);
             return true;
         }
 		default: return false;
@@ -245,15 +238,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         mHelper.close();
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == REQUEST_SEND_IM) {
-    		if (resultCode == RESULT_OK) {
-    			String im = data.getStringExtra(Intent.EXTRA_TEXT);
-    			Helpers.sendIM(this, mSelection, im);
-    		}
-    	}
-    }
 }
 
 

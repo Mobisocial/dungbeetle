@@ -45,11 +45,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private NotificationManager mNotificationManager;
-	private static final int REQUEST_SEND_IM = 470;
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
-	public static final String ACTION_SEND_IM = "mobisocial.db.action.UPDATE_STATUS";
 	public static final String TAG = "ContactsActivity";
-	private Collection<Contact> mSelection;
+
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
 
@@ -96,12 +94,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
         final Contact c = new Contact(cursor);
         menu.setHeaderTitle(c.name);
-        
-        //String[] menuItems = new String[]{ "Send Message", "Start Application", "Manage Groups", "Delete" };
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
@@ -164,30 +159,25 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            String name = cursor.getString(cursor.getColumnIndexOrThrow(Contact.NAME));
+            final Contact c = new Contact(cursor);
+
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
-            nameText.setText(name);
+            nameText.setText(c.name);
 
             TextView statusText = (TextView) v.findViewById(R.id.status_text);
-            statusText.setText(cursor.getString(cursor.getColumnIndexOrThrow(Contact.STATUS)));
+            statusText.setText(c.status);
             
-            int presence = cursor.getInt(cursor.getColumnIndexOrThrow(Contact.PRESENCE));
-            
-            final Contact c = new Contact(cursor);
-           
-
-            //presenceText.setText(Presence.presences[presence]);
-            //presenceText.setTextColor(Presence.colors[presence]);
-
-            String email = cursor.getString(cursor.getColumnIndexOrThrow(Contact.EMAIL));
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             
             if(c.picture != null) {
                 icon.setImageBitmap(BitmapFactory.decodeByteArray(c.picture, 0, c.picture.length));
             }
+            else{
+                icon.setImageResource(R.drawable.anonymous);
+            }
 
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
-            switch(presence) {
+            switch(c.presence) {
             case Presence.AVAILABLE:
                 presenceIcon.setImageResource(R.drawable.available);
                 break;
@@ -207,34 +197,33 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     public void onClick(View v) {
                         final ActionItem send_im = new ActionItem();
                         send_im.setTitle("Send IM");
-                        //chart.setIcon(getResources().getDrawable(R.drawable.chart));
                         send_im.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    mSelection = Collections.singletonList(c);
-                                    Intent update = new Intent(ACTION_SEND_IM);
-                                    Intent chooser = Intent.createChooser(update, "Send IM");
-                                    startActivityForResult(chooser, REQUEST_SEND_IM);
+                                    UIHelpers.sendIM(ContactsActivity.this, 
+                                                     Collections.singletonList(c));
                                 }
                             });
                     
                         final ActionItem start_app = new ActionItem();
                         start_app.setTitle("Start App");
-                        //production.setIcon(getResources().getDrawable(R.drawable.production));
                         start_app.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    UIHelpers.startApplicationWithContact(ContactsActivity.this, Collections.singletonList(c));
+                                    UIHelpers.startApplicationWithContact(
+                                        ContactsActivity.this, 
+                                        Collections.singletonList(c));
                                 }
                             });
                     
                         final ActionItem manage_groups = new ActionItem();
                         manage_groups.setTitle("Groups");
-                        //production.setIcon(getResources().getDrawable(R.drawable.production));
                         manage_groups.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    UIHelpers.showGroupPicker(ContactsActivity.this, c);
+                                    UIHelpers.showGroupPicker(
+                                        ContactsActivity.this, 
+                                        c);
                                 }
                             });
 
@@ -345,13 +334,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_SEND_IM) {
-            if (resultCode == RESULT_OK) {
-                String im = data.getStringExtra(Intent.EXTRA_TEXT);
-                Helpers.sendIM(this, mSelection, im);
-            }
-        }
-        else if (requestCode == REQUEST_INVITE_TO_GROUP) {
+        if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");
                 try{

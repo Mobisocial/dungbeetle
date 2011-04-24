@@ -28,8 +28,8 @@ public class UIHelpers {
 
     public static final String TAG = "UIHelpers";
 
-    public static void sendMessageToContact(final Context context, 
-                                            final Collection<Contact> contacts){
+    public static void sendIM(final Context context, 
+                              final Collection<Contact> contacts){
         AlertDialog.Builder alert = new AlertDialog.Builder(context);
         alert.setMessage("Enter message:");
         final EditText input = new EditText(context);

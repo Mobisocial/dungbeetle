@@ -3,10 +3,12 @@ import android.app.Activity;
 import android.app.ListActivity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,6 +52,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
 	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
     private Uri feedUri;
+    private ContactCache mContactCache;
+
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -58,6 +62,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
         mHelper = new DBHelper(ObjectsActivity.this); 
         mIdent = new DBIdentityProvider(mHelper);
         Intent intent = getIntent();
+        mContactCache = new ContactCache();
         
         if(intent.hasExtra("group_id")) {
         	try {
@@ -106,16 +111,20 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
-                    public void onClick(View v) {
-                    	// TODO: QuickActions or similar UI.
-                    	doActivityForResult(ObjectsActivity.this, new PhotoTaker(ObjectsActivity.this, new PhotoTaker.ResultHandler() {
-							@Override
-							public void onResult(ContentValues values) {
-								Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
-							}
-						}));
-                    }
-                });
+                        public void onClick(View v) {
+                            doActivityForResult(
+                                ObjectsActivity.this, 
+                                new PhotoTaker(
+                                    ObjectsActivity.this, 
+                                    new PhotoTaker.ResultHandler() {
+                                        @Override
+                                        public void onResult(ContentValues values) {
+                                            Helpers.sendToFeed(
+                                                ObjectsActivity.this, values, feedUri);
+                                        }
+                                    }));
+                        }
+                    });
         }
         else{
             findViewById(R.id.add_object_button).setVisibility(View.GONE);
@@ -137,43 +146,57 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
 
-    // Implement a little cache so we don't have to keep pulling the same
-    // contacts. Would be nice to pre-warm this cache given a list of 
-    // person ids...
-    private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
-    private Maybe<Contact> getContact(Long id){
-        if(mContactCache.containsKey(id)){
-            return Maybe.definitely(mContactCache.get(id));
+    private class ContactCache extends ContentObserver{
+
+        public ContactCache(){
+            super(new Handler(ObjectsActivity.this.getMainLooper()));
+            ObjectsActivity.this.getContentResolver().registerContentObserver(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
+                true, this);
         }
-        else{
-            if(id.equals(Contact.MY_ID)){
-                Contact contact = new Contact(
-                    Contact.MY_ID,
-                    mIdent.userPersonId(),
-                    mIdent.userName(), 
-                    mIdent.userEmail(),
-                    0,
-                    "");
-                mContactCache.put(id, contact);
-                return Maybe.definitely(contact);
+        
+        private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
+
+        @Override
+        public void onChange(boolean self){
+            mContactCache.clear();
+        }
+
+        private Maybe<Contact> getContact(long id){
+            if(mContactCache.containsKey(id)){
+                return Maybe.definitely(mContactCache.get(id));
             }
             else{
-                Cursor c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-                    null, Contact._ID + "=?", 
-                    new String[]{String.valueOf(id)}, null);
-                c.moveToFirst();
-                if(c.isAfterLast()){
-                    return Maybe.unknown();
-                }
-                else{
-                    Contact contact = new Contact(c);
+                if(id == Contact.MY_ID){
+                    Contact contact = new Contact(
+                        Contact.MY_ID,
+                        mIdent.userPersonId(),
+                        mIdent.userName(), 
+                        mIdent.userEmail(),
+                        0,
+                        "");
                     mContactCache.put(id, contact);
                     return Maybe.definitely(contact);
                 }
+                else{
+                    Cursor c = getContentResolver().query(
+                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
+                        null, Contact._ID + "=?", 
+                        new String[]{String.valueOf(id)}, null);
+                    c.moveToFirst();
+                    if(c.isAfterLast()){
+                        return Maybe.unknown();
+                    }
+                    else{
+                        Contact contact = new Contact(c);
+                        mContactCache.put(id, contact);
+                        return Maybe.definitely(contact);
+                    }
+                }
             }
-        }
+        }        
     }
+
 
     private class ObjectListCursorAdapter extends CursorAdapter {
 
@@ -194,13 +217,17 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
             Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
             try{
-                Contact contact = getContact(contactId).get();
+                Contact contact = mContactCache.getContact(contactId).get();
                 TextView nameText = (TextView) v.findViewById(R.id.name_text);
                 nameText.setText(contact.name);
                 final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                 
                 if(contact.picture != null) {
-                    icon.setImageBitmap(BitmapFactory.decodeByteArray(contact.picture, 0, contact.picture.length));
+                    icon.setImageBitmap(BitmapFactory.decodeByteArray(
+                                            contact.picture, 0, contact.picture.length));
+                }
+                else{
+                    icon.setImageResource(R.drawable.anonymous);
                 }
                 try {
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
@@ -234,7 +261,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
     
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if (requestCode == ACTIVITY_CALLOUT) {
     		mCurrentCallout.handleResult(resultCode, data);
     	}

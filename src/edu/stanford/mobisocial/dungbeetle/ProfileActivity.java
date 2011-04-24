@@ -184,10 +184,16 @@ public class ProfileActivity extends Activity{
             if(picture != null) {
                 icon.setImageBitmap(BitmapFactory.decodeByteArray(picture, 0, picture.length));
             }
+            else{
+                icon.setImageResource(R.drawable.anonymous);
+            }
 
             if(contact_id == Contact.MY_ID){
                 icon.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
+                            Toast.makeText(ProfileActivity.this,
+                                           "Loading camera...", 
+                                           Toast.LENGTH_SHORT).show();
                             takePhoto();
                         }
                     });
@@ -300,10 +306,10 @@ public class ProfileActivity extends Activity{
 
     @Override
 
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             switch(requestCode){
-                case TAKE_PHOTO_CODE:
+            case TAKE_PHOTO_CODE:
                 final File file = getTempFile(this);
                 try {
                     BitmapFactory.Options options=new BitmapFactory.Options();
@@ -326,7 +332,7 @@ public class ProfileActivity extends Activity{
 
                     // recreate the new Bitmap
                     Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, 
-                                      cropSize, cropSize, matrix, true);
+                                                               cropSize, cropSize, matrix, true);
                     
                     final ImageView icon = (ImageView) findViewById(R.id.icon);
                     icon.setImageBitmap(resizedBitmap);
@@ -337,7 +343,7 @@ public class ProfileActivity extends Activity{
 
                     Helpers.updatePicture(ProfileActivity.this, b);
                     
-                // do whatever you want with the bitmap (Resize, Rename, Add To Gallery, etc)
+                    // do whatever you want with the bitmap (Resize, Rename, Add To Gallery, etc)
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
