@@ -1,7 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,12 +18,12 @@ import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import java.util.Collection;
-import java.util.Collections;
 
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -56,12 +55,11 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
         menu.setHeaderTitle(g.name);
-        String[] menuItems = new String[]{ "Delete" };
-        for (int i = 0; i<menuItems.length; i++) {
+        String[] menuItems = new String[]{ "Delete", "Write to Tag" };
+        for (int i = 0; i< menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
     }
@@ -70,13 +68,20 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         int menuItemIndex = item.getItemId();
-
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
-        final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
         switch(menuItemIndex) {
         case 0:
             Helpers.deleteGroup(GroupsActivity.this, g.id);
+            break;
+        case 1:
+            if(g.dynUpdateUri != null){
+                Uri uri = Uri.parse(g.dynUpdateUri);
+                ((DungBeetleActivity)getParent()).writeGroupToTag(uri);
+            }
+            else{
+				Toast.makeText(this, "Invalid group.", Toast.LENGTH_SHORT).show();
+            }
             break;
         }
         return true;
@@ -86,14 +91,11 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id){
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
-
         Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
         viewGroupIntent.putExtra("group_id", g.id);
         viewGroupIntent.putExtra("group_name", g.name);
         startActivity(viewGroupIntent);
-
     }
-
 
     private class GroupListCursorAdapter extends CursorAdapter {
         public GroupListCursorAdapter (Context context, Cursor c) {
@@ -109,7 +111,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         @Override
         public void bindView(View v, Context context, Cursor c) {
 
-            
             final Group g = new Group(c);
             final Collection<Contact> contactsInGroup = g.contactCollection(mHelper);
         
@@ -161,45 +162,22 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     }
 
 
-	public boolean onCreateOptionsMenu(Menu menu){
-		return true;
-	}
+    public boolean onCreateOptionsMenu(Menu menu){
+        return true;
+    }
 
     private final static int ADD_GROUP = 0;
-    private final static int WRITE_GROUP_TO_TAG = 1;
 
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        menu.clear();
+        menu.add(0, ADD_GROUP, 0, "Add group");
+        menu.add(0, 1, 0, "debug load");
+        return true;
+    }
 
-	public boolean onPreparePanel(int featureId, View view, Menu menu) {
-		menu.clear();
-		menu.add(0, ADD_GROUP, 0, "Add group");
-		menu.add(0, WRITE_GROUP_TO_TAG, 0, "Write dynamic group to tag");
-		menu.add(0, 2, 0, "debug load");
-		return true;
-	}
-
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch(item.getItemId()){
-		case ADD_GROUP: {
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            alert.setMessage("Enter group name:");
-            final EditText input = new EditText(this);
-            alert.setView(input);
-            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        Helpers.insertGroup(GroupsActivity.this, 
-                                            input.getText().toString(),
-                                            null,
-                                            null);
-                    }
-                });
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                    }
-                });
-            alert.show();
-			return true;
-		}
-		case WRITE_GROUP_TO_TAG: {
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+        case ADD_GROUP: {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setMessage("Enter group name:");
             final EditText input = new EditText(this);
@@ -209,7 +187,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                         IdentityProvider ident = new DBIdentityProvider(mHelper);
                         Uri uri = GroupProviders.defaultNewSessionUri(
                             ident, input.getText().toString());
-                        ((DungBeetleActivity)getParent()).writeGroupToTag(uri);
+                        Helpers.insertGroup(GroupsActivity.this, 
+                                            input.getText().toString(),
+                                            uri.toString(),
+                                            null);
                     }
                 });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -217,20 +198,17 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                     }
                 });
             alert.show();
-
             return true;
         }
-        case 2: {
-            IdentityProvider ident = new DBIdentityProvider(mHelper);
-                
+        case 1: {
             Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
             intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
             startActivity(intent);
             return true;
         }
-		default: return false;
-		}
-	}
+        default: return false;
+        }
+    }
 
     @Override
     public void finish() {
