@@ -187,10 +187,13 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                         IdentityProvider ident = new DBIdentityProvider(mHelper);
                         Uri uri = GroupProviders.defaultNewSessionUri(
                             ident, input.getText().toString());
-                        Helpers.insertGroup(GroupsActivity.this, 
-                                            input.getText().toString(),
-                                            uri.toString(),
-                                            null);
+                        Uri gUri = Helpers.insertGroup(GroupsActivity.this, 
+                                                       input.getText().toString(),
+                                                       uri.toString(),
+                                                       null);
+                        long id = Long.valueOf(gUri.getLastPathSegment());
+                        GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
+                        gp.forceUpdate(id, uri, GroupsActivity.this, ident);
                     }
                 });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

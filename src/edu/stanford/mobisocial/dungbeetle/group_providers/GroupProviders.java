@@ -9,7 +9,6 @@ import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
-import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -58,6 +57,14 @@ public class GroupProviders{
         abstract public String groupName(Uri uri);
         abstract public String feedName(Uri uri);
         abstract public Uri newSessionUri(IdentityProvider ident, String groupName);
+        public void forceUpdate(final long groupId, final Uri uriIn, 
+                                final Context context, final IdentityProvider ident){
+            (new Thread(){
+                    public void run(){
+                        GroupProvider.this.handle(groupId, uriIn, context, ident);
+                    }
+                }).start();
+        }
     }
 
     public static class NullGroupProvider extends GroupProvider{
