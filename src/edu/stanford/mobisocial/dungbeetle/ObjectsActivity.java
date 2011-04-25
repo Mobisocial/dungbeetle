@@ -130,14 +130,6 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             findViewById(R.id.add_object_button).setVisibility(View.GONE);
         }
     }
-    
-    private static int ACTIVITY_CALLOUT = 39472874;
-    private static ActivityCallout mCurrentCallout;
-    public static void doActivityForResult(Activity me, ActivityCallout callout) {
-    	mCurrentCallout = callout;
-    	Intent launch = callout.getStartIntent();
-    	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
-    }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
@@ -259,7 +251,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     	}
     	return Object.TYPE + " in (" + allowed.substring(1) + ")";
     }
-    
+
+    private static int ACTIVITY_CALLOUT = 39472874;
+    private static ActivityCallout mCurrentCallout;
+    public static void doActivityForResult(Activity me, ActivityCallout callout) {
+    	mCurrentCallout = callout;
+    	Intent launch = callout.getStartIntent();
+    	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if (requestCode == ACTIVITY_CALLOUT) {
