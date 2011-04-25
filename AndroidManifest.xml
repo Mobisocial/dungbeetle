@@ -125,33 +125,6 @@
 	      android:configChanges="keyboardHidden">
     </activity>
 
-
-
-    <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleGroupActivity"
-	      android:label="Group Invite"
-	      android:screenOrientation="portrait">
-
-      <intent-filter>
-	<action android:name="edu.stanford.mobisocial.dungbeetle.HANDLE_GROUP_INVITE" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-
-      <intent-filter>
-	<action android:name="android.intent.action.VIEW" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<category android:name="android.intent.category.BROWSABLE" />
-	<data android:scheme="dungbeetle-group"/>
-      </intent-filter>
-
-      <intent-filter>
-	<action android:name="android.nfc.action.NDEF_DISCOVERED" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<data android:scheme="dungbeetle-group"/>
-      </intent-filter>
-
-    </activity>
-
     <activity
 	android:label="DungBeetle"
 	android:name="edu.stanford.mobisocial.dungbeetle.WebContentHandler">
@@ -166,6 +139,12 @@
     <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity"
 	      android:label="Group Session Invite"
 	      android:screenOrientation="portrait">
+
+      <intent-filter>
+	<action android:name="edu.stanford.mobisocial.dungbeetle.HANDLE_GROUP_INVITE" />
+	<category android:name="android.intent.category.DEFAULT" />
+	<category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
 
       <intent-filter>
 	<action android:name="android.intent.action.VIEW" />

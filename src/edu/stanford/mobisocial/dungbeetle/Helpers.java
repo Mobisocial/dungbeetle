@@ -236,13 +236,13 @@ public class Helpers {
                                           final String groupName,
                                           final String sharedFeedName,
                                           final long inviterContactId,
-                                          final long[] participants
+                                          final String dynUpdateUri
                                           ){
         ContentValues values = new ContentValues();
         values.put("groupName", groupName);
         values.put("sharedFeedName", sharedFeedName);
         values.put("inviterContactId", inviterContactId);
-        values.put("participants", Util.join(participants, ","));
+        values.put("inviterContactId", inviterContactId);
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
                             "/groups_by_invitation");
         c.getContentResolver().insert(url, values);
@@ -261,6 +261,7 @@ public class Helpers {
         values.put("participants", Util.join(participants, ","));
         values.put("groupName", g.name);
         values.put("sharedFeedName", g.feedName);
+        values.put("dynUpdateUri", g.dynUpdateUri);
         values.put("groupId", g.id);
 
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + 

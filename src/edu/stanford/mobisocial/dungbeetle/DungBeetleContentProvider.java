@@ -7,6 +7,7 @@ import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -160,134 +161,44 @@ public class DungBeetleContentProvider extends ContentProvider {
             return uriWithId(uri, id);
         }
 
-
         else if(match(uri, "group_invitations")){
             if(!appId.equals(SUPER_APP_ID)) return null;
-            long[] participants = Util.splitLongs(
-                values.getAsString("participants"),",");
-            String groupName = values.getAsString("groupName");
-            String sharedFeedName = values.getAsString("sharedFeedName");
+            String groupName = values.getAsString(InviteToGroupObj.GROUP_NAME);
+            String sharedFeedName = values.getAsString(InviteToGroupObj.SHARED_FEED_NAME);
+            Uri dynUpdateUri = Uri.parse(values.getAsString(InviteToGroupObj.DYN_UPDATE_URI));
             long gid = values.getAsLong("groupId");
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            for(int i = 0; i < participants.length; i++){
-                long cid = participants[i];
-                ContentValues gmv = new ContentValues();
-                gmv.put(GroupMember.CONTACT_ID, cid);
-                gmv.put(GroupMember.GROUP_ID, gid);
-                mHelper.insertGroupMember(db, gmv);
-            }
-            getContext().getContentResolver().notifyChange(
-                Uri.parse(CONTENT_URI + "/group_members"), null);
-            getContext().getContentResolver().notifyChange(
-                Uri.parse(CONTENT_URI + "/group_contacts"), null);
             mHelper.addToOutgoing(
                 db,
                 appId,
-                values.getAsString("participants"),
+                values.getAsString(InviteToGroupObj.PARTICIPANTS),
                 InviteToGroupObj.TYPE,
-                InviteToGroupObj.json(participants, groupName, sharedFeedName));
+                InviteToGroupObj.json(groupName, sharedFeedName, dynUpdateUri));
             getContext().getContentResolver().notifyChange(
                 Uri.parse(CONTENT_URI + "/out"), null);
             return uriWithId(uri, gid);
-        }
-
-
-
-
-        else if(match(uri, "groups_by_invitation")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
-
-            long[] participants = Util.splitLongs(
-                values.getAsString("participants"),",");
-            String groupName = values.getAsString("groupName");
-            String sharedFeedName = values.getAsString("sharedFeedName");
-            Long inviterContactId = values.getAsLong("inviterContactId");
-
-            SQLiteDatabase db = mHelper.getWritableDatabase();
-            try{
-                db.beginTransaction();
-
-                long gid = -1;
-                Group group = mHelper.groupByFeedName(sharedFeedName)
-                    .otherwise(Group.NA());
-                if(group.id > -1){
-                    gid = group.id;
-                }
-                else{
-                    ContentValues gv = new ContentValues();
-                    gv.put(Group.NAME, groupName);
-                    gv.put(Group.DYN_UPDATE_URI, (String)null);
-                    gv.put(Group.FEED_NAME, sharedFeedName);
-                    gid = mHelper.insertGroup(db, gv);
-                    getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/groups"), null);
-                }
-
-                if(gid > -1){ 
-                    // Add subscription for invite sender
-                    // to this private group feed
-                    ContentValues sv = new ContentValues();
-                    sv = new ContentValues();
-                    sv.put(Subscriber.CONTACT_ID, inviterContactId);
-                    sv.put(Subscriber.FEED_NAME, sharedFeedName);
-                    mHelper.insertSubscriber(db, sv);
-                    getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/subscribers"), null);
-
-                    for(int i = 0; i < participants.length; i++) {
-                        long cid = participants[i];
-                        if(cid != Contact.MY_ID){
-                            // Create group members
-                            ContentValues gmv = new ContentValues();
-                            gmv.put(GroupMember.GROUP_ID, gid);
-                            gmv.put(GroupMember.CONTACT_ID, cid);
-                            mHelper.insertGroupMember(db, gmv);
-                        }
-                    }
-                    getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/group_members"), null);
-                    getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/group_contacts"), null);
-
-                    // Send subscribe requests
-                    mHelper.addToOutgoing(
-                        db,
-                        appId,
-                        values.getAsString("participants"),
-                        SubscribeReqObj.TYPE,
-                        SubscribeReqObj.json(sharedFeedName));
-
-                    getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/out"), null);
-
-                    db.setTransactionSuccessful();
-
-                }
-                else{
-                    return null;
-                }
-                return uriWithId(uri, gid);
-            }
-            catch(Exception e){
-                Log.e(TAG, "Error handling group invitation", e);
-                return null;
-            }
-            finally{
-                db.endTransaction();
-            }
         }
 
         else if(match(uri, "dynamic_groups")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             Uri gUri = Uri.parse(values.getAsString("uri"));
             GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
-            ContentValues cv = new ContentValues();
-            cv.put(Group.NAME, gp.groupName(gUri));
-            cv.put(Group.FEED_NAME, gp.feedName(gUri));
-            cv.put(Group.DYN_UPDATE_URI, gUri.toString());
-            long id = mHelper.insertGroup(cv);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+            String feedName = gp.feedName(gUri);
+            Maybe<Group> mg = mHelper.groupByFeedName(feedName);
+            long id = -1;
+            try{
+                Group g = mg.get();
+                id = g.id;
+            }
+            catch(Maybe.NoValError e){
+                ContentValues cv = new ContentValues();
+                cv.put(Group.NAME, gp.groupName(gUri));
+                cv.put(Group.FEED_NAME, feedName);
+                cv.put(Group.DYN_UPDATE_URI, gUri.toString());
+                id = mHelper.insertGroup(cv);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+            }
             return uriWithId(uri, id);
         }
 
