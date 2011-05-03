@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.BackupManager.BackupService;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
+import edu.stanford.mobisocial.dungbeetle.google.OAuthFlowApp;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
@@ -250,6 +251,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final static int LOAD_DB = 4;
     private final static int SAVE_DB = 5;
     private final static int INVITE_EMAIL = 6;
+    private final static int GOOGLE_BOOTSTRAP = 7;
 
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
@@ -265,6 +267,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             //menu.add(0, SAVE_DB, 0, "Save");
             menu.add(0, SET_EMAIL, 0, "Set email (debug)");
             menu.add(0, FACEBOOK_BOOTSTRAP, 0, "Facebook Bootstrap");
+            menu.add(0, GOOGLE_BOOTSTRAP, 0, "Google Bootstrap");
         }
         return true;
     }
@@ -296,6 +299,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         }
         case FACEBOOK_BOOTSTRAP: {
             Intent intent = new Intent(this, FacebookInterfaceActivity.class);
+            startActivity(intent); 
+            return true;
+        }
+        case GOOGLE_BOOTSTRAP: {
+            Intent intent = new Intent(this, OAuthFlowApp.class);
             startActivity(intent); 
             return true;
         }
