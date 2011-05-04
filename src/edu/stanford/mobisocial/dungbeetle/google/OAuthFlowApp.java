@@ -108,7 +108,6 @@ public class OAuthFlowApp extends Activity {
                                 Map<String,String> params = new HashMap<String,String>();
                                 try{
                                     JSONObject obj = new JSONObject();
-                                    obj.put("id", 1);
                                     obj.put("name", "foo");
                                     obj.put("value", value);
                                     try {
