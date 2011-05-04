@@ -13,6 +13,21 @@
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
 	            android:text="Clear Credentials"/>	 
+
+	    <Button android:id="@+id/btn_refresh"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Refresh"/>
+
+	    <Button android:id="@+id/btn_set_prop"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Set Property"/>	 
+
+	    <Button android:id="@+id/btn_delete"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Delete Property"/>	 
 	            
             <TextView android:id="@+id/response_code"
                 android:layout_width="wrap_content"
