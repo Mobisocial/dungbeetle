@@ -22,6 +22,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collection;
 
 import android.view.ContextMenu;
@@ -36,7 +37,9 @@ import java.util.UUID;
 public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";
+	private static final int REQUEST_INVITE_TO_GROUP = 1;
 	private DBHelper mHelper;
+    private Maybe<Group> mGroup = Maybe.unknown();
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -124,10 +127,12 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             more.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
+
+                        mGroup = Maybe.definitely(g);
                     
-                        final ActionItem send_im = new ActionItem();
-                        send_im.setTitle("Send IM");
-                        send_im.setOnClickListener(new OnClickListener() {
+                        final ActionItem sendIM = new ActionItem();
+                        sendIM.setTitle("Send IM");
+                        sendIM.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
                                     UIHelpers.sendIM(
@@ -136,9 +141,9 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                                 }
                             });
                     
-                        final ActionItem start_app = new ActionItem();
-                        start_app.setTitle("Start App");
-                        start_app.setOnClickListener(new OnClickListener() {
+                        final ActionItem startApp = new ActionItem();
+                        startApp.setTitle("Start App");
+                        startApp.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
                                     UIHelpers.startApplicationWithContact(
@@ -147,17 +152,44 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                                 }
                             });
 
+                        final ActionItem invite = new ActionItem();
+                        invite.setTitle("Invite Contacts");
+                        invite.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Intent i = new Intent();
+                                    i.setAction(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+                                    GroupsActivity.this.startActivityForResult(
+                                        i, REQUEST_INVITE_TO_GROUP);   
+                                }
+                            });
+
                     
                         QuickAction qa = new QuickAction(v);
 
-                        qa.addActionItem(send_im);
-                        qa.addActionItem(start_app);
+                        qa.addActionItem(sendIM);
+                        qa.addActionItem(startApp);
+                        qa.addActionItem(invite);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();
                     }
                 });
         }
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_INVITE_TO_GROUP) {
+            if (resultCode == RESULT_OK) {
+                long[] contactIds = data.getLongArrayExtra("contacts");
+                try{
+                    Helpers.sendGroupInvite(this, contactIds, mGroup.get());
+                }catch(Maybe.NoValError e){}
+            }
+        }
+        mGroup = Maybe.unknown();
     }
 
 

@@ -66,15 +66,15 @@ public class ProfileActivity extends Activity{
                 String name = obj.optString("name");
                 String about = obj.optString("about");
                 profileName.setText(name);
-                profileAbout.setText(about);                     
+                profileAbout.setText(about);              
             }catch(JSONException e){}
         }
         else {
             profileName.setText(mIdent.userName());
         }
 
-        Button save_button = (Button) findViewById(R.id.save_profile_button);
-        save_button.setOnClickListener(new OnClickListener(){
+        Button saveButton = (Button) findViewById(R.id.save_profile_button);
+        saveButton.setOnClickListener(new OnClickListener(){
                 public void onClick(View v)
                 {
                     String name = profileName.getText().toString();
@@ -137,12 +137,11 @@ public class ProfileActivity extends Activity{
 
         if(c.moveToFirst()) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 int myPresence = Integer.parseInt(obj.optString("presence"));
+                mEnablePresenceUpdates = false;
                 presence.setSelection(myPresence);
-                mEnablePresenceUpdates = true;
             }catch(JSONException e){}
         }
 
@@ -336,8 +335,8 @@ public class ProfileActivity extends Activity{
                     final ImageView icon = (ImageView) findViewById(R.id.icon);
                     icon.setImageBitmap(resizedBitmap);
 
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-                    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object
                     byte[] b = baos.toByteArray(); 
 
                     Helpers.updatePicture(ProfileActivity.this, b);
@@ -351,7 +350,6 @@ public class ProfileActivity extends Activity{
         }
     }
 
-
     @Override
     public void finish() {
         super.finish();
@@ -360,8 +358,12 @@ public class ProfileActivity extends Activity{
     private class PresenceOnItemSelectedListener implements OnItemSelectedListener {
 
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-            if(mEnablePresenceUpdates){ // fix bug where initial selection firing event
+            // fix bug where initial selection firing event
+            if(mEnablePresenceUpdates){ 
                 Helpers.updatePresence(ProfileActivity.this, pos);
+            }
+            else{
+                mEnablePresenceUpdates = true;
             }
         }
 

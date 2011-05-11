@@ -235,6 +235,12 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
     }
 
+    void setMyEmail(String email) {
+        ContentValues cv = new ContentValues();
+        cv.put(MyInfo.EMAIL, email);
+        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
+    }
+
     long addToOutgoing(String appId, String to, String type, JSONObject json){
         return addToOutgoing(getWritableDatabase(), 
                              appId, to, type, json);
