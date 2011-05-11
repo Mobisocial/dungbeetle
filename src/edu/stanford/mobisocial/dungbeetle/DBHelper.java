@@ -229,22 +229,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return possibleEmail;
     }
 
-    void setMyEmail(String email) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.EMAIL, email);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
     void setMyName(String name) {
         ContentValues cv = new ContentValues();
         cv.put(MyInfo.NAME, name);
         getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
-    void setContactName(String id, String name) {
-        ContentValues cv = new ContentValues();
-        cv.put(Contact.NAME, name);
-        getWritableDatabase().update(Contact.TABLE, cv, Contact._ID + "=?", new String[]{ id });
     }
 
     long addToOutgoing(String appId, String to, String type, JSONObject json){

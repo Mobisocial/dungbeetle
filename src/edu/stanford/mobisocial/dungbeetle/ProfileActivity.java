@@ -214,12 +214,6 @@ public class ProfileActivity extends Activity{
             final ImageView icon = (ImageView) findViewById(R.id.icon);
             ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
-            // Listen for future changes
-            ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
-            getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
-                true, 
-                profileContentObserver);
         }
         catch(Maybe.NoValError e){}
     }
@@ -231,6 +225,13 @@ public class ProfileActivity extends Activity{
         mIdent = new DBIdentityProvider(mHelper);
 
         refresh();
+
+        // Listen for future changes
+        ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
+        getContentResolver().registerContentObserver(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
+            true, profileContentObserver);
+
     }
 
 
@@ -243,7 +244,7 @@ public class ProfileActivity extends Activity{
         else if(!intent.hasExtra("edit") && contact_id != Contact.MY_ID){
             viewProfile(contact_id);
         }
-        else if(intent.hasExtra("edit") && contact_id == Contact.MY_ID){
+        else if(intent.hasExtra("edit")){
             editMyProfile();
         }
     }
