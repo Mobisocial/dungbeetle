@@ -1,6 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.util;
 import android.net.Uri;
-import android.util.Log;
 import android.widget.ImageView;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -60,11 +59,15 @@ public class BitmapManager{
 
 
 	protected boolean hasBitmap(String url){
-        return cache.get(url) != null;
+        return cache.get(url.hashCode()) != null;
+    }
+
+	protected boolean hasBitmap(byte[] bytes){
+        return cache.get(Arrays.hashCode(bytes)) != null;
     }
 
 	public Bitmap getBitmap(String url){
-		Bitmap bm = cache.get(url);
+		Bitmap bm = cache.get(url.hashCode());
 		if(bm != null) {
 			return bm;
 		}

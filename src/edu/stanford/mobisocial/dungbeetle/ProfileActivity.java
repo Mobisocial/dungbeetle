@@ -112,6 +112,7 @@ public class ProfileActivity extends Activity{
                 String name = obj.optString("name");
                 String about = obj.optString("about");
                 profileName.setText(name);
+                profileEmail.setText(mIdent.userEmail());
                 profileAbout.setText(about);                     
             }catch(JSONException e){}
         }
