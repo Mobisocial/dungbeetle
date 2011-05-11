@@ -27,6 +27,7 @@ import java.util.Collection;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import java.util.UUID;
 
 
 
@@ -183,12 +184,12 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         IdentityProvider ident = new DBIdentityProvider(mHelper);
-                        Uri uri = GroupProviders.defaultNewSessionUri(
-                            ident, input.getText().toString());
+                        String feedName = UUID.randomUUID().toString();
+                        Uri uri = GroupProviders.defaultNewSessionUri(ident, input.getText().toString(), feedName);
                         Uri gUri = Helpers.insertGroup(GroupsActivity.this, 
                                                        input.getText().toString(),
                                                        uri.toString(),
-                                                       null);
+                                                       feedName);
                         long id = Long.valueOf(gUri.getLastPathSegment());
                         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
                         gp.forceUpdate(id, uri, GroupsActivity.this, ident);

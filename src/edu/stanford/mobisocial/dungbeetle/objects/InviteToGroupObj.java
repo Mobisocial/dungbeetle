@@ -12,17 +12,15 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 public class InviteToGroupObj implements IncomingMessageHandler {
 	private static final String TAG = "InviteToGroupObj";
     public static final String TYPE = "invite_group";
-    public static final String SHARED_FEED_NAME = "sharedFeedName";
     public static final String GROUP_NAME = "groupName";
     public static final String DYN_UPDATE_URI = "dynUpdateUri";
     public static final String PARTICIPANTS = "participants";
     public static final String SENDER = "sender";
 
-    public static JSONObject json(String groupName, String feedName, Uri dynUpdateUri){
+    public static JSONObject json(String groupName, Uri dynUpdateUri){
         JSONObject obj = new JSONObject();
         try{
             obj.put(GROUP_NAME, groupName);
-            obj.put(SHARED_FEED_NAME, feedName);
             obj.put(DYN_UPDATE_URI, dynUpdateUri.toString());
         }
         catch(JSONException e){}
@@ -37,7 +35,6 @@ public class InviteToGroupObj implements IncomingMessageHandler {
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		try {
 			String groupName = obj.getString(GROUP_NAME);
-			String feedName = obj.getString(SHARED_FEED_NAME);
 			Uri dynUpdateUri = Uri.parse(obj.getString(DYN_UPDATE_URI));
 
 			Intent launch = new Intent(Intent.ACTION_VIEW);
@@ -45,7 +42,6 @@ public class InviteToGroupObj implements IncomingMessageHandler {
 			launch.putExtra("type", TYPE);
 			launch.putExtra("creator", false);
 			launch.putExtra(SENDER, from.id);
-			launch.putExtra(SHARED_FEED_NAME, feedName);
 			launch.putExtra(GROUP_NAME, groupName);
 			launch.putExtra(DYN_UPDATE_URI, dynUpdateUri);
 

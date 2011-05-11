@@ -250,12 +250,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
-        try{
-            Group g = mGroup.get();
-            if(g.feedName != null){
-                menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
-            }
-        } catch(Maybe.NoValError e){
+        if(mGroup.isKnown()){
+            menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
+        }
+        else{
         	menu.add(0, INVITE_EMAIL, 0, "Invite over email");
             //menu.add(0, LOAD_DB, 0, "Load");
             //menu.add(0, SAVE_DB, 0, "Save");
@@ -345,11 +343,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final void toast(final String text) {
     	runOnUiThread(new Runnable() {
 			
-			@Override
-			public void run() {
-				Toast.makeText(ContactsActivity.this, text, Toast.LENGTH_SHORT).show();
-			}
-		});
+                @Override
+                public void run() {
+                    Toast.makeText(ContactsActivity.this, text, Toast.LENGTH_SHORT).show();
+                }
+            });
     	
     }
     
@@ -369,7 +367,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     	StringBuilder email = new StringBuilder();
     	Uri inviteUri = WebContentHandler.getWebFriendlyUri(FriendRequest.getInvitationUri(this));
     	Uri downloadUri = Uri.parse(DungBeetleActivity.AUTO_UPDATE_URL_BASE
-    			+ "/" + DungBeetleActivity.AUTO_UPDATE_APK_FILE);
+                                    + "/" + DungBeetleActivity.AUTO_UPDATE_APK_FILE);
     	email.append("Meet me on DungBeetle for Android!<br/><br/>");
     	email.append("If you don't already have DungBeetle, get it ");
     	email.append("<a href=\"" + downloadUri + "\">here.</a><br/><br/>");

@@ -26,7 +26,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class GroupProviders{
@@ -40,8 +39,8 @@ public class GroupProviders{
         mHandlers.add(new PrplGroupProvider());
     }
 
-    public static Uri defaultNewSessionUri(IdentityProvider ident, String groupName){
-        return (new PrplGroupProvider()).newSessionUri(ident, groupName);
+    public static Uri defaultNewSessionUri(IdentityProvider ident, String groupName, String feedName){
+        return (new PrplGroupProvider()).newSessionUri(ident, groupName, feedName);
     }
 
     public static GroupProvider forUri(Uri uri){
@@ -56,7 +55,7 @@ public class GroupProviders{
     public static abstract class GroupProvider implements GroupRefreshHandler{
         abstract public String groupName(Uri uri);
         abstract public String feedName(Uri uri);
-        abstract public Uri newSessionUri(IdentityProvider ident, String groupName);
+        abstract public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName);
         public void forceUpdate(final long groupId, final Uri uriIn, 
                                 final Context context, final IdentityProvider ident){
             (new Thread(){
@@ -74,7 +73,7 @@ public class GroupProviders{
         public String feedName(Uri uri){
             return "NA";
         }
-        public Uri newSessionUri(IdentityProvider ident, String groupName){
+        public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName){
             return Uri.parse("http://example.com/no_group");
         }
         public boolean willHandle(Uri uri){ return true; }
@@ -92,13 +91,13 @@ public class GroupProviders{
             return uri.getQueryParameter("session");
         }
 
-        public Uri newSessionUri(IdentityProvider ident, String groupName){
+        public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName){
             Uri.Builder builder = new Uri.Builder();
             builder.scheme(DungBeetleActivity.GROUP_SESSION_SCHEME);
             builder.authority("suif.stanford.edu");
             builder.appendPath("dungbeetle");
             builder.appendPath("index.php");
-            builder.appendQueryParameter("session", Util.MD5("session" + Math.random()));
+            builder.appendQueryParameter("session", feedName);
             builder.appendQueryParameter("groupName", groupName);
             builder.appendQueryParameter("key", Base64.encodeToString(Util.newAESKey(), false));
             Uri uri = builder.build();

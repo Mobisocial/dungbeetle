@@ -164,7 +164,6 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "group_invitations")){
             if(!appId.equals(SUPER_APP_ID)) return null;
             String groupName = values.getAsString(InviteToGroupObj.GROUP_NAME);
-            String sharedFeedName = values.getAsString(InviteToGroupObj.SHARED_FEED_NAME);
             Uri dynUpdateUri = Uri.parse(values.getAsString(InviteToGroupObj.DYN_UPDATE_URI));
             long gid = values.getAsLong("groupId");
             SQLiteDatabase db = mHelper.getWritableDatabase();
@@ -173,7 +172,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 appId,
                 values.getAsString(InviteToGroupObj.PARTICIPANTS),
                 InviteToGroupObj.TYPE,
-                InviteToGroupObj.json(groupName, sharedFeedName, dynUpdateUri));
+                InviteToGroupObj.json(groupName, dynUpdateUri));
             getContext().getContentResolver().notifyChange(
                 Uri.parse(CONTENT_URI + "/out"), null);
             return uriWithId(uri, gid);

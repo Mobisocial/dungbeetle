@@ -66,11 +66,8 @@ public class Helpers {
     public static Uri insertGroup(final Context c, 
                                   String groupName, 
                                   String dynUpdateUri, 
-                                  String feedNameIn){
-        String feedName = feedNameIn;
-        if(feedName == null){
-            feedName = UUID.randomUUID().toString();
-        }
+                                  String feedName){
+        assert (groupName != null && dynUpdateUri != null && feedName != null);
         ContentValues values = new ContentValues();
         values.put(Group.NAME, groupName);
         values.put(Group.DYN_UPDATE_URI, dynUpdateUri);
@@ -260,7 +257,6 @@ public class Helpers {
         ContentValues values = new ContentValues();
         values.put("participants", Util.join(participants, ","));
         values.put("groupName", g.name);
-        values.put("sharedFeedName", g.feedName);
         values.put("dynUpdateUri", g.dynUpdateUri);
         values.put("groupId", g.id);
 
