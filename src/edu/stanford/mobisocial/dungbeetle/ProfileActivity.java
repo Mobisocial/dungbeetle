@@ -1,253 +1,252 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.Activity;
-import android.os.Bundle;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.EditText;
-import android.net.Uri;
-import android.database.Cursor;
+import android.content.Context;
+import android.content.Intent;
 import android.database.ContentObserver;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.provider.MediaStore;
+import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
-import android.util.Log;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
+import android.view.View.OnClickListener;
+import android.view.View;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.AdapterView;
-import android.content.Context;
-import java.io.File;
-import java.lang.Math;
-import android.provider.MediaStore;
-import android.os.Environment;
-import android.graphics.Bitmap;
-import android.provider.MediaStore.Images.Media;
-import android.graphics.Canvas;
-import android.graphics.Path;
-import android.graphics.Rect;
-import android.graphics.Matrix;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
-
-
-import java.io.ByteArrayOutputStream;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.Intent;
-import android.os.Handler;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.lang.Math;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class ProfileActivity extends Activity{
 
     private Handler handler = new Handler();
     private boolean mEnablePresenceUpdates = false;
+    private DBHelper mHelper;
+    private IdentityProvider mIdent;
 
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        final DBHelper helper = new DBHelper(ProfileActivity.this);
-        final IdentityProvider ident = new DBIdentityProvider(helper);        
-	    final BitmapManager mBitmaps = new BitmapManager(1);
+    protected void editMyProfile(){
+        setContentView(R.layout.edit_profile);
+        final EditText profileName = (EditText) findViewById(R.id.edit_profile_name);
+        final EditText profileAbout = (EditText) findViewById(R.id.edit_profile_about);
+        profileName.setText(mIdent.userName());
 
-        Intent intent = getIntent();
-        Cursor c;
-        
-        if(!intent.hasExtra("edit")) {
-            setContentView(R.layout.view_profile);
-            TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
-            TextView profile_email = (TextView) findViewById(R.id.view_profile_email);
-            TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
+        Cursor c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+            null, 
+            Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
+            Object.TIMESTAMP + " DESC");
 
-            Spinner presence = (Spinner)this.findViewById(R.id.presence);
-            
-            String email = "";
-            String name = "";
-            String about = "";
-            byte picture[] = null;
-        
-            long contact_id = intent.getLongExtra("contact_id", -1);
+        if(c.moveToFirst()) {
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            try{
+                JSONObject obj = new JSONObject(jsonSrc);
+                String name = obj.optString("name");
+                String about = obj.optString("about");
+                profileName.setText(name);
+                profileAbout.setText(about);                     
+            }catch(JSONException e){}
+        }
+        else {
+            profileName.setText(mIdent.userName());
+        }
 
-            if(contact_id == Contact.MY_ID) {
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                    this,
-                    android.R.layout.simple_spinner_item,
-                    Presence.presences);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                presence.setAdapter(adapter);
-
-                c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-                    null, 
-                    Object.TYPE + "=?", 
-                    new String[]{ PresenceObj.TYPE}, 
-                    Object.TIMESTAMP + " DESC");
-
-                if(c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
-                    try{
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        int myPresence = Integer.parseInt(obj.optString("presence"));
-                        presence.setSelection(myPresence);
-                        mEnablePresenceUpdates = true;
-                    }catch(JSONException e){}
+        Button save_button = (Button) findViewById(R.id.save_profile_button);
+        save_button.setOnClickListener(new OnClickListener(){
+                public void onClick(View v)
+                {
+                    String name = profileName.getText().toString();
+                    String about = profileAbout.getText().toString();
+                    mHelper.setMyName(profileName.getText().toString());
+                    Helpers.updateProfile(ProfileActivity.this, name, about);
+                    finish();
                 }
+            });
 
-                c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-                    null, 
-                    Object.TYPE + "=?", 
-                    new String[]{ ProfilePictureObj.TYPE}, 
-                    Object.TIMESTAMP + " DESC");
+    }
 
-                if(c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
 
-                    try{
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        picture = Base64.decode(obj.optString(ProfilePictureObj.DATA), Base64.DEFAULT);
-                        
-                    }catch(JSONException e){}
+
+
+    protected void viewMyProfile(){
+        setContentView(R.layout.view_profile);
+        final TextView profileName = (TextView) findViewById(R.id.view_profile_name);
+        final TextView profileEmail = (TextView) findViewById(R.id.view_profile_email);
+        final TextView profileAbout = (TextView) findViewById(R.id.view_profile_about);
+        final ImageView icon = (ImageView) findViewById(R.id.icon);
+
+        Spinner presence = (Spinner)this.findViewById(R.id.presence);
+
+        Cursor c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
+            null, 
+            Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
+            Object.TIMESTAMP + " DESC");
+
+        if(c.moveToFirst()) {
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            try{
+                JSONObject obj = new JSONObject(jsonSrc);
+                String name = obj.optString("name");
+                String about = obj.optString("about");
+                profileName.setText(name);
+                profileAbout.setText(about);                     
+            }catch(JSONException e){}
+        }
+        else {
+            profileName.setText(mIdent.userName());
+            profileEmail.setText(mIdent.userEmail());
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+            this,
+            android.R.layout.simple_spinner_item,
+            Presence.presences);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        presence.setAdapter(adapter);
+
+        c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+            null, 
+            Object.TYPE + "=?", 
+            new String[]{ PresenceObj.TYPE}, 
+            Object.TIMESTAMP + " DESC");
+
+        if(c.moveToFirst()) {
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+            try{
+                JSONObject obj = new JSONObject(jsonSrc);
+                int myPresence = Integer.parseInt(obj.optString("presence"));
+                presence.setSelection(myPresence);
+                mEnablePresenceUpdates = true;
+            }catch(JSONException e){}
+        }
+
+        c = getContentResolver().query(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+            null, 
+            Object.TYPE + "=?", 
+            new String[]{ ProfilePictureObj.TYPE }, 
+            Object.TIMESTAMP + " DESC");
+
+        if(c.moveToFirst()) {
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+
+            try{
+                JSONObject obj = new JSONObject(jsonSrc);
+                byte[] picture = Base64.decode(obj.optString(ProfilePictureObj.DATA), Base64.DEFAULT);
+                ((App)getApplication()).contactImages.lazyLoadContactPortrait(picture, icon);
+            }catch(JSONException e){}
+        }
+        presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener());
+
+        icon.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    Toast.makeText(ProfileActivity.this,
+                                   "Loading camera...", 
+                                   Toast.LENGTH_SHORT).show();
+                    takePhoto();
                 }
+            });
 
-                
-                presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener());
-            }
-            else {
-                presence.setVisibility(View.GONE);
-            }
+    }
 
 
-            c = getContentResolver().query(
+
+
+
+
+    protected void viewProfile(long contactId){
+        setContentView(R.layout.view_profile);
+        TextView profileName = (TextView) findViewById(R.id.view_profile_name);
+        TextView profileEmail = (TextView) findViewById(R.id.view_profile_email);
+        TextView profileAbout = (TextView) findViewById(R.id.view_profile_about);
+        Spinner presence = (Spinner)this.findViewById(R.id.presence);
+        try{
+            Contact contact = mHelper.contactForContactId(contactId).get();
+            presence.setVisibility(View.GONE);    
+
+            Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
                 null, 
                 Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
-                new String[]{ "profile" , Long.toString(contact_id)}, 
+                new String[]{ "profile" , Long.toString(contact.id)}, 
                 Object.TIMESTAMP + " DESC");
 
-            ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
-            profileContentObserver.setContactId(contact_id);                
+            if(c.moveToFirst()) {
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    profileName.setText(obj.optString("name"));
+                    profileAbout.setText(obj.optString("about"));
+                    profileEmail.setText(contact.email);
+                }catch(JSONException e){}
+            }
+            else {
+                profileName.setText(contact.name);
+                profileEmail.setText(contact.email);
+            }  
+	    
+            final ImageView icon = (ImageView) findViewById(R.id.icon);
+            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
+            // Listen for future changes
+            ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
             getContentResolver().registerContentObserver(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
                 true, 
                 profileContentObserver);
-
-            Contact contact = getContact(contact_id);
-            
-            if(c.moveToFirst()) {
-
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    name = obj.optString("name");
-                    about = obj.optString("about"); 
-
-                    if(contact_id == Contact.MY_ID) {
-                        email = ident.userEmail();
-                    }
-                    else {
-                        email = contact.email;
-                        picture = contact.picture;
-                    }
-
-                }catch(JSONException e){}
-            }
-            else {
-                if(contact_id == Contact.MY_ID) {
-                    name = ident.userName();
-                    email = ident.userEmail();
-                }
-                else {
-                    name = contact.name;
-                    email = contact.email;
-                    picture = contact.picture;
-                }
-            }  
-	    
-
-            profile_name.setText(name);
-            profile_email.setText(email);
-            profile_about.setText(about);
-
-            final ImageView icon = (ImageView) findViewById(R.id.icon);
-            if(picture != null) {
-                icon.setImageBitmap(BitmapFactory.decodeByteArray(picture, 0, picture.length));
-            }
-            else{
-                icon.setImageResource(R.drawable.anonymous);
-            }
-
-            if(contact_id == Contact.MY_ID){
-                icon.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            Toast.makeText(ProfileActivity.this,
-                                           "Loading camera...", 
-                                           Toast.LENGTH_SHORT).show();
-                            takePhoto();
-                        }
-                    });
-            }
-		}
-
-		else {
-            setContentView(R.layout.edit_profile);
-            final EditText edit_profile_name = (EditText) findViewById(R.id.edit_profile_name);
-            final EditText edit_profile_about = (EditText) findViewById(R.id.edit_profile_about);
-            edit_profile_name.setText(ident.userName());
-
-            c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-                null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
-                Object.TIMESTAMP + " DESC");
-
-            if(c.moveToFirst()) {
-
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    String name = obj.optString("name");
-                    String about = obj.optString("about");
-                    
-                    edit_profile_name.setText(name);
-                    edit_profile_about.setText(about);                     
-
-                }catch(JSONException e){}
-            }
-
-            else {
-                edit_profile_name.setText(ident.userName());
-            }
-
-            
-            
-            Button save_button = (Button) findViewById(R.id.save_profile_button);
-            save_button.setOnClickListener(new OnClickListener(){
-                	public void onClick(View v)
-                	{
-                	    String name = edit_profile_name.getText().toString();
-                	    String about = edit_profile_about.getText().toString();
-                		helper.setMyName(edit_profile_name.getText().toString());
-                		Helpers.updateProfile(ProfileActivity.this, name, about);
-                		//((DungBeetleActivity)(getParent().getParent())).shareContactInfo();
-                		finish();
-                	}
-                });
         }
-        helper.close();
+        catch(Maybe.NoValError e){}
     }
+
+
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mHelper = new DBHelper(ProfileActivity.this);
+        mIdent = new DBIdentityProvider(mHelper);
+
+        refresh();
+    }
+
+
+    protected void refresh(){
+        Intent intent = getIntent();
+        long contact_id = intent.getLongExtra("contact_id", -1);
+        if(!intent.hasExtra("edit") && contact_id == Contact.MY_ID) {
+            viewMyProfile();
+        }
+        else if(!intent.hasExtra("edit") && contact_id != Contact.MY_ID){
+            viewProfile(contact_id);
+        }
+        else if(intent.hasExtra("edit") && contact_id == Contact.MY_ID){
+            editMyProfile();
+        }
+    }
+
 
     public boolean onCreateOptionsMenu(Menu menu){
         Intent intent = getIntent();
@@ -258,6 +257,7 @@ public class ProfileActivity extends Activity{
             return false;
         }
     }
+
 
     private final static int EDIT = 0;
     private final static int PICTURE = 1;
@@ -305,8 +305,7 @@ public class ProfileActivity extends Activity{
 
 
     @Override
-
-        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             switch(requestCode){
             case TAKE_PHOTO_CODE:
@@ -316,8 +315,6 @@ public class ProfileActivity extends Activity{
                     options.inSampleSize = 8;
                     Bitmap sourceBitmap=BitmapFactory.decodeFile(file.getPath(),options);
 
-                    
-                    //Bitmap sourceBitmap = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
                     int width = sourceBitmap.getWidth();
                     int height = sourceBitmap.getHeight();
                     int cropSize = Math.min(width, height);
@@ -326,7 +323,7 @@ public class ProfileActivity extends Activity{
                     int targetSize = 80;
                     float scaleSize = ((float) targetSize) / cropSize;
                     Matrix matrix = new Matrix();
-                    // resize the bit map
+                    // resize the bitmap
                     matrix.postScale(scaleSize, scaleSize);
                     matrix.postRotate(270);
 
@@ -358,22 +355,6 @@ public class ProfileActivity extends Activity{
         super.finish();
     }
 
-    private Contact getContact(Long id){
-        Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-            null, Contact._ID + "=?", 
-            new String[]{String.valueOf(id)}, null);
-        c.moveToFirst();
-        if(c.isAfterLast()){
-            return null;
-        }
-        else{
-            Contact contact = new Contact(c);
-            return contact;
-        }
-    }
-
-
     private class PresenceOnItemSelectedListener implements OnItemSelectedListener {
 
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -389,15 +370,8 @@ public class ProfileActivity extends Activity{
 
     private class ProfileContentObserver extends ContentObserver {
 
-        long contact_id;
-
         public ProfileContentObserver(Handler h) {
             super(h);
-            contact_id = 0;
-        }
-
-        void setContactId(long id) {
-            contact_id = id;
         }
 
         @Override
@@ -408,30 +382,7 @@ public class ProfileActivity extends Activity{
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-
-            Cursor c = getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
-                null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(contact_id)}, 
-                Object.TIMESTAMP + " DESC");
-
-            if(c.moveToFirst()) {
-
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    String name = obj.optString("name");
-                    String about = obj.optString("about");  
-
-                    TextView profile_name = (TextView) findViewById(R.id.view_profile_name);
-                    TextView profile_about = (TextView) findViewById(R.id.view_profile_about);
-
-                    profile_name.setText(name);
-                    profile_about.setText(about);                     
-
-                }catch(JSONException e){}
-            }
+            refresh();
         }
 
     }

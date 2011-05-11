@@ -22,7 +22,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import java.util.Collection;
 
 import android.view.ContextMenu;
@@ -36,7 +35,6 @@ import android.view.View.OnClickListener;
 public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";
-	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private DBHelper mHelper;
 
     public void onCreate(Bundle savedInstanceState) {

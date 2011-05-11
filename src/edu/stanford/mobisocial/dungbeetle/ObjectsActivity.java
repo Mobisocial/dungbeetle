@@ -45,7 +45,6 @@ import android.content.Intent;
 
 public class ObjectsActivity extends ListActivity implements OnItemClickListener{
 
-	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
 	private DBHelper mHelper;
@@ -213,14 +212,8 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                 TextView nameText = (TextView) v.findViewById(R.id.name_text);
                 nameText.setText(contact.name);
                 final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                
-                if(contact.picture != null) {
-                    icon.setImageBitmap(BitmapFactory.decodeByteArray(
-                                            contact.picture, 0, contact.picture.length));
-                }
-                else{
-                    icon.setImageResource(R.drawable.anonymous);
-                }
+                ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+
                 try {
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();

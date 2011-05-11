@@ -165,13 +165,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             statusText.setText(c.status);
             
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            
-            if(c.picture != null) {
-                icon.setImageBitmap(BitmapFactory.decodeByteArray(c.picture, 0, c.picture.length));
-            }
-            else{
-                icon.setImageResource(R.drawable.anonymous);
-            }
+            ((App)getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
 
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             switch(c.presence) {

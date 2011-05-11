@@ -16,21 +16,27 @@ public class BitmapManager{
 
 	private final float hashTableLoadFactor = 0.75f;
 	public static final String TAG = "BitmapManager";
-	final Map<String, Bitmap> cache;
+	final Map<Integer, Bitmap> cache;
 	final int cacheSize;
+    final int defaultResource;
 
 	public BitmapManager(int cacheSize){
+        this(cacheSize, R.drawable.anonymous);
+    }
+
+	public BitmapManager(int cacheSize, int defaultResource){
 		this.cacheSize = cacheSize;
+        this.defaultResource = defaultResource;
 		int hashTableCapacity = (int)Math.ceil(cacheSize / hashTableLoadFactor) + 1;
 		cache = Collections.synchronizedMap(
-			new LinkedHashMap<String,Bitmap>( 
+			new LinkedHashMap<Integer,Bitmap>( 
 				hashTableCapacity, hashTableLoadFactor, true) {
 
 				@Override protected boolean removeEldestEntry 
-				(Map.Entry<String,Bitmap> eldest) {
+				(Map.Entry<Integer,Bitmap> eldest) {
 					if(size() > BitmapManager.this.cacheSize){
-						String url = eldest.getKey();
-						remove(url);
+						Integer key = eldest.getKey();
+						remove(key);
 					}
 
 					// We already handled it manually, so
@@ -52,6 +58,7 @@ public class BitmapManager{
 		}.start();
 	}
 
+
 	protected boolean hasBitmap(String url){
         return cache.get(url) != null;
     }
@@ -72,7 +79,7 @@ public class BitmapManager{
 				bis.close();
 				is.close();
 				if(newBm != null){
-					cache.put(url, newBm);
+					cache.put(url.hashCode(), newBm);
 				}
 				return newBm;
 			}
@@ -80,6 +87,21 @@ public class BitmapManager{
 				System.err.println();
                 return null;
 			}
+		}
+	}
+
+	public Bitmap getBitmap(byte[] bytes){
+        int hashCode = Arrays.hashCode(bytes);
+		Bitmap bm = cache.get(hashCode);
+		if(bm != null) {
+			return bm;
+		}
+		else{
+            Bitmap newBm = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if(newBm != null){
+                cache.put(hashCode, newBm);
+            }
+            return newBm;
 		}
 	}
 
@@ -97,7 +119,7 @@ public class BitmapManager{
             im.setImageBitmap(getBitmap(uri.toString()));
             return;
         }
-        im.setImageResource(R.drawable.anonymous);
+        im.setImageResource(defaultResource);
 		getBitmap(uri.toString(), new Handler(){
 				public void handleMessage(Message msg){
 					super.handleMessage(msg);
@@ -107,6 +129,10 @@ public class BitmapManager{
 					}
 				}
 			});
+	}
+
+	public void lazyLoadImage(final ImageView im, final byte[] bytes){
+        im.setImageBitmap(getBitmap(bytes));
 	}
 
 }

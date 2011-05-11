@@ -1,5 +1,4 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.util.Log;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.database.Cursor;
@@ -15,7 +14,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.widget.TabHost;
 import android.app.TabActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Bundle;
@@ -153,10 +151,9 @@ public class PickContactsActivity extends TabActivity {
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
-            String email = contact.email;
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            mgr.lazyLoadImage(icon, Gravatar.gravatarUri(email));
+            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
             checkBox.setChecked(mResultContacts.contains(contact));
