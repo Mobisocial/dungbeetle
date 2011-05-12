@@ -32,6 +32,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
+import edu.stanford.mobisocial.dungbeetle.util.RichActivity;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.lang.Math;
@@ -39,7 +41,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class ProfileActivity extends Activity{
+public class ProfileActivity extends RichActivity{
 
     private Handler handler = new Handler();
     private boolean mEnablePresenceUpdates = false;
@@ -168,7 +170,16 @@ public class ProfileActivity extends Activity{
                     Toast.makeText(ProfileActivity.this,
                                    "Loading camera...", 
                                    Toast.LENGTH_SHORT).show();
-                    takePhoto();
+                    doActivityForResult(
+                        ProfileActivity.this, 
+                        new PhotoTaker(
+                            ProfileActivity.this, 
+                            new PhotoTaker.ResultHandler() {
+                                @Override
+                                public void onResult(byte[] data) {
+                                    Helpers.updatePicture(ProfileActivity.this, data);
+                                }
+                            }, 80, true));
                 }
             });
 
@@ -285,14 +296,6 @@ public class ProfileActivity extends Activity{
     
     private static final int TAKE_PHOTO_CODE = 1;
     
-    private void takePhoto(){
-        final Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(getTempFile(this)) ); 
-        
-        startActivityForResult(intent, TAKE_PHOTO_CODE);
-    }
-
-
 
     private File getTempFile(Context context){
         //it will return /sdcard/image.tmp
@@ -303,52 +306,6 @@ public class ProfileActivity extends Activity{
         return new File(path, "image.tmp");
     }
 
-
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            switch(requestCode){
-            case TAKE_PHOTO_CODE:
-                final File file = getTempFile(this);
-                try {
-                    BitmapFactory.Options options=new BitmapFactory.Options();
-                    options.inSampleSize = 8;
-                    Bitmap sourceBitmap=BitmapFactory.decodeFile(file.getPath(),options);
-
-                    int width = sourceBitmap.getWidth();
-                    int height = sourceBitmap.getHeight();
-                    int cropSize = Math.min(width, height);
-                    Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
-
-                    int targetSize = 80;
-                    float scaleSize = ((float) targetSize) / cropSize;
-                    Matrix matrix = new Matrix();
-                    // resize the bitmap
-                    matrix.postScale(scaleSize, scaleSize);
-                    matrix.postRotate(270);
-
-                    // recreate the new Bitmap
-                    Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, 
-                                                               cropSize, cropSize, matrix, true);
-                    
-                    final ImageView icon = (ImageView) findViewById(R.id.icon);
-                    icon.setImageBitmap(resizedBitmap);
-
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object
-                    byte[] b = baos.toByteArray(); 
-
-                    Helpers.updatePicture(ProfileActivity.this, b);
-                    
-                    // do whatever you want with the bitmap (Resize, Rename, Add To Gallery, etc)
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-            }
-        }
-    }
 
     @Override
     public void finish() {

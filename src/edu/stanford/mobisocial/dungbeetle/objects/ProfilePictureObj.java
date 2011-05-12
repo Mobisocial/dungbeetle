@@ -19,15 +19,15 @@ import android.util.Base64;
 
 public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer {
 	public static final String TAG = "ProfilePictureObj";
-
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";
 
         
-    public static JSONObject json(String data){
+    public static JSONObject json(byte[] data){
+        String encoded = Base64.encodeToString(data, Base64.DEFAULT);
         JSONObject obj = new JSONObject();
         try{
-            obj.put("data", data);
+            obj.put("data", encoded);
             
         }catch(JSONException e){}
         return obj;

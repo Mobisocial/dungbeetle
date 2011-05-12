@@ -10,11 +10,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -28,12 +30,14 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
+import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
+import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +47,7 @@ import android.content.Intent;
 
 
 
-public class ObjectsActivity extends ListActivity implements OnItemClickListener{
+public class ObjectsActivity extends RichListActivity implements OnItemClickListener{
 
 	private ObjectListCursorAdapter mObjects;
 	private DBIdentityProvider mIdent;
@@ -101,10 +105,13 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
             Button button = (Button)findViewById(R.id.add_object_button);
             button.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
-                    	Editable editor = ((EditText)findViewById(R.id.status_text)).getText();
+                        EditText ed = (EditText)findViewById(R.id.status_text);
+                    	Editable editor = ed.getText();
                     	String update = editor.toString();
                     	Helpers.sendToFeed(ObjectsActivity.this, StatusObj.getStatusObj(update), feedUri);
                     	editor.clear();
+                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(ed.getWindowToken(), 0);
                     }
                 });
             
@@ -117,11 +124,15 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
                                     ObjectsActivity.this, 
                                     new PhotoTaker.ResultHandler() {
                                         @Override
-                                        public void onResult(ContentValues values) {
+                                        public void onResult(byte[] data) {
+                                            ContentValues values = new ContentValues();
+                                            JSONObject obj = PictureObj.json(data);
+                                            values.put(Object.JSON, obj.toString());
+                                            values.put(Object.TYPE, PictureObj.TYPE);
                                             Helpers.sendToFeed(
                                                 ObjectsActivity.this, values, feedUri);
                                         }
-                                    }));
+                                    }, 80, false));
                         }
                     });
         }
@@ -237,7 +248,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE };
+    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE };
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");
@@ -245,20 +256,7 @@ public class ObjectsActivity extends ListActivity implements OnItemClickListener
     	return Object.TYPE + " in (" + allowed.substring(1) + ")";
     }
 
-    private static int ACTIVITY_CALLOUT = 39472874;
-    private static ActivityCallout mCurrentCallout;
-    public static void doActivityForResult(Activity me, ActivityCallout callout) {
-    	mCurrentCallout = callout;
-    	Intent launch = callout.getStartIntent();
-    	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
-    }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	if (requestCode == ACTIVITY_CALLOUT) {
-    		mCurrentCallout.handleResult(resultCode, data);
-    	}
-    }
 }
 
 

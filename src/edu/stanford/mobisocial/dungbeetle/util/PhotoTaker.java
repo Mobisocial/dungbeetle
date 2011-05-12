@@ -24,17 +24,25 @@ import android.util.Base64;
 public class PhotoTaker implements ActivityCallout {
 	private final ResultHandler mResultHandler;
 	private final Context mContext;
+	private final boolean mPortraitMode;
+	private final int mSize;
 
-	public PhotoTaker(Context c, ResultHandler handler) {
+	public PhotoTaker(Context c, ResultHandler handler, int size, boolean portraitMode) {
 		mContext = c;
 		mResultHandler = handler;
+        mPortraitMode = portraitMode;
+        mSize = size;
+	}
+
+	public PhotoTaker(Context c, ResultHandler handler) {
+        this(c, handler, 80, false);
 	}
 
 	@Override
 	public Intent getStartIntent() {
 		final Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 		intent.putExtra(MediaStore.EXTRA_OUTPUT,
-				Uri.fromFile(getTempFile(mContext)));
+                        Uri.fromFile(getTempFile(mContext)));
 		return intent;
 	}
 
@@ -46,7 +54,7 @@ public class PhotoTaker implements ActivityCallout {
 
 		final File file;
 		final File path = new File(Environment.getExternalStorageDirectory(),
-				mContext.getPackageName());
+                                   mContext.getPackageName());
 		if (!path.exists()) {
 			path.mkdir();
 		}
@@ -55,54 +63,49 @@ public class PhotoTaker implements ActivityCallout {
 			BitmapFactory.Options options = new BitmapFactory.Options();
 			options.inSampleSize = 8;
 			Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(),
-					options);
+                                                           options);
 
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();
 			int height = sourceBitmap.getHeight();
 			int cropSize = Math.min(width, height);
-			Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize,
-					cropSize);
+			Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 
+                                                 0, 0, 
+                                                 cropSize,
+                                                 cropSize);
 
-			int targetSize = 80;
+			int targetSize = mSize;
 			float scaleSize = ((float) targetSize) / cropSize;
+
 			Matrix matrix = new Matrix();
-			// resize the bit map
 			matrix.postScale(scaleSize, scaleSize);
-			matrix.postRotate(270);
 
-			// recreate the new Bitmap
+            if(mPortraitMode){
+                matrix.postRotate(270);
+            }
+
 			Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, cropSize,
-					cropSize, matrix, true);
-
-			final ImageView icon = new ImageView(mContext);
-			icon.setImageBitmap(resizedBitmap);
+                                                       cropSize, matrix, true);
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 			byte[] data = baos.toByteArray();
 
-			ContentValues values = new ContentValues();
-			String encoded = Base64.encodeToString(data, Base64.DEFAULT);
-			JSONObject obj = ProfilePictureObj.json(encoded);
-			values.put(Object.JSON, obj.toString());
-			values.put(Object.TYPE, ProfilePictureObj.TYPE);
-
-			mResultHandler.onResult(values);
+			mResultHandler.onResult(data);
 		} catch (Exception e) {
 
 		}
 	}
 
 	public interface ResultHandler {
-		public void onResult(ContentValues values);
+		public void onResult(byte[] data);
 	}
 
 	private static File getTempFile(Context context) {
 		// it will return /sdcard/image.tmp
 		final File path = new File(Environment.getExternalStorageDirectory(),
-				context.getPackageName());
+                                   context.getPackageName());
 		if (!path.exists()) {
 			path.mkdir();
 		}

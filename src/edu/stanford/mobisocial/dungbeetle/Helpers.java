@@ -189,8 +189,7 @@ public class Helpers {
     public static void updatePicture(final Context c, final byte[] data) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
-        String encoded = Base64.encodeToString(data, Base64.DEFAULT);
-        JSONObject obj = ProfilePictureObj.json(encoded);
+        JSONObject obj = ProfilePictureObj.json(data);
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, ProfilePictureObj.TYPE);
         c.getContentResolver().insert(url, values); 

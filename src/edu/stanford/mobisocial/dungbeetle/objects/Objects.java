@@ -22,6 +22,7 @@ public final class Objects {
         objs.add(new PresenceObj());
         objs.add(new StatusObj());
         objs.add(new ProfilePictureObj());
+        objs.add(new PictureObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
