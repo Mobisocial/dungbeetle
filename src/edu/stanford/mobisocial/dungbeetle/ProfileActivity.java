@@ -159,8 +159,8 @@ public class ProfileActivity extends RichActivity{
 
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
-                byte[] picture = Base64.decode(obj.optString(ProfilePictureObj.DATA), Base64.DEFAULT);
-                ((App)getApplication()).contactImages.lazyLoadContactPortrait(picture, icon);
+                String bytes = obj.optString(ProfilePictureObj.DATA);
+                ((App)getApplication()).objectImages.lazyLoadImage(bytes.hashCode(), bytes, icon);
             }catch(JSONException e){}
         }
         presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener());

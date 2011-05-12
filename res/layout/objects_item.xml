@@ -33,9 +33,20 @@
 	  android:layout_marginLeft="6dip"
 	  />
 
-      <LinearLayout android:layout_width="fill_parent"
+      <TextView
+	  android:id="@+id/time_text"
+	  android:text="..."
+	  android:layout_width="fill_parent"
+	  android:layout_height="wrap_content"
+	  android:gravity="left|top"
+	  android:textColor="#999999"
+	  android:textSize="6pt"
+	  android:layout_marginLeft="6dip"
+	  />
+
+      <LinearLayout android:id="@+id/object_content"
+		    android:layout_width="fill_parent"
 		    android:layout_height="wrap_content"
-		    android:id="@+id/object_content"
 		    android:layout_marginLeft="8dip"
 		    android:layout_marginTop="4dip"
 		    android:gravity="left|top"

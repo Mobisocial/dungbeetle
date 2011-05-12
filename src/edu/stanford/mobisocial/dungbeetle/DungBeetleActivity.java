@@ -110,6 +110,13 @@ public class DungBeetleActivity extends TabActivity
         Intent intent;  
 
 
+        intent = new Intent().setClass(this, ObjectsActivity.class);
+        spec = tabHost.newTabSpec("objects").setIndicator(
+            "Feed",
+            null).setContent(intent);
+        tabHost.addTab(spec);
+
+
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, ContactsActivity.class);
         spec = tabHost.newTabSpec("contacts").setIndicator(
@@ -117,11 +124,6 @@ public class DungBeetleActivity extends TabActivity
             null).setContent(intent);
         tabHost.addTab(spec);
 
-        intent = new Intent().setClass(this, ObjectsActivity.class);
-        spec = tabHost.newTabSpec("objects").setIndicator(
-            "Feed",
-            null).setContent(intent);
-        tabHost.addTab(spec);
 		
         // Do the same for the other tabs
         

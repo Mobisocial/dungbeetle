@@ -24,7 +24,6 @@ import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
@@ -34,10 +33,11 @@ import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
+import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
+import java.util.Date;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -218,17 +218,26 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
         public void bindView(View v, Context context, Cursor c) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
             Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
+            Long timestamp = c.getLong(c.getColumnIndexOrThrow(Object.TIMESTAMP));
+            Date date = new Date(timestamp);
             try{
                 Contact contact = mContactCache.getContact(contactId).get();
+
                 TextView nameText = (TextView) v.findViewById(R.id.name_text);
                 nameText.setText(contact.name);
+
                 final ImageView icon = (ImageView)v.findViewById(R.id.icon);
                 ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
                 try {
+                    JSONObject content = new JSONObject(jsonSrc);
+
+                    TextView timeText = (TextView)v.findViewById(R.id.time_text);
+                    timeText.setText(RelativeDate.getRelativeDate(date));
+
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();
-                    JSONObject content = new JSONObject(jsonSrc);
+
                     FeedRenderer renderer = Objects.getFeedRenderer(content);
                     if(renderer != null){
                         renderer.render(ObjectsActivity.this, frame, content);

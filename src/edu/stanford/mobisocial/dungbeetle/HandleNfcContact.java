@@ -36,8 +36,10 @@ public class HandleNfcContact extends Activity {
 
             ImageView portraitView = (ImageView)findViewById(R.id.image);
             if(uri != null){
-                ((App)getApplication()).contactImages.lazyLoadContactPortrait(
-                    Gravatar.gravatarUri(mEmail, 100), portraitView);
+                ((App)getApplication()).contactImages.lazyLoadImage(
+                    mEmail.hashCode(),
+                    Gravatar.gravatarUri(mEmail, 100), 
+                    portraitView);
             }
 		}
 		else{

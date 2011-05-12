@@ -20,13 +20,16 @@
 
     <LinearLayout
 	      android:layout_width="fill_parent"
-	      android:layout_height="wrap_content">
+	      android:layout_height="20dip"
+	      android:gravity="center_vertical"
+	      >
 
         <ImageView
           android:id="@+id/presence_icon"
-          android:layout_width="20dip"
-          android:layout_height="20dip"
-          android:src="@drawable/available" 
+          android:layout_width="10dip"
+          android:layout_height="10dip"
+	  android:layout_marginRight="4dip"
+          android:src="@drawable/status_green"
           android:scaleType="fitCenter"
           />
 	      
@@ -34,7 +37,6 @@
 	        android:id="@+id/name_text"
 	        android:layout_width="wrap_content"
 	        android:layout_height="20dip"
-	        android:gravity="center_vertical"
 	        android:textStyle="bold"
             />
     </LinearLayout>

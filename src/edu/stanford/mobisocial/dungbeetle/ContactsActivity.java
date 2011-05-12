@@ -170,13 +170,13 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             switch(c.presence) {
             case Presence.AVAILABLE:
-                presenceIcon.setImageResource(R.drawable.available);
+                presenceIcon.setImageResource(R.drawable.status_green);
                 break;
             case Presence.BUSY:
-                presenceIcon.setImageResource(R.drawable.busy);
+                presenceIcon.setImageResource(R.drawable.status_yellow);
                 break;
             case Presence.AWAY:
-                presenceIcon.setImageResource(R.drawable.away);
+                presenceIcon.setImageResource(R.drawable.status_red);
                 break;
             }
 

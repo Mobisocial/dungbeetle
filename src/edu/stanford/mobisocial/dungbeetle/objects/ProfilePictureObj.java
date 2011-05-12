@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import edu.stanford.mobisocial.dungbeetle.App;
 import org.json.JSONException;
 
 import org.json.JSONObject;
@@ -53,11 +54,11 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer {
 
 	public void render(Context context, ViewGroup frame, JSONObject content) {
 		ImageView imageView = new ImageView(context);
-		byte[] data = Base64.decode(content.optString(DATA), Base64.DEFAULT);
-		imageView.setImageBitmap(BitmapFactory.decodeByteArray(data, 0, data.length));
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
+        String bytes = content.optString(DATA);
+        App.instance().objectImages.lazyLoadImage(bytes.hashCode(), bytes, imageView);
         frame.addView(imageView);
 	}
 

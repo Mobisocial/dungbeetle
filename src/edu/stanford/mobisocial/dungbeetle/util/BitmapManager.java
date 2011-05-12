@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Message;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import java.util.*;
 import java.net.*;
 import java.io.*;
@@ -15,7 +16,7 @@ public class BitmapManager{
 
 	private final float hashTableLoadFactor = 0.75f;
 	public static final String TAG = "BitmapManager";
-	final Map<Integer, Bitmap> cache;
+	final Map<Long, Bitmap> cache;
 	final int cacheSize;
     final int defaultResource;
 
@@ -28,13 +29,13 @@ public class BitmapManager{
         this.defaultResource = defaultResource;
 		int hashTableCapacity = (int)Math.ceil(cacheSize / hashTableLoadFactor) + 1;
 		cache = Collections.synchronizedMap(
-			new LinkedHashMap<Integer,Bitmap>( 
+			new LinkedHashMap<Long,Bitmap>( 
 				hashTableCapacity, hashTableLoadFactor, true) {
 
 				@Override protected boolean removeEldestEntry 
-				(Map.Entry<Integer,Bitmap> eldest) {
+				(Map.Entry<Long,Bitmap> eldest) {
 					if(size() > BitmapManager.this.cacheSize){
-						Integer key = eldest.getKey();
+						Long key = eldest.getKey();
 						remove(key);
 					}
 
@@ -46,10 +47,10 @@ public class BitmapManager{
 			}); 
 	}
 
-	public void getBitmap(final String url, final Handler handler){
+	public void getBitmap(final long id, final String url, final Handler handler){
 		new Thread(){
 			public void run(){
-				Bitmap bm = getBitmap(url);
+				Bitmap bm = getBitmap(id, url);
 				Message m = handler.obtainMessage();
 				m.obj = bm;
 				handler.sendMessage(m);
@@ -58,16 +59,12 @@ public class BitmapManager{
 	}
 
 
-	protected boolean hasBitmap(String url){
-        return cache.get(url.hashCode()) != null;
+	protected boolean hasBitmap(long id){
+        return cache.get(id) != null;
     }
 
-	protected boolean hasBitmap(byte[] bytes){
-        return cache.get(Arrays.hashCode(bytes)) != null;
-    }
-
-	public Bitmap getBitmap(String url){
-		Bitmap bm = cache.get(url.hashCode());
+	public Bitmap getBitmap(long id, String url){
+		Bitmap bm = cache.get(id);
 		if(bm != null) {
 			return bm;
 		}
@@ -82,7 +79,7 @@ public class BitmapManager{
 				bis.close();
 				is.close();
 				if(newBm != null){
-					cache.put(url.hashCode(), newBm);
+					cache.put(id, newBm);
 				}
 				return newBm;
 			}
@@ -93,16 +90,30 @@ public class BitmapManager{
 		}
 	}
 
-	public Bitmap getBitmap(byte[] bytes){
-        int hashCode = Arrays.hashCode(bytes);
-		Bitmap bm = cache.get(hashCode);
+	public Bitmap getBitmap(long id, byte[] bytes){
+		Bitmap bm = cache.get(id);
 		if(bm != null) {
 			return bm;
 		}
 		else{
             Bitmap newBm = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             if(newBm != null){
-                cache.put(hashCode, newBm);
+                cache.put(id, newBm);
+            }
+            return newBm;
+		}
+	}
+
+	public Bitmap getBitmapB64(long id, String b64Bytes){
+		Bitmap bm = cache.get(id);
+		if(bm != null) {
+			return bm;
+		}
+		else{
+            byte[] bytes = Base64.decode(b64Bytes);
+            Bitmap newBm = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if(newBm != null){
+                cache.put(id, newBm);
             }
             return newBm;
 		}
@@ -117,13 +128,13 @@ public class BitmapManager{
 		cache.clear();
 	}
 
-	public void lazyLoadImage(final ImageView im, final Uri uri){
-        if(hasBitmap(uri.toString())) {
-            im.setImageBitmap(getBitmap(uri.toString()));
+	public void lazyLoadImage(final long id, final ImageView im, final Uri uri){
+        if(hasBitmap(id)) {
+            im.setImageBitmap(getBitmap(id, uri.toString()));
             return;
         }
         im.setImageResource(defaultResource);
-		getBitmap(uri.toString(), new Handler(){
+		getBitmap(id, uri.toString(), new Handler(){
 				public void handleMessage(Message msg){
 					super.handleMessage(msg);
 					Bitmap bm = (Bitmap)msg.obj;
@@ -134,8 +145,12 @@ public class BitmapManager{
 			});
 	}
 
-	public void lazyLoadImage(final ImageView im, final byte[] bytes){
-        im.setImageBitmap(getBitmap(bytes));
+	public void lazyLoadImage(final long id, final ImageView im, final byte[] bytes){
+        im.setImageBitmap(getBitmap(id, bytes));
+	}
+
+	public void lazyLoadImage(final long id, final ImageView im, final String b64Bytes){
+        im.setImageBitmap(getBitmapB64(id, b64Bytes));
 	}
 
 }
