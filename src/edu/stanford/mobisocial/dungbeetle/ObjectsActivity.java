@@ -188,6 +188,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                         mIdent.userName(), 
                         mIdent.userEmail(),
                         0,
+                        0,
                         "");
                     mContactCache.put(id, contact);
                     return Maybe.definitely(contact);

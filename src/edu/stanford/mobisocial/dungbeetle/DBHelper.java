@@ -35,7 +35,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 27;
+	public static final int VERSION = 28;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -89,6 +89,12 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'picture' to contact table.");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PICTURE + " BLOB");
         }
+
+        if(oldVersion <= 27) {
+            Log.w(TAG, "Adding column 'last_presence_time' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_PRESENCE_TIME + " INTEGER DEFAULT 0");
+        }
+
         db.setVersion(VERSION);
     }
 
@@ -164,6 +170,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Contact.PERSON_ID, "TEXT",
                     Contact.EMAIL, "TEXT",
                     Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
+                    Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
                     Contact.STATUS, "TEXT",
                     Contact.PICTURE, "BLOB");
         createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
@@ -276,11 +283,11 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
-            json.put("type", type);
-            json.put("feedName", feedName);
-            json.put("sequenceId", nextSeqId);
-            json.put("timestamp", timestamp);
-            json.put("appId", appId);
+            json.put(Object.TYPE, type);
+            json.put(Object.FEED_NAME, feedName);
+            json.put(Object.SEQUENCE_ID, nextSeqId);
+            json.put(Object.TIMESTAMP, timestamp);
+            json.put(Object.APP_ID, appId);
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
@@ -323,7 +330,6 @@ public class DBHelper extends SQLiteOpenHelper {
             return -1;
         }
     }
-
 
     long insertContact(ContentValues cv) {
         return insertContact(getWritableDatabase(), cv);

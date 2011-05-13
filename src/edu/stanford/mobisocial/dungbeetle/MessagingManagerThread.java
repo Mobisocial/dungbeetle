@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -308,8 +309,12 @@ public class MessagingManagerThread extends Thread {
             final Contact c = mHelper.contactForPersonId(incoming.from()).get();
             try{
                 JSONObject obj = new JSONObject(contents);
-                final IncomingMessageHandler h = Objects.getIncomingMessageHandler(
-                    c, obj);
+
+                long time = obj.optLong(Object.TIMESTAMP);
+                Helpers.updateLastPresence(mContext, c, time);
+
+                final IncomingMessageHandler h = 
+                    Objects.getIncomingMessageHandler(c, obj);
                 if(h != null){
                     h.handleReceived(mContext, c, obj);
                 }

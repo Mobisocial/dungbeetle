@@ -200,13 +200,13 @@ public class Helpers {
      * Sends a message to the default user feed.
      */
     public static void sendToFeed(Context c, ContentValues values) {
-    	 Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-         c.getContentResolver().insert(url, values); 
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        c.getContentResolver().insert(url, values); 
     }
     
     public static void sendToFeed(Context c, ContentValues values, Uri feed) {
         c.getContentResolver().insert(feed, values); 
-   }
+    }
 
     public static void updatePresence(final Context c, final int presence){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
@@ -271,6 +271,16 @@ public class Helpers {
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, ProfileObj.TYPE);
         c.getContentResolver().insert(url, values);
+    }
+
+    public static void updateLastPresence(final Context c, 
+                                          final Contact contact, 
+                                          final long time){
+        ContentValues values = new ContentValues();
+        values.put(Contact.LAST_PRESENCE_TIME, time);
+        c.getContentResolver().update(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
+            values, "_id=?", new String[]{ String.valueOf(contact.id) });
     }
 
     private static String buildAddresses(Collection<Contact> contacts){
