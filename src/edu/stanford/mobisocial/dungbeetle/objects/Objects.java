@@ -37,6 +37,19 @@ public final class Objects {
         return null;
 	}
 
+	public static Activator getActivator(JSONObject json) {
+        for(Object obj : objs){
+            if(obj instanceof Activator){
+                Activator o = (Activator)obj;
+                if(o.willActivate(json)){
+                    return o;
+                }
+            }
+        }
+        return null;
+	}
+
+
 	public static IncomingMessageHandler 
         getIncomingMessageHandler(Contact c, JSONObject json) {
         for(Object obj : objs){

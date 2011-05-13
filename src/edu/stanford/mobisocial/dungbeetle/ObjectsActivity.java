@@ -27,6 +27,7 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.objects.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
@@ -41,6 +42,7 @@ import java.util.Date;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
@@ -144,6 +146,16 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+        try{
+            JSONObject obj = new JSONObject(jsonSrc);
+            Activator activator = Objects.getActivator(obj);
+            if(activator != null){
+                activator.activate(ObjectsActivity.this, obj);
+            }
+        }
+        catch(JSONException e){
+            Log.e(TAG, "Couldn't parse obj.", e);
+        }
         Log.i(TAG, "Clicked object: " + jsonSrc);
     }
 

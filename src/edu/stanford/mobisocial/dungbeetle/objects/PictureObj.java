@@ -1,15 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.content.Intent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
 
 import android.util.Base64;
 
-public class PictureObj implements FeedRenderer {
+public class PictureObj implements FeedRenderer, Activator {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
@@ -32,10 +34,22 @@ public class PictureObj implements FeedRenderer {
 	public void render(Context context, ViewGroup frame, JSONObject content) {
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+                                      LinearLayout.LayoutParams.WRAP_CONTENT,
+                                      LinearLayout.LayoutParams.WRAP_CONTENT));
         String bytes = content.optString(DATA);
         App.instance().objectImages.lazyLoadImage(bytes.hashCode(), bytes, imageView);
         frame.addView(imageView);
 	}
+
+    public void activate(Context context, JSONObject content){
+        Intent intent = new Intent(context, ImageViewerActivity.class);
+        String bytes = content.optString(DATA);
+        intent.putExtra("b64Bytes", bytes);
+        context.startActivity(intent); 
+    }
+
+	public boolean willActivate(JSONObject object) { 
+        return object.optString("type").equals(TYPE);
+	}
+
 }
