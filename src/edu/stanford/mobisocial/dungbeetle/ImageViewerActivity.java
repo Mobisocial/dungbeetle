@@ -1,7 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.Activity;
+import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -10,9 +10,7 @@ import android.os.Bundle;
 import android.widget.ImageView;
 
 public class ImageViewerActivity extends Activity{
-
 	private BitmapManager mgr = new BitmapManager(1);
-	private ProgressDialog mProgressDialog;
 	private ImageView im;
 
     public void onCreate(Bundle savedInstanceState) {
@@ -24,27 +22,13 @@ public class ImageViewerActivity extends Activity{
 
         if(intent.hasExtra("image_url")){
             String url = intent.getStringExtra("image_url");
-            mgr.getBitmap(url.hashCode(), url, new Handler(){
-                    public void handleMessage(Message msg){
-                        super.handleMessage(msg);
-                        Bitmap bm = (Bitmap)msg.obj;
-                        if(bm != null){
-                            im.setImageBitmap(bm);
-                        }
-                        if(mProgressDialog != null){
-                            mProgressDialog.dismiss();
-                        }
-                    }
-                });
-            mProgressDialog = ProgressDialog.show(this,"",
-                                                  "Loading...", true);
+            ((App)getApplication()).objectImages.lazyLoadImage(
+                url.hashCode(), Uri.parse(url), im);
         }
         else if(intent.hasExtra("b64Bytes")){
             String b64Bytes = intent.getStringExtra("b64Bytes");
-            Bitmap bm = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
-            if(bm != null){
-                im.setImageBitmap(bm);
-            }
+            ((App)getApplication()).objectImages.lazyLoadImage(
+                b64Bytes.hashCode(), b64Bytes, im);
         }
 
 
