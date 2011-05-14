@@ -216,7 +216,7 @@ public class MessagingManagerThread extends Thread {
                 }
             }
             catch(Exception e){
-                Log.wtf(TAG, e);
+                Log.e(TAG, "wtf", e);
             }
 
             try {
