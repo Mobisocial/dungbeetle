@@ -217,7 +217,8 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                     public void onClick(DialogInterface dialog, int whichButton) {
                         IdentityProvider ident = new DBIdentityProvider(mHelper);
                         String feedName = UUID.randomUUID().toString();
-                        Uri uri = GroupProviders.defaultNewSessionUri(ident, input.getText().toString(), feedName);
+                        Uri uri = GroupProviders.defaultNewSessionUri(
+                            ident, input.getText().toString(), feedName);
                         Uri gUri = Helpers.insertGroup(GroupsActivity.this, 
                                                        input.getText().toString(),
                                                        uri.toString(),

@@ -59,7 +59,18 @@ public class HandleGroupSessionActivity extends Activity {
 	}
 
     private void loadGroup(Uri uri){
-        Helpers.addDynamicGroup(this, uri);
+        Uri gUri = Helpers.addDynamicGroup(this, uri);
+
+        // Force an immediate update
+        long id = Long.valueOf(gUri.getLastPathSegment());
+        if(id > -1){
+            GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
+            DBHelper helper = new DBHelper(this);
+            DBIdentityProvider ident = new DBIdentityProvider(helper);
+            gp.forceUpdate(id, uri, this, ident);
+            ident.close();
+        }
+
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);

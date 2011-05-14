@@ -217,11 +217,11 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
 
-    public static void addDynamicGroup(final Context c, final Uri uri){
+    public static Uri addDynamicGroup(final Context c, final Uri uri){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/dynamic_groups");
         ContentValues values = new ContentValues();
         values.put("uri", uri.toString());
-        c.getContentResolver().insert(url, values);
+        return c.getContentResolver().insert(url, values);
     }
 
 
