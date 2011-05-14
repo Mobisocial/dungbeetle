@@ -10,12 +10,14 @@ public class MyInfo{
     public static final String PRIVATE_KEY = "private_key";
     public static final String NAME = "name";
     public static final String EMAIL = "email";
+    public static final String PICTURE = "picture";
 
     public final String publicKey;
     public final String privateKey;
     public final String email;
     public final String name;
     public final Long id;
+    public final byte[] picture;
 
     public MyInfo(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -23,6 +25,7 @@ public class MyInfo{
         email = c.getString(c.getColumnIndexOrThrow(EMAIL));
         publicKey = c.getString(c.getColumnIndexOrThrow(PUBLIC_KEY));
         privateKey = c.getString(c.getColumnIndexOrThrow(PRIVATE_KEY));
+        picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){

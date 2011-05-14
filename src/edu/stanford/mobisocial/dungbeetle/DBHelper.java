@@ -36,7 +36,7 @@ import android.database.sqlite.SQLiteQuery;
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP";
-	public static final int VERSION = 28;
+	public static final int VERSION = 29;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -96,6 +96,11 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_PRESENCE_TIME + " INTEGER DEFAULT 0");
         }
 
+        if(oldVersion <= 28) {
+            Log.w(TAG, "Adding column 'picture' to my_info table.");
+            db.execSQL("ALTER TABLE " + MyInfo.TABLE + " ADD COLUMN " + MyInfo.PICTURE + " BLOB");
+        }
+
         db.setVersion(VERSION);
     }
 
@@ -145,7 +150,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     MyInfo.PUBLIC_KEY, "TEXT",
                     MyInfo.PRIVATE_KEY, "TEXT",
                     MyInfo.NAME, "TEXT",
-                    MyInfo.EMAIL, "TEXT"
+                    MyInfo.EMAIL, "TEXT",
+                    MyInfo.PICTURE, "BLOB"
                     );
 
         createTable(db, Object.TABLE, null,

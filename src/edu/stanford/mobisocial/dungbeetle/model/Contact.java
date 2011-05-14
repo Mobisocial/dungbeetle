@@ -1,7 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.model;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import java.io.Serializable;
 import android.database.Cursor;
+import java.security.PublicKey;
 import java.util.Date;
 
 
@@ -26,7 +28,7 @@ public class Contact implements Serializable{
     public final long lastPresenceTime;
     public final int presence;
     public final String status;
-    public final byte[] picture;
+    public byte[] picture;
 
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -49,7 +51,6 @@ public class Contact implements Serializable{
         this.status = status;
         this.picture = null;
     }
-
 
     public static Contact NA(){
         return new Contact(-1L, "NA", "NA", "NA", 1, 0, "NA");

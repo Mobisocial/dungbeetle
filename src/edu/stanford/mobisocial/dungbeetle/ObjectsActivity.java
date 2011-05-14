@@ -172,6 +172,11 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             ObjectsActivity.this.getContentResolver().registerContentObserver(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
                 true, this);
+
+            // So we pickup changes to user's profile image..
+            ObjectsActivity.this.getContentResolver().registerContentObserver(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
+                true, this);
         }
         
         private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
@@ -187,14 +192,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             }
             else{
                 if(id == Contact.MY_ID){
-                    Contact contact = new Contact(
-                        Contact.MY_ID,
-                        mIdent.userPersonId(),
-                        mIdent.userName(), 
-                        mIdent.userEmail(),
-                        0,
-                        0,
-                        "");
+                    Contact contact = mIdent.contactForUser();
                     mContactCache.put(id, contact);
                     return Maybe.definitely(contact);
                 }

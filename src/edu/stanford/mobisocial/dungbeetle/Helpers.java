@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -193,6 +194,12 @@ public class Helpers {
         values.put(Object.JSON, obj.toString());
         values.put(Object.TYPE, ProfilePictureObj.TYPE);
         c.getContentResolver().insert(url, values); 
+
+        values = new ContentValues();
+        values.put(MyInfo.PICTURE, data);
+        c.getContentResolver().update(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
+            values, null, null);
     }
     
     
