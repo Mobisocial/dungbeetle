@@ -12,6 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 public class GroupManagerThread extends Thread {
     public static final String TAG = "GroupManagerThread";
+    public static final int UPDATE_INTERVAL_MS = 10000;
     private Context mContext;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
@@ -32,7 +33,14 @@ public class GroupManagerThread extends Thread {
 
     @Override
     public void run(){
-        Log.i(TAG, "Starting DungBeetle group manager thread");
+
+        Log.i(TAG, "Running DungBeetle group manager thread.");
+
+        /* Update once every UPDATE_INTERVAL_MS milliseconds, 
+         * while the screen is on. We also force updates 
+         * when the group is initially created on a device.
+         */
+
         while(!interrupted()) {
             if(!mScreenState.isOff){
                 try {
@@ -49,7 +57,7 @@ public class GroupManagerThread extends Thread {
                         Log.wtf(TAG, e);
                     }
 
-                    Thread.sleep(15000);
+                    Thread.sleep(UPDATE_INTERVAL_MS);
                 } catch(InterruptedException e) {}
             }
         }
