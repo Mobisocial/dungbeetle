@@ -128,6 +128,10 @@ public class BitmapManager{
 		cache.clear();
 	}
 
+	public void invalidate(long id){
+        cache.remove(id);
+	}
+
 	public void lazyLoadImage(final long id, final ImageView im, final Uri uri){
         if(hasBitmap(id)) {
             im.setImageBitmap(getBitmap(id, uri.toString()));

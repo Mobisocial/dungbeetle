@@ -81,10 +81,6 @@ public class PhotoTaker implements ActivityCallout {
 			Matrix matrix = new Matrix();
 			matrix.postScale(scaleSize, scaleSize);
 
-            if(mPortraitMode){
-                matrix.postRotate(270);
-            }
-
 			Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, cropSize,
                                                        cropSize, matrix, true);
 

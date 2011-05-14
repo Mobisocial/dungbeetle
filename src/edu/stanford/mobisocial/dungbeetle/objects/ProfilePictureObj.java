@@ -42,6 +42,7 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer, 
 		context.getContentResolver().update(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             values, "_id=?", new String[] { id });
+        App.instance().contactImages.invalidate(from.id);
 	}
 
 

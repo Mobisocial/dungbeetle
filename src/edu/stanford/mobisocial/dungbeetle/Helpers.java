@@ -200,6 +200,8 @@ public class Helpers {
         c.getContentResolver().update(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
             values, null, null);
+
+        App.instance().contactImages.invalidate(Contact.MY_ID);
     }
     
     
