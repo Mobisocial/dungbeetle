@@ -36,10 +36,11 @@ public class ImageCache {
 	}
 	public void lazyLoadContactPortrait(Contact c, ImageView v, int size){
         if(c.picture != null) {
-            lazyLoadImage(c.id, c.picture, v);
+            lazyLoadImage(c.picture.hashCode(), c.picture, v);
         }
         else{
-            lazyLoadImage(c.id, Gravatar.gravatarUri(c.email, size), v);
+            Uri uri = Gravatar.gravatarUri(c.email, size);
+            lazyLoadImage(uri.toString().hashCode(), uri, v);
         }        
 	}
 

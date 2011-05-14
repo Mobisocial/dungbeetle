@@ -56,7 +56,6 @@ public class GroupManagerThread extends Thread {
                     catch(Exception e){
                         Log.wtf(TAG, e);
                     }
-
                     Thread.sleep(UPDATE_INTERVAL_MS);
                 } catch(InterruptedException e) {}
             }

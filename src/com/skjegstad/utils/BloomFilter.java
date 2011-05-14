@@ -16,11 +16,14 @@
 package com.skjegstad.utils;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
 import java.util.Collection;
+
+import android.util.Log;
 
 /**
  * Implementation of a Bloom-filter, as described here:
@@ -121,8 +124,9 @@ public class BloomFilter<E> implements Serializable {
      * @param val specifies the input data.
      * @param charset specifies the encoding of the input data.
      * @return digest as long.
+     * @throws UnsupportedEncodingException 
      */
-    public static long createHash(String val, Charset charset) {
+    public static long createHash(String val, String charset) throws UnsupportedEncodingException {
         return createHash(val.getBytes(charset));
     }
 
@@ -133,7 +137,11 @@ public class BloomFilter<E> implements Serializable {
      * @return digest as long.
      */
     public static long createHash(String val) {
-        return createHash(val, charset);
+        try {
+			return createHash(val, charset.name());
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
     }
 
     /**
