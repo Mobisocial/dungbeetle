@@ -110,9 +110,14 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                         EditText ed = (EditText)findViewById(R.id.status_text);
                     	Editable editor = ed.getText();
                     	String update = editor.toString();
-                    	Helpers.sendToFeed(ObjectsActivity.this, StatusObj.getStatusObj(update), feedUri);
-                    	editor.clear();
-                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if(update.length() != 0){
+                            Helpers.sendToFeed(ObjectsActivity.this, 
+                                               StatusObj.getStatusObj(update), 
+                                               feedUri);
+                            editor.clear();
+                        }
+                        InputMethodManager imm = (InputMethodManager)getSystemService(
+                            Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(ed.getWindowToken(), 0);
                     }
                 });
