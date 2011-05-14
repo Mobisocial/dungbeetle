@@ -7,6 +7,13 @@ import org.json.JSONObject;
 
 public final class Objects {
 
+    // Basic property names for all objects
+    public static final String TYPE = "type";
+    public static final String FEED_NAME = "feedName";
+    public static final String SEQUENCE_ID = "sequenceId";
+    public static final String TIMESTAMP = "timestamp";
+    public static final String APP_ID = "appId";
+
     private static final List<Object> objs = new ArrayList<Object>();
 
     static{

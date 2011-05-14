@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -283,11 +284,11 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
-            json.put(Object.TYPE, type);
-            json.put(Object.FEED_NAME, feedName);
-            json.put(Object.SEQUENCE_ID, nextSeqId);
-            json.put(Object.TIMESTAMP, timestamp);
-            json.put(Object.APP_ID, appId);
+            json.put(Objects.TYPE, type);
+            json.put(Objects.FEED_NAME, feedName);
+            json.put(Objects.SEQUENCE_ID, nextSeqId);
+            json.put(Objects.TIMESTAMP, timestamp);
+            json.put(Objects.APP_ID, appId);
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);
@@ -308,11 +309,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
     long addObjectByJson(long contactId, JSONObject json){
         try{
-            long seqId = json.optLong("sequenceId");
-            long timestamp = json.getLong("timestamp");
-            String feedName = json.getString("feedName");
-            String type = json.getString("type");
-            String appId = json.getString("appId");
+            long seqId = json.optLong(Objects.SEQUENCE_ID);
+            long timestamp = json.getLong(Objects.TIMESTAMP);
+            String feedName = json.getString(Objects.FEED_NAME);
+            String type = json.getString(Objects.TYPE);
+            String appId = json.getString(Objects.APP_ID);
             ContentValues cv = new ContentValues();
             cv.put(Object.APP_ID, appId);
             cv.put(Object.FEED_NAME, feedName);

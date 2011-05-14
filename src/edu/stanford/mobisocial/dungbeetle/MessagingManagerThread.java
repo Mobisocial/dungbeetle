@@ -1,5 +1,4 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -8,8 +7,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
-
-import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
@@ -21,15 +18,14 @@ import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.IncomingMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import org.json.JSONException;
@@ -79,16 +75,8 @@ public class MessagingManagerThread extends Thread {
 
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), true, mOco);
-
 		mContext.getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out"), true, mOco);
-    }
-
-    private void toastInMainThread(final String msg){
-        mMainThreadHandler.post(new Runnable(){
-                public void run(){
-                    Toast.makeText(mContext, msg,Toast.LENGTH_SHORT).show();
-                }});
     }
 
     // FYI: Invoked on XMPP reader thread
@@ -185,44 +173,40 @@ public class MessagingManagerThread extends Thread {
         mMessenger.init();
         while(!interrupted()) {
             try{
-                if(mOco.changed){
-                    Log.i(TAG, "Noticed change...");
-                    mOco.clearChanged();
-                    Cursor objs = mHelper.queryUnsentObjects();
-                    Log.i(TAG, objs.getCount() + " objects...");
-                    objs.moveToFirst();
-                    ArrayList<Long> sent = new ArrayList<Long>();
-                    while(!objs.isAfterLast()){
-                        String to = objs.getString(objs.getColumnIndexOrThrow(Object.DESTINATION));
-                        if(to != null){
-                            OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
-                            Log.i(TAG, "Sending direct message " + m);
-                            if(m.toPublicKeys().isEmpty()){
-                                Log.e(TAG, "Empty addressees!");
-                            }
-                            mMessenger.sendMessage(m);
+                mOco.waitForChange();
+                Log.i(TAG, "Noticed change...");
+                mOco.clearChanged();
+                Cursor objs = mHelper.queryUnsentObjects();
+                Log.i(TAG, objs.getCount() + " objects...");
+                objs.moveToFirst();
+                ArrayList<Long> sent = new ArrayList<Long>();
+                while(!objs.isAfterLast()){
+                    String to = objs.getString(
+                        objs.getColumnIndexOrThrow(Object.DESTINATION));
+                    if(to != null){
+                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                        Log.i(TAG, "Sending direct message " + m);
+                        if(m.toPublicKeys().isEmpty()){
+                            Log.e(TAG, "Empty addressees!");
                         }
-                        else{
-                            OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
-                            Log.i(TAG, "Sending feed object " + m);
-                            if(m.toPublicKeys().isEmpty()){
-                                Log.e(TAG, "Empty addressees!");
-                            }
-                            mMessenger.sendMessage(m);
-                        }
-                        sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
-                        objs.moveToNext();
+                        mMessenger.sendMessage(m);
                     }
-                    mHelper.markObjectsAsSent(sent);
+                    else{
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        Log.i(TAG, "Sending feed object " + m);
+                        if(m.toPublicKeys().isEmpty()){
+                            Log.e(TAG, "Empty addressees!");
+                        }
+                        mMessenger.sendMessage(m);
+                    }
+                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
+                    objs.moveToNext();
                 }
+                mHelper.markObjectsAsSent(sent);
             }
             catch(Exception e){
                 Log.wtf(TAG, e);
             }
-
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException e) {}
         }
         mHelper.close();
     }
@@ -283,23 +267,29 @@ public class MessagingManagerThread extends Thread {
     }
 
 
-
     class ObjectContentObserver extends ContentObserver {
-        public boolean changed;
-        public ObjectContentObserver(Handler h)  {
-            super(h);
-            // Default to true so we do the initial check.
-            changed = true; 
-        }
-        @Override
-        public synchronized void onChange(boolean self) {
-            changed = true;
-            notify();
-        }
-        public synchronized void clearChanged() {
-            changed = false;
-        }
-    };
+		public boolean changed;
+		public ObjectContentObserver(Handler h)  {
+			super(h);
+			changed = true;
+		}
+		@Override
+		public synchronized void onChange(boolean self) {
+			changed = true;
+			notify();
+		}
+		public synchronized void waitForChange() {
+			if(changed)
+				return;
+			try {
+				wait();
+				changed = false;
+			} catch(InterruptedException e) {}
+		}
+		public synchronized void clearChanged() {
+			changed = false;
+		}
+	};
 
 
     // FYI: Must be invoked from main app thread. See above.
