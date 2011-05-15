@@ -139,7 +139,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                             Helpers.sendToFeed(
                                                 ObjectsActivity.this, values, feedUri);
                                         }
-                                    }, 80, false));
+                                    }, 200, false));
                         }
                     });
         }
