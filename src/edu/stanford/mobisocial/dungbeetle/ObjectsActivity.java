@@ -38,7 +38,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
-import edu.stanford.mobisocial.dungbeetle.util.AppSelector;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -143,7 +143,21 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                     public void onClick(DialogInterface dialog, int which) {
                                         switch (which) {
                                             case 0: {
-                                                // TODO: Invoke TapBoard.
+                                                doActivityForResult(ObjectsActivity.this, 
+                                                        new RemoteActivity(ObjectsActivity.this, new RemoteActivity.ResultHandler() {
+                                                            
+                                                            @Override
+                                                            public void onResult(String data) {
+                                                                // TODO: move this inside RemoteActivity
+                                                                // TODO: finish objectification:
+                                                                // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
+                                                                ContentValues values = new ContentValues();
+                                                                JSONObject obj = StatusObj.json(data);
+                                                                values.put(Object.JSON, obj.toString());
+                                                                values.put(Object.TYPE, PictureObj.TYPE);
+                                                                Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
+                                                            }
+                                                        }));
                                             }
                                             case 1: {
                                                 doActivityForResult(ObjectsActivity.this,
