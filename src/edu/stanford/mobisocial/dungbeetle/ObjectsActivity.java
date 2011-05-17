@@ -1,8 +1,12 @@
+
 package edu.stanford.mobisocial.dungbeetle;
+
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.MatrixCursor;
@@ -34,6 +38,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.util.AppSelector;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -47,18 +52,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
 
+public class ObjectsActivity extends RichListActivity implements OnItemClickListener {
 
+    private ObjectListCursorAdapter mObjects;
 
-public class ObjectsActivity extends RichListActivity implements OnItemClickListener{
+    private DBIdentityProvider mIdent;
 
-	private ObjectListCursorAdapter mObjects;
-	private DBIdentityProvider mIdent;
-	private DBHelper mHelper;
-	public static final String TAG = "ObjectsActivity";
+    private DBHelper mHelper;
+
+    public static final String TAG = "ObjectsActivity";
+
     private String feedName = "friend";
-    private Uri feedUri;
-    private ContactCache mContactCache;
 
+    private Uri feedUri;
+
+    private ContactCache mContactCache;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -125,21 +133,36 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
-                            doActivityForResult(
-                                ObjectsActivity.this, 
-                                new PhotoTaker(
-                                    ObjectsActivity.this, 
-                                    new PhotoTaker.ResultHandler() {
-                                        @Override
-                                        public void onResult(byte[] data) {
-                                            ContentValues values = new ContentValues();
-                                            JSONObject obj = PictureObj.json(data);
-                                            values.put(Object.JSON, obj.toString());
-                                            values.put(Object.TYPE, PictureObj.TYPE);
-                                            Helpers.sendToFeed(
-                                                ObjectsActivity.this, values, feedUri);
+                            new AlertDialog.Builder(ObjectsActivity.this)
+                                .setTitle("Choose App")
+                                .setItems(new String[] {
+                                        "TapBoard",
+                                        "PhotoTaker"
+                                }, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        switch (which) {
+                                            case 0: {
+                                                // TODO: Invoke TapBoard.
+                                            }
+                                            case 1: {
+                                                doActivityForResult(ObjectsActivity.this,
+                                                    new PhotoTaker(
+                                                        ObjectsActivity.this,
+                                                        new PhotoTaker.ResultHandler() {
+                                                            @Override
+                                                            public void onResult(byte[] data) {
+                                                                ContentValues values = new ContentValues();
+                                                                JSONObject obj = PictureObj.json(data);
+                                                                values.put(Object.JSON, obj.toString());
+                                                                values.put(Object.TYPE, PictureObj.TYPE);
+                                                                Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
+                                                            }
+                                                        }));
+                                            }
                                         }
-                                    }, 80, false));
+                                  }
+                            }).create().show(); // TODO: use Dialog Interface so changing orientation works.
                         }
                     });
         }
@@ -148,77 +171,70 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
         }
     }
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-        Cursor c = (Cursor)mObjects.getItem(position);
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Cursor c = (Cursor) mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-        try{
+        try {
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = Objects.getActivator(obj);
-            if(activator != null){
+            if (activator != null) {
                 activator.activate(ObjectsActivity.this, obj);
             }
-        }
-        catch(JSONException e){
+        } catch (JSONException e) {
             Log.e(TAG, "Couldn't parse obj.", e);
         }
         Log.i(TAG, "Clicked object: " + jsonSrc);
     }
 
+    private class ContactCache extends ContentObserver {
 
-    private class ContactCache extends ContentObserver{
-
-        public ContactCache(){
+        public ContactCache() {
             super(new Handler(ObjectsActivity.this.getMainLooper()));
             ObjectsActivity.this.getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-                true, this);
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), true, this);
 
             // So we pickup changes to user's profile image..
             ObjectsActivity.this.getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
-                true, this);
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"), true, this);
         }
-        
+
         private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
 
         @Override
-        public void onChange(boolean self){
+        public void onChange(boolean self) {
             mContactCache.clear();
         }
 
-        private Maybe<Contact> getContact(long id){
-            if(mContactCache.containsKey(id)){
+        private Maybe<Contact> getContact(long id) {
+            if (mContactCache.containsKey(id)) {
                 return Maybe.definitely(mContactCache.get(id));
-            }
-            else{
-                if(id == Contact.MY_ID){
+            } else {
+                if (id == Contact.MY_ID) {
                     Contact contact = mIdent.contactForUser();
                     mContactCache.put(id, contact);
                     return Maybe.definitely(contact);
-                }
-                else{
+                } else {
                     Cursor c = getContentResolver().query(
-                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-                        null, Contact._ID + "=?", 
-                        new String[]{String.valueOf(id)}, null);
+                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), null,
+                            Contact._ID + "=?", new String[] {
+                                String.valueOf(id)
+                            }, null);
                     c.moveToFirst();
-                    if(c.isAfterLast()){
+                    if (c.isAfterLast()) {
                         return Maybe.unknown();
-                    }
-                    else{
+                    } else {
                         Contact contact = new Contact(c);
                         mContactCache.put(id, contact);
                         return Maybe.definitely(contact);
                     }
                 }
             }
-        }        
+        }
     }
-
 
     private class ObjectListCursorAdapter extends CursorAdapter {
 
-        public ObjectListCursorAdapter (Context context, Cursor c) {
+        public ObjectListCursorAdapter(Context context, Cursor c) {
             super(context, c);
         }
 
@@ -236,36 +252,36 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
             Long timestamp = c.getLong(c.getColumnIndexOrThrow(Object.TIMESTAMP));
             Date date = new Date(timestamp);
-            try{
+            try {
                 Contact contact = mContactCache.getContact(contactId).get();
 
                 TextView nameText = (TextView) v.findViewById(R.id.name_text);
                 nameText.setText(contact.name);
 
-                final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+                final ImageView icon = (ImageView) v.findViewById(R.id.icon);
+                ((App) getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
                 try {
                     JSONObject content = new JSONObject(jsonSrc);
 
-                    TextView timeText = (TextView)v.findViewById(R.id.time_text);
+                    TextView timeText = (TextView) v.findViewById(R.id.time_text);
                     timeText.setText(RelativeDate.getRelativeDate(date));
 
-                    ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+                    ViewGroup frame = (ViewGroup) v.findViewById(R.id.object_content);
                     frame.removeAllViews();
 
                     FeedRenderer renderer = Objects.getFeedRenderer(content);
-                    if(renderer != null){
+                    if (renderer != null) {
                         renderer.render(ObjectsActivity.this, frame, content);
                     }
                 } catch (JSONException e) {
                     Log.e("db", "error opening json");
                 }
+            } catch (Maybe.NoValError e) {
             }
-            catch(Maybe.NoValError e){}
         }
     }
-    
+
     @Override
     public void finish() {
         super.finish();
@@ -273,16 +289,14 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE };
-    	StringBuffer allowed = new StringBuffer();
-    	for (String type : types) {
-    		allowed.append(",'").append(type).append("'");
-    	}
-    	return Object.TYPE + " in (" + allowed.substring(1) + ")";
+        String[] types = new String[] {
+                StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE
+        };
+        StringBuffer allowed = new StringBuffer();
+        for (String type : types) {
+            allowed.append(",'").append(type).append("'");
+        }
+        return Object.TYPE + " in (" + allowed.substring(1) + ")";
     }
 
-
 }
-
-
-
