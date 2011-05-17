@@ -1,16 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Activity;
-import android.app.ListActivity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
@@ -33,16 +29,13 @@ import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 import java.util.Date;
-
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
@@ -93,7 +86,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             c = getContentResolver().query(
                 feedUri,
                 null, 
-                getFeedObjectClause(), null, 
+                getFeedObjectClause(), null,
                 Object._ID + " DESC");
 		}
 
@@ -170,10 +163,10 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
         public ContactCache(){
             super(new Handler(ObjectsActivity.this.getMainLooper()));
             ObjectsActivity.this.getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                 true, this);
 
-            // So we pickup changes to user's profile image..
+            // So we pick up changes to user's profile image..
             ObjectsActivity.this.getContentResolver().registerContentObserver(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
                 true, this);

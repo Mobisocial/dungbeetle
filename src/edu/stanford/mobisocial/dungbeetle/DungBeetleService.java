@@ -12,6 +12,7 @@ public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private MessagingManagerThread mMessagingManagerThread;
 	private GroupManagerThread mGroupManagerThread;
+	private PresenceThread mPresenceThread;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
 
@@ -20,10 +21,15 @@ public class DungBeetleService extends Service {
     public void onCreate() {
         mHelper = new DBHelper(this);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+
         mMessagingManagerThread = new MessagingManagerThread(this);
         mMessagingManagerThread.start();
+
         mGroupManagerThread = new GroupManagerThread(this);
         mGroupManagerThread.start();
+
+//        mPresenceThread = new PresenceThread(this);
+//        mPresenceThread.start();
     }
 
 
@@ -39,6 +45,9 @@ public class DungBeetleService extends Service {
         mNotificationManager.cancel(R.string.active);
         Toast.makeText(this, R.string.stopping, Toast.LENGTH_SHORT).show();
         mHelper.close();
+        mMessagingManagerThread.interrupt();
+        mGroupManagerThread.interrupt();
+//        mPresenceThread.interrupt();
     }
 
     @Override
