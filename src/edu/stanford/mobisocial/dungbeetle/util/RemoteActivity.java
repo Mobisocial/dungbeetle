@@ -35,14 +35,4 @@ public class RemoteActivity implements ActivityCallout {
 	public interface ResultHandler {
 		public void onResult(String data);
 	}
-
-	private static File getTempFile(Context context) {
-		// it will return /sdcard/image.tmp
-		final File path = new File(Environment.getExternalStorageDirectory(),
-                                   context.getPackageName());
-		if (!path.exists()) {
-			path.mkdir();
-		}
-		return new File(path, "image.tmp");
-	}
 }
