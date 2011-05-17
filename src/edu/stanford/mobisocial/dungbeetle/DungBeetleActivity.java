@@ -13,18 +13,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TabHost;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
+import java.util.BitSet;
+import java.util.Date;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
-import java.security.PublicKey;
-import java.util.Date;
 import org.json.JSONException;
 import org.json.JSONObject;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import java.util.BitSet;
-import com.skjegstad.utils.BloomFilter;
-import android.util.Base64;
 
 
 public class DungBeetleActivity extends TabActivity

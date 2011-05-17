@@ -2,7 +2,6 @@
 *.apk
 *.ap
 *.ap_
-*.jar
 classes.dex
 gen
 .project

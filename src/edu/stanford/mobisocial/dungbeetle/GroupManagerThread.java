@@ -34,7 +34,7 @@ public class GroupManagerThread extends Thread {
     @Override
     public void run(){
 
-        Log.i(TAG, "Running DungBeetle group manager thread.");
+        Log.i(TAG, "Running...");
 
         /* Update once every UPDATE_INTERVAL_MS milliseconds, 
          * while the screen is on. We also force updates 

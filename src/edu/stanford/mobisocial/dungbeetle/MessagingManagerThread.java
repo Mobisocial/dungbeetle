@@ -168,8 +168,7 @@ public class MessagingManagerThread extends Thread {
 
     @Override
     public void run(){
-        Log.i(TAG, "Starting DungBeetle manager thread");
-        Log.i(TAG, "Starting messenger...");
+        Log.i(TAG, "Running...");
         mMessenger.init();
         while(!interrupted()) {
             try{
