@@ -27,6 +27,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
 import edu.stanford.mobisocial.dungbeetle.objects.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
@@ -36,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 import edu.stanford.mobisocial.dungbeetle.util.RemoteActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -125,7 +127,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                             .setTitle("Choose App")
                             .setItems(new String[] {
                                     "TapBoard",
-                                    "PhotoTaker"
+                                    "PhotoTaker",
+                                    "Whiteboard"
                                 }, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -165,9 +168,19 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                             }
                                                         }, 200, false));
                                             }
+                                        case 2: {
+                                            String packageName = "edu.stanford.junction.sample.jxwhiteboard";
+                                            String arg = "junction://prpl.stanford.edu/whiteboard1";
+                                            ContentValues values = new ContentValues();
+                                            JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
+                                            values.put(Object.JSON, obj.toString());
+                                            values.put(Object.TYPE, InviteToSharedAppObj.TYPE);
+                                            Helpers.sendToFeed(
+                                                ObjectsActivity.this, values, feedUri);
                                         }
                                     }
                                 }
+                            }
                             ).create().show();
                         }
                 });
@@ -302,7 +315,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE };
+        // TODO: Enumerate all Object classes, look for FeedRenderables.
+    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE, InviteToSharedAppObj.TYPE };
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");

@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.view.Gravity;
 import android.view.ViewGroup;
 
 import java.util.List;
@@ -15,10 +16,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 
@@ -76,8 +77,27 @@ public class InviteToSharedAppObj implements IncomingMessageHandler, FeedRendere
             contentIntent);
     }
     
-	public boolean willRender(JSONObject object) { return false; }
+	public boolean willRender(JSONObject object) { return true; }
 
-	public void render(Context context, ViewGroup frame, JSONObject content){}
+	public void render(final Context context, final ViewGroup frame, final JSONObject content) {
+        TextView valueTV = new TextView(context);
+        valueTV.setText(content.optString(ARG));
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
+        frame.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent launch = new Intent(Intent.ACTION_MAIN);
+                launch.setComponent(
+                        new ComponentName("edu.stanford.junction.sample.jxwhiteboard",
+                        "edu.stanford.junction.sample.jxwhiteboard.JXWhiteboardActivity"));
+                launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+                context.startActivity(launch);
+            }
+        });
+    }
 
 }
