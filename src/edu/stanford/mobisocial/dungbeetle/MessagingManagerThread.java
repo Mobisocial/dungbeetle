@@ -17,9 +17,9 @@ import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.Objects;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.objects.IncomingMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.objects.Objects;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -302,7 +302,7 @@ public class MessagingManagerThread extends Thread {
                 long time = obj.optLong(Object.TIMESTAMP);
                 Helpers.updateLastPresence(mContext, c, time);
 
-                final IncomingMessageHandler h = 
+                final DbEntryHandler h = 
                     Objects.getIncomingMessageHandler(c, obj);
                 if(h != null){
                     h.handleReceived(mContext, c, obj);

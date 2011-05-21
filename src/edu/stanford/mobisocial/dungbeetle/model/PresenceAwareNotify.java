@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.objects;
+package edu.stanford.mobisocial.dungbeetle.model;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,8 +10,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.database.Cursor;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import android.net.Uri;
 
 public class PresenceAwareNotify {

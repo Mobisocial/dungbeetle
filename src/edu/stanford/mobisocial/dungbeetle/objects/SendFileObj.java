@@ -7,15 +7,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class SendFileObj implements IncomingMessageHandler, FeedRenderer {
+public class SendFileObj implements DbEntryHandler, FeedRenderer {
 
     public static final String TYPE = "send_file";
     public static final String URI = "uri";
     public static final String MIME_TYPE = "mimeType";
+
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     public static JSONObject json(String uri, String mimeType){
         JSONObject obj = new JSONObject();
@@ -25,10 +34,6 @@ public class SendFileObj implements IncomingMessageHandler, FeedRenderer {
         }catch(JSONException e){}
         return obj;
     }
-
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals(TYPE);
-	}
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		String mimeType = obj.optString(MIME_TYPE);
@@ -48,7 +53,5 @@ public class SendFileObj implements IncomingMessageHandler, FeedRenderer {
             "New Shared File", mimeType + "  " + uri, contentIntent);
 	}
 
-	public boolean willRender(JSONObject object) { return false; }
 	public void render(Context context, ViewGroup frame, JSONObject content){}
-
 }

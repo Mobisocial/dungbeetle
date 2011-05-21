@@ -1,7 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -21,9 +19,12 @@ import android.content.pm.ResolveInfo;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.R;
 
-public class InviteToSharedAppFeedObj implements IncomingMessageHandler, FeedRenderer {
+public class InviteToSharedAppFeedObj implements DbEntryHandler {
 	private static final String TAG = "InviteToSharedAppFeedHandler";
 
     public static final String TYPE = "invite_app_feed";
@@ -32,6 +33,10 @@ public class InviteToSharedAppFeedObj implements IncomingMessageHandler, FeedRen
     public static final String PARTICIPANTS = "participants";
     public static final String FEED_NAME = "feedName";
 
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     public static JSONObject json(Collection<Contact> contacts, 
                                   String feedName,
@@ -52,10 +57,6 @@ public class InviteToSharedAppFeedObj implements IncomingMessageHandler, FeedRen
         }catch(JSONException e){}
         return obj;
     }
-
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals("invite_app_feed");
-	}
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		try {
@@ -100,9 +101,4 @@ public class InviteToSharedAppFeedObj implements IncomingMessageHandler, FeedRen
 			Log.e(TAG, e.getMessage());
 		}
 	}
-
-
-	public boolean willRender(JSONObject object) { return false; }
-	public void render(Context context, ViewGroup frame, JSONObject content){}
-
 }

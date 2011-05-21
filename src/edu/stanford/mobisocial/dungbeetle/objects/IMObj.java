@@ -1,6 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -14,11 +13,18 @@ import android.content.Context;
 import android.content.Intent;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
-public class IMObj implements IncomingMessageHandler, FeedRenderer {
+public class IMObj implements DbEntryHandler, FeedRenderer {
     public static final String TYPE = "instant_message";
     public static final String TEXT = "text";
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     public static JSONObject json(String msg){
         JSONObject obj = new JSONObject();
@@ -27,10 +33,6 @@ public class IMObj implements IncomingMessageHandler, FeedRenderer {
         }catch(JSONException e){}
         return obj;
     }
-
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals(TYPE);
-	}
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		Intent launch = new Intent();
@@ -45,11 +47,6 @@ public class IMObj implements IncomingMessageHandler, FeedRenderer {
 		(new PresenceAwareNotify(context)).notify(
             "IM from " + from.name,
             "IM from " + from.name, "\"" + msg + "\"", contentIntent);
-	}
-
-
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content){
