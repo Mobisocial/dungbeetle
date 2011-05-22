@@ -8,9 +8,11 @@ import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 
-public class PresenceObj implements IncomingMessageHandler, FeedRenderer {
+public class PresenceObj implements DbEntryHandler {
 
     public static final String TYPE = "presence";
     public static final String PRESENCE = "presence";
@@ -23,8 +25,9 @@ public class PresenceObj implements IncomingMessageHandler, FeedRenderer {
         return obj;
     }
 
-    public boolean willHandle(Contact from, JSONObject msg){
-        return msg.optString("type").equals("presence");
+    @Override
+    public String getType() {
+        return TYPE;
     }
 
     public void handleReceived(Context context, Contact from, JSONObject obj){
@@ -38,8 +41,4 @@ public class PresenceObj implements IncomingMessageHandler, FeedRenderer {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
             values, "_id=?", new String[]{id});
     }
-
-	public boolean willRender(JSONObject object) { return false; }
-	public void render(Context context, ViewGroup frame, JSONObject content){}
-
 }

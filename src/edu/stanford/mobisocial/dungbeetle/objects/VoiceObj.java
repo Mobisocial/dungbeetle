@@ -10,6 +10,8 @@ import org.json.JSONObject;
 import android.content.Context;
 
 
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,9 +25,14 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 
+
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+
 import edu.stanford.mobisocial.dungbeetle.R;
 
-public class VoiceObj implements FeedRenderer, Activator {
+public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 	public static final String TAG = "VoiceObj";
 
     public static final String TYPE = "voice";
@@ -36,6 +43,11 @@ public class VoiceObj implements FeedRenderer, Activator {
 	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_CONFIGURATION_MONO;
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
         
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
@@ -45,10 +57,6 @@ public class VoiceObj implements FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
-
-	public boolean willRender(JSONObject object) { 
-        return object.optString("type").equals(TYPE);
-	}
 	
 	public void render(Context context, ViewGroup frame, JSONObject content) {
 		ImageView imageView = new ImageView(context);
@@ -66,8 +74,11 @@ public class VoiceObj implements FeedRenderer, Activator {
         track.play();
     }
 
-	public boolean willActivate(JSONObject object) { 
-        return object.optString("type").equals(TYPE);
-	}
+
+    @Override
+    public void handleReceived(Context context, Contact from, JSONObject msg) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

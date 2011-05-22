@@ -1,10 +1,12 @@
-package edu.stanford.mobisocial.dungbeetle.objects;
+package edu.stanford.mobisocial.dungbeetle.objects.iface;
 import android.content.Context;
 import android.view.ViewGroup;
 import org.json.JSONObject;
 
-
+/**
+ * An interface for {@link DbEntryHandler} objects that have a 
+ * visible entry in a feed.
+ */
 public interface FeedRenderer {
-	public boolean willRender(JSONObject object);
 	public void render(Context context, ViewGroup frame, JSONObject content);
 }

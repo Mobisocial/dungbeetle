@@ -25,14 +25,15 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.objects.Activator;
-import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.model.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
-import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -122,14 +123,14 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                 });
 
             
-            findViewById(R.id.voice)
+            /*findViewById(R.id.voice)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
                             Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
                             voiceintent.putExtra("feedUri", feedUri.toString());
                             startActivity(voiceintent);
                         }
-                    });
+                    });*/
 
             
             findViewById(R.id.publish)
@@ -140,7 +141,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                             .setItems(new String[] {
                                     "TapBoard",
                                     "PhotoTaker",
-                                    "Whiteboard"
+                                    "Whiteboard",
+                                    "VoiceRecorder"
                                 }, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -179,6 +181,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                                     ObjectsActivity.this, values, feedUri);
                                                             }
                                                         }, 200, false));
+                                                break;
                                             }
                                         case 2: {
                                             String packageName = "edu.stanford.junction.sample.jxwhiteboard";
@@ -189,6 +192,13 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                             values.put(Object.TYPE, InviteToSharedAppObj.TYPE);
                                             Helpers.sendToFeed(
                                                 ObjectsActivity.this, values, feedUri);
+                                            break;
+                                        }
+                                        case 3: {
+                                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                                            voiceintent.putExtra("feedUri", feedUri.toString());
+                                            startActivity(voiceintent);
+                                            break;
                                         }
                                     }
                                 }
@@ -327,7 +337,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
     public String getFeedObjectClause() {
         // TODO: Enumerate all Object classes, look for FeedRenderables.
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE, InviteToSharedAppObj.TYPE, VoiceObj.TYPE };
+
+    	String[] types = Objects.getRenderableTypes();
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");

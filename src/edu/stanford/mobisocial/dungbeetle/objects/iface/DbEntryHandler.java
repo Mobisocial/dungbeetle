@@ -1,9 +1,12 @@
-package edu.stanford.mobisocial.dungbeetle.objects;
+package edu.stanford.mobisocial.dungbeetle.objects.iface;
 import android.content.Context;
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
-public interface IncomingMessageHandler {
-    boolean willHandle(Contact from, JSONObject msg);
+/**
+ * Base interface for DungBeetle objects.
+ */
+public interface DbEntryHandler {
+    String getType();
     void handleReceived(Context context, Contact from, JSONObject msg);
 }

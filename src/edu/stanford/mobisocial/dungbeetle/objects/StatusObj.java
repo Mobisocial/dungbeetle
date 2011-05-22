@@ -12,14 +12,21 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class StatusObj implements IncomingMessageHandler, FeedRenderer {
+public class StatusObj implements DbEntryHandler, FeedRenderer {
 
     public static final String TYPE = "status";
     public static final String TEXT = "text";
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     public static JSONObject json(String status){
         JSONObject obj = new JSONObject();
@@ -27,10 +34,6 @@ public class StatusObj implements IncomingMessageHandler, FeedRenderer {
             obj.put("text", status);
         }catch(JSONException e){}
         return obj;
-    }
-	
-    public boolean willHandle(Contact from, JSONObject msg){
-        return msg.optString("type").equals(TYPE);
     }
 
     public void handleReceived(Context context, Contact from, JSONObject obj){
@@ -43,10 +46,6 @@ public class StatusObj implements IncomingMessageHandler, FeedRenderer {
             values, "_id=?", new String[]{id});
     }
 
-	public boolean willRender(JSONObject object) {
-		return object.optString("type").equals(TYPE);
-	}
-    
     public void render(Context context, ViewGroup frame, JSONObject content) {
         TextView valueTV = new TextView(context);
         valueTV.setText(content.optString(TEXT));
