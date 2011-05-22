@@ -30,6 +30,7 @@ public final class Objects {
         objs.add(new StatusObj());
         objs.add(new ProfilePictureObj());
         objs.add(new PictureObj());
+        objs.add(new VoiceObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
