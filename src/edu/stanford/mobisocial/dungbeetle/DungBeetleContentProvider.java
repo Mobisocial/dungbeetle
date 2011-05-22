@@ -110,6 +110,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                     values.getAsString(Object.TYPE),
                     new JSONObject(values.getAsString(Object.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/" + feedName), null);
+                
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){

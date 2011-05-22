@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
-public class Object{
+public class Object {
     public static final String TABLE = "objects";
     public static final String _ID = "_id";
     public static final String TYPE = "type";

@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -23,16 +25,21 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.objects.Activator;
-import edu.stanford.mobisocial.dungbeetle.objects.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.objects.Objects;
+import edu.stanford.mobisocial.dungbeetle.model.Objects;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -114,27 +121,91 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                         imm.hideSoftInputFromWindow(ed.getWindowToken(), 0);
                     }
                 });
+
+            
+            /*findViewById(R.id.voice)
+            	.setOnClickListener(new OnClickListener() {
+                        public void onClick(View v) {
+                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                            voiceintent.putExtra("feedUri", feedUri.toString());
+                            startActivity(voiceintent);
+                        }
+                    });*/
+
             
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
-                            doActivityForResult(
-                                ObjectsActivity.this, 
-                                new PhotoTaker(
-                                    ObjectsActivity.this, 
-                                    new PhotoTaker.ResultHandler() {
-                                        @Override
-                                        public void onResult(byte[] data) {
+                            new AlertDialog.Builder(ObjectsActivity.this)
+                            .setTitle("Choose App")
+                            .setItems(new String[] {
+                                    "TapBoard",
+                                    "PhotoTaker",
+                                    "Whiteboard",
+                                    "VoiceRecorder"
+                                }, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        switch (which) {
+                                            case 0: {
+                                                doActivityForResult(ObjectsActivity.this, 
+                                                        new RemoteActivity(ObjectsActivity.this, new RemoteActivity.ResultHandler() {
+                                                            
+                                                            @Override
+                                                            public void onResult(String data) {
+                                                                // TODO: move this inside RemoteActivity
+                                                                // TODO: finish objectification:
+                                                                // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
+                                                                ContentValues values = new ContentValues();
+                                                                JSONObject obj = StatusObj.json(data);
+                                                                values.put(Object.JSON, obj.toString());
+                                                                values.put(Object.TYPE, StatusObj.TYPE);
+                                                                Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
+                                                            }
+                                                        }));
+                                                break;
+                                            }
+                                            case 1: {
+                                                doActivityForResult(
+                                                    ObjectsActivity.this, 
+                                                    new PhotoTaker(
+                                                        ObjectsActivity.this, 
+                                                        new PhotoTaker.ResultHandler() {
+                                                            @Override
+                                                            public void onResult(byte[] data) {
+                                                                ContentValues values = new ContentValues();
+                                                                JSONObject obj = PictureObj.json(data);
+                                                                values.put(Object.JSON, obj.toString());
+                                                                values.put(Object.TYPE, PictureObj.TYPE);
+                                                                Helpers.sendToFeed(
+                                                                    ObjectsActivity.this, values, feedUri);
+                                                            }
+                                                        }, 200, false));
+                                                break;
+                                            }
+                                        case 2: {
+                                            String packageName = "edu.stanford.junction.sample.jxwhiteboard";
+                                            String arg = "junction://prpl.stanford.edu/whiteboard1";
                                             ContentValues values = new ContentValues();
-                                            JSONObject obj = PictureObj.json(data);
+                                            JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
                                             values.put(Object.JSON, obj.toString());
-                                            values.put(Object.TYPE, PictureObj.TYPE);
+                                            values.put(Object.TYPE, InviteToSharedAppObj.TYPE);
                                             Helpers.sendToFeed(
                                                 ObjectsActivity.this, values, feedUri);
+                                            break;
                                         }
-                                    }, 200, false));
+                                        case 3: {
+                                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                                            voiceintent.putExtra("feedUri", feedUri.toString());
+                                            startActivity(voiceintent);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            ).create().show();
                         }
-                    });
+                });
         }
         else{
             findViewById(R.id.add_object_button).setVisibility(View.GONE);
@@ -246,7 +317,6 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();
-
                     FeedRenderer renderer = Objects.getFeedRenderer(content);
                     if(renderer != null){
                         renderer.render(ObjectsActivity.this, frame, content);
@@ -266,7 +336,9 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE };
+        // TODO: Enumerate all Object classes, look for FeedRenderables.
+
+    	String[] types = Objects.getRenderableTypes();
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");
@@ -276,6 +348,5 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
 
 }
-
 
 

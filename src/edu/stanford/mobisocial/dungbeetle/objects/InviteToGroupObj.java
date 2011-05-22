@@ -7,15 +7,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 
-public class InviteToGroupObj implements IncomingMessageHandler {
+public class InviteToGroupObj implements DbEntryHandler {
 	private static final String TAG = "InviteToGroupObj";
     public static final String TYPE = "invite_group";
     public static final String GROUP_NAME = "groupName";
     public static final String DYN_UPDATE_URI = "dynUpdateUri";
     public static final String PARTICIPANTS = "participants";
     public static final String SENDER = "sender";
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
     public static JSONObject json(String groupName, Uri dynUpdateUri){
         JSONObject obj = new JSONObject();
@@ -26,11 +33,6 @@ public class InviteToGroupObj implements IncomingMessageHandler {
         catch(JSONException e){}
         return obj;
     }
-
-
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals(TYPE);
-	}
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		try {

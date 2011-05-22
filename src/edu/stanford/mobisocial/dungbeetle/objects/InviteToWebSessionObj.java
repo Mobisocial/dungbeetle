@@ -1,7 +1,4 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
 import org.json.JSONObject;
 
@@ -10,17 +7,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.R;
 
-public class InviteToWebSessionObj implements IncomingMessageHandler, FeedRenderer {
+public class InviteToWebSessionObj implements DbEntryHandler {
 
     public static final String TYPE = "invite_web_session";
     public static final String WEB_URL = "webUrl";
     public static final String ARG = "arg";
 
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals(TYPE);
-	}
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		String arg = obj.optString(ARG);
@@ -38,9 +39,4 @@ public class InviteToWebSessionObj implements IncomingMessageHandler, FeedRender
 				"Invitation received", "Click to launch application.",
 				contentIntent);
 	}
-
-	public boolean willRender(JSONObject object) { return false; }
-	public void render(Context context, ViewGroup frame, JSONObject content){}
-
-
 }

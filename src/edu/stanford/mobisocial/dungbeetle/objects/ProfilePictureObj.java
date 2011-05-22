@@ -11,15 +11,23 @@ import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer, Activator {
+public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activator {
 	public static final String TAG = "ProfilePictureObj";
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";
 
-        
+    @Override
+    public String getType() {
+        return TYPE;
+    }
+
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
         JSONObject obj = new JSONObject();
@@ -29,10 +37,6 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer, 
         }catch(JSONException e){}
         return obj;
     }
-
-	public boolean willHandle(Contact from, JSONObject msg) {
-		return msg.optString("type").equals(TYPE);
-	}
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
 		byte[] data = Base64.decode(obj.optString(DATA), Base64.DEFAULT);
@@ -44,12 +48,6 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer, 
             values, "_id=?", new String[] { id });
         App.instance().contactImages.invalidate(from.id);
 	}
-
-
-	public boolean willRender(JSONObject object) { 
-		return willHandle(null, object);
-	}
-
 
 	public void render(Context context, ViewGroup frame, JSONObject content) {
 		ImageView imageView = new ImageView(context);
@@ -68,9 +66,4 @@ public class ProfilePictureObj implements IncomingMessageHandler, FeedRenderer, 
         intent.putExtra("b64Bytes", bytes);
         context.startActivity(intent); 
     }
-
-	public boolean willActivate(JSONObject object) { 
-		return willHandle(null, object);
-	}
-
 }

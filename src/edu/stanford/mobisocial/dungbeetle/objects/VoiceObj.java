@@ -5,28 +5,50 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
 
+
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.TextView;
+
 import android.util.Base64;
+import android.util.Log;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
-	public static final String TAG = "PictureObj";
 
-    public static final String TYPE = "picture";
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
+
+import edu.stanford.mobisocial.dungbeetle.R;
+
+public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
+	public static final String TAG = "VoiceObj";
+
+    public static final String TYPE = "voice";
     public static final String DATA = "data";
+
+    
+	private static final int RECORDER_SAMPLERATE = 8000;
+	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_CONFIGURATION_MONO;
+	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+
 
     @Override
     public String getType() {
         return TYPE;
     }
-
+        
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
         JSONObject obj = new JSONObject();
@@ -38,20 +60,20 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
 	
 	public void render(Context context, ViewGroup frame, JSONObject content) {
 		ImageView imageView = new ImageView(context);
+		imageView.setImageResource(R.drawable.play);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
-        String bytes = content.optString(DATA);
-        App.instance().objectImages.lazyLoadImage(bytes.hashCode(), bytes, imageView);
         frame.addView(imageView);
 	}
 
     public void activate(Context context, JSONObject content){
-        Intent intent = new Intent(context, ImageViewerActivity.class);
-        String bytes = content.optString(DATA);
-        intent.putExtra("b64Bytes", bytes);
-        context.startActivity(intent); 
+        byte bytes[] = Base64.decode(content.optString(DATA), Base64.DEFAULT);
+        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);
+        track.write(bytes, 0, bytes.length);
+        track.play();
     }
+
 
     @Override
     public void handleReceived(Context context, Contact from, JSONObject msg) {
