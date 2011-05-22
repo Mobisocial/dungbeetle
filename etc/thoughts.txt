@@ -1,5 +1,5 @@
 
-a feed is a sequenced set of objects with a name
+A feed is a sequenced set of objects with a name
   - giving it a name allows us to efficiently request missing objects 
   - gives us a hook for permissions
   - optimize database operations

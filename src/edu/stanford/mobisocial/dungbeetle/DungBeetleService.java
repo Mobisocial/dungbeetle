@@ -28,8 +28,8 @@ public class DungBeetleService extends Service {
         mGroupManagerThread = new GroupManagerThread(this);
         mGroupManagerThread.start();
 
-//        mPresenceThread = new PresenceThread(this);
-//        mPresenceThread.start();
+        // mPresenceThread = new PresenceThread(this);
+        // mPresenceThread.start();
     }
 
 
@@ -55,8 +55,8 @@ public class DungBeetleService extends Service {
         return mBinder;
     }
 
-   // This is the object that receives interactions from clients.  See
-   // RemoteService for a more complete example.
+    // This is the object that receives interactions from clients.  See
+    // RemoteService for a more complete example.
     private final IBinder mBinder = new Binder(){
             DungBeetleService getService(){
                 return DungBeetleService.this;

@@ -16,24 +16,18 @@ public class GroupManagerThread extends Thread {
     private Context mContext;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
-    private ScreenState mScreenState;
+
 
     public GroupManagerThread(final Context context){
         mContext = context;
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
-
-        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        mScreenState = new ScreenState();
-        mContext.registerReceiver(mScreenState, filter);
     }
 
 
 
     @Override
     public void run(){
-
         Log.i(TAG, "Running...");
 
         /* Update once every UPDATE_INTERVAL_MS milliseconds, 
@@ -42,7 +36,7 @@ public class GroupManagerThread extends Thread {
          */
 
         while(!interrupted()) {
-            if(!mScreenState.isOff){
+            if(App.instance().isScreenOn()){
                 try {
                     try{
                         Cursor grps = mHelper.queryDynamicGroups();
@@ -81,17 +75,5 @@ public class GroupManagerThread extends Thread {
         public void handle(long id, Uri uri, Context context, IdentityProvider ident);
     }
 
-    public class ScreenState extends BroadcastReceiver {
-        public boolean isOff = false;
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-                isOff = true;
-            } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-                isOff = false;
-            }
-        }
-
-    }
 
 }
