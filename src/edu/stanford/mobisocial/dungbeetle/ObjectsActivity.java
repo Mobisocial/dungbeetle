@@ -29,6 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.Objects;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -114,6 +115,17 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                         imm.hideSoftInputFromWindow(ed.getWindowToken(), 0);
                     }
                 });
+
+            
+            findViewById(R.id.voice)
+            	.setOnClickListener(new OnClickListener() {
+                        public void onClick(View v) {
+                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                            voiceintent.putExtra("feedUri", feedUri.toString());
+                            startActivity(voiceintent);
+                        }
+                    });
+
             
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
@@ -246,7 +258,6 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();
-
                     FeedRenderer renderer = Objects.getFeedRenderer(content);
                     if(renderer != null){
                         renderer.render(ObjectsActivity.this, frame, content);
@@ -266,7 +277,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     }
 
     public String getFeedObjectClause() {
-    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE };
+    	String[] types = new String[] { StatusObj.TYPE, ProfilePictureObj.TYPE, PictureObj.TYPE, VoiceObj.TYPE };
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");

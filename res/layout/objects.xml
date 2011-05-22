@@ -13,11 +13,19 @@
       android:gravity="center">
 
     <Button
+	android:id="@+id/voice"
+	android:layout_width="wrap_content"
+	android:layout_height="50dip"
+	android:text="Voice"
+	android:layout_alignParentRight="true"
+	/> 
+	
+    <Button
 	android:id="@+id/publish"
 	android:layout_width="wrap_content"
 	android:layout_height="50dip"
 	android:text="Photo"
-	android:layout_alignParentRight="true"
+	android:layout_toLeftOf="@+id/voice"
 	/> 
 	
     <Button
