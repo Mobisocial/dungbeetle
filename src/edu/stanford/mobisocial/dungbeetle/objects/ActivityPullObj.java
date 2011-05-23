@@ -69,6 +69,8 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
 		            Log.e(TAG, "error receiving ndef", e);
 		            toast(context, "Could not decode message.");
 		        }
+		    } else {
+		        toast(context, "No activity found.");
 		    }
 		}
 	}
