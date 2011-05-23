@@ -1,19 +1,27 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 
+import java.util.List;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.android.apps.tag.record.UriRecord;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.appmanifest.ApplicationManifest;
+import edu.stanford.mobisocial.appmanifest.platforms.PlatformReference;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -28,6 +36,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler {
     private static final String TAG = "activityPull";
     protected static final String ACTION_SET_NDEF = "mobisocial.intent.action.SET_NDEF";
+    public static final String EXTRA_APPLICATION_ARGUMENT = "android.intent.extra.APPLICATION_ARGUMENT";
     public static final String TYPE = "ndef_pull";
     private static NdefMessage mNdef;
     
@@ -68,7 +77,6 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
 	    toast(context, "Requesting activity...");
 	    JSONObject activityPull = new JSONObject();
 	    try {
-	        activityPull.put(DbObject.TYPE, TYPE);
 	        activityPull.put("request", "true");
 	    } catch (JSONException e) {
 	        Log.e(TAG, "Error building request", e);
@@ -78,8 +86,8 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
 	}
 
 	private void startActivityForNdef(Context context, NdefMessage[] ndefMessages) {
-        NdefRecord firstRecord = ndefMessages[0].getRecords()[0];
-        Log.d(TAG, "DISCOVERED NDEF " + new String(firstRecord.getPayload()));
+	    NdefMessage ndef = ndefMessages[0];
+        NdefRecord firstRecord = ndef.getRecords()[0];
 
         if (UriRecord.isUri(firstRecord)) {
             UriRecord uriRecord = UriRecord.parse(firstRecord);
@@ -91,6 +99,59 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
                 return;
             }
             context.startActivity(intent);
+        } else if (firstRecord.getTnf() == NdefRecord.TNF_MIME_MEDIA) {
+            Intent launch = null;
+            String webpage = null;
+            String androidReference = null;
+
+            byte[] manifestBytes = ndef.getRecords()[0].getPayload();
+            ApplicationManifest manifest = new ApplicationManifest(manifestBytes);
+            List<PlatformReference> platforms = manifest
+                    .getPlatformReferences();
+            for (PlatformReference platform : platforms) {
+                int platformId = platform.getPlatformIdentifier();
+                switch (platformId) {
+                case ApplicationManifest.PLATFORM_WEB_GET:
+                    webpage = new String(platform.getAppReference());
+                    break;
+                case ApplicationManifest.PLATFORM_ANDROID_PACKAGE:
+                    androidReference = new String(platform.getAppReference());
+                    break;
+                }
+            }
+
+            boolean foundMatch = false;
+            if (androidReference != null) {
+                int col = androidReference.indexOf(":");
+                String pkg = androidReference.substring(0, col);
+                String arg = androidReference.substring(col+1);
+                
+                launch = new Intent(Intent.ACTION_MAIN);
+                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                launch.setPackage(pkg);
+                launch.putExtra(EXTRA_APPLICATION_ARGUMENT, arg);
+                
+                // TODO: support applications that aren't yet installed.
+                List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
+                if (resolved != null && resolved.size() > 0) {
+                    ActivityInfo info = resolved.get(0).activityInfo;
+                    launch.setComponent(new ComponentName(info.packageName, info.name));
+                    foundMatch = true;
+                }
+            }
+
+            if (!foundMatch && webpage != null) {
+                launch = new Intent(Intent.ACTION_VIEW);
+                launch.setData(Uri.parse(webpage));
+                foundMatch = true;
+            }
+
+            if (foundMatch) {
+                launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(launch);
+            } else {
+                toast(context, "Failed to launch activity.");
+            }
         } else {
             toast(context, "Ndef launching needs work.");
         }
