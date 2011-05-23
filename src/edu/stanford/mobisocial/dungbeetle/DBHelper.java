@@ -17,8 +17,8 @@ import android.accounts.Account;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Objects;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import java.security.PublicKey;
 import java.util.Iterator;
@@ -106,7 +106,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private void dropAll(SQLiteDatabase db){
         db.execSQL("DROP TABLE IF EXISTS " + MyInfo.TABLE);
-        db.execSQL("DROP TABLE IF EXISTS " + Object.TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + DbObject.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Contact.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Subscriber.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Group.TABLE);
@@ -154,21 +154,21 @@ public class DBHelper extends SQLiteOpenHelper {
                     MyInfo.PICTURE, "BLOB"
                     );
 
-        createTable(db, Object.TABLE, null,
-                    Object._ID, "INTEGER PRIMARY KEY",
-                    Object.TYPE, "TEXT",
-                    Object.SEQUENCE_ID, "INTEGER",
-                    Object.FEED_NAME, "TEXT",
-                    Object.APP_ID, "TEXT",
-                    Object.CONTACT_ID, "INTEGER",
-                    Object.DESTINATION, "TEXT",
-                    Object.JSON, "TEXT",
-                    Object.TIMESTAMP, "INTEGER",
-                    Object.SENT, "INTEGER DEFAULT 0"
+        createTable(db, DbObject.TABLE, null,
+                    DbObject._ID, "INTEGER PRIMARY KEY",
+                    DbObject.TYPE, "TEXT",
+                    DbObject.SEQUENCE_ID, "INTEGER",
+                    DbObject.FEED_NAME, "TEXT",
+                    DbObject.APP_ID, "TEXT",
+                    DbObject.CONTACT_ID, "INTEGER",
+                    DbObject.DESTINATION, "TEXT",
+                    DbObject.JSON, "TEXT",
+                    DbObject.TIMESTAMP, "INTEGER",
+                    DbObject.SENT, "INTEGER DEFAULT 0"
                     );
-        createIndex(db, "INDEX", "objects_by_sequence_id", Object.TABLE, Object.SEQUENCE_ID);
-        createIndex(db, "INDEX", "objects_by_feed_name", Object.TABLE, Object.FEED_NAME);
-        createIndex(db, "INDEX", "objects_by_creator_id", Object.TABLE, Object.CONTACT_ID);
+        createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
+        createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
+        createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
 
         createTable(db, Contact.TABLE, null,
                     Contact._ID, "INTEGER PRIMARY KEY",
@@ -269,15 +269,15 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put("timestamp", timestamp);
             json.put("appId", appId);
             ContentValues cv = new ContentValues();
-            cv.put(Object.APP_ID, appId);
-            cv.put(Object.FEED_NAME, "direct");
-            cv.put(Object.CONTACT_ID, Contact.MY_ID);
-            cv.put(Object.DESTINATION, to);
-            cv.put(Object.TYPE, type);
-            cv.put(Object.JSON, json.toString());
-            cv.put(Object.SEQUENCE_ID, 0);
-            cv.put(Object.TIMESTAMP, timestamp);
-            db.insertOrThrow(Object.TABLE, null, cv);
+            cv.put(DbObject.APP_ID, appId);
+            cv.put(DbObject.FEED_NAME, "direct");
+            cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
+            cv.put(DbObject.DESTINATION, to);
+            cv.put(DbObject.TYPE, type);
+            cv.put(DbObject.JSON, json.toString());
+            cv.put(DbObject.SEQUENCE_ID, 0);
+            cv.put(DbObject.TIMESTAMP, timestamp);
+            db.insertOrThrow(DbObject.TABLE, null, cv);
             return 0;
         }
         catch(Exception e){
@@ -290,20 +290,20 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
-            json.put(Objects.TYPE, type);
-            json.put(Objects.FEED_NAME, feedName);
-            json.put(Objects.SEQUENCE_ID, nextSeqId);
-            json.put(Objects.TIMESTAMP, timestamp);
-            json.put(Objects.APP_ID, appId);
+            json.put(DbObjects.TYPE, type);
+            json.put(DbObjects.FEED_NAME, feedName);
+            json.put(DbObjects.SEQUENCE_ID, nextSeqId);
+            json.put(DbObjects.TIMESTAMP, timestamp);
+            json.put(DbObjects.APP_ID, appId);
             ContentValues cv = new ContentValues();
-            cv.put(Object.APP_ID, appId);
-            cv.put(Object.FEED_NAME, feedName);
-            cv.put(Object.CONTACT_ID, Contact.MY_ID);
-            cv.put(Object.TYPE, type);
-            cv.put(Object.SEQUENCE_ID, nextSeqId);
-            cv.put(Object.JSON, json.toString());
-            cv.put(Object.TIMESTAMP, timestamp);
-            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
+            cv.put(DbObject.APP_ID, appId);
+            cv.put(DbObject.FEED_NAME, feedName);
+            cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
+            cv.put(DbObject.TYPE, type);
+            cv.put(DbObject.SEQUENCE_ID, nextSeqId);
+            cv.put(DbObject.JSON, json.toString());
+            cv.put(DbObject.TIMESTAMP, timestamp);
+            getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
             return nextSeqId;
         }
         catch(Exception e){
@@ -315,21 +315,21 @@ public class DBHelper extends SQLiteOpenHelper {
 
     long addObjectByJson(long contactId, JSONObject json){
         try{
-            long seqId = json.optLong(Objects.SEQUENCE_ID);
-            long timestamp = json.getLong(Objects.TIMESTAMP);
-            String feedName = json.getString(Objects.FEED_NAME);
-            String type = json.getString(Objects.TYPE);
-            String appId = json.getString(Objects.APP_ID);
+            long seqId = json.optLong(DbObjects.SEQUENCE_ID);
+            long timestamp = json.getLong(DbObjects.TIMESTAMP);
+            String feedName = json.getString(DbObjects.FEED_NAME);
+            String type = json.getString(DbObjects.TYPE);
+            String appId = json.getString(DbObjects.APP_ID);
             ContentValues cv = new ContentValues();
-            cv.put(Object.APP_ID, appId);
-            cv.put(Object.FEED_NAME, feedName);
-            cv.put(Object.CONTACT_ID, contactId);
-            cv.put(Object.TYPE, type);
-            cv.put(Object.SEQUENCE_ID, seqId);
-            cv.put(Object.JSON, json.toString());
-            cv.put(Object.TIMESTAMP, timestamp);
-            cv.put(Object.SENT, 1);
-            getWritableDatabase().insertOrThrow(Object.TABLE, null, cv);
+            cv.put(DbObject.APP_ID, appId);
+            cv.put(DbObject.FEED_NAME, feedName);
+            cv.put(DbObject.CONTACT_ID, contactId);
+            cv.put(DbObject.TYPE, type);
+            cv.put(DbObject.SEQUENCE_ID, seqId);
+            cv.put(DbObject.JSON, json.toString());
+            cv.put(DbObject.TIMESTAMP, timestamp);
+            cv.put(DbObject.SENT, 1);
+            getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
             return seqId;
         }
         catch(Exception e){
@@ -413,9 +413,9 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private long getFeedMaxSequenceId(long contactId, String feedName){
         Cursor c = getReadableDatabase().query(
-            Object.TABLE,
-            new String[]{ "max(" + Object.SEQUENCE_ID + ")" },
-            Object.CONTACT_ID + "=? AND " + Object.FEED_NAME + "=?",
+            DbObject.TABLE,
+            new String[]{ "max(" + DbObject.SEQUENCE_ID + ")" },
+            DbObject.CONTACT_ID + "=? AND " + DbObject.FEED_NAME + "=?",
             new String[]{ String.valueOf(contactId), feedName },
             null,
             null,
@@ -435,9 +435,9 @@ public class DBHelper extends SQLiteOpenHelper {
                             String[] projection, String selection,
                             String[] selectionArgs, String sortOrder
                             ){
-        String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
-        select = andClauses(select, Object.APP_ID + "='" + appId + "'");
-        return getReadableDatabase().query(Object.TABLE, projection, 
+        String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
+        return getReadableDatabase().query(DbObject.TABLE, projection, 
                                            select, selectionArgs, 
                                            null, null, sortOrder, null);
     }
@@ -446,20 +446,20 @@ public class DBHelper extends SQLiteOpenHelper {
                                   String feedName, 
                                   String[] proj, String selection,
                                   String[] selectionArgs, String sortOrder){
-        String select = andClauses(selection, Object.FEED_NAME + "='" + feedName + "'");
-        select = andClauses(select, Object.APP_ID + "='" + appId + "'");
+        String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
 
         // Don't allow custom projection. Just grab everything.
         String[] projection = new String[]{
-            "o." + Object._ID + " as " + Object._ID,
-            "o." + Object.TYPE + " as " + Object.TYPE,
-            "o." + Object.SEQUENCE_ID + " as " + Object.SEQUENCE_ID,
-            "o." + Object.FEED_NAME + " as " + Object.FEED_NAME,
-            "o." + Object.CONTACT_ID + " as " + Object.CONTACT_ID,
-            "o." + Object.DESTINATION + " as " + Object.DESTINATION,
-            "o." + Object.JSON + " as " + Object.JSON,
-            "o." + Object.TIMESTAMP + " as " + Object.TIMESTAMP,
-            "o." + Object.APP_ID + " as " + Object.APP_ID
+            "o." + DbObject._ID + " as " + DbObject._ID,
+            "o." + DbObject.TYPE + " as " + DbObject.TYPE,
+            "o." + DbObject.SEQUENCE_ID + " as " + DbObject.SEQUENCE_ID,
+            "o." + DbObject.FEED_NAME + " as " + DbObject.FEED_NAME,
+            "o." + DbObject.CONTACT_ID + " as " + DbObject.CONTACT_ID,
+            "o." + DbObject.DESTINATION + " as " + DbObject.DESTINATION,
+            "o." + DbObject.JSON + " as " + DbObject.JSON,
+            "o." + DbObject.TIMESTAMP + " as " + DbObject.TIMESTAMP,
+            "o." + DbObject.APP_ID + " as " + DbObject.APP_ID
         };
 
         // Double this because select appears twice in full query
@@ -467,15 +467,15 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{} : concat(selectionArgs, selectionArgs);
         String orderBy = sortOrder == null ? "" : " ORDER BY " + sortOrder;
         String q = joinWithSpaces("SELECT",projToStr(projection),
-                                  "FROM (SELECT ", Object.CONTACT_ID, ",",
-                                  "max(",Object.SEQUENCE_ID,")", "as max_seq_id", 
-                                  "FROM", Object.TABLE,"WHERE",select,"GROUP BY",
-                                  Object.CONTACT_ID,") AS x INNER JOIN ",
-                                  "(SELECT * FROM ",Object.TABLE,
+                                  "FROM (SELECT ", DbObject.CONTACT_ID, ",",
+                                  "max(",DbObject.SEQUENCE_ID,")", "as max_seq_id", 
+                                  "FROM", DbObject.TABLE,"WHERE",select,"GROUP BY",
+                                  DbObject.CONTACT_ID,") AS x INNER JOIN ",
+                                  "(SELECT * FROM ",DbObject.TABLE,
                                   "WHERE", select,") AS o ON ",
-                                  "o.",Object.CONTACT_ID,"=", 
-                                  "x.",Object.CONTACT_ID,"AND",
-                                  "o.",Object.SEQUENCE_ID,"=x.max_seq_id",
+                                  "o.",DbObject.CONTACT_ID,"=", 
+                                  "x.",DbObject.CONTACT_ID,"AND",
+                                  "o.",DbObject.SEQUENCE_ID,"=x.max_seq_id",
                                   orderBy);
         Log.i(TAG, q);
         return getReadableDatabase().rawQuery(q,selectArgs);
@@ -496,11 +496,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryUnsentObjects() {
         return getReadableDatabase().query(
-            Object.TABLE,
-            new String[]{ Object._ID, Object.JSON,
-                          Object.DESTINATION,
-                          Object.FEED_NAME },
-            Object.CONTACT_ID + "=? AND " + Object.SENT + "=?",
+            DbObject.TABLE,
+            new String[]{ DbObject._ID, DbObject.JSON,
+                          DbObject.DESTINATION,
+                          DbObject.FEED_NAME },
+            DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0) },
             null,
             null,
@@ -521,11 +521,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public void markObjectsAsSent(Collection<Long> ids) {
         ContentValues cv = new ContentValues();
-        cv.put(Object.SENT, 1);
+        cv.put(DbObject.SENT, 1);
         getWritableDatabase().update(
-            Object.TABLE, 
+            DbObject.TABLE, 
             cv,
-            Object._ID + " in (" + Util.joinLongs(ids,",") + ")",
+            DbObject._ID + " in (" + Util.joinLongs(ids,",") + ")",
             null);
     }
     

@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.ViewGroup;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.ContentValues;
@@ -33,7 +33,7 @@ public class PresenceObj implements DbEntryHandler {
     public void handleReceived(Context context, Contact from, JSONObject obj){
         int presence = obj.optInt(PRESENCE);
         String id = Long.toString(from.id);
-        long time = obj.optLong(Object.TIMESTAMP);
+        long time = obj.optLong(DbObject.TIMESTAMP);
         ContentValues values = new ContentValues();
         values.put(Contact.PRESENCE, presence);
         values.put(Contact.LAST_PRESENCE_TIME, time);

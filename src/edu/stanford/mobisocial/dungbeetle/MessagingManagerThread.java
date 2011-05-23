@@ -16,8 +16,8 @@ import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Objects;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -181,7 +181,7 @@ public class MessagingManagerThread extends Thread {
                 ArrayList<Long> sent = new ArrayList<Long>();
                 while(!objs.isAfterLast()){
                     String to = objs.getString(
-                        objs.getColumnIndexOrThrow(Object.DESTINATION));
+                        objs.getColumnIndexOrThrow(DbObject.DESTINATION));
                     if(to != null){
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
                         Log.i(TAG, "Sending direct message " + m);
@@ -198,7 +198,7 @@ public class MessagingManagerThread extends Thread {
                         }
                         mMessenger.sendMessage(m);
                     }
-                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(Object._ID)));
+                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID)));
                     objs.moveToNext();
                 }
                 mHelper.markObjectsAsSent(sent);
@@ -221,7 +221,7 @@ public class MessagingManagerThread extends Thread {
     private class OutgoingFeedObjectMsg extends OutgoingMsg{
         public OutgoingFeedObjectMsg(Cursor objs){
             String feedName = objs.getString(
-                objs.getColumnIndexOrThrow(Object.FEED_NAME));
+                objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
             Cursor subs = mHelper.querySubscribers(feedName);
             subs.moveToFirst();
             ArrayList<Long> ids = new ArrayList<Long>();
@@ -231,17 +231,17 @@ public class MessagingManagerThread extends Thread {
                 subs.moveToNext();
             }
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(Object.JSON)));
+            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
         }
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg{
         public OutgoingDirectObjectMsg(Cursor objs){
             String to = objs.getString(
-                objs.getColumnIndexOrThrow(Object.DESTINATION));
+                objs.getColumnIndexOrThrow(DbObject.DESTINATION));
             List<Long> ids = Util.splitLongsToList(to, ",");
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(Object.JSON)));
+            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
         }
     }
 
@@ -299,11 +299,11 @@ public class MessagingManagerThread extends Thread {
             try{
                 JSONObject obj = new JSONObject(contents);
 
-                long time = obj.optLong(Object.TIMESTAMP);
+                long time = obj.optLong(DbObject.TIMESTAMP);
                 Helpers.updateLastPresence(mContext, c, time);
 
                 final DbEntryHandler h = 
-                    Objects.getIncomingMessageHandler(c, obj);
+                    DbObjects.getIncomingMessageHandler(c, obj);
                 if(h != null){
                     h.handleReceived(mContext, c, obj);
                 }

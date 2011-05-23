@@ -36,12 +36,12 @@ public class PresenceAwareNotify {
         Cursor c = mContext.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
             null, 
-            Object.TYPE + "=?", 
+            DbObject.TYPE + "=?", 
             new String[]{ "presence"}, 
-            Object.TIMESTAMP + " DESC");
+            DbObject.TIMESTAMP + " DESC");
         c.moveToFirst();
         if(!c.isAfterLast()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 int myPresence = Integer.parseInt(obj.optString("presence"));

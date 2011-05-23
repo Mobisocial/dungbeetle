@@ -184,6 +184,11 @@
 
     </activity>
 
+   <receiver android:name="edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj">
+     <intent-filter>
+   	   <action android:name="mobisocial.intent.action.SET_NDEF" />
+   	 </intent-filter>
+   </receiver>
 
   </application>
 </manifest> 

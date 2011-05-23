@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.model;
+import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
 
-public final class Objects {
+public final class DbObjects {
 
     // Basic property names for all objects
     public static final String TYPE = "type";
@@ -46,6 +47,7 @@ public final class Objects {
         objs.add(new ProfilePictureObj());
         objs.add(new PictureObj());
         objs.add(new VoiceObj());
+        objs.add(new ActivityPullObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
