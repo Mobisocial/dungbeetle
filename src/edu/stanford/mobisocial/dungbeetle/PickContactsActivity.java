@@ -7,6 +7,8 @@ import android.content.Intent;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import mobisocial.nfc.Nfc;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.content.Context;
@@ -22,6 +24,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.net.Uri;
+import android.nfc.NdefMessage;
 import android.widget.Toast;
 import android.widget.CheckBox;
 
@@ -32,6 +35,7 @@ public class PickContactsActivity extends TabActivity {
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
 	protected final BitmapManager mgr = new BitmapManager(20);
+	private Nfc mNfc;
 
     public static final String TAG = "PickContactsActivity";
 
@@ -41,10 +45,13 @@ public class PickContactsActivity extends TabActivity {
     public static final String INTENT_ACTION_PICK_CONTACTS = 
         "edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS";
 
+    public static final String INTENT_EXTRA_NFC_SHARE = "mobisocial.dungbeetle.NFC_SHARE";
+
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.pick_contacts);
 		mIntent = getIntent();
+		mNfc = new Nfc(this);
 
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
@@ -90,6 +97,10 @@ public class PickContactsActivity extends TabActivity {
                     handleOk();
                 }
             });
+
+        if (getIntent().hasExtra(INTENT_EXTRA_NFC_SHARE)) {
+            mNfc.share((NdefMessage)getIntent().getParcelableExtra(INTENT_EXTRA_NFC_SHARE));
+        }
     }
 
 
@@ -161,7 +172,22 @@ public class PickContactsActivity extends TabActivity {
 
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mNfc.onPause(this);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mNfc.onResume(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (mNfc.onNewIntent(this, intent)) return;
+    }
 }
 
 
