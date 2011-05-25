@@ -20,12 +20,13 @@ public class PresenceThread extends Thread {
         Log.i(TAG, "Running...");
         while(!interrupted()) {
             try{
-                Cursor c = mHelper.sampleFromContacts(10);
-                c.moveToFirst();
-                while(!c.isAfterLast()){
+                // Cursor c = mHelper.sampleFromContacts(10);
+                // c.moveToFirst();
+                // while(!c.isAfterLast()){
                     
-                    c.moveToNext();
-                }
+                //     c.moveToNext();
+
+                // }
                 if(App.instance().isScreenOn()){
                     Thread.sleep(10000);
                 }
