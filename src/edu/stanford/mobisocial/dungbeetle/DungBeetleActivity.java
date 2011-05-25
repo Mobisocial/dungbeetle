@@ -26,7 +26,7 @@ import org.json.JSONObject;
 
 public class DungBeetleActivity extends TabActivity
 {
-
+    private static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
     public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
@@ -140,11 +140,13 @@ public class DungBeetleActivity extends TabActivity
         tabHost.setCurrentTab(0);
 
         mNfc = new Nfc(this);
+        // TODO: Combine doHandleInput calls in onNewIntent.
+        doHandleInput(getIntent().getData());
         mNfc.addNdefHandler(new NdefHandler() {
                 public int handleNdef(final NdefMessage[] messages){
                     DungBeetleActivity.this.runOnUiThread(new Runnable(){
                             public void run(){
-                                doHandleNdef(messages);
+                                doHandleInput(uriFromNdef(messages));
                             }
                         });
                     return NDEF_CONSUME;
@@ -172,35 +174,37 @@ public class DungBeetleActivity extends TabActivity
                         }); 
                 }
             });
+        
         pushContactInfoViaNfc();
+        acceptInboundContactInfo();
     }
 
-    protected void doHandleNdef(NdefMessage[] messages){
-        if(messages.length != 1 || messages[0].getRecords().length != 1){
-            Toast.makeText(this, "Oops! expected a single Uri record. ",
-                           Toast.LENGTH_SHORT).show();
+    public Uri uriFromNdef(NdefMessage... messages) {
+        if(messages.length == 0){
+            return null;
+        }
+        
+       return Uri.parse(new String(messages[0].getRecords()[0].getPayload()));
+    }
+
+    protected void doHandleInput(Uri uri){
+        if(uri == null){
             return;
         }
-        String uriStr = new String(messages[0].getRecords()[0].getPayload());
-        Uri uri = Uri.parse(uriStr);
 
-        if(uri == null){
-            Toast.makeText(this, "Null uri!", Toast.LENGTH_SHORT).show();
+        if (DBG) Log.d(TAG, "launching dungbeetle with uri " + uri);
+        if(uri.getScheme().equals(SHARE_SCHEME)
+                || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)){
+            Intent intent = new Intent().setClass(this, HandleNfcContact.class);
+            intent.setData(uri);
+            startActivity(intent);
+        } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)){
+            Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
+            intent.setData(uri);
+            startActivity(intent);
         }
         else{
-            if(uri.getScheme().equals(SHARE_SCHEME)){
-                Intent intent = new Intent().setClass(this, HandleNfcContact.class);
-                intent.setData(uri);
-                startActivity(intent);
-            }
-            else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)){
-                Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-                intent.setData(uri);
-                startActivity(intent);
-            }
-            else{
-                Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
-            }
+            Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
         }
 
         // Re-push the contact info ndef
@@ -247,6 +251,17 @@ public class DungBeetleActivity extends TabActivity
         NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
         mNfc.share(ndef);
         //Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
+    }
+
+    public void acceptInboundContactInfo() {
+        if (getIntent().getData() == null) {
+            // TODO: convert if(getFoo().doBar()) into if (getFoo() != null && getFoo().doBar())
+            return;
+        }
+        if (getIntent().getData().getAuthority().equals("mobisocial.stanford.edu")) {
+            FriendRequest.acceptFriendRequest(this, getIntent().getData());
+            // TODO, update bigtime
+        }
     }
 
     @Override

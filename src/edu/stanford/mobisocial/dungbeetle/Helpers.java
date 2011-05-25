@@ -5,8 +5,10 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.*;
+
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.UUID;
@@ -143,9 +145,9 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, InviteToSharedAppObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.DESTINATION, buildAddresses(contacts));
+        values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
         c.getContentResolver().insert(url, values);
     }
 
@@ -155,11 +157,29 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         JSONObject obj = IMObj.json(msg);
-        values.put(Object.JSON, obj.toString());
+        values.put(DbObject.JSON, obj.toString());
         String to = buildAddresses(contacts);
-        values.put(Object.DESTINATION, to);
-        values.put(Object.TYPE, IMObj.TYPE);
+        values.put(DbObject.DESTINATION, to);
+        values.put(DbObject.TYPE, IMObj.TYPE);
         c.getContentResolver().insert(url, values);
+    }
+
+    public static void sendMessage(final Context c,
+                                   final Collection<Contact> contacts,
+                                   final DbObject obj) {
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.getJson().toString());
+        values.put(DbObject.TYPE, obj.getType());
+        String to = buildAddresses(contacts);
+        values.put(DbObject.DESTINATION, to);
+        c.getContentResolver().insert(url, values);
+    }
+
+    public static void sendMessage(final Context context,
+            final Contact contact,
+            final DbObject obj) {
+        sendMessage(context, Collections.singletonList(contact), obj);
     }
 
     public static void sendFile(final Context c, final Collection<Contact> contacts,
@@ -168,9 +188,9 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         JSONObject obj = SendFileObj.json(uri, mimeType);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, SendFileObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.DESTINATION, buildAddresses(contacts));
+        values.put(DbObject.TYPE, SendFileObj.TYPE);
         c.getContentResolver().insert(url, values);
     }
 
@@ -181,9 +201,9 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         JSONObject obj = InviteToSharedAppFeedObj.json(contacts, feedName, packageName);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.DESTINATION, buildAddresses(contacts));
-        values.put(Object.TYPE, InviteToSharedAppFeedObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.DESTINATION, buildAddresses(contacts));
+        values.put(DbObject.TYPE, InviteToSharedAppFeedObj.TYPE);
         c.getContentResolver().insert(url, values);
     }
 
@@ -191,8 +211,8 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = ProfilePictureObj.json(data);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.TYPE, ProfilePictureObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
         c.getContentResolver().insert(url, values); 
 
         values = new ContentValues();
@@ -221,8 +241,8 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = PresenceObj.json(presence);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.TYPE, PresenceObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, PresenceObj.TYPE);
         c.getContentResolver().insert(url, values); 
     }
 
@@ -277,8 +297,8 @@ public class Helpers {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = ProfileObj.json(name, about);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.TYPE, ProfileObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, ProfileObj.TYPE);
         c.getContentResolver().insert(url, values);
     }
 

@@ -24,8 +24,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
-import edu.stanford.mobisocial.dungbeetle.model.Objects;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
@@ -85,16 +85,16 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             c = getContentResolver().query(
                 feedUri,
                 null, 
-                getFeedObjectClause() + " AND " + Object.CONTACT_ID + "=?", new String[]{ 
+                getFeedObjectClause() + " AND " + DbObject.CONTACT_ID + "=?", new String[]{ 
                     String.valueOf(contactId) }, 
-                Object._ID + " DESC");
+                DbObject._ID + " DESC");
 		}
         else {
             c = getContentResolver().query(
                 feedUri,
                 null, 
                 getFeedObjectClause(), null,
-                Object._ID + " DESC");
+                DbObject._ID + " DESC");
 		}
 
 		mObjects = new ObjectListCursorAdapter(this, c);
@@ -158,8 +158,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                                 // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
                                                                 ContentValues values = new ContentValues();
                                                                 JSONObject obj = StatusObj.json(data);
-                                                                values.put(Object.JSON, obj.toString());
-                                                                values.put(Object.TYPE, StatusObj.TYPE);
+                                                                values.put(DbObject.JSON, obj.toString());
+                                                                values.put(DbObject.TYPE, StatusObj.TYPE);
                                                                 Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
                                                             }
                                                         }));
@@ -175,8 +175,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                             public void onResult(byte[] data) {
                                                                 ContentValues values = new ContentValues();
                                                                 JSONObject obj = PictureObj.json(data);
-                                                                values.put(Object.JSON, obj.toString());
-                                                                values.put(Object.TYPE, PictureObj.TYPE);
+                                                                values.put(DbObject.JSON, obj.toString());
+                                                                values.put(DbObject.TYPE, PictureObj.TYPE);
                                                                 Helpers.sendToFeed(
                                                                     ObjectsActivity.this, values, feedUri);
                                                             }
@@ -188,8 +188,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                             String arg = "junction://prpl.stanford.edu/whiteboard1";
                                             ContentValues values = new ContentValues();
                                             JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-                                            values.put(Object.JSON, obj.toString());
-                                            values.put(Object.TYPE, InviteToSharedAppObj.TYPE);
+                                            values.put(DbObject.JSON, obj.toString());
+                                            values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
                                             Helpers.sendToFeed(
                                                 ObjectsActivity.this, values, feedUri);
                                             break;
@@ -214,10 +214,10 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
         try{
             JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = Objects.getActivator(obj);
+            Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
                 activator.activate(ObjectsActivity.this, obj);
             }
@@ -296,9 +296,9 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
-            Long contactId = c.getLong(c.getColumnIndexOrThrow(Object.CONTACT_ID));
-            Long timestamp = c.getLong(c.getColumnIndexOrThrow(Object.TIMESTAMP));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+            Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
+            Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
             Date date = new Date(timestamp);
             try{
                 Contact contact = mContactCache.getContact(contactId).get();
@@ -317,7 +317,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
                     ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                     frame.removeAllViews();
-                    FeedRenderer renderer = Objects.getFeedRenderer(content);
+                    FeedRenderer renderer = DbObjects.getFeedRenderer(content);
                     if(renderer != null){
                         renderer.render(ObjectsActivity.this, frame, content);
                     }
@@ -338,12 +338,12 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
     public String getFeedObjectClause() {
         // TODO: Enumerate all Object classes, look for FeedRenderables.
 
-    	String[] types = Objects.getRenderableTypes();
+    	String[] types = DbObjects.getRenderableTypes();
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {
     		allowed.append(",'").append(type).append("'");
     	}
-    	return Object.TYPE + " in (" + allowed.substring(1) + ")";
+    	return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
     }
 
 

@@ -4,7 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -91,8 +91,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                 mHelper.addToFeed(
                     appId,
                     "friend",
-                    values.getAsString(Object.TYPE),
-                    new JSONObject(values.getAsString(Object.JSON)));
+                    values.getAsString(DbObject.TYPE),
+                    new JSONObject(values.getAsString(DbObject.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
                 return Uri.parse(uri.toString());
@@ -107,8 +107,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                 mHelper.addToFeed(
                     appId,
                     feedName,
-                    values.getAsString(Object.TYPE),
-                    new JSONObject(values.getAsString(Object.JSON)));
+                    values.getAsString(DbObject.TYPE),
+                    new JSONObject(values.getAsString(DbObject.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/" + feedName), null);
                 
                 return Uri.parse(uri.toString());
@@ -122,8 +122,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToOutgoing(
                     appId,
-                    values.getAsString(Object.DESTINATION),
-                    values.getAsString(Object.TYPE),
+                    values.getAsString(DbObject.DESTINATION),
+                    values.getAsString(DbObject.TYPE),
                     obj);
                 getContext().getContentResolver().notifyChange(
                     Uri.parse(CONTENT_URI + "/out"), null);
@@ -297,7 +297,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
                 selection, 
-                Object.CONTACT_ID + "=" + Contact.MY_ID) : selection;
+                DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeed(appId,
                                          feedName,
                                          projection,
@@ -312,7 +312,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
-                selection, Object.CONTACT_ID + "=" + Contact.MY_ID) : selection;
+                selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeedLatest(appId,
                                                feedName,
                                                projection,

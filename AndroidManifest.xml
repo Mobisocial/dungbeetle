@@ -27,6 +27,15 @@
 	<action android:name="android.intent.action.MAIN" />
 	<category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+      
+      <intent-filter>
+    <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+	<action android:name="android.intent.action.VIEW" />
+	<category android:name="android.intent.category.DEFAULT" />
+	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/dungbeetle" />
+      </intent-filter>
+
+ 
     </activity>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
@@ -152,12 +161,16 @@
 	android:label="DungBeetle"
 	android:name="edu.stanford.mobisocial.dungbeetle.WebContentHandler">
       
+      <!-- See DungBeetleActivity. Sorry!
       <intent-filter>
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/dungbeetle" />
       </intent-filter>
+      -->
     </activity>
+    
+    
     
     <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity"
 	      android:label="Group Session Invite"
@@ -184,6 +197,11 @@
 
     </activity>
 
+   <receiver android:name="edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj">
+     <intent-filter>
+   	   <action android:name="mobisocial.intent.action.SET_NDEF" />
+   	 </intent-filter>
+   </receiver>
 
   </application>
 </manifest> 

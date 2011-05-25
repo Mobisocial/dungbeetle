@@ -18,7 +18,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.widget.ImageView;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import android.util.Base64;
 
 public class AppSelector implements ActivityCallout {

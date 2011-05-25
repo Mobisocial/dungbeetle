@@ -11,6 +11,8 @@ import android.content.Context;
 import android.net.Uri;
 
 public class FriendRequest {
+    public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/dungbeetle/join";
+
 	public static Uri getInvitationUri(Context c) {
         DBHelper helper = new DBHelper(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
@@ -20,8 +22,9 @@ public class FriendRequest {
         helper.close();
 
         return new Uri.Builder()
-        	.scheme(DungBeetleActivity.SHARE_SCHEME)
-        	.authority("dungbeetle")
+        	.scheme("http")
+        	.authority("mobisocial.stanford.edu")
+        	.path("dungbeetle/join")
         	.appendQueryParameter("name", name)
         	.appendQueryParameter("email", email)
         	.appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey))

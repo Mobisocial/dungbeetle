@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
-public class Object {
+import org.json.JSONObject;
+
+public class DbObject {
     public static final String TABLE = "objects";
     public static final String _ID = "_id";
     public static final String TYPE = "type";
@@ -12,4 +14,19 @@ public class Object {
     public static final String TIMESTAMP = "timestamp";
     public static final String APP_ID = "app_id";
     public static final String SENT = "sent";
+
+    protected final String mType;
+    protected final JSONObject mJson;
+
+    public DbObject(String type, JSONObject json) {
+        mType = type;
+        mJson = json;
+    }
+
+    public String getType() {
+        return mType;
+    }
+    public JSONObject getJson() {
+        return mJson;
+    }
 }

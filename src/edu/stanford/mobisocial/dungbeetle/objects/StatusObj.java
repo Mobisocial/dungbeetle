@@ -11,7 +11,7 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
@@ -61,8 +61,8 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
     public static ContentValues getStatusObj(String status) {
         ContentValues values = new ContentValues();
         JSONObject obj = StatusObj.json(status);
-        values.put(Object.JSON, obj.toString());
-        values.put(Object.TYPE, StatusObj.TYPE);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, StatusObj.TYPE);
         return values;
     }
 }

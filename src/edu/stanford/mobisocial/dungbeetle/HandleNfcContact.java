@@ -6,6 +6,7 @@ import android.widget.TextView;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Intent;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -16,8 +17,10 @@ import java.util.BitSet;
 public class HandleNfcContact extends Activity {
     private String mName;
     private String mEmail;
-    
+    private static final String TAG = "HandleNfcContact";
+
 	public void onCreate(Bundle savedInstanceState) {
+	    Log.d(TAG, "join request");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.handle_give);
 		Intent intent = getIntent();
@@ -27,7 +30,9 @@ public class HandleNfcContact extends Activity {
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
 		mutualFriendsButton.setVisibility(View.GONE);
 
-		if(uri != null && uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME)){
+		if(uri != null && 
+		        (uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME) ||
+		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
 			mName = uri.getQueryParameter("name");
 	        mEmail = uri.getQueryParameter("email");
 

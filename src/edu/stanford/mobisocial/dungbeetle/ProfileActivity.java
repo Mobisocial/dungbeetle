@@ -27,7 +27,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Object;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
@@ -58,11 +58,11 @@ public class ProfileActivity extends RichActivity{
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
             null, 
-            Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
-            Object.TIMESTAMP + " DESC");
+            DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
+            DbObject.TIMESTAMP + " DESC");
 
         if(c.moveToFirst()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String name = obj.optString("name");
@@ -104,11 +104,11 @@ public class ProfileActivity extends RichActivity{
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
             null, 
-            Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
-            Object.TIMESTAMP + " DESC");
+            DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[]{ "profile" , Long.toString(Contact.MY_ID)}, 
+            DbObject.TIMESTAMP + " DESC");
 
         if(c.moveToFirst()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String name = obj.optString("name");
@@ -133,12 +133,12 @@ public class ProfileActivity extends RichActivity{
         c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
             null, 
-            Object.TYPE + "=?", 
+            DbObject.TYPE + "=?", 
             new String[]{ PresenceObj.TYPE}, 
-            Object.TIMESTAMP + " DESC");
+            DbObject.TIMESTAMP + " DESC");
 
         if(c.moveToFirst()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 int myPresence = Integer.parseInt(obj.optString("presence"));
@@ -150,12 +150,12 @@ public class ProfileActivity extends RichActivity{
         c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
             null, 
-            Object.TYPE + "=?", 
+            DbObject.TYPE + "=?", 
             new String[]{ ProfilePictureObj.TYPE }, 
-            Object.TIMESTAMP + " DESC");
+            DbObject.TIMESTAMP + " DESC");
 
         if(c.moveToFirst()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
 
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
@@ -203,12 +203,12 @@ public class ProfileActivity extends RichActivity{
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"),
                 null, 
-                Object.TYPE + "=? AND " + Object.CONTACT_ID + "=?", 
+                DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", 
                 new String[]{ "profile" , Long.toString(contact.id)}, 
-                Object.TIMESTAMP + " DESC");
+                DbObject.TIMESTAMP + " DESC");
 
             if(c.moveToFirst()) {
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(Object.JSON));
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
                 try{
                     JSONObject obj = new JSONObject(jsonSrc);
                     profileName.setText(obj.optString("name"));

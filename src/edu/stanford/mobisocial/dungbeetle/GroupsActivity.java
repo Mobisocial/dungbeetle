@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.nfc.NdefMessage;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,6 +30,8 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import java.util.UUID;
+
+import mobisocial.nfc.NdefFactory;
 
 
 
@@ -96,6 +99,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
         viewGroupIntent.putExtra("group_id", g.id);
         viewGroupIntent.putExtra("group_name", g.name);
+        viewGroupIntent.putExtra("group_uri", g.dynUpdateUri);
         startActivity(viewGroupIntent);
     }
 
@@ -159,6 +163,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                                 public void onClick(View v) {
                                     Intent i = new Intent();
                                     i.setAction(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+                                    i.putExtra(PickContactsActivity.INTENT_EXTRA_NFC_SHARE, ndefForGroup(g));
                                     GroupsActivity.this.startActivityForResult(
                                         i, REQUEST_INVITE_TO_GROUP);   
                                 }
@@ -251,6 +256,9 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         mHelper.close();
     }
 
+    private NdefMessage ndefForGroup(Group g) {
+        return NdefFactory.fromUri(g.dynUpdateUri);
+    }
 }
 
 
