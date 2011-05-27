@@ -58,11 +58,12 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
         if(intent.hasExtra("group_id")) {
         	try {
 	        	Long groupId = intent.getLongExtra("group_id", -1);
-	        	Group group = mHelper.groupForGroupId(groupId).get();
-	            feedName = group.feedName;
+	        	feedName = mHelper.groupForGroupId(groupId).get().feedName;
         	} catch (Maybe.NoValError e) {
         		Log.w(TAG, "Tried to view a group with bad group id");
         	}
+        } else if (intent.hasExtra("feed_id")) {
+            feedName = intent.getStringExtra("feed_id");
         }
         
         feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
