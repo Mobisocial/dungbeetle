@@ -1,16 +1,25 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.app.ListActivity;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ComponentInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.TextView;
 
@@ -20,6 +29,7 @@ import android.widget.TextView;
  */
 public class FeedListActivity extends ListActivity {
     private static final String TAG = "DungBeetle";
+    private FeedListCursorAdapter mFeeds;
     private ContactCache mContactCache;
 
     @Override
@@ -29,7 +39,8 @@ public class FeedListActivity extends ListActivity {
         setContentView(R.layout.feeds);
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
-        setListAdapter(new FeedListCursorAdapter(this, c));
+        mFeeds = new FeedListCursorAdapter(this, c);
+        setListAdapter(mFeeds);
     }
 
     @Override
@@ -39,7 +50,6 @@ public class FeedListActivity extends ListActivity {
     }
 
     private class FeedListCursorAdapter extends CursorAdapter {
-
         public FeedListCursorAdapter (Context context, Cursor c) {
             super(context, c);
         }
@@ -53,11 +63,21 @@ public class FeedListActivity extends ListActivity {
         }
 
         @Override
-        public void bindView(View v, Context context, Cursor c) {
+        public void bindView(final View v, final Context context, final Cursor c) {
             String labelText = c.getString(c.getColumnIndexOrThrow(DbObject.FEED_NAME));
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
             labelView.setText(labelText);
             DbObject.bindView(v, FeedListActivity.this, c, mContactCache);
+            v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View arg0) {
+                    String feed = c.getString(c.getColumnIndexOrThrow(DbObject.FEED_NAME));
+                    Intent launch = new Intent();
+                    launch.putExtra("feed_id", feed);
+                    launch.setClass(FeedListActivity.this, ObjectsActivity.class);
+                    startActivity(launch);
+                }
+            });
         }
     }
 
