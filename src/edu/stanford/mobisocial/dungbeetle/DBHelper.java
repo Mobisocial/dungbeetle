@@ -429,6 +429,13 @@ public class DBHelper extends SQLiteOpenHelper {
         return -1;
     }
 
+    public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
+            String sortOrder){
+        String groupBy = DbObject.FEED_NAME;
+        String orderBy = DbObject.TIMESTAMP + " desc";
+        return getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, 
+                groupBy, null, orderBy, null);
+    }
 
     public Cursor queryFeed(String appId, 
                             String feedName,

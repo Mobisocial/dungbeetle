@@ -292,18 +292,18 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", ".+")){
+        if(match(uri, "feedlist")) {
+            Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
+            c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/"));
+            return c;
+        }
+        else if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
                 selection, 
                 DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeed(appId,
-                                         feedName,
-                                         projection,
-                                         select,
-                                         selectionArgs,
-                                         sortOrder);
+            Cursor c = mHelper.queryFeed(appId, feedName, projection, select, selectionArgs, sortOrder);
             c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
