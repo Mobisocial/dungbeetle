@@ -2,4 +2,6 @@
 <resources>
     <drawable name="white">#ffffff</drawable>
     <drawable name="black">#000000</drawable>
+    <drawable name="brown">#BCA254</drawable>
+    <drawable name="feed_header">#BCA254</drawable>
 </resources>

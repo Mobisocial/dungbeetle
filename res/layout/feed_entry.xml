@@ -15,7 +15,9 @@
  android:layout_width="fill_parent"
  android:layout_height="wrap_content"
  android:text="feed name"
- android:background="@android:color/darker_gray">
+ android:background="@drawable/feed_header"
+ android:textColor="@drawable/black"
+ android:padding="4dip">
 </TextView>
 <include android:id="@+id/object_entry" layout="@layout/objects_item" />
 
