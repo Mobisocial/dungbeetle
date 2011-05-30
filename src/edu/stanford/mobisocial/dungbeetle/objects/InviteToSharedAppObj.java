@@ -15,18 +15,18 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 
-public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer {
+public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "InviteToSharedAppObj";
 
     public static final String TYPE = "invite_app_session";
@@ -90,17 +90,15 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer {
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
-        frame.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent launch = new Intent(Intent.ACTION_MAIN);
-                launch.setComponent(
-                        new ComponentName("edu.stanford.junction.sample.jxwhiteboard",
-                        "edu.stanford.junction.sample.jxwhiteboard.JXWhiteboardActivity"));
-                launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
-                context.startActivity(launch);
-            }
-        });
     }
 
+	@Override
+	public void activate(Context context, JSONObject content) {
+	    Intent launch = new Intent(Intent.ACTION_MAIN);
+        launch.setComponent(
+                new ComponentName("edu.stanford.junction.sample.jxwhiteboard",
+                "edu.stanford.junction.sample.jxwhiteboard.JXWhiteboardActivity"));
+        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+        context.startActivity(launch);
+	}
 }

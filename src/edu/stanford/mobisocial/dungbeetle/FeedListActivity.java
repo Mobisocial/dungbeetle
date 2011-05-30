@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 /**
@@ -56,20 +57,21 @@ public class FeedListActivity extends ListActivity {
 
         @Override
         public void bindView(final View v, final Context context, final Cursor c) {
-            final String labelText = c.getString(c.getColumnIndexOrThrow(DbObject.FEED_NAME));
+            String labelText = c.getString(c.getColumnIndexOrThrow(DbObject.FEED_NAME));
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
             labelView.setText(labelText);
             DbObject.bindView(v, FeedListActivity.this, c, mContactCache);
-            v.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View arg0) {
-                    Intent launch = new Intent();
-                    launch.putExtra("feed_id", labelText);
-                    launch.setClass(FeedListActivity.this, ObjectsActivity.class);
-                    startActivity(launch);
-                }
-            });
+            v.setTag(R.id.feed_label, labelText);
         }
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        String feedId = (String)v.getTag(R.id.feed_label);
+        Intent launch = new Intent();
+        launch.putExtra("feed_id", feedId);
+        launch.setClass(FeedListActivity.this, ObjectsActivity.class);
+        startActivity(launch);
     }
 
     private String getFeedObjectClause() {
