@@ -92,7 +92,7 @@
       </intent-filter>
     </activity>
 
-    <activity android:name="edu.stanford.mobisocial.dungbeetle.PickContactsActivity"
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.SendFileActivity"
 	      android:label="@string/pick_contacts"
 	      android:screenOrientation="portrait">
 
