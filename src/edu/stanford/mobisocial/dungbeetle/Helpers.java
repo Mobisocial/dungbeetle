@@ -139,18 +139,6 @@ public class Helpers {
         return friends.toArray(friendsArray);
     }
 
-    public static void sendApplicationInvite(final Context c, 
-                                             final Collection<Contact> contacts, 
-                                             final String packageName, final String arg){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
-        ContentValues values = new ContentValues();
-        JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.DESTINATION, buildAddresses(contacts));
-        values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
-        c.getContentResolver().insert(url, values);
-    }
-
     public static void sendIM(final Context c, 
                               final Collection<Contact> contacts, 
                               final String msg){
@@ -233,7 +221,10 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
     
-    public static void sendToFeed(Context c, ContentValues values, Uri feed) {
+    public static void sendToFeed(Context c, DbObject obj, Uri feed) {
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.getJson().toString());
+        values.put(DbObject.TYPE, obj.getType());
         c.getContentResolver().insert(feed, values); 
     }
 

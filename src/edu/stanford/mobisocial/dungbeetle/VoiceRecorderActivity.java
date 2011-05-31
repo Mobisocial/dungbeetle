@@ -219,12 +219,8 @@ public class VoiceRecorderActivity extends Activity {
 				    }
 				    else
 				    {
-				        ContentValues values = new ContentValues();
-                        JSONObject obj = VoiceObj.json(rawBytes);
-                        values.put(DbObject.JSON, obj.toString());
-                        values.put(DbObject.TYPE, VoiceObj.TYPE);
                         Helpers.sendToFeed(
-                            getApplicationContext(), values, feedUri);
+                            getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
 
                         Log.i("voice recorder",feedUri.toString());
                         finish();

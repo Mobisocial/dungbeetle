@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -11,6 +12,7 @@ import android.content.Context;
 
 
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 import android.view.Gravity;
 import android.view.View;
@@ -48,7 +50,10 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
     public String getType() {
         return TYPE;
     }
-        
+
+    public static DbObject from(byte[] data) {
+        return new DbObject(TYPE, json(data));
+    }
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
         JSONObject obj = new JSONObject();

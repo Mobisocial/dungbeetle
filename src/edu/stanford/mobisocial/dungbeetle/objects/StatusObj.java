@@ -28,6 +28,10 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
         return TYPE;
     }
 
+    public static DbObject from(String status) {
+        return new DbObject(TYPE, json(status));
+    }
+
     public static JSONObject json(String status){
         JSONObject obj = new JSONObject();
         try{
@@ -54,15 +58,5 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
-    }
-    
-    // TODO: Return a populated StatusObj type, extends FeedObj.
-    // Then: Helper.sendToFeed(Context c, FeedObj obj, Uri feed).
-    public static ContentValues getStatusObj(String status) {
-        ContentValues values = new ContentValues();
-        JSONObject obj = StatusObj.json(status);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, StatusObj.TYPE);
-        return values;
     }
 }

@@ -2,14 +2,19 @@ package edu.stanford.mobisocial.dungbeetle.objects;
 import android.view.Gravity;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONException;
 
 import org.json.JSONObject;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -19,7 +24,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
@@ -38,6 +45,10 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    public static DbObject from(String packageName, String arg) {
+        return new DbObject(TYPE, json(packageName, arg));
     }
 
     public static JSONObject json(String packageName, String arg){
@@ -100,5 +111,70 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
                 "edu.stanford.junction.sample.jxwhiteboard.JXWhiteboardActivity"));
         launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
         context.startActivity(launch);
+	}
+
+	public static void promptForApplication(final Context context, final Callback callback) {
+	    final PackageManager mgr = context.getPackageManager();
+        Intent i = new Intent("android.intent.action.CONFIGURE");
+        i.addCategory("android.intent.category.P2P");
+        final List<ResolveInfo> infos = mgr.queryBroadcastReceivers(i, 0);
+        if(infos.size() > 0){
+            ArrayList<String> names = new ArrayList<String>();
+            for(ResolveInfo info : infos){
+                names.add(info.loadLabel(mgr).toString());
+            }
+            final CharSequence[] items = names.toArray(new CharSequence[]{});
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle("Share application:");
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        final ResolveInfo info = infos.get(item);
+                        Intent i = new Intent();
+                        i.setClassName(info.activityInfo.packageName, 
+                                       info.activityInfo.name);
+                        i.setAction("android.intent.action.CONFIGURE");
+                        i.addCategory("android.intent.category.P2P");
+                        BroadcastReceiver rec = new BroadcastReceiver(){
+                                public void onReceive(Context c, Intent i){
+                                    Intent launch = new Intent();
+                                    launch.setAction(Intent.ACTION_MAIN);
+                                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                                    launch.setPackage(info.activityInfo.packageName);
+                                    List<ResolveInfo> resolved = 
+                                        mgr.queryIntentActivities(launch, 0);
+                                    if (resolved.size() > 0) {
+                                        ActivityInfo info = resolved.get(0).activityInfo;
+                                        String arg = getResultData();
+                                        launch.setComponent(new ComponentName(
+                                                                info.packageName,
+                                                                info.name));
+                                        launch.putExtra("creator", true);
+                                        launch.putExtra(
+                                            "android.intent.extra.APPLICATION_ARGUMENT",
+                                            arg);
+                                        callback.onAppSelected(info.packageName, arg, launch);
+                                    }
+                                    else{
+                                        Toast.makeText(context, 
+                                                       "No applications found.",
+                                                       Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            };
+                        context.sendOrderedBroadcast(i, null, rec, null, Activity.RESULT_OK, null, null);
+                    }
+                });
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
+        else{
+            Toast.makeText(context.getApplicationContext(), 
+                           "Sorry, couldn't find any compatible apps.", 
+                           Toast.LENGTH_SHORT).show();
+        }
+	}
+
+	public interface Callback {
+	    public void onAppSelected(String pkg, String arg, Intent localLaunch);
 	}
 }

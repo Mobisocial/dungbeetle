@@ -1,31 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
 
-import java.util.List;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.android.apps.tag.record.UriRecord;
-
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
-import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.appmanifest.ApplicationManifest;
-import edu.stanford.mobisocial.appmanifest.platforms.PlatformReference;
-import edu.stanford.mobisocial.bumblebee.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 
@@ -36,7 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
  */
 public class ActivitySnapshot extends BroadcastReceiver implements DbEntryHandler, ActivityCallout {
     private static final String TAG = "DbActivitySnapshot";
-    public static final String TYPE = "app_snap";
+    public static final String TYPE = "app_snapshot";
     
     @Override
     public String getType() {
@@ -44,7 +26,7 @@ public class ActivitySnapshot extends BroadcastReceiver implements DbEntryHandle
     }
 
 	public void handleReceived(Context context, Contact from, JSONObject obj) {
-		// Not yet hndled.
+		// Not yet handled.
 	}
 
 	private static void toast(final Context context, final String text) {
@@ -64,7 +46,6 @@ public class ActivitySnapshot extends BroadcastReceiver implements DbEntryHandle
 
     @Override
     public Intent getStartIntent() {
-        // TODO Auto-generated method stub
         // mPackage, mAppArg
         return null;
     }

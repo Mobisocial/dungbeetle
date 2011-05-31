@@ -97,7 +97,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                     	String update = editor.toString();
                         if(update.length() != 0){
                             Helpers.sendToFeed(ObjectsActivity.this, 
-                                               StatusObj.getStatusObj(update), 
+                                               StatusObj.from(update), 
                                                feedUri);
                             editor.clear();
                         }
@@ -126,7 +126,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                             .setItems(new String[] {
                                     "TapBoard",
                                     "PhotoTaker",
-                                    "Whiteboard",
+                                    "Application...",
                                     "VoiceRecorder"
                                 }, new DialogInterface.OnClickListener() {
                                     @Override
@@ -141,11 +141,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                                 // TODO: move this inside RemoteActivity
                                                                 // TODO: finish objectification:
                                                                 // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
-                                                                ContentValues values = new ContentValues();
-                                                                JSONObject obj = StatusObj.json(data);
-                                                                values.put(DbObject.JSON, obj.toString());
-                                                                values.put(DbObject.TYPE, StatusObj.TYPE);
-                                                                Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
+                                                                DbObject obj = StatusObj.from(data);
+                                                                Helpers.sendToFeed(ObjectsActivity.this, obj, feedUri);
                                                             }
                                                         }));
                                                 break;
@@ -158,25 +155,23 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                         new PhotoTaker.ResultHandler() {
                                                             @Override
                                                             public void onResult(byte[] data) {
-                                                                ContentValues values = new ContentValues();
-                                                                JSONObject obj = PictureObj.json(data);
-                                                                values.put(DbObject.JSON, obj.toString());
-                                                                values.put(DbObject.TYPE, PictureObj.TYPE);
+                                                                DbObject obj = PictureObj.from(data);
                                                                 Helpers.sendToFeed(
-                                                                    ObjectsActivity.this, values, feedUri);
+                                                                    ObjectsActivity.this, obj, feedUri);
                                                             }
                                                         }, 200, false));
                                                 break;
                                             }
                                         case 2: {
-                                            String packageName = "edu.stanford.junction.sample.jxwhiteboard";
-                                            String arg = "junction://prpl.stanford.edu/whiteboard1";
-                                            ContentValues values = new ContentValues();
-                                            JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-                                            values.put(DbObject.JSON, obj.toString());
-                                            values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
-                                            Helpers.sendToFeed(
-                                                ObjectsActivity.this, values, feedUri);
+                                            InviteToSharedAppObj.promptForApplication(
+                                                    ObjectsActivity.this, new InviteToSharedAppObj.Callback() {
+                                                @Override
+                                                public void onAppSelected(String pkg, String arg, Intent localLaunch) {
+                                                    DbObject obj = InviteToSharedAppObj.from(pkg, arg);
+                                                    Helpers.sendToFeed(
+                                                        ObjectsActivity.this, obj, feedUri);
+                                                }
+                                            });
                                             break;
                                         }
                                         case 3: {

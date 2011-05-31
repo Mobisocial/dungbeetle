@@ -22,7 +22,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collection;
 
@@ -150,9 +153,15 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                         startApp.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    UIHelpers.startApplicationWithContact(
-                                        GroupsActivity.this, 
-                                        contactsInGroup);
+                                    InviteToSharedAppObj.promptForApplication(GroupsActivity.this, new InviteToSharedAppObj.Callback() {
+                                        @Override
+                                        public void onAppSelected(String packageName, String arg, Intent localLaunch) {
+                                            Helpers.sendMessage(GroupsActivity.this, contactsInGroup,
+                                                    new DbObject(InviteToSharedAppFeedObj.TYPE,
+                                                            InviteToSharedAppObj.json(packageName, arg)));
+                                            GroupsActivity.this.startActivity(localLaunch);
+                                        }
+                                    });
                                 }
                             });
 
