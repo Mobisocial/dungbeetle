@@ -11,18 +11,13 @@ import edu.stanford.mobisocial.dungbeetle.objects.*;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Collection;
-import java.util.UUID;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.ContentValues;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.content.Context;
 import android.database.Cursor;
-import java.util.BitSet;
 import com.skjegstad.utils.BloomFilter;
-import android.util.Base64;
 import java.util.ArrayList;
 
 public class Helpers {

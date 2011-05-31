@@ -1,11 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.content.ContentValues;
-import android.content.Intent;
+
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.App;
-import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
@@ -14,15 +11,7 @@ import android.content.Context;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.TextView;
-
 import android.util.Base64;
-import android.util.Log;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
