@@ -7,6 +7,7 @@ import android.content.Intent;
 public class RemoteActivity implements ActivityCallout {
     private static final String ACTION_LAUNCH_TAPBOARD = "mobisocial.db.action.UPDATE_STATUS";
 	private final ResultHandler mResultHandler;
+	@SuppressWarnings("unused")
 	private final Context mContext;
 
 	public RemoteActivity(Context c, ResultHandler handler) {

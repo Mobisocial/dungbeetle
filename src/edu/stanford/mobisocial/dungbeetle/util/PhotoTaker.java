@@ -3,12 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.util;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 
-import org.json.JSONObject;
-
-import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
-
 import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -17,13 +12,11 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.widget.ImageView;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import android.util.Base64;
 
 public class PhotoTaker implements ActivityCallout {
 	private final ResultHandler mResultHandler;
 	private final Context mContext;
+	@SuppressWarnings("unused")
 	private final boolean mPortraitMode;
 	private final int mSize;
 

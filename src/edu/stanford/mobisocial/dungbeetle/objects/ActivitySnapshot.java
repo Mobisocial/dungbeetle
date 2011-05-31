@@ -17,6 +17,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
  *
  */
 public class ActivitySnapshot extends BroadcastReceiver implements DbEntryHandler, ActivityCallout {
+    @SuppressWarnings("unused")
     private static final String TAG = "DbActivitySnapshot";
     public static final String TYPE = "app_snapshot";
     
@@ -29,6 +30,7 @@ public class ActivitySnapshot extends BroadcastReceiver implements DbEntryHandle
 		// Not yet handled.
 	}
 
+	@SuppressWarnings("unused")
 	private static void toast(final Context context, final String text) {
 	    Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
 	}

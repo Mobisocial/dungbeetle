@@ -8,9 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.R;
 
 public class InviteToWebSessionObj implements DbEntryHandler {
 
