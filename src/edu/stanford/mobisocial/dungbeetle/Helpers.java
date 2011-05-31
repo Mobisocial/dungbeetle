@@ -165,18 +165,6 @@ public class Helpers {
         sendMessage(context, Collections.singletonList(contact), obj);
     }
 
-    public static void sendFile(final Context c, final Collection<Contact> contacts,
-                                final String mimeType,
-                                final String uri){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
-        ContentValues values = new ContentValues();
-        JSONObject obj = SendFileObj.json(uri, mimeType);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.DESTINATION, buildAddresses(contacts));
-        values.put(DbObject.TYPE, SendFileObj.TYPE);
-        c.getContentResolver().insert(url, values);
-    }
-
     public static void sendAppFeedInvite(Context c, 
                                          Collection<Contact> contacts, 
                                          String feedName,

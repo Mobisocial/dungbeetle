@@ -5,13 +5,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.ViewGroup;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class SendFileObj implements DbEntryHandler, FeedRenderer {
+public class FileObj implements DbEntryHandler, FeedRenderer {
 
     public static final String TYPE = "send_file";
     public static final String URI = "uri";
@@ -21,6 +22,10 @@ public class SendFileObj implements DbEntryHandler, FeedRenderer {
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    public static DbObject from(String uri, String mimeType) {
+        return new DbObject(TYPE, json(uri, mimeType));
     }
 
     public static JSONObject json(String uri, String mimeType){

@@ -4,7 +4,6 @@ import java.security.PublicKey;
 
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import android.content.Context;
