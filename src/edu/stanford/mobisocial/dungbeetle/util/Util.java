@@ -1,15 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle.util;
-import android.util.Log;
+
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.AbstractCollection;
 import java.util.Iterator;
 import java.math.BigInteger;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;

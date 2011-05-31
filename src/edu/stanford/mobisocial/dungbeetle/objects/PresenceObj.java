@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.view.ViewGroup;
+
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,7 +8,6 @@ import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 
