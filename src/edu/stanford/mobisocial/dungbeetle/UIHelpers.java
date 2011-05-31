@@ -1,32 +1,18 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Activity;
+
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
 import android.widget.EditText;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-
 
 public class UIHelpers {
 

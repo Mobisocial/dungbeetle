@@ -3,9 +3,6 @@ import android.app.Activity;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Bundle;
 import android.widget.ImageView;
 
