@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -30,12 +32,19 @@ public class GroupsTabActivity extends TabActivity
         TabHost.TabSpec spec;  
 
         Intent intent = getIntent();
-        
-        Long group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-        group_id = intent.getLongExtra("group_id", group_id);
-        String group_name = intent.getStringExtra("group_name");
-        if (intent.hasExtra("group_uri")) {
-            mNfc.share(NdefFactory.fromUri(intent.getStringExtra("group_uri")));
+        Long group_id = null;
+        String group_name = null;
+        if (intent.hasExtra("group_id")) {
+            group_id = intent.getLongExtra("group_id", -1);
+            group_name = intent.getStringExtra("group_name");
+            mNfc.share(NdefFactory.fromUri(intent.getStringExtra("group_uri")));            
+        } else if (getIntent().getType().equals(Group.MIME_TYPE)) {
+            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
+            Maybe<Group> maybeG = Group.forId(this, group_id);
+            try {
+                Group g = maybeG.get();
+                group_name = g.name;
+            } catch (Exception e) {}
         }
 
         setTitle("Groups > " + group_name);
@@ -81,6 +90,7 @@ public class GroupsTabActivity extends TabActivity
     }
 
 }
+
 
 
 
