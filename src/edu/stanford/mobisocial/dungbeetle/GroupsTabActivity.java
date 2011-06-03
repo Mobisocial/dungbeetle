@@ -1,9 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewParent;
 import android.widget.TabHost;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
@@ -34,9 +37,17 @@ public class GroupsTabActivity extends TabActivity
         Intent intent = getIntent();
         Long group_id = null;
         String group_name = null;
+        String feed_name = null;
+        // TODO: Depracate extras-based access in favor of Data field.
         if (intent.hasExtra("group_id")) {
             group_id = intent.getLongExtra("group_id", -1);
             group_name = intent.getStringExtra("group_name");
+            feed_name = group_name;
+            Maybe<Group> maybeG = Group.forId(this, group_id);
+            try {
+                Group g = maybeG.get();
+                feed_name = g.feedName;
+            } catch (Exception e) {}
             mNfc.share(NdefFactory.fromUri(intent.getStringExtra("group_uri")));            
         } else if (getIntent().getType().equals(Group.MIME_TYPE)) {
             group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
@@ -44,10 +55,19 @@ public class GroupsTabActivity extends TabActivity
             try {
                 Group g = maybeG.get();
                 group_name = g.name;
+                feed_name = g.feedName;
             } catch (Exception e) {}
         }
 
         setTitle("Groups > " + group_name);
+        View titleView = getWindow().findViewById(android.R.id.title);
+        if (titleView != null) {
+            ViewParent parent = titleView.getParent();
+            if (parent != null && parent instanceof View) {
+                View parentView = (View) parent;
+                parentView.setBackgroundColor(Feed.colorFor(feed_name));
+            }
+        }
             
         intent = new Intent().setClass(this, FeedActivity.class);
         intent.putExtra("group_id", group_id);
