@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.social.Groups;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.app.ListActivity;
 import android.content.Context;
@@ -13,7 +14,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -32,6 +35,7 @@ public class FeedListActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         mContactCache = new ContactCache(this);
         setContentView(R.layout.feeds);
+        findViewById(R.id.button_new).setOnClickListener(newFeed());
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
         mFeeds = new FeedListCursorAdapter(this, c);
@@ -98,7 +102,7 @@ public class FeedListActivity extends ListActivity {
             launch.putExtra("group_id", (Long)v.getTag(R.id.group_id));
             launch.putExtra("group_uri", (String)v.getTag(R.id.group_uri));
         } else {
-            launch.setClass(FeedListActivity.this, ObjectsActivity.class);
+            launch.setClass(FeedListActivity.this, FeedActivity.class);
             launch.putExtra("feed_id", feedId);
         }
 
@@ -114,5 +118,15 @@ public class FeedListActivity extends ListActivity {
             allowed.append(",'").append(type).append("'");
         }
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
+
+    private OnClickListener newFeed() {
+        return new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Group g = Groups.createGroup(FeedListActivity.this);
+                Groups.startViewActivity(FeedListActivity.this, g);
+            }
+        };
     }
 }

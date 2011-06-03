@@ -36,7 +36,7 @@ import android.content.Intent;
 
 
 
-public class ObjectsActivity extends RichListActivity implements OnItemClickListener{
+public class FeedActivity extends RichListActivity implements OnItemClickListener{
 
 	private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
@@ -95,7 +95,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                     	Editable editor = ed.getText();
                     	String update = editor.toString();
                         if(update.length() != 0){
-                            Helpers.sendToFeed(ObjectsActivity.this, 
+                            Helpers.sendToFeed(FeedActivity.this, 
                                                StatusObj.from(update), 
                                                feedUri);
                             editor.clear();
@@ -120,7 +120,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
-                            new AlertDialog.Builder(ObjectsActivity.this)
+                            new AlertDialog.Builder(FeedActivity.this)
                             .setTitle("Choose App")
                             .setItems(new String[] {
                                     "TapBoard",
@@ -132,8 +132,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                     public void onClick(DialogInterface dialog, int which) {
                                         switch (which) {
                                             case 0: {
-                                                doActivityForResult(ObjectsActivity.this, 
-                                                        new RemoteActivity(ObjectsActivity.this, new RemoteActivity.ResultHandler() {
+                                                doActivityForResult(FeedActivity.this, 
+                                                        new RemoteActivity(FeedActivity.this, new RemoteActivity.ResultHandler() {
                                                             
                                                             @Override
                                                             public void onResult(String data) {
@@ -141,40 +141,40 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                                                                 // TODO: finish objectification:
                                                                 // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
                                                                 DbObject obj = StatusObj.from(data);
-                                                                Helpers.sendToFeed(ObjectsActivity.this, obj, feedUri);
+                                                                Helpers.sendToFeed(FeedActivity.this, obj, feedUri);
                                                             }
                                                         }));
                                                 break;
                                             }
                                             case 1: {
                                                 doActivityForResult(
-                                                    ObjectsActivity.this, 
+                                                    FeedActivity.this, 
                                                     new PhotoTaker(
-                                                        ObjectsActivity.this, 
+                                                        FeedActivity.this, 
                                                         new PhotoTaker.ResultHandler() {
                                                             @Override
                                                             public void onResult(byte[] data) {
                                                                 DbObject obj = PictureObj.from(data);
                                                                 Helpers.sendToFeed(
-                                                                    ObjectsActivity.this, obj, feedUri);
+                                                                    FeedActivity.this, obj, feedUri);
                                                             }
                                                         }, 200, false));
                                                 break;
                                             }
                                         case 2: {
                                             InviteToSharedAppObj.promptForApplication(
-                                                    ObjectsActivity.this, new InviteToSharedAppObj.Callback() {
+                                                    FeedActivity.this, new InviteToSharedAppObj.Callback() {
                                                 @Override
                                                 public void onAppSelected(String pkg, String arg, Intent localLaunch) {
                                                     DbObject obj = InviteToSharedAppObj.from(pkg, arg);
                                                     Helpers.sendToFeed(
-                                                        ObjectsActivity.this, obj, feedUri);
+                                                        FeedActivity.this, obj, feedUri);
                                                 }
                                             });
                                             break;
                                         }
                                         case 3: {
-                                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                                            Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
                                             voiceintent.putExtra("feedUri", feedUri.toString());
                                             startActivity(voiceintent);
                                             break;
@@ -198,7 +198,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(ObjectsActivity.this, obj);
+                activator.activate(FeedActivity.this, obj);
             }
         }
         catch(JSONException e){
@@ -223,7 +223,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, ObjectsActivity.this, c, mContactCache);
+            DbObject.bindView(v, FeedActivity.this, c, mContactCache);
         }
     }
     

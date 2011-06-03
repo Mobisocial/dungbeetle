@@ -26,6 +26,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
+import edu.stanford.mobisocial.dungbeetle.social.Groups;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collection;
 
@@ -229,17 +230,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             alert.setView(input);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        IdentityProvider ident = new DBIdentityProvider(mHelper);
-                        String feedName = UUID.randomUUID().toString();
-                        Uri uri = GroupProviders.defaultNewSessionUri(
-                            ident, input.getText().toString(), feedName);
-                        Uri gUri = Helpers.insertGroup(GroupsActivity.this, 
-                                                       input.getText().toString(),
-                                                       uri.toString(),
-                                                       feedName);
-                        long id = Long.valueOf(gUri.getLastPathSegment());
-                        GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-                        gp.forceUpdate(id, uri, GroupsActivity.this, ident);
+                        Groups.createGroup(GroupsActivity.this, input.getText().toString(), mHelper);
                     }
                 });
             alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

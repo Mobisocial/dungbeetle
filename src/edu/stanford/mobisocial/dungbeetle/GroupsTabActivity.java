@@ -30,7 +30,9 @@ public class GroupsTabActivity extends TabActivity
         TabHost.TabSpec spec;  
 
         Intent intent = getIntent();
-        Long group_id = intent.getLongExtra("group_id", -1);
+        
+        Long group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
+        group_id = intent.getLongExtra("group_id", group_id);
         String group_name = intent.getStringExtra("group_name");
         if (intent.hasExtra("group_uri")) {
             mNfc.share(NdefFactory.fromUri(intent.getStringExtra("group_uri")));
@@ -38,7 +40,7 @@ public class GroupsTabActivity extends TabActivity
 
         setTitle("Groups > " + group_name);
             
-        intent = new Intent().setClass(this, ObjectsActivity.class);
+        intent = new Intent().setClass(this, FeedActivity.class);
         intent.putExtra("group_id", group_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",

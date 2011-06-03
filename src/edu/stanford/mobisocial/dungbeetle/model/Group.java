@@ -4,6 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import java.util.Collection;
 
 public class Group{
+    public static final String MIME_TYPE = "vnd.mobisocial.db/group";
     public static final String TABLE = "groups";
     public static final String _ID = "_id";
     public static final String NAME = "name";
