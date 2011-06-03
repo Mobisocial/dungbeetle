@@ -107,9 +107,9 @@ public class DungBeetleActivity extends TabActivity
         Intent intent;  
 
 
-        intent = new Intent().setClass(this, ObjectsActivity.class);
+        intent = new Intent().setClass(this, FeedListActivity.class);
         spec = tabHost.newTabSpec("objects").setIndicator(
-            "Feed",
+            "Feeds",
             null).setContent(intent);
         tabHost.addTab(spec);
 

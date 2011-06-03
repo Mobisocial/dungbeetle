@@ -6,6 +6,10 @@ import android.widget.TabHost;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 
+/**
+ * Represents a group by showing its feed and members.
+ * TODO: Accept only a group_id extra and query for other parameters.
+ */
 public class GroupsTabActivity extends TabActivity
 {
     private Nfc mNfc;

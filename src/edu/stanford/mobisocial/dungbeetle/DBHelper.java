@@ -32,6 +32,7 @@ import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
+import android.database.sqlite.SQLiteQueryBuilder;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
@@ -431,9 +432,22 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
             String sortOrder){
-        String groupBy = DbObject.FEED_NAME;
+
+        String tables = new StringBuilder(DbObject.TABLE)
+            .append(" LEFT JOIN ")
+            .append(Group.TABLE)
+            .append(" ON ")
+            .append(DbObject.TABLE)
+            .append(".")
+            .append(DbObject.FEED_NAME)
+            .append(" = ")
+            .append(Group.TABLE)
+            .append(".")
+            .append(Group.FEED_NAME).toString();
+        String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
         String orderBy = DbObject.TIMESTAMP + " desc";
-        return getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, 
+        Log.d(TAG, "THE QUEYR IS " + tables);
+        return getReadableDatabase().query(tables, projection, selection, selectionArgs, 
                 groupBy, null, orderBy, null);
     }
 

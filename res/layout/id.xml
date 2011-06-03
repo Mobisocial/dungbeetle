@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  A dummy view to add IDs for use with View tags. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	      android:orientation="vertical"
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent"
+	      >
+  <Button
+      android:id="@+id/group_id"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      />
+  <Button
+      android:id="@+id/group_name"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      />
+  <Button
+      android:id="@+id/group_uri"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      />
+</LinearLayout>
+
