@@ -14,6 +14,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 
 public class HandleGroupSessionActivity extends Activity {
@@ -69,25 +72,12 @@ public class HandleGroupSessionActivity extends Activity {
             DBIdentityProvider ident = new DBIdentityProvider(helper);
             gp.forceUpdate(id, uri, this, ident);
             ident.close();
+            helper.close();
         }
-
-        Intent launch = new Intent();
-        launch.setAction(Intent.ACTION_MAIN);
-        launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        launch.setComponent(
-            new ComponentName(
-                getPackageName(),
-                DungBeetleActivity.class.getName()));
-        Notification notification = new Notification(
-            R.drawable.icon, "Added new group.", System.currentTimeMillis());
-        PendingIntent contentIntent = PendingIntent.getActivity(
-            this, 0, launch, 0);
-        notification.setLatestEventInfo(
-            this, "New Group",
-            "Click to view.", 
-            contentIntent);
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.notify(0, notification);
+        try {
+            Maybe<Group> group = Group.forId(this, id);
+            Group.view(HandleGroupSessionActivity.this, group.get());
+        } catch (NoValError e) {}
     }
 
 }
