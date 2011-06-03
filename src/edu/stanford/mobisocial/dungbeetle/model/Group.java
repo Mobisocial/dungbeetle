@@ -1,6 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.model;
+import android.content.Context;
 import android.database.Cursor;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+
 import java.util.Collection;
 
 public class Group{
@@ -29,6 +32,13 @@ public class Group{
         this.name = name;
         this.dynUpdateUri = dynUpdateUri;
         this.feedName = feedName;
+    }
+
+    public static Maybe<Group> forId(Context context, long id) {
+        DBHelper helper = new DBHelper(context);
+        Maybe<Group> g = helper.groupForGroupId(id);
+        helper.close();
+        return g;
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
