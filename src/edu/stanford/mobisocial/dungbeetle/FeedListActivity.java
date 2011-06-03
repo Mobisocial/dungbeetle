@@ -2,7 +2,9 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.social.Groups;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.app.ListActivity;
@@ -125,7 +127,8 @@ public class FeedListActivity extends ListActivity {
             @Override
             public void onClick(View v) {
                 Group g = Groups.createGroup(FeedListActivity.this);
-                Groups.startViewActivity(FeedListActivity.this, g);
+                Helpers.sendToFeed(FeedListActivity.this,
+                        StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
             }
         };
     }
