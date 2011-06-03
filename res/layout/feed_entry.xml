@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	      android:layout_width="fill_parent"
+	      android:layout_height="wrap_content"
+	      android:paddingTop="6dip"
+	      android:paddingBottom="6dip"
+	      android:orientation="vertical"
+	      android:gravity="top"
+	      android:id="@+id/contact_frame"
+	      >
+
+
+<TextView
+ android:id="@+id/feed_label"
+ android:layout_width="fill_parent"
+ android:layout_height="wrap_content"
+ android:text="feed name"
+ android:background="@drawable/feed_header"
+ android:textColor="@drawable/black"
+ android:padding="4dip">
+</TextView>
+<include android:id="@+id/object_entry" layout="@layout/objects_item" />
+
+</LinearLayout>

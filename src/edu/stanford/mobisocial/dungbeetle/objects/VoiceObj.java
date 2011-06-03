@@ -1,26 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle.objects;
-import android.content.Intent;
+
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.App;
-import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
 
 
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 import android.util.Base64;
-import android.util.Log;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -48,7 +39,10 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
     public String getType() {
         return TYPE;
     }
-        
+
+    public static DbObject from(byte[] data) {
+        return new DbObject(TYPE, json(data));
+    }
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
         JSONObject obj = new JSONObject();

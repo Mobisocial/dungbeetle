@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.content.Context;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.objects.FileObj;
 import android.widget.TabHost;
 import android.app.TabActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -116,7 +117,7 @@ public class PickContactsActivity extends TabActivity {
             String url = "";
             if(data != null) url = data.toString();
             else if(txt != null) url = txt;
-            Helpers.sendFile(this, mResultContacts, mIntent.getType(), url);
+            Helpers.sendMessage(this, mResultContacts, FileObj.from(mIntent.getType(), url));
         } 
         else if(mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
                 mIntent.getStringExtra("type").equals("invite_app_feed")){

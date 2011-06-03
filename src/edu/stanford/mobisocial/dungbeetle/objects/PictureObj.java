@@ -6,6 +6,7 @@ import android.widget.LinearLayout;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
@@ -25,6 +26,10 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    public static DbObject from(byte[] data) {
+        return new DbObject(TYPE, PictureObj.json(data));
     }
 
     public static JSONObject json(byte[] data){

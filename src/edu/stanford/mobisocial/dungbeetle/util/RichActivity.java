@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.util;
+
 import android.app.Activity;
-import android.app.ListActivity;
 import android.content.Intent;
 
 

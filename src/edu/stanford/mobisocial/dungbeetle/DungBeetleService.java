@@ -12,7 +12,6 @@ public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private MessagingManagerThread mMessagingManagerThread;
 	private GroupManagerThread mGroupManagerThread;
-	private PresenceThread mPresenceThread;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
 

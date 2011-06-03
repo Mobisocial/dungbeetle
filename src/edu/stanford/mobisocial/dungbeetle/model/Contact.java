@@ -1,9 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.model;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+
 import edu.stanford.mobisocial.dungbeetle.R;
 import java.io.Serializable;
 import android.database.Cursor;
-import java.security.PublicKey;
 import java.util.Date;
 
 

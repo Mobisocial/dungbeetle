@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.util.Log;
+
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -11,19 +11,11 @@ import edu.stanford.mobisocial.dungbeetle.objects.*;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Collection;
-import java.util.UUID;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.ContentValues;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.content.Context;
-import android.database.Cursor;
-import java.util.BitSet;
-import com.skjegstad.utils.BloomFilter;
-import android.util.Base64;
-import java.util.ArrayList;
 
 public class Helpers {
     public static final String TAG = "Helpers";
@@ -91,66 +83,6 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static BloomFilter getFriendsBloomFilter(final Context c) {
-        BloomFilter<String> friendsFilter = new BloomFilter<String>(.001, 1000);
-        Cursor cursor = c.getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            new String[]{Contact.PUBLIC_KEY}, 
-            null, 
-            null, 
-            null);
-
-        cursor.moveToFirst();
-        while(!cursor.isAfterLast()){
-            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
-            friendsFilter.add(publicKey);
-            cursor.moveToNext();
-        }
-
-        return friendsFilter;    
-    }
-
-    public static Contact[] checkFriends(final Context c, BloomFilter friendsFilter) {
-        Cursor cursor = c.getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            null, 
-            null, 
-            null, 
-            null);
-
-        cursor.moveToFirst();
-
-        ArrayList<Contact> friends = new ArrayList<Contact>();
-        while(!cursor.isAfterLast()){
-            Contact contact = new Contact(cursor);
-            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
-            String name = cursor.getString(cursor.getColumnIndexOrThrow(Contact.NAME));
-            if(friendsFilter.contains(publicKey)) {
-                Log.w("bloomfilter", name + " is a friend");
-                friends.add(contact);
-            }
-            else {
-                Log.w("bloomfilter", name + " is not a friend");
-            }
-            cursor.moveToNext();
-        }
-
-        Contact[] friendsArray = new Contact[friends.size()];
-        return friends.toArray(friendsArray);
-    }
-
-    public static void sendApplicationInvite(final Context c, 
-                                             final Collection<Contact> contacts, 
-                                             final String packageName, final String arg){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
-        ContentValues values = new ContentValues();
-        JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.DESTINATION, buildAddresses(contacts));
-        values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
-        c.getContentResolver().insert(url, values);
-    }
-
     public static void sendIM(final Context c, 
                               final Collection<Contact> contacts, 
                               final String msg){
@@ -180,18 +112,6 @@ public class Helpers {
             final Contact contact,
             final DbObject obj) {
         sendMessage(context, Collections.singletonList(contact), obj);
-    }
-
-    public static void sendFile(final Context c, final Collection<Contact> contacts,
-                                final String mimeType,
-                                final String uri){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
-        ContentValues values = new ContentValues();
-        JSONObject obj = SendFileObj.json(uri, mimeType);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.DESTINATION, buildAddresses(contacts));
-        values.put(DbObject.TYPE, SendFileObj.TYPE);
-        c.getContentResolver().insert(url, values);
     }
 
     public static void sendAppFeedInvite(Context c, 
@@ -233,7 +153,10 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
     
-    public static void sendToFeed(Context c, ContentValues values, Uri feed) {
+    public static void sendToFeed(Context c, DbObject obj, Uri feed) {
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.getJson().toString());
+        values.put(DbObject.TYPE, obj.getType());
         c.getContentResolver().insert(feed, values); 
     }
 

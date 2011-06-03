@@ -28,12 +28,13 @@ import edu.stanford.mobisocial.dungbeetle.BackupManager.BackupService;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.google.OAuthFlowApp;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
+import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.graphics.BitmapFactory;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collections;
 import android.view.ContextMenu;
@@ -191,9 +192,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                         start_app.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    UIHelpers.startApplicationWithContact(
-                                        ContactsActivity.this, 
-                                        Collections.singletonList(c));
+                                    InviteToSharedAppObj.promptForApplication(ContactsActivity.this, new InviteToSharedAppObj.Callback() {
+                                        @Override
+                                        public void onAppSelected(String packageName, String arg, Intent localLaunch) {
+                                            Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c),
+                                                    new DbObject(InviteToSharedAppFeedObj.TYPE,
+                                                            InviteToSharedAppObj.json(packageName, arg)));
+                                            ContactsActivity.this.startActivity(localLaunch);
+                                        }
+                                    });
                                 }
                             });
                     

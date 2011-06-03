@@ -1,13 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,40 +17,28 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 
+import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
-import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 import edu.stanford.mobisocial.dungbeetle.util.RemoteActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
 
 
 
-public class ObjectsActivity extends RichListActivity implements OnItemClickListener{
+public class FeedActivity extends RichListActivity implements OnItemClickListener{
 
 	private ObjectListCursorAdapter mObjects;
-	private DBIdentityProvider mIdent;
-	private DBHelper mHelper;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
     private Uri feedUri;
@@ -64,19 +49,18 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
         Cursor c;
-        mHelper = new DBHelper(ObjectsActivity.this); 
-        mIdent = new DBIdentityProvider(mHelper);
         Intent intent = getIntent();
-        mContactCache = new ContactCache();
+        mContactCache = new ContactCache(this);
         
         if(intent.hasExtra("group_id")) {
         	try {
 	        	Long groupId = intent.getLongExtra("group_id", -1);
-	        	Group group = mHelper.groupForGroupId(groupId).get();
-	            feedName = group.feedName;
+	        	feedName = new DBHelper(this).groupForGroupId(groupId).get().feedName;
         	} catch (Maybe.NoValError e) {
         		Log.w(TAG, "Tried to view a group with bad group id");
         	}
+        } else if (intent.hasExtra("feed_id")) {
+            feedName = intent.getStringExtra("feed_id");
         }
         
         feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
@@ -111,8 +95,8 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
                     	Editable editor = ed.getText();
                     	String update = editor.toString();
                         if(update.length() != 0){
-                            Helpers.sendToFeed(ObjectsActivity.this, 
-                                               StatusObj.getStatusObj(update), 
+                            Helpers.sendToFeed(FeedActivity.this, 
+                                               StatusObj.from(update), 
                                                feedUri);
                             editor.clear();
                         }
@@ -136,66 +120,61 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
-                            new AlertDialog.Builder(ObjectsActivity.this)
+                            new AlertDialog.Builder(FeedActivity.this)
                             .setTitle("Choose App")
                             .setItems(new String[] {
                                     "TapBoard",
                                     "PhotoTaker",
-                                    "Whiteboard",
+                                    "Application...",
                                     "VoiceRecorder"
                                 }, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         switch (which) {
                                             case 0: {
-                                                doActivityForResult(ObjectsActivity.this, 
-                                                        new RemoteActivity(ObjectsActivity.this, new RemoteActivity.ResultHandler() {
+                                                doActivityForResult(FeedActivity.this, 
+                                                        new RemoteActivity(FeedActivity.this, new RemoteActivity.ResultHandler() {
                                                             
                                                             @Override
                                                             public void onResult(String data) {
                                                                 // TODO: move this inside RemoteActivity
                                                                 // TODO: finish objectification:
                                                                 // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
-                                                                ContentValues values = new ContentValues();
-                                                                JSONObject obj = StatusObj.json(data);
-                                                                values.put(DbObject.JSON, obj.toString());
-                                                                values.put(DbObject.TYPE, StatusObj.TYPE);
-                                                                Helpers.sendToFeed(ObjectsActivity.this, values, feedUri);
+                                                                DbObject obj = StatusObj.from(data);
+                                                                Helpers.sendToFeed(FeedActivity.this, obj, feedUri);
                                                             }
                                                         }));
                                                 break;
                                             }
                                             case 1: {
                                                 doActivityForResult(
-                                                    ObjectsActivity.this, 
+                                                    FeedActivity.this, 
                                                     new PhotoTaker(
-                                                        ObjectsActivity.this, 
+                                                        FeedActivity.this, 
                                                         new PhotoTaker.ResultHandler() {
                                                             @Override
                                                             public void onResult(byte[] data) {
-                                                                ContentValues values = new ContentValues();
-                                                                JSONObject obj = PictureObj.json(data);
-                                                                values.put(DbObject.JSON, obj.toString());
-                                                                values.put(DbObject.TYPE, PictureObj.TYPE);
+                                                                DbObject obj = PictureObj.from(data);
                                                                 Helpers.sendToFeed(
-                                                                    ObjectsActivity.this, values, feedUri);
+                                                                    FeedActivity.this, obj, feedUri);
                                                             }
                                                         }, 200, false));
                                                 break;
                                             }
                                         case 2: {
-                                            String packageName = "edu.stanford.junction.sample.jxwhiteboard";
-                                            String arg = "junction://prpl.stanford.edu/whiteboard1";
-                                            ContentValues values = new ContentValues();
-                                            JSONObject obj = InviteToSharedAppObj.json(packageName, arg);
-                                            values.put(DbObject.JSON, obj.toString());
-                                            values.put(DbObject.TYPE, InviteToSharedAppObj.TYPE);
-                                            Helpers.sendToFeed(
-                                                ObjectsActivity.this, values, feedUri);
+                                            InviteToSharedAppObj.promptForApplication(
+                                                    FeedActivity.this, new InviteToSharedAppObj.Callback() {
+                                                @Override
+                                                public void onAppSelected(String pkg, String arg, Intent localLaunch) {
+                                                    DbObject obj = InviteToSharedAppObj.from(pkg, arg);
+                                                    Helpers.sendToFeed(
+                                                        FeedActivity.this, obj, feedUri);
+                                                }
+                                            });
                                             break;
                                         }
                                         case 3: {
-                                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
+                                            Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
                                             voiceintent.putExtra("feedUri", feedUri.toString());
                                             startActivity(voiceintent);
                                             break;
@@ -219,7 +198,7 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(ObjectsActivity.this, obj);
+                activator.activate(FeedActivity.this, obj);
             }
         }
         catch(JSONException e){
@@ -227,58 +206,6 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
         }
         Log.i(TAG, "Clicked object: " + jsonSrc);
     }
-
-
-    private class ContactCache extends ContentObserver{
-
-        public ContactCache(){
-            super(new Handler(ObjectsActivity.this.getMainLooper()));
-            ObjectsActivity.this.getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-                true, this);
-
-            // So we pick up changes to user's profile image..
-            ObjectsActivity.this.getContentResolver().registerContentObserver(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
-                true, this);
-        }
-        
-        private Map<Long, Contact> mContactCache = new HashMap<Long, Contact>();
-
-        @Override
-        public void onChange(boolean self){
-            mContactCache.clear();
-        }
-
-        private Maybe<Contact> getContact(long id){
-            if(mContactCache.containsKey(id)){
-                return Maybe.definitely(mContactCache.get(id));
-            }
-            else{
-                if(id == Contact.MY_ID){
-                    Contact contact = mIdent.contactForUser();
-                    mContactCache.put(id, contact);
-                    return Maybe.definitely(contact);
-                }
-                else{
-                    Cursor c = getContentResolver().query(
-                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
-                        null, Contact._ID + "=?", 
-                        new String[]{String.valueOf(id)}, null);
-                    c.moveToFirst();
-                    if(c.isAfterLast()){
-                        return Maybe.unknown();
-                    }
-                    else{
-                        Contact contact = new Contact(c);
-                        mContactCache.put(id, contact);
-                        return Maybe.definitely(contact);
-                    }
-                }
-            }
-        }        
-    }
-
 
     private class ObjectListCursorAdapter extends CursorAdapter {
 
@@ -296,46 +223,17 @@ public class ObjectsActivity extends RichListActivity implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-            Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
-            Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
-            Date date = new Date(timestamp);
-            try{
-                Contact contact = mContactCache.getContact(contactId).get();
-
-                TextView nameText = (TextView) v.findViewById(R.id.name_text);
-                nameText.setText(contact.name);
-
-                final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-                ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
-
-                try {
-                    JSONObject content = new JSONObject(jsonSrc);
-
-                    TextView timeText = (TextView)v.findViewById(R.id.time_text);
-                    timeText.setText(RelativeDate.getRelativeDate(date));
-
-                    ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
-                    frame.removeAllViews();
-                    FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-                    if(renderer != null){
-                        renderer.render(ObjectsActivity.this, frame, content);
-                    }
-                } catch (JSONException e) {
-                    Log.e("db", "error opening json");
-                }
-            }
-            catch(Maybe.NoValError e){}
+            DbObject.bindView(v, FeedActivity.this, c, mContactCache);
         }
     }
     
     @Override
     public void finish() {
         super.finish();
-        mIdent.close();
+        mContactCache.close();
     }
 
-    public String getFeedObjectClause() {
+    private String getFeedObjectClause() {
         // TODO: Enumerate all Object classes, look for FeedRenderables.
 
     	String[] types = DbObjects.getRenderableTypes();

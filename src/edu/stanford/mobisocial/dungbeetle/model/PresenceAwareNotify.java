@@ -21,7 +21,7 @@ public class PresenceAwareNotify {
     public PresenceAwareNotify(Context context) {
         mContext = context;
         mNotificationManager = (NotificationManager)
-            context.getSystemService(context.NOTIFICATION_SERVICE);
+            context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {

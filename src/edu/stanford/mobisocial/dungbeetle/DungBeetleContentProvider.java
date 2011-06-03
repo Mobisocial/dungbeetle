@@ -6,9 +6,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
-import edu.stanford.mobisocial.dungbeetle.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.os.Binder;
@@ -292,18 +290,18 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", ".+")){
+        if(match(uri, "feedlist")) {
+            Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
+            c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/"));
+            return c;
+        }
+        else if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
                 selection, 
                 DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeed(appId,
-                                         feedName,
-                                         projection,
-                                         select,
-                                         selectionArgs,
-                                         sortOrder);
+            Cursor c = mHelper.queryFeed(appId, feedName, projection, select, selectionArgs, sortOrder);
             c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(getContext().getContentResolver(), Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;

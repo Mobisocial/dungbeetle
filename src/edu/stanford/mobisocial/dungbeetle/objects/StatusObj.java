@@ -3,13 +3,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
@@ -26,6 +23,10 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    public static DbObject from(String status) {
+        return new DbObject(TYPE, json(status));
     }
 
     public static JSONObject json(String status){
@@ -54,15 +55,5 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
-    }
-    
-    // TODO: Return a populated StatusObj type, extends FeedObj.
-    // Then: Helper.sendToFeed(Context c, FeedObj obj, Uri feed).
-    public static ContentValues getStatusObj(String status) {
-        ContentValues values = new ContentValues();
-        JSONObject obj = StatusObj.json(status);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, StatusObj.TYPE);
-        return values;
     }
 }

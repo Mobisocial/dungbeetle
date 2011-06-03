@@ -20,9 +20,7 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.R;
 
 public class InviteToSharedAppFeedObj implements DbEntryHandler {
 	private static final String TAG = "InviteToSharedAppFeedHandler";

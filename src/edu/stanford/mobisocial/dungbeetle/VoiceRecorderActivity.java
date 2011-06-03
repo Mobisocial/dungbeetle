@@ -18,11 +18,7 @@ import android.net.Uri;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.objects.VoiceObj;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.util.Log;
 
@@ -219,12 +215,8 @@ public class VoiceRecorderActivity extends Activity {
 				    }
 				    else
 				    {
-				        ContentValues values = new ContentValues();
-                        JSONObject obj = VoiceObj.json(rawBytes);
-                        values.put(DbObject.JSON, obj.toString());
-                        values.put(DbObject.TYPE, VoiceObj.TYPE);
                         Helpers.sendToFeed(
-                            getApplicationContext(), values, feedUri);
+                            getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
 
                         Log.i("voice recorder",feedUri.toString());
                         finish();
