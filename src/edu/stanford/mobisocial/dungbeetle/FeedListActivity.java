@@ -11,6 +11,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -89,6 +90,8 @@ public class FeedListActivity extends ListActivity {
             } else {
                 labelView.setText(feedName);
             }
+            
+            labelView.setBackgroundColor(Feed.colorFor(feedName));
         }
     }
 
