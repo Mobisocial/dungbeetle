@@ -43,6 +43,12 @@
 	      android:screenOrientation="portrait">
     </activity>
 
+	<receiver android:name="Publisher">
+		<intent-filter>
+			<action android:name="mobisocial.db.action.PUBLISH" />
+		</intent-filter>
+	</receiver>
+
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
 	      android:label="Dungbeetle Status"
