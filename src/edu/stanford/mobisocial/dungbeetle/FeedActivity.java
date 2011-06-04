@@ -17,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
+import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
@@ -166,9 +167,8 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                     FeedActivity.this, new InviteToSharedAppObj.Callback() {
                                                 @Override
                                                 public void onAppSelected(String pkg, String arg, Intent localLaunch) {
-                                                    DbObject obj = InviteToSharedAppObj.from(pkg, arg);
-                                                    Helpers.sendToFeed(
-                                                        FeedActivity.this, obj, mFeedUri);
+                                                    DbObject obj = new AppReference(pkg, arg);
+                                                    Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
                                                 }
                                             });
                                             break;

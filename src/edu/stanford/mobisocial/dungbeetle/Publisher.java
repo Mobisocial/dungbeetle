@@ -13,12 +13,12 @@ public class Publisher extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String arg = intent.getStringExtra(EXTRA_APP_ARGUMENT);
         // TODO: security
-        String pkg = intent.getStringExtra("mobisocial.db.PKG");
+        String pkg = intent.getStringExtra("mobisocial.db.PACKAGE");
         String state = intent.getStringExtra("mobisocial.db.STATE");
         AppReference app = new AppReference(pkg, arg, state);
         Uri feed = intent.getParcelableExtra("mobisocial.db.FEED");
-        // TODO: disabled due to bugs.
-        //Helpers.sendToFeed(context, app, feed);
+        // TODO: disabled due spam. Need "replaces" field for objects.
+        Helpers.sendToFeed(context, app, feed);
     }
 
 }

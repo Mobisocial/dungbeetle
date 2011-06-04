@@ -31,10 +31,9 @@ import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.IntentAbsorber;
 
 
-public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator, IntentAbsorber {
+public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "InviteToSharedAppObj";
 
     public static final String TYPE = "invite_app_session";
@@ -116,12 +115,6 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
     }
 
 	@Override
-	public void handleIntent(Intent intent) {
-	    AppReference app = from(intent.getStringExtra("package"), intent.getStringExtra("arg"));
-	    //app.store(intent.getStringExtra("feed_uri"));
-	}
-
-	@Override
 	public void activate(Uri feed, Context context, JSONObject content) {
 	    AppReference app = new AppReference(content);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
@@ -134,6 +127,7 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
 	        ActivityInfo activity = r.activityInfo;
 	        if (activity.packageName.equals(app.pkg())) {
 	            launch.setClassName(activity.packageName, activity.name);
+	            launch.putExtra("mobisocial.db.PACKAGE", activity.packageName);
 	            if (content.has(STATE)) {
 	                launch.putExtra("mobisocial.db.STATE", content.optString(STATE));
 	            }
