@@ -16,8 +16,9 @@ public class Publisher extends BroadcastReceiver {
         String pkg = intent.getStringExtra("mobisocial.db.PKG");
         String state = intent.getStringExtra("mobisocial.db.STATE");
         AppReference app = new AppReference(pkg, arg, state);
-        Uri feed = intent.getParcelableExtra("mobisocial.db.FEED"); 
-        Helpers.sendToFeed(context, app, feed);
+        Uri feed = intent.getParcelableExtra("mobisocial.db.FEED");
+        // TODO: disabled due to bugs.
+        //Helpers.sendToFeed(context, app, feed);
     }
 
 }
