@@ -25,4 +25,9 @@ public class Feed {
         }
         return Color.parseColor(feedColorStr);
     }
+
+    public static int colorFor(String name, int alpha) {
+        int c = colorFor(name);
+        return Color.argb(alpha, Color.red(c), Color.green(c), Color.blue(c));
+    }
 }

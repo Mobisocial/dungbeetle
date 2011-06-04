@@ -59,16 +59,21 @@ public class GroupsTabActivity extends TabActivity
             } catch (Exception e) {}
         }
 
+        int color = Feed.colorFor(feed_name);
         setTitle("Groups > " + group_name);
         View titleView = getWindow().findViewById(android.R.id.title);
         if (titleView != null) {
-            int color = Feed.colorFor(feed_name);
             ViewParent parent = titleView.getParent();
             if (parent != null && parent instanceof View) {
                 View parentView = (View) parent;
                 parentView.setBackgroundColor(color);
             }
         }
+
+        // Note: If you change this color, also update the cacheColorHint
+        // in FeedActivity and ContactsActivity.
+        tabHost.setBackgroundColor(color);
+        tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
             
         intent = new Intent().setClass(this, FeedActivity.class);
         intent.putExtra("group_id", group_id);

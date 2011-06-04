@@ -46,14 +46,12 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     private Uri mFeedUri;
     private ContactCache mContactCache;
 
-
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
         Cursor c;
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
-        int color = 0;
         
         if(intent.hasExtra("group_id")) {
         	try {
@@ -66,7 +64,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             feedName = intent.getStringExtra("feed_id");
         }
 
-        color = Feed.colorFor(feedName);
+        int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
@@ -89,6 +87,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
+		getListView().setCacheColorHint(color);
 
 		// TODO: Get rid of this? All feeds are created equal! -BJD
         if(!intent.hasExtra("contact_id")){
