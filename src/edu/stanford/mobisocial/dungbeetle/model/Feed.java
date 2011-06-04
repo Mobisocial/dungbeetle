@@ -5,7 +5,7 @@ import android.graphics.Color;
 import android.net.Uri;
 
 public class Feed {
-
+    public static final int BACKGROUND_ALPHA = 150;
     public static Uri uriForName(String name) {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + name);
     }

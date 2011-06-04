@@ -62,10 +62,11 @@ public class GroupsTabActivity extends TabActivity
         setTitle("Groups > " + group_name);
         View titleView = getWindow().findViewById(android.R.id.title);
         if (titleView != null) {
+            int color = Feed.colorFor(feed_name);
             ViewParent parent = titleView.getParent();
             if (parent != null && parent instanceof View) {
                 View parentView = (View) parent;
-                parentView.setBackgroundColor(Feed.colorFor(feed_name));
+                parentView.setBackgroundColor(color);
             }
         }
             

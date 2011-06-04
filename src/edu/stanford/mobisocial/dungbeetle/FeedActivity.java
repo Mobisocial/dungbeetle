@@ -20,6 +20,7 @@ import android.widget.EditText;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
@@ -52,6 +53,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         Cursor c;
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
+        int color = 0;
         
         if(intent.hasExtra("group_id")) {
         	try {
@@ -63,7 +65,8 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         } else if (intent.hasExtra("feed_id")) {
             feedName = intent.getStringExtra("feed_id");
         }
-        
+
+        color = Feed.colorFor(feedName);
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
