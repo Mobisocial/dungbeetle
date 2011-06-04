@@ -19,20 +19,22 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.IntentAbsorber;
 
 
-public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator {
+public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator, IntentAbsorber {
 	private static final String TAG = "InviteToSharedAppObj";
 
     public static final String TYPE = "invite_app_session";
@@ -46,8 +48,8 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
         return TYPE;
     }
 
-    public static DbObject from(String packageName, String arg) {
-        return new DbObject(TYPE, json(packageName, arg));
+    public static AppReference from(String packageName, String arg) {
+        return new AppReference(json(packageName, arg));
     }
 
     public static JSONObject json(String packageName, String arg){
@@ -103,13 +105,30 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
     }
 
 	@Override
-	public void activate(Context context, JSONObject content) {
+	public void handleIntent(Intent intent) {
+	    AppReference app = from(intent.getStringExtra("package"), intent.getStringExtra("arg"));
+	    //app.store(intent.getStringExtra("feed_uri"));
+	}
+
+	@Override
+	public void activate(Uri feed, Context context, JSONObject content) {
+	    AppReference app = new AppReference(content);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
-        launch.setComponent(
-                new ComponentName("edu.stanford.junction.sample.jxwhiteboard",
-                "edu.stanford.junction.sample.jxwhiteboard.JXWhiteboardActivity"));
-        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
-        context.startActivity(launch);
+	    launch.addCategory(Intent.CATEGORY_LAUNCHER);
+	    launch.putExtra("mobisocial.db.FEED", feed);
+	    launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+	    // TODO: optimize!
+	    List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
+	    for (ResolveInfo r : resolved) {
+	        ActivityInfo activity = r.activityInfo;
+	        if (activity.packageName.equals(app.pkg())) {
+	            launch.setClassName(activity.packageName, activity.name);
+	            context.startActivity(launch);
+	            return;
+	        }
+	    }
+
+	    Toast.makeText(context, "No activity found.", Toast.LENGTH_SHORT).show();
 	}
 
 	public static void promptForApplication(final Context context, final Callback callback) {

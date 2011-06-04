@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
 
+import android.net.Uri;
 import android.util.Base64;
 
 public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
@@ -51,7 +52,8 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         frame.addView(imageView);
 	}
 
-    public void activate(Context context, JSONObject content){
+	@Override
+    public void activate(Uri feed, Context context, JSONObject content){
         Intent intent = new Intent(context, ImageViewerActivity.class);
         String bytes = content.optString(DATA);
         intent.putExtra("b64Bytes", bytes);

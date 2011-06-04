@@ -41,7 +41,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 	private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = "friend";
-    private Uri feedUri;
+    private Uri mFeedUri;
     private ContactCache mContactCache;
 
 
@@ -63,11 +63,11 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             feedName = intent.getStringExtra("feed_id");
         }
         
-        feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
+        mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
             c = getContentResolver().query(
-                feedUri,
+                mFeedUri,
                 null, 
                 getFeedObjectClause() + " AND " + DbObject.CONTACT_ID + "=?", new String[]{ 
                     String.valueOf(contactId) }, 
@@ -75,7 +75,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 		}
         else {
             c = getContentResolver().query(
-                feedUri,
+                mFeedUri,
                 null, 
                 getFeedObjectClause(), null,
                 DbObject._ID + " DESC");
@@ -97,7 +97,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                         if(update.length() != 0){
                             Helpers.sendToFeed(FeedActivity.this, 
                                                StatusObj.from(update), 
-                                               feedUri);
+                                               mFeedUri);
                             editor.clear();
                         }
                         InputMethodManager imm = (InputMethodManager)getSystemService(
@@ -141,7 +141,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                                 // TODO: finish objectification:
                                                                 // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
                                                                 DbObject obj = StatusObj.from(data);
-                                                                Helpers.sendToFeed(FeedActivity.this, obj, feedUri);
+                                                                Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
                                                             }
                                                         }));
                                                 break;
@@ -156,7 +156,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                             public void onResult(byte[] data) {
                                                                 DbObject obj = PictureObj.from(data);
                                                                 Helpers.sendToFeed(
-                                                                    FeedActivity.this, obj, feedUri);
+                                                                    FeedActivity.this, obj, mFeedUri);
                                                             }
                                                         }, 200, false));
                                                 break;
@@ -168,14 +168,14 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                 public void onAppSelected(String pkg, String arg, Intent localLaunch) {
                                                     DbObject obj = InviteToSharedAppObj.from(pkg, arg);
                                                     Helpers.sendToFeed(
-                                                        FeedActivity.this, obj, feedUri);
+                                                        FeedActivity.this, obj, mFeedUri);
                                                 }
                                             });
                                             break;
                                         }
                                         case 3: {
                                             Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
-                                            voiceintent.putExtra("feedUri", feedUri.toString());
+                                            voiceintent.putExtra("feedUri", mFeedUri.toString());
                                             startActivity(voiceintent);
                                             break;
                                         }
@@ -198,7 +198,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(FeedActivity.this, obj);
+                activator.activate(mFeedUri, FeedActivity.this, obj);
             }
         }
         catch(JSONException e){

@@ -59,8 +59,8 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         frame.addView(imageView);
 	}
 
-
-    public void activate(Context context, JSONObject content){
+	@Override
+    public void activate(Uri feed, Context context, JSONObject content){
         Intent intent = new Intent(context, ImageViewerActivity.class);
         String bytes = content.optString(DATA);
         intent.putExtra("b64Bytes", bytes);

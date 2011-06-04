@@ -15,6 +15,7 @@ import android.util.Base64;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.net.Uri;
 
 
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
@@ -61,7 +62,8 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
         frame.addView(imageView);
 	}
 
-    public void activate(Context context, JSONObject content){
+	@Override
+    public void activate(Uri feed, Context context, JSONObject content){
         byte bytes[] = Base64.decode(content.optString(DATA), Base64.DEFAULT);
         AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);
         track.write(bytes, 0, bytes.length);

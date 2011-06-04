@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.objects.iface.IntentAbsorber;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 
 /**
