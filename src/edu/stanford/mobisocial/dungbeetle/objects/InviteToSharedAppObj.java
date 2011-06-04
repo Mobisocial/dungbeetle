@@ -39,6 +39,7 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
 
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
+    public static final String STATE = "state";
     public static final String PACKAGE_NAME = "packageName";
     public static final String PARTICIPANTS = "participants";
     public static final String FEED_NAME = "feedName";
@@ -57,6 +58,16 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
         try{
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
+        }catch(JSONException e){}
+        return obj;
+    }
+
+    public static JSONObject json(String packageName, String arg, String state){
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put(PACKAGE_NAME, packageName);
+            obj.put(ARG, arg);
+            obj.put(STATE, state);
         }catch(JSONException e){}
         return obj;
     }
@@ -123,6 +134,9 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
 	        ActivityInfo activity = r.activityInfo;
 	        if (activity.packageName.equals(app.pkg())) {
 	            launch.setClassName(activity.packageName, activity.name);
+	            if (content.has(STATE)) {
+	                launch.putExtra("mobisocial.db.STATE", content.optString(STATE));
+	            }
 	            context.startActivity(launch);
 	            return;
 	        }

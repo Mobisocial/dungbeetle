@@ -13,6 +13,13 @@ public class AppReference extends DbObject {
     public String pkg() {
         return this.mJson.optString("packageName");
     }
-    
+
+    public AppReference(String pkg, String arg) {
+        super(InviteToSharedAppObj.TYPE, InviteToSharedAppObj.json(pkg, arg));
+    }
+
+    public AppReference(String pkg, String arg, String state) {
+        super(InviteToSharedAppObj.TYPE, InviteToSharedAppObj.json(pkg, arg, state));
+    }
 
 }
