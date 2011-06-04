@@ -18,7 +18,7 @@ public class Publisher extends BroadcastReceiver {
         AppReference app = new AppReference(pkg, arg, state);
         Uri feed = intent.getParcelableExtra("mobisocial.db.FEED");
         // TODO: disabled due spam. Need "replaces" field for objects.
-        Helpers.sendToFeed(context, app, feed);
+        //Helpers.sendToFeed(context, app, feed);
     }
 
 }
