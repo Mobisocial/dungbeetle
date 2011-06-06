@@ -38,6 +38,7 @@ public class GroupsTabActivity extends TabActivity
         Long group_id = null;
         String group_name = null;
         String feed_name = null;
+        String feed_uri = null;
         // TODO: Depracate extras-based access in favor of Data field.
         if (intent.hasExtra("group_id")) {
             group_id = intent.getLongExtra("group_id", -1);
@@ -48,7 +49,7 @@ public class GroupsTabActivity extends TabActivity
                 Group g = maybeG.get();
                 feed_name = g.feedName;
             } catch (Exception e) {}
-            mNfc.share(NdefFactory.fromUri(intent.getStringExtra("group_uri")));            
+            feed_uri = intent.getStringExtra("group_uri");
         } else if (getIntent().getType().equals(Group.MIME_TYPE)) {
             group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
             Maybe<Group> maybeG = Group.forId(this, group_id);
@@ -56,7 +57,12 @@ public class GroupsTabActivity extends TabActivity
                 Group g = maybeG.get();
                 group_name = g.name;
                 feed_name = g.feedName;
+                feed_uri = g.dynUpdateUri;
             } catch (Exception e) {}
+        }
+
+        if (feed_uri != null) {
+            mNfc.share(NdefFactory.fromUri(feed_uri));
         }
 
         int color = Feed.colorFor(feed_name);

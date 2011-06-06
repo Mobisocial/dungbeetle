@@ -33,7 +33,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
+import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -196,12 +196,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                         start_app.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    InviteToSharedAppObj.promptForApplication(ContactsActivity.this, new InviteToSharedAppObj.Callback() {
+                                    AppReferenceObj.promptForApplication(ContactsActivity.this, new AppReferenceObj.Callback() {
                                         @Override
                                         public void onAppSelected(String packageName, String arg, Intent localLaunch) {
                                             Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c),
                                                     new DbObject(InviteToSharedAppFeedObj.TYPE,
-                                                            InviteToSharedAppObj.json(packageName, arg)));
+                                                            AppReferenceObj.json(packageName, arg)));
                                             ContactsActivity.this.startActivity(localLaunch);
                                         }
                                     });

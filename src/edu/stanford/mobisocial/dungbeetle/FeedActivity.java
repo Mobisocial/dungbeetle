@@ -21,7 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
+import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
@@ -165,8 +165,8 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                 break;
                                             }
                                         case 2: {
-                                            InviteToSharedAppObj.promptForApplication(
-                                                    FeedActivity.this, new InviteToSharedAppObj.Callback() {
+                                            AppReferenceObj.promptForApplication(
+                                                    FeedActivity.this, new AppReferenceObj.Callback() {
                                                 @Override
                                                 public void onAppSelected(String pkg, String arg, Intent localLaunch) {
                                                     DbObject obj = new AppReference(pkg, arg);

@@ -33,7 +33,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
 
-public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activator {
+public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "InviteToSharedAppObj";
 
     public static final String TYPE = "invite_app_session";
@@ -78,7 +78,7 @@ public class InviteToSharedAppObj implements DbEntryHandler, FeedRenderer, Activ
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
+        launch.putExtra(AppReference.APPLICATION_ARGUMENT, arg);
         launch.putExtra("creator", false);
         launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launch.setPackage(packageName);

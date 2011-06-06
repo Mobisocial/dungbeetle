@@ -2,12 +2,22 @@ package edu.stanford.mobisocial.dungbeetle.model;
 
 import org.json.JSONObject;
 
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
+import android.content.Intent;
+
+import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 
 public class AppReference extends DbObject {
+    public static final String APPLICATION_ARGUMENT = "android.intent.extra.APPLICATION_ARGUMENT";
 
     public AppReference(JSONObject json) {
-        super(InviteToSharedAppObj.TYPE, json);
+        super(AppReferenceObj.TYPE, json);
+    }
+
+    public static AppReference fromIntent(Intent intent) {
+        String arg = intent.getStringExtra(APPLICATION_ARGUMENT);
+        String pkg = intent.getStringExtra("mobisocial.db.PACKAGE");
+        String state = intent.getStringExtra("mobisocial.db.STATE");
+        return new AppReference(arg, pkg, state);
     }
 
     public String pkg() {
@@ -15,11 +25,11 @@ public class AppReference extends DbObject {
     }
 
     public AppReference(String pkg, String arg) {
-        super(InviteToSharedAppObj.TYPE, InviteToSharedAppObj.json(pkg, arg));
+        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg));
     }
 
     public AppReference(String pkg, String arg, String state) {
-        super(InviteToSharedAppObj.TYPE, InviteToSharedAppObj.json(pkg, arg, state));
+        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg, state));
     }
 
 }
