@@ -21,10 +21,12 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
@@ -39,6 +41,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
     public static final String STATE = "state";
+    public static final String THUMB_JPG = "b64jpgthumb";
     public static final String PACKAGE_NAME = "packageName";
     public static final String PARTICIPANTS = "participants";
     public static final String FEED_NAME = "feedName";
@@ -61,12 +64,17 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         return obj;
     }
 
-    public static JSONObject json(String packageName, String arg, String state){
+    public static JSONObject json(String packageName, String arg, String state, String b64JpgThumb){
         JSONObject obj = new JSONObject();
         try{
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
-            obj.put(STATE, state);
+            if (state != null) {
+                obj.put(STATE, state);
+            }
+            if (b64JpgThumb != null) {
+                obj.put(THUMB_JPG, b64JpgThumb);
+            }
         }catch(JSONException e){}
         return obj;
     }
@@ -78,7 +86,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        launch.putExtra(AppReference.APPLICATION_ARGUMENT, arg);
+        launch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
         launch.putExtra("creator", false);
         launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launch.setPackage(packageName);
@@ -105,13 +113,24 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
     }
 
 	public void render(final Context context, final ViewGroup frame, final JSONObject content) {
-        TextView valueTV = new TextView(context);
-        valueTV.setText(content.optString(ARG));
-        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT));
-        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-        frame.addView(valueTV);
+	    AppReference ref = new AppReference(content);
+	    String thumbnail = ref.getThumbnailImage();
+	    if (thumbnail != null) {
+	        ImageView imageView = new ImageView(context);
+	        imageView.setLayoutParams(new LinearLayout.LayoutParams(
+	                                      LinearLayout.LayoutParams.WRAP_CONTENT,
+	                                      LinearLayout.LayoutParams.WRAP_CONTENT));
+	        App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
+	        frame.addView(imageView);
+	    } else {
+            TextView valueTV = new TextView(context);
+            valueTV.setText(content.optString(ARG));
+            valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+            valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+            frame.addView(valueTV);
+	    }
     }
 
 	@Override
