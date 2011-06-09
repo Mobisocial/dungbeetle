@@ -31,6 +31,7 @@ import org.json.JSONObject;
 public class GroupProviders{
 
     public static final String TAG = "GroupProviders";
+    static final boolean DBG = false;
 
     private static List<GroupProvider> mHandlers = 
         new ArrayList<GroupProvider>();
@@ -121,7 +122,7 @@ public class GroupProviders{
                 b.path("dungbeetle/index.php");
                 Uri uri = b.build();
 
-                Log.i(TAG, "Doing dynamic group update for " + uri);
+                if (DBG) Log.i(TAG, "Doing dynamic group update for " + uri);
                 StringBuffer sb = new StringBuffer();
                 DefaultHttpClient client = new DefaultHttpClient();
                 HttpPost httpPost = new HttpPost(uri.toString());

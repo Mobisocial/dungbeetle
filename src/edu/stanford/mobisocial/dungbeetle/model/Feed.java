@@ -5,7 +5,7 @@ import android.graphics.Color;
 import android.net.Uri;
 
 public class Feed {
-
+    public static final int BACKGROUND_ALPHA = 150;
     public static Uri uriForName(String name) {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + name);
     }
@@ -24,5 +24,10 @@ public class Feed {
             } catch (NumberFormatException e) {}
         }
         return Color.parseColor(feedColorStr);
+    }
+
+    public static int colorFor(String name, int alpha) {
+        int c = colorFor(name);
+        return Color.argb(alpha, Color.red(c), Color.green(c), Color.blue(c));
     }
 }

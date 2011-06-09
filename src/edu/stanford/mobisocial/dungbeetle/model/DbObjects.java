@@ -3,7 +3,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppObj;
+import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToWebSessionObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
@@ -33,11 +33,11 @@ public final class DbObjects {
     private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
 
     static{
-		objs.add(new InviteToSharedAppObj());
+		objs.add(new AppReferenceObj());
 		objs.add(new SubscribeReqObj());
 		objs.add(new IMObj());
 		objs.add(new InviteToWebSessionObj());
-		objs.add(new InviteToSharedAppObj());
+		objs.add(new AppReferenceObj());
         objs.add(new InviteToSharedAppFeedObj());
         objs.add(new InviteToGroupObj());
         objs.add(new FileObj());

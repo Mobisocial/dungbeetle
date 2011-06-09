@@ -282,7 +282,8 @@ public class DBHelper extends SQLiteOpenHelper {
             return 0;
         }
         catch(Exception e){
-            e.printStackTrace(System.err);
+            // TODO, too spammy
+            //e.printStackTrace(System.err);
             return -1;
         }
     }
@@ -308,7 +309,8 @@ public class DBHelper extends SQLiteOpenHelper {
             return nextSeqId;
         }
         catch(Exception e){
-            e.printStackTrace(System.err);
+            // TODO, too spammy
+            //e.printStackTrace(System.err);
             return -1;
         }
     }
@@ -402,7 +404,8 @@ public class DBHelper extends SQLiteOpenHelper {
     		return db.insertOrThrow(GroupMember.TABLE, null, cv);
     	}
     	catch(Exception e){
-    		e.printStackTrace(System.err);
+            // TODO, too spammy
+            //e.printStackTrace(System.err);
     		return -1;
     	}
     }

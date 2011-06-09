@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.objects.iface;
 import android.content.Context;
+import android.net.Uri;
+
 import org.json.JSONObject;
 
 /**
@@ -7,5 +9,5 @@ import org.json.JSONObject;
  * on in a feed for deeper interaction.
  */
 public interface Activator {
-	public void activate(Context context, JSONObject content);
+	public void activate(Uri feed, Context context, JSONObject content);
 }

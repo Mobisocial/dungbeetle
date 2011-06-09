@@ -89,8 +89,10 @@ public class FeedListActivity extends ListActivity {
             } else {
                 labelView.setText(feedName);
             }
-            
-            labelView.setBackgroundColor(Feed.colorFor(feedName));
+            int color = Feed.colorFor(feedName);
+            labelView.setBackgroundColor(color);
+            v.setBackgroundColor(color);
+            v.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
         }
     }
 
