@@ -640,6 +640,19 @@ public class DBHelper extends SQLiteOpenHelper {
         else return Maybe.definitely(new Group(c));
     }
 
+	public Maybe<Group> groupForFeedName(String feed){
+        Cursor c = getReadableDatabase().query(
+            Group.TABLE,
+            null,
+            Group.FEED_NAME + "=?",
+            new String[]{String.valueOf(feed)},
+            null,null,null);
+        c.moveToFirst();
+        if(c.isAfterLast()) return Maybe.unknown();
+        else return Maybe.definitely(new Group(c));
+    }
+
+
 	public Maybe<Group> groupByFeedName(String feedName){
         Cursor c = getReadableDatabase().query(
             Group.TABLE,

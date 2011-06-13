@@ -139,7 +139,9 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
 	    launch.addCategory(Intent.CATEGORY_LAUNCHER);
 	    launch.putExtra("mobisocial.db.FEED", feed);
-	    launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+	    if (content.has(ARG)) {
+	        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+	    }
 	    // TODO: optimize!
 	    List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
 	    for (ResolveInfo r : resolved) {
@@ -166,6 +168,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         if(infos.size() > 0){
             ArrayList<String> names = new ArrayList<String>();
             for(ResolveInfo info : infos){
+                Log.d(TAG, "looking at " + info);
                 names.add(info.loadLabel(mgr).toString());
             }
             final CharSequence[] items = names.toArray(new CharSequence[]{});

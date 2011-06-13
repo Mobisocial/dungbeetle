@@ -48,6 +48,26 @@ public class Group{
         return g;
     }
 
+    public static Maybe<Group> forFeed(Context context, String feed) {
+        DBHelper helper = new DBHelper(context);
+        Maybe<Group> g = helper.groupForFeedName(feed);
+        helper.close();
+        return g;
+    }
+
+    public static Group createForFeed(Context context, String feedName) {
+        String groupName = feedName;
+        if (feedName.length() > 3) feedName = feedName.substring(0, 3);
+        DBHelper helper = new DBHelper(context);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        Uri uri = GroupProviders.defaultNewSessionUri(ident, groupName, feedName);
+        Uri gUri = Helpers.insertGroup(context, groupName, uri.toString(), feedName);
+        long id = Long.valueOf(gUri.getLastPathSegment());
+        GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
+        gp.forceUpdate(id, uri, context, ident);
+        return new Group(id, groupName, uri.toString(), feedName);
+    }
+
     public Collection<Contact> contactCollection(DBHelper helper){
         return new ContactCollection(id, helper);
     }

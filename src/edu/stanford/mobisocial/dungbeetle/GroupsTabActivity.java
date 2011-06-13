@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.TabHost;
+import android.widget.Toast;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 
@@ -50,7 +51,7 @@ public class GroupsTabActivity extends TabActivity
                 feed_name = g.feedName;
             } catch (Exception e) {}
             feed_uri = intent.getStringExtra("group_uri");
-        } else if (getIntent().getType().equals(Group.MIME_TYPE)) {
+        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
             group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
             Maybe<Group> maybeG = Group.forId(this, group_id);
             try {
@@ -59,6 +60,20 @@ public class GroupsTabActivity extends TabActivity
                 feed_name = g.feedName;
                 feed_uri = g.dynUpdateUri;
             } catch (Exception e) {}
+        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
+            String feedName = getIntent().getData().getLastPathSegment();
+            Maybe<Group>maybeG = Group.forFeed(this, feedName);
+            Group g = null;
+            try {
+               g = maybeG.get();
+                
+            } catch (Exception e) {
+                g = Group.createForFeed(this, feedName);
+            }
+            group_name = g.name;
+            feed_name = g.feedName;
+            feed_uri = g.dynUpdateUri;
+            group_id = g.id;
         }
 
         if (feed_uri != null) {
@@ -121,6 +136,9 @@ public class GroupsTabActivity extends TabActivity
         if (mNfc.onNewIntent(this, intent)) return;
     }
 
+    public void toast(final String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    }
 }
 
 

@@ -17,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
@@ -42,7 +43,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 
 	private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
-    private String feedName = "friend";
+    private String feedName = null;
     private Uri mFeedUri;
     private ContactCache mContactCache;
 
@@ -52,8 +53,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         Cursor c;
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
-        
-        if(intent.hasExtra("group_id")) {
+        if(feedName == null && intent.hasExtra("group_id")) {
         	try {
 	        	Long groupId = intent.getLongExtra("group_id", -1);
 	        	feedName = new DBHelper(this).groupForGroupId(groupId).get().feedName;
@@ -62,6 +62,9 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         	}
         } else if (intent.hasExtra("feed_id")) {
             feedName = intent.getStringExtra("feed_id");
+        }
+        if (feedName == null) {
+            feedName = "friend";
         }
 
         int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);

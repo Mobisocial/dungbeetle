@@ -13,7 +13,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TabHost;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 import java.util.BitSet;
@@ -93,6 +95,14 @@ public class DungBeetleActivity extends TabActivity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        // TODO: Hack.
+        try {
+            if (getIntent().hasExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)) {
+                getIntent().setData(Uri.parse(getIntent().getStringExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)));
+            }
+        } catch (ClassCastException e) {}
+
         setContentView(R.layout.main);
         startService(new Intent(this, DungBeetleService.class));
 
@@ -203,7 +213,21 @@ public class DungBeetleActivity extends TabActivity
             intent.setData(uri);
             startActivity(intent);
         }
-        else{
+        else if (uri.getScheme().equals("content")) {
+            if (uri.getAuthority().equals("vnd.mobisocial.db")) {
+                if (uri.getPath().startsWith("/feed")) {
+                    Intent view = new Intent(Intent.ACTION_VIEW);
+                    view.addCategory(Intent.CATEGORY_DEFAULT);
+                    view.setData(uri);
+                    // TODO: fix in AndroidManifest.
+                    //view.setClass(this, FeedActivity.class);
+                    view.setClass(this, GroupsTabActivity.class);
+                    startActivity(view);
+                    finish();
+                    return;
+                }
+    		}
+        } else {
             Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
         }
 
@@ -296,6 +320,14 @@ public class DungBeetleActivity extends TabActivity
     @Override
     public void onDestroy(){
         super.onDestroy();
+    }
+
+    public Uri ANULL (Uri u) {
+        return (u == null) ? Uri.parse("urn:"): u;
+    }
+
+    private void toast(final String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 }
 
