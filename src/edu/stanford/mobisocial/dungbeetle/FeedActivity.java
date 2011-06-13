@@ -17,12 +17,13 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.objects.FeedObj;
 import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
@@ -127,12 +128,13 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
                             new AlertDialog.Builder(FeedActivity.this)
-                            .setTitle("Choose App")
+                            .setTitle("Attach")
                             .setItems(new String[] {
                                     "TapBoard",
-                                    "PhotoTaker",
+                                    "Photo",
                                     "Application...",
-                                    "VoiceRecorder"
+                                    "Voice",
+                                    "Feed"
                                 }, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -182,6 +184,13 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                             Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
                                             voiceintent.putExtra("feedUri", mFeedUri.toString());
                                             startActivity(voiceintent);
+                                            break;
+                                        }
+                                        case 4: {
+                                            Group g = Group.create(FeedActivity.this);
+                                            Helpers.sendToFeed(FeedActivity.this,
+                                                    StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
+                                            Helpers.sendToFeed(FeedActivity.this, FeedObj.from(g), mFeedUri);
                                             break;
                                         }
                                     }
@@ -239,8 +248,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     }
 
     private String getFeedObjectClause() {
-        // TODO: Enumerate all Object classes, look for FeedRenderables.
-
     	String[] types = DbObjects.getRenderableTypes();
     	StringBuffer allowed = new StringBuffer();
     	for (String type : types) {

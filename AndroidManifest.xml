@@ -225,15 +225,6 @@
    	 </intent-filter>
    </receiver>
    -->
-   
-   <receiver android:name="edu.stanford.mobisocial.dungbeetle.NewFeedReceiver"
-   android:label="Feed"
-   >
-         <intent-filter>
-    <action android:name="android.intent.action.CONFIGURE" />
-	<category android:name="android.intent.category.P2P" />
-      </intent-filter>
-   </receiver>
 
   </application>
 </manifest> 

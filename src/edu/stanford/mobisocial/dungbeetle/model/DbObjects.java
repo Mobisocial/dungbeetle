@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
+import edu.stanford.mobisocial.dungbeetle.objects.FeedObj;
 import edu.stanford.mobisocial.dungbeetle.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
@@ -20,6 +21,8 @@ import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
+
+import android.widget.Toast;
 
 public final class DbObjects {
 
@@ -48,6 +51,7 @@ public final class DbObjects {
         objs.add(new PictureObj());
         objs.add(new VoiceObj());
         objs.add(new ActivityPullObj());
+        objs.add(new FeedObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
