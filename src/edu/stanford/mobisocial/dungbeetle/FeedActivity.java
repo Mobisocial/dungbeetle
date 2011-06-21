@@ -176,6 +176,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                 public void onAppSelected(String pkg, String arg, Intent localLaunch) {
                                                     DbObject obj = new AppReference(pkg, arg);
                                                     Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
+                                                    startActivity(localLaunch);
                                                 }
                                             });
                                             break;

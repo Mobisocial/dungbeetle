@@ -93,8 +93,8 @@ public class GroupsTabActivity extends TabActivity
 
         // Note: If you change this color, also update the cacheColorHint
         // in FeedActivity and ContactsActivity.
-        tabHost.setBackgroundColor(color);
-        tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
+        //tabHost.setBackgroundColor(color);
+        //tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
             
         intent = new Intent().setClass(this, FeedActivity.class);
         intent.putExtra("group_id", group_id);

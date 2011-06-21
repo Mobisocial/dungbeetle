@@ -11,6 +11,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
+
+import android.content.DialogInterface;
+import android.widget.EditText;
+import android.app.AlertDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,6 +35,7 @@ public class FeedListActivity extends ListActivity {
     private static final String TAG = "DungBeetle";
     private FeedListCursorAdapter mFeeds;
     private ContactCache mContactCache;
+    private DBHelper mHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +46,7 @@ public class FeedListActivity extends ListActivity {
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
         mFeeds = new FeedListCursorAdapter(this, c);
+        mHelper = new DBHelper(this);
         setListAdapter(mFeeds);
     }
 
@@ -91,8 +97,8 @@ public class FeedListActivity extends ListActivity {
             }
             int color = Feed.colorFor(feedName);
             labelView.setBackgroundColor(color);
-            v.setBackgroundColor(color);
-            v.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
+            //v.setBackgroundColor(color);
+            //v.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
         }
     }
 
@@ -130,9 +136,34 @@ public class FeedListActivity extends ListActivity {
         return new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Group g = Group.create(FeedListActivity.this);
+                AlertDialog.Builder alert = new AlertDialog.Builder(FeedListActivity.this);
+                alert.setMessage("Enter group name:");
+                final EditText input = new EditText(FeedListActivity.this);
+                alert.setView(input);
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            String groupName = input.getText().toString();
+                            Group g;
+                            if(groupName.length() > 0) {
+                                g = Group.create(FeedListActivity.this, groupName, mHelper);
+                            }
+                            else {
+                                g = Group.create(FeedListActivity.this);
+                            }
+                            
+                            Helpers.sendToFeed(FeedListActivity.this,
+                            StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
+                        }
+                    });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                        }
+                    });
+                alert.show();
+                
+                /*Group g = Group.create(FeedListActivity.this);
                 Helpers.sendToFeed(FeedListActivity.this,
-                        StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
+                        StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));*/
             }
         };
     }

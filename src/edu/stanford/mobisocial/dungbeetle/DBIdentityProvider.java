@@ -38,6 +38,8 @@ public class DBIdentityProvider implements IdentityProvider {
             mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
             mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
             mPubKeyTag = personIdForPublicKey(mPubKey);
+
+            Log.d(TAG, c.getCount() + " public keys");
         }
     }
 

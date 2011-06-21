@@ -265,11 +265,12 @@ public class ProfileActivity extends RichActivity{
 
 
     private final static int EDIT = 0;
-    private final static int PICTURE = 1;
+    private final static int ANON = 1;
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, EDIT, 0, "Edit Profile");
+        //menu.add(1, ANON, 1, "Add anon profile");
         return true;
     }
 
@@ -281,6 +282,10 @@ public class ProfileActivity extends RichActivity{
             startActivity(intent); 
             return true;
         }
+        /*case ANON: {
+            mHelper.generateAndStorePersonalInfo();
+            return true;
+        }*/
         default: return false;
         }
     }
