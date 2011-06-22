@@ -11,28 +11,31 @@
       android:layout_height="wrap_content"
       xmlns:android="http://schemas.android.com/apk/res/android"
       android:gravity="center">
-
-    <Button
-	android:id="@+id/publish"
-	android:layout_width="wrap_content"
-	android:layout_height="50dip"
-	android:text="Apps"
-	android:layout_alignParentRight="true"
-	/> 
+    
+  <ImageView
+      android:id="@+id/more"
+      android:layout_width="50dip"
+      android:layout_height="50dip"
+      android:src="@drawable/ic_menu_more" 
+      android:scaleType="fitCenter"
+      android:layout_alignParentRight="true"
+      />
+    
+  <ImageView
+      android:id="@+id/add_object"
+      android:layout_width="50dip"
+      android:layout_height="50dip"
+      android:src="@drawable/ic_menu_dialog" 
+      android:scaleType="fitCenter"
+      android:layout_toLeftOf="@id/more"
+      />
 	
-    <Button
-	android:id="@+id/add_object_button"
-	android:layout_width="wrap_content"
-	android:layout_height="50dip"
-	android:text="Update"
-	android:layout_toLeftOf="@id/publish"
-	/> 
 	
     <EditText
     android:id="@+id/status_text"
     android:layout_width="fill_parent"
 	android:layout_height="50dip"
-	android:layout_toLeftOf="@id/add_object_button"
+	android:layout_toLeftOf="@id/add_object"
 	android:maxLines="1"
 	android:hint="What's up?"
 	/>

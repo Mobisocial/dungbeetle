@@ -38,6 +38,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Intent;
 
+import android.widget.ImageView;
+import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
+
 
 
 public class FeedActivity extends RichListActivity implements OnItemClickListener{
@@ -95,8 +98,8 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 
 		// TODO: Get rid of this? All feeds are created equal! -BJD
         if(!intent.hasExtra("contact_id")){
-            Button button = (Button)findViewById(R.id.add_object_button);
-            button.setOnClickListener(new OnClickListener() {
+            ImageView addObject = (ImageView)findViewById(R.id.add_object);
+            addObject.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                         EditText ed = (EditText)findViewById(R.id.status_text);
                     	Editable editor = ed.getText();
@@ -123,8 +126,106 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                         }
                     });*/
 
+            final ImageView more = (ImageView)findViewById(R.id.more);
+
+            more.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                    
+                        final ActionItem tapBoard = new ActionItem();
+                        tapBoard.setTitle("TapBoard");
+                        tapBoard.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                doActivityForResult(FeedActivity.this, 
+                                    new RemoteActivity(FeedActivity.this, new RemoteActivity.ResultHandler() {
+                                        
+                                        @Override
+                                        public void onResult(String data) {
+                                            // TODO: move this inside RemoteActivity
+                                            // TODO: finish objectification:
+                                            // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
+                                            DbObject obj = StatusObj.from(data);
+                                            Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
+                                        }
+                                    }));
+                                }
+                            });
+                    
+                        final ActionItem camera = new ActionItem();
+                        camera.setTitle("Camera");
+                        camera.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    doActivityForResult(
+                                        FeedActivity.this, 
+                                        new PhotoTaker(
+                                            FeedActivity.this, 
+                                            new PhotoTaker.ResultHandler() {
+                                                @Override
+                                                public void onResult(byte[] data) {
+                                                    DbObject obj = PictureObj.from(data);
+                                                    Helpers.sendToFeed(
+                                                        FeedActivity.this, obj, mFeedUri);
+                                                }
+                                            }, 200, false));
+                                }
+                            });
+                    
+                        final ActionItem application = new ActionItem();
+                        application.setTitle("Application...");
+                        application.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    AppReferenceObj.promptForApplication(
+                                            FeedActivity.this, new AppReferenceObj.Callback() {
+                                        @Override
+                                        public void onAppSelected(String pkg, String arg, Intent localLaunch) {
+                                            DbObject obj = new AppReference(pkg, arg);
+                                            Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
+                                            startActivity(localLaunch);
+                                        }
+                                    });
+                                }
+                            });
+                    
+                        final ActionItem voice = new ActionItem();
+                        voice.setTitle("Voice");
+                        voice.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
+                                    voiceintent.putExtra("feedUri", mFeedUri.toString());
+                                    startActivity(voiceintent);
+                                }
+                            });
+                    
+                        final ActionItem feed = new ActionItem();
+                        feed.setTitle("Feed");
+                        feed.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Group g = Group.create(FeedActivity.this);
+                                    Helpers.sendToFeed(FeedActivity.this,
+                                            StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
+                                    Helpers.sendToFeed(FeedActivity.this, FeedObj.from(g), mFeedUri);
+                                }
+                            });
+                    
+                        QuickAction qa = new QuickAction(v);
+
+                        qa.addActionItem(tapBoard);
+                        qa.addActionItem(camera);
+                        qa.addActionItem(application);
+                        qa.addActionItem(voice);
+                        qa.addActionItem(feed);
+                        qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
+
+                        qa.show();
+                    }
+                });
             
-            findViewById(R.id.publish)
+            /*findViewById(R.id.publish)
             	.setOnClickListener(new OnClickListener() {
                         public void onClick(View v) {
                             new AlertDialog.Builder(FeedActivity.this)
@@ -199,10 +300,10 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                             }
                             ).create().show();
                         }
-                });
+                });*/
         }
         else{
-            findViewById(R.id.add_object_button).setVisibility(View.GONE);
+            findViewById(R.id.add_object).setVisibility(View.GONE);
         }
     }
 
