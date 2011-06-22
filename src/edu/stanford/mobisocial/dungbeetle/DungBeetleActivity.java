@@ -258,6 +258,15 @@ public class DungBeetleActivity extends TabActivity
         return bytes;
     }
 
+    public void pushGroupInfoViaNfc(Uri uri){
+        NdefRecord urlRecord = new NdefRecord(
+            NdefRecord.TNF_ABSOLUTE_URI, 
+            NdefRecord.RTD_URI, new byte[] {},
+            uri.toString().getBytes());
+        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
+        mNfc.share(ndef);
+    }
+
     public void pushContactInfoViaNfc(){
     	
     	/*

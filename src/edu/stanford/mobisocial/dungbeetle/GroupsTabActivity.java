@@ -110,7 +110,7 @@ public class GroupsTabActivity extends TabActivity
             "Members",
             null).setContent(intent);
         tabHost.addTab(spec);
-		
+
         tabHost.setCurrentTab(0);
     }
 
