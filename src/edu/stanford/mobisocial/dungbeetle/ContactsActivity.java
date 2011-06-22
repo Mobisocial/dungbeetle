@@ -41,6 +41,7 @@ import java.util.Collections;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 
 
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
@@ -199,10 +200,15 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                     AppReferenceObj.promptForApplication(ContactsActivity.this, new AppReferenceObj.Callback() {
                                         @Override
                                         public void onAppSelected(String packageName, String arg, Intent localLaunch) {
-                                            Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c),
+                                            /*Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c),
                                                     new DbObject(InviteToSharedAppFeedObj.TYPE,
                                                             AppReferenceObj.json(packageName, arg)));
-                                            ContactsActivity.this.startActivity(localLaunch);
+                                            ContactsActivity.this.startActivity(localLaunch);*/
+
+                                            
+                                            DbObject obj = new AppReference(packageName, arg);
+                                            Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c), obj);
+                                            startActivity(localLaunch);
                                         }
                                     });
                                 }
