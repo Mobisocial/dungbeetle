@@ -64,7 +64,7 @@ public class GroupManagerThread extends Thread {
         final GroupRefreshHandler h = GroupProviders.forUri(uri);
         new Thread(){
             public void run(){
-                h.handle(g.id, uri, mContext, mIdent);
+                h.handle(g.id, uri, mContext, mIdent, g.version);
             }
         }.start();
     }
@@ -72,7 +72,7 @@ public class GroupManagerThread extends Thread {
     // These handlers should be stateless
     public interface GroupRefreshHandler{
         public boolean willHandle(Uri uri);
-        public void handle(long id, Uri uri, Context context, IdentityProvider ident);
+        public void handle(long id, Uri uri, Context context, IdentityProvider ident, int version);
     }
 
 

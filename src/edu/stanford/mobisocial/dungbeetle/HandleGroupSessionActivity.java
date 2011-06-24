@@ -70,7 +70,8 @@ public class HandleGroupSessionActivity extends Activity {
             GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
             DBHelper helper = new DBHelper(this);
             DBIdentityProvider ident = new DBIdentityProvider(helper);
-            gp.forceUpdate(id, uri, this, ident);
+            int version = -1;
+            gp.forceUpdate(id, uri, this, ident, version);
             ident.close();
             helper.close();
         }

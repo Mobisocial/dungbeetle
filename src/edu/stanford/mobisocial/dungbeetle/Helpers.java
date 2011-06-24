@@ -83,6 +83,15 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void updateGroupVersion(final Context c,
+                                   final long groupId,
+                                   final int version){
+       Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups");
+       ContentValues values = new ContentValues();
+       values.put(Group.VERSION, version);
+       c.getContentResolver().update(url, values, Group._ID + "=" + groupId, null);
+   }
+
     public static void sendIM(final Context c, 
                               final Collection<Contact> contacts, 
                               final String msg){

@@ -20,25 +20,29 @@ public class Group{
     public static final String NAME = "name";
     public static final String FEED_NAME = "feed_name";
     public static final String DYN_UPDATE_URI = "dyn_update_uri";
+    public static final String VERSION = "version";
 
     public final String feedName;
     public final String name;
     public final String dynUpdateUri;
     public final Long id;
+    public final int version;
 
     public Group(Cursor c){
         this(c.getLong(c.getColumnIndexOrThrow(_ID)),
              c.getString(c.getColumnIndexOrThrow(NAME)),
              c.getString(c.getColumnIndexOrThrow(DYN_UPDATE_URI)),
-             c.getString(c.getColumnIndexOrThrow(FEED_NAME))
+             c.getString(c.getColumnIndexOrThrow(FEED_NAME)),
+             c.getInt(c.getColumnIndexOrThrow(VERSION))
              );
     }
 
-    public Group(long id, String name, String dynUpdateUri, String feedName){
+    public Group(long id, String name, String dynUpdateUri, String feedName, int version){
         this.id = id;
         this.name = name;
         this.dynUpdateUri = dynUpdateUri;
         this.feedName = feedName;
+        this.version = version;
     }
 
     public static Maybe<Group> forId(Context context, long id) {
@@ -64,8 +68,9 @@ public class Group{
         Uri gUri = Helpers.insertGroup(context, groupName, uri.toString(), feedName);
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-        gp.forceUpdate(id, uri, context, ident);
-        return new Group(id, groupName, uri.toString(), feedName);
+        int version = -1;
+        gp.forceUpdate(id, uri, context, ident, version);
+        return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
@@ -73,7 +78,7 @@ public class Group{
     }
 
     public static Group NA(){
-        return new Group(-1L, "NA", "NA", "NA");
+        return new Group(-1L, "NA", "NA", "NA", -1);
     }
 
     public static Group create(Context context, String groupName, DBHelper helper) {
@@ -83,8 +88,9 @@ public class Group{
         Uri gUri = Helpers.insertGroup(context, groupName, uri.toString(), feedName);
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-        gp.forceUpdate(id, uri, context, ident);
-        return new Group(id, groupName, uri.toString(), feedName);
+        int version = -1;
+        gp.forceUpdate(id, uri, context, ident, version);
+        return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
     public static Group create(Context context) {
@@ -96,9 +102,10 @@ public class Group{
         Uri gUri = Helpers.insertGroup(context, groupName, uri.toString(), feedName);
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-        gp.forceUpdate(id, uri, context, ident);
+        int version = -1;
+        gp.forceUpdate(id, uri, context, ident, version);
         helper.close();
-        return new Group(id, groupName, uri.toString(), feedName);
+        return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
     public static void view(Context context, Group group) {

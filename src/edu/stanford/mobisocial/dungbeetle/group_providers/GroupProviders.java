@@ -8,6 +8,7 @@ import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -58,10 +59,10 @@ public class GroupProviders{
         abstract public String feedName(Uri uri);
         abstract public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName);
         public void forceUpdate(final long groupId, final Uri uriIn, 
-                                final Context context, final IdentityProvider ident){
+                                final Context context, final IdentityProvider ident, final int version){
             (new Thread(){
                     public void run(){
-                        GroupProvider.this.handle(groupId, uriIn, context, ident);
+                        GroupProvider.this.handle(groupId, uriIn, context, ident, version);
                     }
                 }).start();
         }
@@ -79,7 +80,7 @@ public class GroupProviders{
         }
         public boolean willHandle(Uri uri){ return true; }
         public void handle(final long groupId, final Uri uriIn, 
-                           final Context context, final IdentityProvider ident){}
+                           final Context context, final IdentityProvider ident, final int version){}
     }
     
     public static class PrplGroupProvider extends GroupProvider{
@@ -110,7 +111,7 @@ public class GroupProviders{
         }
 
         public void handle(final long groupId, final Uri uriIn, 
-                           final Context context, final IdentityProvider ident){
+                           final Context context, final IdentityProvider ident, int version){
 
             try{
                 final byte[] key = Base64.decode(uriIn.getQueryParameter("key"));
@@ -123,11 +124,14 @@ public class GroupProviders{
                 Uri uri = b.build();
 
                 if (DBG) Log.i(TAG, "Doing dynamic group update for " + uri);
+
+                
                 StringBuffer sb = new StringBuffer();
                 DefaultHttpClient client = new DefaultHttpClient();
                 HttpPost httpPost = new HttpPost(uri.toString());
 
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+            
                 final String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());
                 final String encryptedPubKey = Util.encryptAES(pubKey,key);
                 final String feedName = uriIn.getQueryParameter("session");
@@ -135,6 +139,7 @@ public class GroupProviders{
                 nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
                 nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
                 nameValuePairs.add(new BasicNameValuePair("session", feedName));
+                nameValuePairs.add(new BasicNameValuePair("version", Integer.toString(version)));
                 httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                 try {
                     HttpResponse execute = client.execute(httpPost);
@@ -150,35 +155,68 @@ public class GroupProviders{
                 }
 
                 String response = sb.toString();
-                JSONArray arr = new JSONArray(response);
-                for(int i = 0; i < arr.length(); i++) {
+
+                Log.i(TAG, response);
+
+                if(response.equals("1"))
+                {    
+                    sb = new StringBuffer();
+                    client = new DefaultHttpClient();
+                    httpPost = new HttpPost(uri.toString());
+
+                    nameValuePairs = new ArrayList<NameValuePair>(2);
+                    nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
+                    nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
+                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
+                    nameValuePairs.add(new BasicNameValuePair("session", feedName));
+                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                     try {
-                        String objStr = arr.getString(i);
-                        JSONObject o = new JSONObject(objStr);
-                        String encryptedPubK = o.getString("public_key");
-                        final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
-                        final String email = Util.decryptAES(o.getString("email"), key);
-                        //final String profile = Util.decryptAES(o.getString("profile"), key);
-                        //final String groupSession = o.getString("group_session");
-                        final String idInGroup = o.getString("group_id");
-                        (new Handler(context.getMainLooper())).post(new Runnable(){
-                                public void run(){
-                                    ContentValues values = new ContentValues();
-                                    values.put(Contact.PUBLIC_KEY, pubKeyStr);
-                                    values.put(Contact.NAME, email);
-                                    values.put(Contact.EMAIL, email);
-                                    values.put(Group.FEED_NAME, feedName);
-                                    values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
-                                    values.put(GroupMember.GROUP_ID, groupId);
-                                    Uri url = Uri.parse(
-                                        DungBeetleContentProvider.CONTENT_URI + 
-                                        "/dynamic_group_member");
-                                    context.getContentResolver().insert(url, values);
-                                }
-                            });
+                        HttpResponse execute = client.execute(httpPost);
+                        InputStream content = execute.getEntity().getContent();
+                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                        String s = "";
+                        while ((s = buffer.readLine()) != null) {
+                            sb.append(s);
+                        }
                     }
-                    catch(Exception e){
-                        Log.e(TAG, "Error processing dynamic group contact.", e);
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    response = sb.toString();
+                    JSONObject group = new JSONObject(response);
+                    version = Integer.parseInt(group.getString("version"));
+                    Helpers.updateGroupVersion(context, groupId, version);
+                    JSONArray arr = new JSONArray(group.getString("users"));
+                    for(int i = 0; i < arr.length(); i++) {
+                        try {
+                            String objStr = arr.getString(i);
+                            JSONObject o = new JSONObject(objStr);
+                            String encryptedPubK = o.getString("public_key");
+                            final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
+                            final String email = Util.decryptAES(o.getString("email"), key);
+                            //final String profile = Util.decryptAES(o.getString("profile"), key);
+                            //final String groupSession = o.getString("group_session");
+                            final String idInGroup = o.getString("group_id");
+                            (new Handler(context.getMainLooper())).post(new Runnable(){
+                                    public void run(){
+                                        ContentValues values = new ContentValues();
+                                        values.put(Contact.PUBLIC_KEY, pubKeyStr);
+                                        values.put(Contact.NAME, email);
+                                        values.put(Contact.EMAIL, email);
+                                        values.put(Group.FEED_NAME, feedName);
+                                        values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
+                                        values.put(GroupMember.GROUP_ID, groupId);
+                                        Uri url = Uri.parse(
+                                            DungBeetleContentProvider.CONTENT_URI + 
+                                            "/dynamic_group_member");
+                                        context.getContentResolver().insert(url, values);
+                                    }
+                                });
+                        }
+                        catch(Exception e){
+                            Log.e(TAG, "Error processing dynamic group contact.", e);
+                        }
                     }
                 }
             }
