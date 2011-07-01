@@ -23,7 +23,15 @@ import java.util.Date;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
 import org.json.JSONException;
+
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import org.json.JSONObject;
+
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.os.Environment;
+import java.io.File;
+import java.io.IOException;
 
 
 public class DungBeetleActivity extends TabActivity
@@ -38,6 +46,8 @@ public class DungBeetleActivity extends TabActivity
     public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";
     private Nfc mNfc;
 	private NotificationManager mNotificationManager;
+
+	private Intent DBServiceIntent;
 
     private class CheckForUpdatesTask extends HTTPDownloadTextFileTask {
         @Override
@@ -90,10 +100,74 @@ public class DungBeetleActivity extends TabActivity
         mNotificationManager.notify(0, notification);
     }
 
+    private void restoreDatabase() {
+        DBHelper mHelper = new DBHelper(this);
+        mHelper.getWritableDatabase().close();
+        
+        
+        File data = Environment.getDataDirectory();
+        String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+"new.db";
+        File newDB = new File(data, newDBPath);
+        if(newDB.exists()){
+    
+            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+            File currentDB = new File(data, currentDBPath);
+            currentDB.delete();
+            //currentDB = new File(data, currentDBPath);
+            //newDB.renameTo(currentDB);
+            
+            Log.w(TAG, "backup exists");
+        }
+        else {
+        //database does't exist yet.
+            Log.w(TAG, "backup does not exist");
+        }
+
+
+    }
+    /*
+    public SQLiteDatabase loadDb(Context context) throws IOException,SQLiteException{
+        //Close any old db handle
+        if (db != null && db.isOpen()) {
+            db.close();
+        }
+        File fileTest = context.getFileStreamPath(DATABASE_NAME);
+        boolean exists = fileTest.exists();
+        if(exists==false)
+        {
+
+            // The name of the database to use from the bundled assets.
+            InputStream myInput = context.getAssets().open(DATABASE_NAME, Context.MODE_PRIVATE);
+
+            // Create a file in the app’s file directory since sqlite requires a path
+            // Not ideal but we will copy the file out of our bundled assets and open it
+            // it in another location.
+            FileOutputStream myOutput = context.openFileOutput(DATABASE_NAME, Context.MODE_PRIVATE);
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = myInput.read(buffer)) > 0) {
+                myOutput.write(buffer, 0, length);
+            }
+
+            // Close the streams
+            myOutput.flush();
+            // Guarantee Write!
+            myOutput.getFD().sync();
+            myOutput.close();
+            myInput.close();
+        }
+        // Not grab the newly written file
+        File fileObj = context.getFileStreamPath(DATABASE_NAME);
+        // and open the database
+        return db = SQLiteDatabase.openDatabase(fileObj.getAbsolutePath(), null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+    }*/
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        restoreDatabase();
         super.onCreate(savedInstanceState);
 
         // TODO: Hack.
@@ -104,7 +178,8 @@ public class DungBeetleActivity extends TabActivity
         } catch (ClassCastException e) {}
 
         setContentView(R.layout.main);
-        startService(new Intent(this, DungBeetleService.class));
+        DBServiceIntent = new Intent(this, DungBeetleService.class);
+        startService(DBServiceIntent);
 
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
@@ -329,6 +404,8 @@ public class DungBeetleActivity extends TabActivity
     @Override
     public void onDestroy(){
         super.onDestroy();
+        //stopService(DBServiceIntent);
+        //android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     public Uri ANULL (Uri u) {

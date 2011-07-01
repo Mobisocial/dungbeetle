@@ -1,5 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabase;  
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -20,6 +20,13 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+
+
+
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.os.Environment;
+import java.io.File;
 
 public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = 
@@ -246,6 +253,12 @@ public class DungBeetleContentProvider extends ContentProvider {
                         sv.put(Subscriber.CONTACT_ID, cid);
                         sv.put(Subscriber.FEED_NAME, values.getAsString(Group.FEED_NAME));
                         mHelper.insertSubscriber(db, sv);
+
+                        ContentValues xv = new ContentValues();
+                        xv.put(Subscriber.CONTACT_ID, cid);
+                        xv.put(Subscriber.FEED_NAME, "friend");
+                        mHelper.insertSubscriber(db, xv);
+                        
                         getContext().getContentResolver().notifyChange(
                             Uri.parse(CONTENT_URI + "/subscribers"), null);
 
@@ -268,9 +281,34 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
     }
 
+/*private void restoreDatabase() {
+        File data = Environment.getDataDirectory();
+        String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+".new";
+        File newDB = new File(data, newDBPath);
+        if(newDB.exists()){
+    
+            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+            File currentDB = new File(data, currentDBPath);
+            currentDB.delete();
+            currentDB = new File(data, currentDBPath);
+            newDB.renameTo(currentDB);
+            
+            Log.w(TAG, "backup exists");
+        }
+        else {
+        //database does't exist yet.
+            Log.w(TAG, "backup does not exist");
+        }
 
+
+    }
+*/
     @Override
     public boolean onCreate() {
+
+        
+        //restoreDatabase();
+    
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
         mIdent = new DBIdentityProvider(mHelper);

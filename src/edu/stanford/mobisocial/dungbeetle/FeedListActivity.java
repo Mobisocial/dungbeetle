@@ -26,6 +26,8 @@ import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.view.Menu;
+import android.view.MenuItem;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
@@ -47,6 +49,7 @@ public class FeedListActivity extends ListActivity {
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
         mFeeds = new FeedListCursorAdapter(this, c);
         mHelper = new DBHelper(this);
+        
         setListAdapter(mFeeds);
     }
 
@@ -54,6 +57,34 @@ public class FeedListActivity extends ListActivity {
     public void finish() {
         super.finish();
         mContactCache.close();
+    }
+    private final static int BACKUP = 0;
+    private final static int RESTORE = 1;
+
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        menu.clear();
+        menu.add(0, BACKUP, 0, "Backup");
+        menu.add(1, RESTORE, 1, "Restore");
+        //menu.add(1, ANON, 1, "Add anon profile");
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+        case BACKUP: {
+            Intent intent = new Intent(this, DropboxBackupActivity.class);
+            intent.putExtra("action", 0);
+            startActivity(intent); 
+            return true;
+        }
+        case RESTORE: {
+            Intent intent = new Intent(this, DropboxBackupActivity.class);
+            intent.putExtra("action", 1);
+            startActivity(intent); 
+            return true;
+        }
+        default: return false;
+        }
     }
 
     private class FeedListCursorAdapter extends CursorAdapter {

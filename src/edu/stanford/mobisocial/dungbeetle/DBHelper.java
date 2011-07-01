@@ -34,9 +34,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
 import android.database.sqlite.SQLiteQueryBuilder;
 
+
+import android.database.sqlite.SQLiteException;
+import android.os.Environment;
+import java.io.IOException;
+import java.io.File;
+
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
-	public static final String DB_NAME = "DUNG_HEAP";
+	public static final String DB_NAME = "DUNG_HEAP.db";
+	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
 	public static final int VERSION = 30;
     private final Context mContext;
 
@@ -63,6 +70,7 @@ public class DBHelper extends SQLiteOpenHelper {
         // enable locking so we can safely share 
         // this instance around
         db.setLockingEnabled(true);
+        Log.w(TAG, "dbhelper onopen");
     }
 
 	@Override
@@ -148,75 +156,109 @@ public class DBHelper extends SQLiteOpenHelper {
     
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-		db.beginTransaction();
+        /*Log.w(TAG, "dbhelper oncreate");
 
-        createTable(db, MyInfo.TABLE, null,
-                    MyInfo._ID, "INTEGER PRIMARY KEY",
-                    MyInfo.PUBLIC_KEY, "TEXT",
-                    MyInfo.PRIVATE_KEY, "TEXT",
-                    MyInfo.NAME, "TEXT",
-                    MyInfo.EMAIL, "TEXT",
-                    MyInfo.PICTURE, "BLOB"
-                    );
+        File data = Environment.getDataDirectory();
+        String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+"new.db";
+        File newDB = new File(data, newDBPath);
+        if(newDB.exists()){
+        // and open the database
+    
+            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+            File currentDB = new File(data, currentDBPath);
+            currentDB.delete();
+            currentDB = new File(data, currentDBPath);
+            if(newDB.renameTo(currentDB)){
+                Log.w(TAG, "renamed file");
+            }
+            else {
+                Log.w(TAG, "did not rename file");
+            }
+            Log.w(TAG, "size of file: " + currentDB.length());
+            currentDB = new File(data, currentDBPath);
 
-        createTable(db, DbObject.TABLE, null,
-                    DbObject._ID, "INTEGER PRIMARY KEY",
-                    DbObject.TYPE, "TEXT",
-                    DbObject.SEQUENCE_ID, "INTEGER",
-                    DbObject.FEED_NAME, "TEXT",
-                    DbObject.APP_ID, "TEXT",
-                    DbObject.CONTACT_ID, "INTEGER",
-                    DbObject.DESTINATION, "TEXT",
-                    DbObject.JSON, "TEXT",
-                    DbObject.TIMESTAMP, "INTEGER",
-                    DbObject.SENT, "INTEGER DEFAULT 0"
-                    );
-        createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
-        createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
-        createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
+            Log.w(TAG, "attempting to open database file");
+            db = SQLiteDatabase.openDatabase(currentDB.getAbsolutePath(), null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+            if(db == null){
+                Log.w(TAG, "database null");
+            }
+            else {
+                Log.w(TAG, db.toString());
+            }
+            Log.w(TAG, "version: " + Integer.toString(db.getVersion()));
+            this.onOpen(db);
+        }
+        else {*/
+		    db.beginTransaction();
 
-        createTable(db, Contact.TABLE, null,
-                    Contact._ID, "INTEGER PRIMARY KEY",
-                    Contact.NAME, "TEXT",
-                    Contact.PUBLIC_KEY, "TEXT",
-                    Contact.PERSON_ID, "TEXT",
-                    Contact.EMAIL, "TEXT",
-                    Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
-                    Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
-                    Contact.STATUS, "TEXT",
-                    Contact.PICTURE, "BLOB");
-        createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
+            createTable(db, MyInfo.TABLE, null,
+                        MyInfo._ID, "INTEGER PRIMARY KEY",
+                        MyInfo.PUBLIC_KEY, "TEXT",
+                        MyInfo.PRIVATE_KEY, "TEXT",
+                        MyInfo.NAME, "TEXT",
+                        MyInfo.EMAIL, "TEXT",
+                        MyInfo.PICTURE, "BLOB"
+                        );
+
+            createTable(db, DbObject.TABLE, null,
+                        DbObject._ID, "INTEGER PRIMARY KEY",
+                        DbObject.TYPE, "TEXT",
+                        DbObject.SEQUENCE_ID, "INTEGER",
+                        DbObject.FEED_NAME, "TEXT",
+                        DbObject.APP_ID, "TEXT",
+                        DbObject.CONTACT_ID, "INTEGER",
+                        DbObject.DESTINATION, "TEXT",
+                        DbObject.JSON, "TEXT",
+                        DbObject.TIMESTAMP, "INTEGER",
+                        DbObject.SENT, "INTEGER DEFAULT 0"
+                        );
+            createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
+            createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
+            createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
+
+            createTable(db, Contact.TABLE, null,
+                        Contact._ID, "INTEGER PRIMARY KEY",
+                        Contact.NAME, "TEXT",
+                        Contact.PUBLIC_KEY, "TEXT",
+                        Contact.PERSON_ID, "TEXT",
+                        Contact.EMAIL, "TEXT",
+                        Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
+                        Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
+                        Contact.STATUS, "TEXT",
+                        Contact.PICTURE, "BLOB");
+            createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
-		createTable(db, Subscriber.TABLE, new String[]{Subscriber.CONTACT_ID, Subscriber.FEED_NAME},
-                    Subscriber._ID, "INTEGER PRIMARY KEY",
-                    Subscriber.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
-                    Subscriber.FEED_NAME, "TEXT");
-        createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
+		    createTable(db, Subscriber.TABLE, new String[]{Subscriber.CONTACT_ID, Subscriber.FEED_NAME},
+                        Subscriber._ID, "INTEGER PRIMARY KEY",
+                        Subscriber.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
+                        Subscriber.FEED_NAME, "TEXT");
+            createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
 
-        createTable(db, Group.TABLE, null,
-        			Group._ID, "INTEGER PRIMARY KEY",
-        			Group.NAME, "TEXT",
-                Group.FEED_NAME, "TEXT",
-                Group.DYN_UPDATE_URI, "TEXT",
-                Group.VERSION, "INTEGER DEFAULT -1"
-                    );
-        
-        createTable(db, GroupMember.TABLE, null,
-        			GroupMember._ID, "INTEGER PRIMARY KEY",
-        			GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
-        			GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
-                    GroupMember.GLOBAL_CONTACT_ID, "TEXT");
-        createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
-                    GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
+            createTable(db, Group.TABLE, null,
+            			Group._ID, "INTEGER PRIMARY KEY",
+            			Group.NAME, "TEXT",
+                    Group.FEED_NAME, "TEXT",
+                    Group.DYN_UPDATE_URI, "TEXT",
+                    Group.VERSION, "INTEGER DEFAULT -1"
+                        );
+            
+            createTable(db, GroupMember.TABLE, null,
+            			GroupMember._ID, "INTEGER PRIMARY KEY",
+            			GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
+            			GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
+                        GroupMember.GLOBAL_CONTACT_ID, "TEXT");
+            createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
+                        GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
 
 
-        generateAndStorePersonalInfo(db);
+            generateAndStorePersonalInfo(db);
 
-        db.setVersion(VERSION);
-        db.setTransactionSuccessful();
-        db.endTransaction();
-        this.onOpen(db);
+            db.setVersion(VERSION);
+            db.setTransactionSuccessful();
+            db.endTransaction();
+            this.onOpen(db);
+        //}
 	}
 
     private void generateAndStorePersonalInfo(SQLiteDatabase db){
@@ -367,6 +409,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return -1;
         }
     }
+
 
     long insertContact(ContentValues cv) {
         return insertContact(getWritableDatabase(), cv);

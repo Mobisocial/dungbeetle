@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.app.AlertDialog;
+
+import android.widget.Toast;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
@@ -41,9 +43,24 @@ import android.content.Intent;
 import android.widget.ImageView;
 import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
 
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+
 
 
 public class FeedActivity extends RichListActivity implements OnItemClickListener{
+
+    public static final String SERVICECMD = "com.android.music.musicservicecommand";
+	public static final String CMDNAME = "command";
+	public static final String CMDTOGGLEPAUSE = "togglepause";
+	public static final String CMDSTOP = "stop";
+	public static final String CMDPAUSE = "pause";
+	public static final String CMDPREVIOUS = "previous";
+	public static final String CMDNEXT = "next";
 
 	private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
@@ -51,9 +68,12 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     private Uri mFeedUri;
     private ContactCache mContactCache;
 
+    private boolean shareMusic;
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
+		
         Cursor c;
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
@@ -72,6 +92,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         }
 
         int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
+        shareMusic = false;
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
@@ -212,9 +233,29 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                 }
                             });
                     
+                        final ActionItem music = new ActionItem();
+                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_not_sharing));
+                        music.setTitle("Show Music");
+                        music.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    if(shareMusic){
+                                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_not_sharing));
+                                        shareMusic = false;
+                                        showToast("No longer sharing music");
+                                    }
+                                    else if(!shareMusic){
+                                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_sharing));
+                                        shareMusic = true;
+                                        showToast("Now sharing music");
+                                    }
+                                }
+                            });
+                    
                         QuickAction qa = new QuickAction(v);
 
-                        qa.addActionItem(tapBoard);
+                        //qa.addActionItem(tapBoard);
+                        qa.addActionItem(music);
                         qa.addActionItem(camera);
                         qa.addActionItem(application);
                         qa.addActionItem(voice);
@@ -305,7 +346,34 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         else{
             findViewById(R.id.add_object).setVisibility(View.GONE);
         }
+
+        
+		IntentFilter iF = new IntentFilter();
+		iF.addAction("com.android.music.metachanged");
+		//iF.addAction("com.android.music.playstatechanged");
+		//iF.addAction("com.android.music.playbackcomplete");
+		//iF.addAction("com.android.music.queuechanged");
+		
+		registerReceiver(mReceiver, iF);
     }
+	
+	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent)
+		{
+		    if(shareMusic) {
+			    String action = intent.getAction();
+			    String cmd = intent.getStringExtra("command");
+			    //Log.d("mIntentReceiver.onReceive ", action + " / " + cmd);
+			    String artist = intent.getStringExtra("artist");
+			    String album = intent.getStringExtra("album");
+			    String track = intent.getStringExtra("track");
+			    //Log.d("Music",artist+":"+album+":"+track);
+			    String song = artist + " - " + track;
+    			    Helpers.sendToFeed(FeedActivity.this, StatusObj.from(song), mFeedUri);
+            }
+		}
+	};
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
@@ -356,6 +424,12 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     		allowed.append(",'").append(type).append("'");
     	}
     	return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
+
+    
+    private void showToast(String msg) {
+        Toast error = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
+        error.show();
     }
 
 
