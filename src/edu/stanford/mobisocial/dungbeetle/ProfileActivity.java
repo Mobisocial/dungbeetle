@@ -41,9 +41,40 @@ public class ProfileActivity extends RichActivity{
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
+/*** Dashbaord stuff ***/
+    public void goHome(Context context) 
+    {
+        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity (intent);
+    }
+
+    public void setTitleFromActivityLabel (int textViewId)
+    {
+        TextView tv = (TextView) findViewById (textViewId);
+        if (tv != null) tv.setText (getTitle ());
+    } 
+    public void onClickHome (View v)
+    {
+        goHome (this);
+    }
+
+
+    public void onClickSearch (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+    }
+
+    public void onClickAbout (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
+    }
+
+/*** End Dashboard Stuff ***/
 
     protected void editMyProfile(){
         setContentView(R.layout.edit_profile);
+        setTitleFromActivityLabel (R.id.title_text);
         final EditText profileName = (EditText) findViewById(R.id.edit_profile_name);
         final EditText profileAbout = (EditText) findViewById(R.id.edit_profile_about);
         profileName.setText(mIdent.userName());
@@ -87,6 +118,7 @@ public class ProfileActivity extends RichActivity{
 
     protected void viewMyProfile(){
         setContentView(R.layout.view_profile);
+        setTitleFromActivityLabel (R.id.title_text);
         final TextView profileName = (TextView) findViewById(R.id.view_profile_name);
         final TextView profileEmail = (TextView) findViewById(R.id.view_profile_email);
         final TextView profileAbout = (TextView) findViewById(R.id.view_profile_about);

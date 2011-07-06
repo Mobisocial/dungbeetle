@@ -11,6 +11,8 @@ import android.widget.TabHost;
 import android.widget.Toast;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
+import android.widget.TextView;
+import android.content.Context;
 
 /**
  * Represents a group by showing its feed and members.
@@ -20,6 +22,36 @@ public class GroupsTabActivity extends TabActivity
 {
     private Nfc mNfc;
 
+/*** Dashbaord stuff ***/
+    public void goHome(Context context) 
+    {
+        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity (intent);
+    }
+
+    public void setTitleFromActivityLabel (int textViewId)
+    {
+        TextView tv = (TextView) findViewById (textViewId);
+        if (tv != null) tv.setText (getTitle ());
+    } 
+    public void onClickHome (View v)
+    {
+        goHome (this);
+    }
+
+
+    public void onClickSearch (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+    }
+
+    public void onClickAbout (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
+    }
+
+/*** End Dashboard Stuff ***/
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)

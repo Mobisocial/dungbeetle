@@ -53,9 +53,41 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
 
+/*** Dashbaord stuff ***/
+    public void goHome(Context context) 
+    {
+        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity (intent);
+    }
+
+    public void setTitleFromActivityLabel (int textViewId)
+    {
+        TextView tv = (TextView) findViewById (textViewId);
+        if (tv != null) tv.setText (getTitle ());
+    } 
+    public void onClickHome (View v)
+    {
+        goHome (this);
+    }
+
+
+    public void onClickSearch (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+    }
+
+    public void onClickAbout (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
+    }
+
+/*** End Dashboard Stuff ***/
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.contacts);
+        setTitleFromActivityLabel (R.id.title_text);
         mHelper = new DBHelper(this);
         Intent intent = getIntent();
         String groupName = "";

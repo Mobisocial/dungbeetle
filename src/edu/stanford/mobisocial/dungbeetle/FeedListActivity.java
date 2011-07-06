@@ -39,12 +39,44 @@ public class FeedListActivity extends ListActivity {
     private ContactCache mContactCache;
     private DBHelper mHelper;
 
+/*** Dashbaord stuff ***/
+    public void goHome(Context context) 
+    {
+        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity (intent);
+    }
+
+    public void setTitleFromActivityLabel (int textViewId)
+    {
+        TextView tv = (TextView) findViewById (textViewId);
+        if (tv != null) tv.setText (getTitle ());
+    } 
+    public void onClickHome (View v)
+    {
+        goHome (this);
+    }
+
+
+    public void onClickSearch (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+    }
+
+    public void onClickAbout (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
+    }
+
+/*** End Dashboard Stuff ***/
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mContactCache = new ContactCache(this);
         setContentView(R.layout.feeds);
-        findViewById(R.id.button_new).setOnClickListener(newFeed());
+        setTitleFromActivityLabel (R.id.title_text);
+        //findViewById(R.id.button_new).setOnClickListener(newFeed());
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
         mFeeds = new FeedListCursorAdapter(this, c);
@@ -58,6 +90,7 @@ public class FeedListActivity extends ListActivity {
         super.finish();
         mContactCache.close();
     }
+/**** THIS HAS BEEN MOVED TO SettingsActivity.java
     private final static int BACKUP = 0;
     private final static int RESTORE = 1;
 
@@ -85,7 +118,7 @@ public class FeedListActivity extends ListActivity {
         }
         default: return false;
         }
-    }
+    }*/
 
     private class FeedListCursorAdapter extends CursorAdapter {
         public FeedListCursorAdapter (Context context, Cursor c) {

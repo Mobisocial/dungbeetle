@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 
 
-public class DungBeetleActivity extends TabActivity
+public class DungBeetleActivity extends DashboardActivity
 {
     private static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
@@ -177,7 +177,7 @@ public class DungBeetleActivity extends TabActivity
             }
         } catch (ClassCastException e) {}
 
-        setContentView(R.layout.main);
+        setContentView(R.layout.activity_home);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
 
@@ -187,7 +187,7 @@ public class DungBeetleActivity extends TabActivity
         //Resources res = getResources();
         // res.getDrawable(R.drawable.icon)
 
-        TabHost tabHost = getTabHost();
+        /*TabHost tabHost = getTabHost();
         TabHost.TabSpec spec;  
         Intent intent;  
 
@@ -222,7 +222,7 @@ public class DungBeetleActivity extends TabActivity
             .setContent(intent);
         tabHost.addTab(spec);
         
-        tabHost.setCurrentTab(0);
+        tabHost.setCurrentTab(0);*/
 
         mNfc = new Nfc(this);
         // TODO: Combine doHandleInput calls in onNewIntent.
@@ -412,9 +412,9 @@ public class DungBeetleActivity extends TabActivity
         return (u == null) ? Uri.parse("urn:"): u;
     }
 
-    private void toast(final String text) {
+   /* private void toast(final String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }
+    }*/
 }
 
 
