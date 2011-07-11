@@ -12,6 +12,7 @@ import android.widget.Toast;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 import android.widget.TextView;
+import android.util.Log;
 import android.content.Context;
 
 /**
@@ -21,6 +22,8 @@ import android.content.Context;
 public class GroupsTabActivity extends TabActivity
 {
     private Nfc mNfc;
+
+    public final String TAG = "GroupsTabActivity";
 
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
@@ -110,6 +113,7 @@ public class GroupsTabActivity extends TabActivity
 
         if (feed_uri != null) {
             mNfc.share(NdefFactory.fromUri(feed_uri));
+            Log.w(TAG, feed_uri);
         }
 
         int color = Feed.colorFor(feed_name);

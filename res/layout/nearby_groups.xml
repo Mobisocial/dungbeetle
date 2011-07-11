@@ -17,13 +17,22 @@
             android:contentDescription="@string/description_about"
             android:src="@drawable/title_about"
             android:onClick="onClickAbout" />
-        <!--<ImageButton style="@style/TitleBarAction"
-            android:contentDescription="@string/description_search"
-            android:src="@drawable/title_search"
-            android:onClick="onClickSearch" />-->
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_refresh"
+            android:src="@drawable/title_refresh"
+            android:layout_height="fill_parent"
+            android:onClick="onClickRefresh" />
     </LinearLayout>
 
-    
+  <!--  <com.google.android.maps.MapView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mapview"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:clickable="true"
+    android:apiKey="0HSCT62d9V-Kzz6x3ZqxcJuKJ2EEkqzUUjIG5VQ"
+/>-->
+
     <ListView  
         android:id="@android:id/list"
         android:layout_width="fill_parent" 
@@ -32,6 +41,6 @@
     <TextView android:id="@android:id/empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Empty set"
+        android:text=""
         />
 </LinearLayout>

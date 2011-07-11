@@ -256,6 +256,10 @@ public void onClickFeature (View v)
            intent = new Intent().setClass(getApplicationContext(), SettingsActivity.class);
            startActivity (intent);
           break;
+      case R.id.home_btn_nearby :
+           intent = new Intent().setClass(getApplicationContext(), NearbyGroupsActivity.class);
+           startActivity (intent);
+          break;
       default: 
     	   break;
     }

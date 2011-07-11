@@ -33,11 +33,28 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import java.util.UUID;
+import android.app.AlertDialog;
 
+import android.util.Log;
 import mobisocial.nfc.NdefFactory;
 
+import org.apache.http.message.BasicNameValuePair;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.InputStream;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import java.util.ArrayList;
+import java.util.List;
 
+import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+import android.location.Location;
+import android.app.ProgressDialog;
 
 
 public class GroupsActivity extends ListActivity implements OnItemClickListener{
@@ -46,6 +63,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 	private static final int REQUEST_INVITE_TO_GROUP = 1;
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
+    public final String TAG = "GroupsActivity";
 
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
@@ -150,6 +168,16 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
             bindView(v, context, c);
             return v;
         }
+
+        
+              
+        public MyLocation myLocation;
+        public MyLocation.LocationResult locationResult;
+
+        private void locationClick() {
+            myLocation.getLocation(GroupsActivity.this, locationResult);
+        }
+        
         @Override
         public void bindView(View v, Context context, Cursor c) {
 
@@ -211,12 +239,120 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                                 }
                             });
 
+                        final ActionItem nearby = new ActionItem();
+                        nearby.setTitle("Broadcast Nearby");
+                        nearby.setOnClickListener(new OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                
+                                    final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
+
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(GroupsActivity.this);
+                                    builder.setTitle("Choose duration of broadcast");
+                                    builder.setItems(items, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, final int item) {
+                                            
+                                            myLocation = new MyLocation();
+
+                                            locationResult = new MyLocation.LocationResult(){
+
+                                            
+                                                final ProgressDialog dialog = ProgressDialog.show(GroupsActivity.this, "", 
+                                                            "Preparing broadcast...", true);  
+                                                @Override
+                                                public void gotLocation(final Location location){
+                                                    //Got the location!
+                                                    try {
+                                                        int minutes;
+                                                        if(item == 0) {
+                                                            minutes = 5;
+                                                        }
+                                                        else if(item == 1) {
+                                                            minutes = 15;
+                                                        }
+                                                        else if(item == 2) {
+                                                            minutes = 60;
+                                                        }
+                                                        else if(item == 3) {
+                                                            minutes = 1440;
+                                                        }
+                                                        else
+                                                        {
+                                                            minutes = 5;
+                                                        }
+                                                        Uri.Builder b = new Uri.Builder();
+                                                        b.scheme("http");
+                                                        b.authority("suif.stanford.edu");
+                                                        b.path("dungbeetle/nearby.php");
+                                                        Uri uri = b.build();
+                                                        
+                                                        StringBuffer sb = new StringBuffer();
+                                                        DefaultHttpClient client = new DefaultHttpClient();
+                                                        HttpPost httpPost = new HttpPost(uri.toString());
+
+                                                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                                                    
+                                                        nameValuePairs.add(new BasicNameValuePair("group_name", g.name));
+                                                        nameValuePairs.add(new BasicNameValuePair("feed_uri", g.dynUpdateUri));
+                                                        nameValuePairs.add(new BasicNameValuePair("length", Integer.toString(minutes)));
+                                                        nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
+                                                        nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
+                                                        httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                                                        try {
+                                                            HttpResponse execute = client.execute(httpPost);
+                                                            InputStream content = execute.getEntity().getContent();
+                                                            BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                                                            String s = "";
+                                                            while ((s = buffer.readLine()) != null) {
+                                                                sb.append(s);
+                                                            }
+                                                        }
+                                                        catch (Exception e) {
+                                                            e.printStackTrace();
+                                                        }
+
+                                                        String response = sb.toString();
+                                                        if(response.equals("1"))
+                                                        {
+                                                            Toast.makeText(getApplicationContext(), 
+                                                                "Now broadcasting for " + items[item], 
+                                                                Toast.LENGTH_SHORT).show();
+                                                        }    
+
+                                                        Log.i(TAG, response);
+                                                    }
+                                                    catch(Exception e) {
+                                                    }
+
+                                                    
+                                                    dialog.dismiss();
+                                                }
+                                            };
+
+                                            locationClick();
+                                        }
+                                    });
+                                    AlertDialog alert = builder.create();
+                                    alert.show();
+                                    
+                                    Log.w(TAG, "name: " + g.name);
+                                    
+                                    Log.w(TAG, "uri: " + g.dynUpdateUri);
+                                    /*Intent i = new Intent();
+                                    i.setAction(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+                                    i.putExtra(PickContactsActivity.INTENT_EXTRA_NFC_SHARE, ndefForGroup(g));
+                                    GroupsActivity.this.startActivityForResult(
+                                        i, REQUEST_INVITE_TO_GROUP);   */
+                                }
+                            });
+
                     
                         QuickAction qa = new QuickAction(v);
 
                         qa.addActionItem(sendIM);
                         qa.addActionItem(startApp);
-                        qa.addActionItem(invite);
+                        //qa.addActionItem(invite);
+                        qa.addActionItem(nearby);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();

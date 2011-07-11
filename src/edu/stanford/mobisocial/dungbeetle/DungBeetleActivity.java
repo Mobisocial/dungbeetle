@@ -125,44 +125,7 @@ public class DungBeetleActivity extends DashboardActivity
 
 
     }
-    /*
-    public SQLiteDatabase loadDb(Context context) throws IOException,SQLiteException{
-        //Close any old db handle
-        if (db != null && db.isOpen()) {
-            db.close();
-        }
-        File fileTest = context.getFileStreamPath(DATABASE_NAME);
-        boolean exists = fileTest.exists();
-        if(exists==false)
-        {
-
-            // The name of the database to use from the bundled assets.
-            InputStream myInput = context.getAssets().open(DATABASE_NAME, Context.MODE_PRIVATE);
-
-            // Create a file in the app’s file directory since sqlite requires a path
-            // Not ideal but we will copy the file out of our bundled assets and open it
-            // it in another location.
-            FileOutputStream myOutput = context.openFileOutput(DATABASE_NAME, Context.MODE_PRIVATE);
-
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = myInput.read(buffer)) > 0) {
-                myOutput.write(buffer, 0, length);
-            }
-
-            // Close the streams
-            myOutput.flush();
-            // Guarantee Write!
-            myOutput.getFD().sync();
-            myOutput.close();
-            myInput.close();
-        }
-        // Not grab the newly written file
-        File fileObj = context.getFileStreamPath(DATABASE_NAME);
-        // and open the database
-        return db = SQLiteDatabase.openDatabase(fileObj.getAbsolutePath(), null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
-    }*/
-
+  
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)

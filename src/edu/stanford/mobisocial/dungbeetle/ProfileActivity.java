@@ -117,7 +117,7 @@ public class ProfileActivity extends RichActivity{
 
 
     protected void viewMyProfile(){
-        setContentView(R.layout.view_profile);
+        setContentView(R.layout.view_self_profile);
         setTitleFromActivityLabel (R.id.title_text);
         final TextView profileName = (TextView) findViewById(R.id.view_profile_name);
         final TextView profileEmail = (TextView) findViewById(R.id.view_profile_email);

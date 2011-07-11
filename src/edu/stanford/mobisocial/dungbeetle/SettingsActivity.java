@@ -12,6 +12,8 @@ import android.content.Context;
 import android.util.Log;
 import android.content.Intent;
 
+import edu.stanford.mobisocial.dungbeetle.google.*;
+
 
 
 public class SettingsActivity extends ListActivity {
@@ -83,6 +85,8 @@ public class SettingsActivity extends ListActivity {
                     case 2:
                         break;
                     case 3:
+                        intent = new Intent(SettingsActivity.this, OAuthFlowApp.class);
+                        startActivity(intent);
                         break;
                 }
             }
