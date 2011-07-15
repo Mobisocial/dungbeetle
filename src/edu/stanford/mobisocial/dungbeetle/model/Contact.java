@@ -29,6 +29,7 @@ public class Contact implements Serializable{
     public final String status;
     public byte[] picture;
 
+
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
         name = c.getString(c.getColumnIndexOrThrow(NAME));

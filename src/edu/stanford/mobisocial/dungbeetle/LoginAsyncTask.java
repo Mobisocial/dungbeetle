@@ -26,6 +26,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.app.ProgressDialog;
 
 import com.dropbox.client.DropboxAPI;
 
@@ -39,15 +40,16 @@ public class LoginAsyncTask extends AsyncTask<Void, Void, Integer> {
     DropboxBackupActivity mDropboxSample;
     DropboxAPI.Config mConfig;
     DropboxAPI.Account mAccount;
-    
+    ProgressDialog dialog;
     // Will just log in
-    public LoginAsyncTask(DropboxBackupActivity act, String user, String password, DropboxAPI.Config config) {
+    public LoginAsyncTask(DropboxBackupActivity act, String user, String password, DropboxAPI.Config config, ProgressDialog dialog) {
         super();
 
         mDropboxSample = act;
         mUser = user;
         mPassword = password;
         mConfig = config;
+        this.dialog = dialog;
     }
 
     @Override
@@ -82,6 +84,7 @@ public class LoginAsyncTask extends AsyncTask<Void, Void, Integer> {
 
     @Override
     protected void onPostExecute(Integer result) {
+    
         if (result == DropboxAPI.STATUS_SUCCESS) {
             	if (mConfig != null && mConfig.authStatus == DropboxAPI.STATUS_SUCCESS) {
                 	mDropboxSample.storeKeys(mConfig.accessTokenKey, mConfig.accessTokenSecret);
@@ -90,13 +93,16 @@ public class LoginAsyncTask extends AsyncTask<Void, Void, Integer> {
             	if (mAccount != null) {
             		mDropboxSample.action(mAccount);
             	}
-            } else {
+        } 
+        else {
             	if (result == DropboxAPI.STATUS_NETWORK_ERROR) {
             		mDropboxSample.showToast("Network error: " + mConfig.authDetail);
             	} else {
             		mDropboxSample.showToast("Unsuccessful login.");
             	}
         }
+        
+    	    dialog.dismiss();
     }
 
 }

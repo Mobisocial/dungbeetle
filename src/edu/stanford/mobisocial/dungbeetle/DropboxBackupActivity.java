@@ -39,6 +39,7 @@ import android.widget.Toast;
 import java.io.File;
 import android.os.Environment;
 import android.content.Intent;
+import android.app.ProgressDialog;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -74,6 +75,7 @@ public class DropboxBackupActivity extends Activity {
     private Button mSubmit;
     private TextView mText;
     private Config mConfig;
+    ProgressDialog dialog;
     
     /** Called when the activity is first created. */
     @Override
@@ -85,6 +87,10 @@ public class DropboxBackupActivity extends Activity {
         mLoginPassword = (EditText)findViewById(R.id.login_password);
         mSubmit = (Button)findViewById(R.id.login_submit);
         mText = (TextView)findViewById(R.id.text);
+        
+        dialog = new ProgressDialog(DropboxBackupActivity.this);
+        dialog.setMessage("Connecting to Dropbox...");
+        dialog.setCancelable(false);
         
         mSubmit.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -145,7 +151,9 @@ public class DropboxBackupActivity extends Activity {
     private void getAccountInfo() {
     	if (api.isAuthenticated()) {
     		// If we're already authenticated, we don't need to get the login info
-	        LoginAsyncTask login = new LoginAsyncTask(this, null, null, getConfig());
+    		
+            		dialog.show();
+	        LoginAsyncTask login = new LoginAsyncTask(this, null, null, getConfig(), dialog);
 	        login.execute();    		
     	} else {
     	
@@ -165,7 +173,9 @@ public class DropboxBackupActivity extends Activity {
 
 	        // It's good to do Dropbox API (and any web API) calls in a separate thread,
 	        // so we don't get a force-close due to the UI thread stalling.
-	        LoginAsyncTask login = new LoginAsyncTask(this, email, password, getConfig());
+	            
+            		dialog.show();
+	        LoginAsyncTask login = new LoginAsyncTask(this, email, password, getConfig(), dialog);
 	        login.execute();
     	}
     }
@@ -188,6 +198,9 @@ public class DropboxBackupActivity extends Activity {
                 String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
                 File currentDB = new File(data, currentDBPath);
                 
+                String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+".new";
+                File newDB = new File(data, newDBPath);
+                
                 if(contact_id == 0) {
                     api.delete("dropbox", "/" + DBHelper.DB_NAME);
                     api.putFile("dropbox", "/", currentDB);
@@ -195,10 +208,9 @@ public class DropboxBackupActivity extends Activity {
                 }
                 else if(contact_id == 1) {
                     try {
-                        downloadDropboxFile(DBHelper.DB_NAME, currentDB);
+                        downloadDropboxFile(DBHelper.DB_NAME, newDB);
+                        mHelper.importDatabase(newDBPath);
                         showToast("restored");
-                        stopService(new Intent(this, DungBeetleService.class));
-                        android.os.Process.killProcess(android.os.Process.myPid());
                     }
                     catch (Exception e) {
                         showToast("could not restore");
@@ -217,7 +229,7 @@ public class DropboxBackupActivity extends Activity {
         try {
             if (!localFile.exists()) {
                 localFile.createNewFile(); //otherwise dropbox client will fail silently
-                showToast("initial length: " + localFile.length());
+                //showToast("initial length: " + localFile.length());
             }
 
             FileDownload fd = api.getFileStream("dropbox", "/" + dbPath, null);
@@ -242,7 +254,7 @@ public class DropboxBackupActivity extends Activity {
                 br.close();
             }
         }
-        showToast("length: " + localFile.length());
+        //showToast("length: " + localFile.length());
         return true;
     }
     

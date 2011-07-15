@@ -221,6 +221,9 @@ public class DungBeetleContentProvider extends ContentProvider {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
+                    if(values.getAsString(Contact.PICTURE) != null) {
+                        cv.put(Contact.PICTURE, values.getAsByteArray(Contact.PICTURE));
+                    }
 
                     long cid = -1;
                     Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
@@ -281,7 +284,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
     }
 
-/*private void restoreDatabase() {
+    /*private void restoreDatabase() {
         File data = Environment.getDataDirectory();
         String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+".new";
         File newDB = new File(data, newDBPath);
@@ -301,8 +304,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
 
 
-    }
-*/
+    }*/
+
     @Override
     public boolean onCreate() {
 

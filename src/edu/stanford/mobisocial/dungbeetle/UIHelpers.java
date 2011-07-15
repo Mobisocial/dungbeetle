@@ -74,12 +74,12 @@ public class UIHelpers {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Pick Groups");
+        builder.setTitle("Member of");
         builder.setMultiChoiceItems(
             groupNames, tempSelected, 
             new DialogInterface.OnMultiChoiceClickListener() {
                 public void onClick(DialogInterface dialog, int item, boolean isChecked) {
-                    Long groupId = groupIds[item];
+                    /*Long groupId = groupIds[item];
                     Long contactId = contact.id;
                     if(isChecked) {
                         ContentValues values = new ContentValues();
@@ -93,11 +93,11 @@ public class UIHelpers {
                             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
                             GroupMember.GROUP_ID + "=? AND " + GroupMember.CONTACT_ID + "=?",
                             new String[]{ String.valueOf(groupId), String.valueOf(contactId)});
-                    }
+                    }*/
                 }
             });
 
-        builder.setPositiveButton("Done",
+        builder.setPositiveButton("Close",
                                   new DialogInterface.OnClickListener() {
                                       public void onClick(
                                           DialogInterface dialog, 

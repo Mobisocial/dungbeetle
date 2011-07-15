@@ -32,7 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.util.RichActivity;
 import java.io.File;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import android.util.Log;
 
 public class ProfileActivity extends RichActivity{
 
@@ -40,6 +40,7 @@ public class ProfileActivity extends RichActivity{
     private boolean mEnablePresenceUpdates = false;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
+    private final String TAG = "ProfileActivity";
 
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
@@ -124,6 +125,15 @@ public class ProfileActivity extends RichActivity{
         final TextView profileAbout = (TextView) findViewById(R.id.view_profile_about);
         final ImageView icon = (ImageView) findViewById(R.id.icon);
 
+        Button edit_profile_button = (Button)this.findViewById(R.id.edit_profile_button);
+        edit_profile_button.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    Intent intent = new Intent(ProfileActivity.this, ProfileActivity.class);
+                    intent.putExtra("edit", 1);
+                    startActivity(intent); 
+                }
+            });
+        
         Spinner presence = (Spinner)this.findViewById(R.id.presence);
 
         Cursor c = getContentResolver().query(
@@ -185,6 +195,7 @@ public class ProfileActivity extends RichActivity{
             try{
                 JSONObject obj = new JSONObject(jsonSrc);
                 String bytes = obj.optString(ProfilePictureObj.DATA);
+                Log.w(TAG, "picture size: " + bytes.length());
                 ((App)getApplication()).objectImages.lazyLoadImage(bytes.hashCode(), bytes, icon);
             }catch(JSONException e){}
         }
@@ -204,7 +215,7 @@ public class ProfileActivity extends RichActivity{
                                 public void onResult(byte[] data) {
                                     Helpers.updatePicture(ProfileActivity.this, data);
                                 }
-                            }, 80, true));
+                            }, 200, true));
                 }
             });
 
@@ -247,7 +258,8 @@ public class ProfileActivity extends RichActivity{
             }  
 	    
             final ImageView icon = (ImageView) findViewById(R.id.icon);
-            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon, 200);
+            //((App)getApplication()).objectImages.lazyLoadImage(contact.picture.hashCode(), contact.picture, icon);
 
         }
         catch(Maybe.NoValError e){}
@@ -258,6 +270,7 @@ public class ProfileActivity extends RichActivity{
         super.onCreate(savedInstanceState);
         mHelper = new DBHelper(ProfileActivity.this);
         mIdent = new DBIdentityProvider(mHelper);
+
 
         refresh();
 
@@ -299,7 +312,7 @@ public class ProfileActivity extends RichActivity{
     private final static int EDIT = 0;
     private final static int ANON = 1;
 
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+    /*public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, EDIT, 0, "Edit Profile");
         //menu.add(1, ANON, 1, "Add anon profile");
@@ -314,13 +327,9 @@ public class ProfileActivity extends RichActivity{
             startActivity(intent); 
             return true;
         }
-        /*case ANON: {
-            mHelper.generateAndStorePersonalInfo();
-            return true;
-        }*/
         default: return false;
         }
-    }
+    }*/
 
     private Uri mImageCaptureUri;
     

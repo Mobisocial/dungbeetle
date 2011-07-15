@@ -10,7 +10,7 @@
     <color name="foreground1">#ff282828</color>
     <color name="foreground2">#ff282828</color>
     <color name="background1">#ffffffff</color>
-    <color name="background2">#ff282828</color>
-    <color name="background3">#ff282828</color>
+    <color name="background2">#ffffffff</color>
+    <color name="background3">#ffffffff</color>
     <color name="title_separator">#40ffffff</color>
 </resources>

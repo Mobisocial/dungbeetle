@@ -41,6 +41,7 @@ public class ImageCache {
 	public void lazyLoadContactPortrait(Contact c, ImageView v){
         lazyLoadContactPortrait(c, v, 80);
 	}
+
 	public void lazyLoadContactPortrait(Contact c, ImageView v, int size){
         if(c.picture != null) {
             lazyLoadImage(c.id, c.picture, v);

@@ -202,6 +202,7 @@ public class MessagingManagerThread extends Thread {
                     objs.moveToNext();
                 }
                 mHelper.markObjectsAsSent(sent);
+                objs.close();
             }
             catch(Exception e){
                 Log.e(TAG, "wtf", e);

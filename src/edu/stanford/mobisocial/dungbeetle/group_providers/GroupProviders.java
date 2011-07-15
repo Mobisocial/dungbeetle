@@ -62,7 +62,7 @@ public class GroupProviders{
                                 final Context context, final IdentityProvider ident, final int version){
             (new Thread(){
                     public void run(){
-                        GroupProvider.this.handle(groupId, uriIn, context, ident, version);
+                        GroupProvider.this.handle(groupId, uriIn, context, ident, version, true);
                     }
                 }).start();
         }
@@ -80,7 +80,7 @@ public class GroupProviders{
         }
         public boolean willHandle(Uri uri){ return true; }
         public void handle(final long groupId, final Uri uriIn, 
-                           final Context context, final IdentityProvider ident, final int version){}
+                           final Context context, final IdentityProvider ident, final int version, final boolean updateProfile){}
     }
     
     public static class PrplGroupProvider extends GroupProvider{
@@ -111,7 +111,7 @@ public class GroupProviders{
         }
 
         public void handle(final long groupId, final Uri uriIn, 
-                           final Context context, final IdentityProvider ident, int version){
+                           final Context context, final IdentityProvider ident, int version, boolean updateProfile){
 
             try{
                 final byte[] key = Base64.decode(uriIn.getQueryParameter("key"));
@@ -137,7 +137,10 @@ public class GroupProviders{
                 final String feedName = uriIn.getQueryParameter("session");
                 nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
                 nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
-                nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
+                //if(updateProfile){
+                  //  Log.w(TAG, ident.userProfile());
+                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
+                //}
                 nameValuePairs.add(new BasicNameValuePair("session", feedName));
                 nameValuePairs.add(new BasicNameValuePair("version", Integer.toString(version)));
                 httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -156,7 +159,7 @@ public class GroupProviders{
 
                 String response = sb.toString();
 
-                Log.i(TAG, response);
+                //Log.i(TAG, response);
 
                 if(response.equals("1"))
                 {    
@@ -167,7 +170,8 @@ public class GroupProviders{
                     nameValuePairs = new ArrayList<NameValuePair>(2);
                     nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
                     nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
-                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES("", key)));
+                    
+                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
                     nameValuePairs.add(new BasicNameValuePair("session", feedName));
                     httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                     try {
@@ -195,14 +199,38 @@ public class GroupProviders{
                             String encryptedPubK = o.getString("public_key");
                             final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
                             final String email = Util.decryptAES(o.getString("email"), key);
-                            //final String profile = Util.decryptAES(o.getString("profile"), key);
+
+                            if(email.equals(ident.userEmail())){
+                                continue;
+                            }
+
+                            final String encryptedProfile = o.getString("profile");
                             //final String groupSession = o.getString("group_session");
                             final String idInGroup = o.getString("group_id");
                             (new Handler(context.getMainLooper())).post(new Runnable(){
                                     public void run(){
+
                                         ContentValues values = new ContentValues();
                                         values.put(Contact.PUBLIC_KEY, pubKeyStr);
-                                        values.put(Contact.NAME, email);
+
+                                        String profile = "";
+                                        if(encryptedProfile != "null" && encryptedProfile != "") {
+                                            //Log.w(TAG, "["+encryptedProfile+"]");
+                                            profile = Util.decryptAES(encryptedProfile, key);
+                                        }
+                                        if(!profile.equals("")) {
+                                            try{
+                                                JSONObject profileJSON = new JSONObject(profile);
+                                                values.put(Contact.NAME, profileJSON.getString("name"));
+                                                Log.w(TAG, profileJSON.getString("picture"));
+                                                values.put(Contact.PICTURE, Base64.decode(profileJSON.getString("picture")));
+                                            }
+                                            catch(Exception e){
+                                            }
+                                        }
+                                        else {
+                                            values.put(Contact.NAME, email);
+                                        }
                                         values.put(Contact.EMAIL, email);
                                         values.put(Group.FEED_NAME, feedName);
                                         values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);

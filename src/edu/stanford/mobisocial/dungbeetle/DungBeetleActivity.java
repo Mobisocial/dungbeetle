@@ -100,37 +100,12 @@ public class DungBeetleActivity extends DashboardActivity
         mNotificationManager.notify(0, notification);
     }
 
-    private void restoreDatabase() {
-        DBHelper mHelper = new DBHelper(this);
-        mHelper.getWritableDatabase().close();
-        
-        
-        File data = Environment.getDataDirectory();
-        String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+"new.db";
-        File newDB = new File(data, newDBPath);
-        if(newDB.exists()){
     
-            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
-            File currentDB = new File(data, currentDBPath);
-            currentDB.delete();
-            //currentDB = new File(data, currentDBPath);
-            //newDB.renameTo(currentDB);
-            
-            Log.w(TAG, "backup exists");
-        }
-        else {
-        //database does't exist yet.
-            Log.w(TAG, "backup does not exist");
-        }
-
-
-    }
   
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-        restoreDatabase();
         super.onCreate(savedInstanceState);
 
         // TODO: Hack.
@@ -349,12 +324,12 @@ public class DungBeetleActivity extends DashboardActivity
         mNfc.onResume(this);
 
         // Don't check for updates too frequently...
-        long t = new Date().getTime();
+        /*long t = new Date().getTime();
         if((t - lastUpdateCheckTime) > 30000){
             CheckForUpdatesTask task = new CheckForUpdatesTask();
             task.execute(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_METADATA_FILE);
             lastUpdateCheckTime = t;
-        }
+        }*/
     }
 
     @Override

@@ -33,10 +33,10 @@ public class GroupsTabActivity extends TabActivity
         context.startActivity (intent);
     }
 
-    public void setTitleFromActivityLabel (int textViewId)
+    public void setTitleFromActivityLabel (int textViewId, String title)
     {
         TextView tv = (TextView) findViewById (textViewId);
-        if (tv != null) tv.setText (getTitle ());
+        if (tv != null) tv.setText (title);
     } 
     public void onClickHome (View v)
     {
@@ -117,7 +117,8 @@ public class GroupsTabActivity extends TabActivity
         }
 
         int color = Feed.colorFor(feed_name);
-        setTitle("Groups > " + group_name);
+        
+        setTitleFromActivityLabel (R.id.title_text, group_name);
         View titleView = getWindow().findViewById(android.R.id.title);
         if (titleView != null) {
             ViewParent parent = titleView.getParent();

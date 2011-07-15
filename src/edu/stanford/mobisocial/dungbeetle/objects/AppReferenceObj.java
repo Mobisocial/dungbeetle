@@ -34,6 +34,8 @@ import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 
+import java.util.Iterator;
+
 
 public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "InviteToSharedAppObj";
@@ -140,7 +142,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    launch.addCategory(Intent.CATEGORY_LAUNCHER);
 	    launch.putExtra("mobisocial.db.FEED", feed);
 	    if (content.has(ARG)) {
-	        launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", content.optString(ARG));
+	        launch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, content.optString(ARG));
 	    }
 	    // TODO: optimize!
 	    List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
@@ -157,7 +159,16 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	        }
 	    }
 
-	    Toast.makeText(context, "No activity found.", Toast.LENGTH_SHORT).show();
+        Iterator keyIter = content.keys();
+
+        while(keyIter.hasNext())
+        {
+            Log.d(TAG, keyIter.next().toString());
+        }
+
+        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id="+content.optString("packageName")));
+        context.startActivity(market);
+	    //Toast.makeText(context, "No activity found.", Toast.LENGTH_SHORT).show();
 	}
 
 	public static void promptForApplication(final Context context, final Callback callback) {

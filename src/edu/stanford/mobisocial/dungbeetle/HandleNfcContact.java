@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.app.Activity;
@@ -13,6 +14,8 @@ import android.widget.Button;
 import android.net.Uri;
 import android.widget.Toast;
 import java.util.BitSet;
+import org.json.JSONObject;
+import edu.stanford.mobisocial.bumblebee.util.Base64;
 
 public class HandleNfcContact extends Activity {
     private String mName;
@@ -33,18 +36,66 @@ public class HandleNfcContact extends Activity {
 		if(uri != null && 
 		        (uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
-			mName = uri.getQueryParameter("name");
+			
 	        mEmail = uri.getQueryParameter("email");
+	        mName = mEmail;
+
+            String mProfile = uri.getQueryParameter("profile");
+
+            //byte[] mPicture = new byte[0];
+            
+            try{
+                JSONObject o = new JSONObject(mProfile);
+                mName = o.getString("name");
+                //mPicture = Base64.decode(o.getString("picture"));
+            }
+            catch(Exception e){
+            }
 
             TextView nameView = (TextView)findViewById(R.id.name_text);
-            nameView.setText(mName);
+            nameView.setText("Would you like to be friends with " + mName + "?");
+
+            final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
+
+                
+		    saveButton.setOnClickListener(new OnClickListener() {
+				    public void onClick(View v) {
+                        
+                        DBHelper helper = new DBHelper(HandleNfcContact.this);
+                        IdentityProvider ident = new DBIdentityProvider(helper);
+
+                        try{
+                            JSONObject profile = new JSONObject(ident.userProfile());
+                            byte[] data = Base64.decode(profile.getString("picture"));
+                            
+                            Helpers.updatePicture(HandleNfcContact.this, data);
+                        }
+                        catch(Exception e)
+                        {
+                        }
+                        Toast.makeText(HandleNfcContact.this, "Added " + mName + " as a friend.", Toast.LENGTH_SHORT).show();
+                        finish();
+				    }
+			    });
+
+		    cancelButton.setOnClickListener(new OnClickListener() {
+				    public void onClick(View v) {
+				        Helpers.deleteContact(HandleNfcContact.this, cid);
+				        
+					    finish();
+				    }
+			    });
 
             ImageView portraitView = (ImageView)findViewById(R.id.image);
             if(uri != null){
+            /*
                 ((App)getApplication()).contactImages.lazyLoadImage(
                     mEmail.hashCode(),
                     Gravatar.gravatarUri(mEmail, 100), 
                     portraitView);
+            */
+                    
+                //((App)getApplication()).contactImages.lazyLoadImage(mPicture.hashCode(), mPicture, portraitView);
             }
 		}
 		else{
@@ -53,19 +104,6 @@ public class HandleNfcContact extends Activity {
                            Toast.LENGTH_SHORT).show();
 		}
 
-		saveButton.setOnClickListener(new OnClickListener() {
-				public void onClick(View v) {
-                    FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
-                    Toast.makeText(HandleNfcContact.this, "Added " + mName + " as a friend.", Toast.LENGTH_SHORT).show();
-                    finish();
-				}
-			});
-
-		cancelButton.setOnClickListener(new OnClickListener() {
-				public void onClick(View v) {
-					finish();
-				}
-			});
 	}
 
 

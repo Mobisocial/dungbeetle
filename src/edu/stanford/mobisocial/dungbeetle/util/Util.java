@@ -15,6 +15,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.channels.FileChannel;
 
 public class Util {
 
@@ -221,6 +222,25 @@ public class Util {
         }
         return result;
     }
-
+    
+    public static void copyFile(FileInputStream fromFile, FileOutputStream toFile) throws IOException {
+        FileChannel fromChannel = null;
+        FileChannel toChannel = null;
+        try {
+            fromChannel = fromFile.getChannel();
+            toChannel = toFile.getChannel();
+            fromChannel.transferTo(0, fromChannel.size(), toChannel);
+        } finally {
+            try {
+                if (fromChannel != null) {
+                    fromChannel.close();
+                }
+            } finally {
+                if (toChannel != null) {
+                    toChannel.close();
+                }
+            }
+        }
+    }
 
 }
