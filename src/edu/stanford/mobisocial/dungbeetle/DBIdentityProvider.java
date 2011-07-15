@@ -17,6 +17,9 @@ import java.security.PublicKey;
 import android.database.Cursor;
 import android.util.Log;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 public class DBIdentityProvider implements IdentityProvider {
 
     public static final String TAG = "DBIdentityProvider";
@@ -44,13 +47,28 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public String userName(){
-        return mName;
+		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT " + MyInfo.NAME + " FROM " + MyInfo.TABLE, new String[] {});
+		c.moveToFirst();
+        return c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
     }
 
 	public String userEmail(){
 		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT " + MyInfo.EMAIL + " FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         return c.getString(c.getColumnIndexOrThrow("email"));
+    }
+
+    public String userProfile(){
+		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		c.moveToFirst();
+		
+		JSONObject obj = new JSONObject();
+        try{
+            obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
+            obj.put("picture", Base64.encodeToString(c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)), false));
+            
+        }catch(JSONException e){}
+        return obj.toString(); 
     }
 
 	public PublicKey userPublicKey(){

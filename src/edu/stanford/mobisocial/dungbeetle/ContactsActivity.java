@@ -123,9 +123,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
         lv.setFastScrollEnabled(true);
-        registerForContextMenu(lv);
+        //registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
-		lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
+		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
 		
 	}
 
@@ -248,7 +248,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                             });
                     
                         final ActionItem manage_groups = new ActionItem();
-                        manage_groups.setTitle("Groups");
+                        manage_groups.setTitle("Show Groups");
                         manage_groups.setOnClickListener(new OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
@@ -272,7 +272,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                         qa.addActionItem(send_im);
                         qa.addActionItem(start_app);
                         qa.addActionItem(manage_groups);
-                        qa.addActionItem(join_activity);
+                        //qa.addActionItem(join_activity);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();
@@ -297,7 +297,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     private final static int GOOGLE_BOOTSTRAP = 7;
 
 
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+    /*public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         if(mGroup.isKnown()){
             menu.add(0, INVITE_TO_GROUP, 0, "Invite to group");
@@ -369,7 +369,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		}
         default: return false;
         }
-    }
+    }*/
 
     @Override
     public void finish() {

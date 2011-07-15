@@ -39,6 +39,8 @@ import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 import java.io.IOException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
@@ -64,6 +66,26 @@ public class DBHelper extends SQLiteOpenHelper {
 		    VERSION);
         mContext = context;
 	}
+	
+    public boolean importDatabase(String dbPath) throws IOException {
+
+        // Close the SQLiteOpenHelper so it will commit the created empty
+        // database to internal storage.
+        close();
+        
+        File data = Environment.getDataDirectory();
+        File newDb = new File(data, dbPath);
+        File oldDb = new File(data, DB_PATH+DB_NAME);
+        if (newDb.exists()) {
+            Util.copyFile(new FileInputStream(newDb), new FileOutputStream(oldDb));
+            // Access the copied database so SQLiteHelper will cache it and mark
+            // it as created.
+            getWritableDatabase().close();
+            return true;
+        }
+        return false;
+    }
+
 
 	@Override
 	public void onOpen(SQLiteDatabase db) {
@@ -516,10 +538,11 @@ public class DBHelper extends SQLiteOpenHelper {
             .append(" = ")
             .append(Group.TABLE)
             .append(".")
-            .append(Group.FEED_NAME).toString();
+            .append(Group.FEED_NAME)
+            .toString();
         String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
         String orderBy = DbObject.TIMESTAMP + " desc";
-        Log.d(TAG, "THE QUEYR IS " + tables);
+        Log.d(TAG, "THE QUERY IS " + tables);
         return getReadableDatabase().query(tables, projection, selection, selectionArgs, 
                 groupBy, null, orderBy, null);
     }

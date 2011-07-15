@@ -17,11 +17,14 @@ public class GroupManagerThread extends Thread {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
+    private String profile;
+
 
     public GroupManagerThread(final Context context){
         mContext = context;
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
+        profile = mIdent.userProfile();
     }
 
 
@@ -40,12 +43,23 @@ public class GroupManagerThread extends Thread {
                 try {
                     try{
                         Cursor grps = mHelper.queryDynamicGroups();
-                        Log.i(TAG, grps.getCount() + " dynamic groups...");
+                        //Log.i(TAG, grps.getCount() + " dynamic groups...");
                         grps.moveToFirst();
+                        String currentProfile = mIdent.userProfile();
                         while(!grps.isAfterLast()){
-                            handleUpdate(new Group(grps));
+                            if(!profile.equals(currentProfile)) {
+                                handleUpdate(new Group(grps), true);
+                            }
+                            else {
+                                handleUpdate(new Group(grps), false);
+                            }
                             grps.moveToNext();
                         }
+                        
+                        if(!profile.equals(currentProfile)) {
+                            profile = currentProfile;
+                        }
+                        grps.close();
                     }
                     catch(Exception e){
                         Log.e(TAG, "Screen off wtf", e);
@@ -59,12 +73,12 @@ public class GroupManagerThread extends Thread {
 
 
     // FYI: Invoked in manager thread
-    private void handleUpdate(final Group g){
+    private void handleUpdate(final Group g, final boolean updateProfile){
         final Uri uri = Uri.parse(g.dynUpdateUri);
         final GroupRefreshHandler h = GroupProviders.forUri(uri);
         new Thread(){
             public void run(){
-                h.handle(g.id, uri, mContext, mIdent, g.version);
+                h.handle(g.id, uri, mContext, mIdent, g.version, updateProfile);
             }
         }.start();
     }
@@ -72,7 +86,7 @@ public class GroupManagerThread extends Thread {
     // These handlers should be stateless
     public interface GroupRefreshHandler{
         public boolean willHandle(Uri uri);
-        public void handle(long id, Uri uri, Context context, IdentityProvider ident, int version);
+        public void handle(long id, Uri uri, Context context, IdentityProvider ident, int version, boolean updateProfile);
     }
 
 

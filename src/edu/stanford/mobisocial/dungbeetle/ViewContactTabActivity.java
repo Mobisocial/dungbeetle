@@ -3,10 +3,43 @@ import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TabHost;
+import android.widget.TextView;
+import android.view.View;
+import android.content.Context;
 
 public class ViewContactTabActivity extends TabActivity
 {
 
+/*** Dashbaord stuff ***/
+    public void goHome(Context context) 
+    {
+        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity (intent);
+    }
+
+    public void setTitleFromActivityLabel (int textViewId, String title)
+    {
+        TextView tv = (TextView) findViewById (textViewId);
+        if (tv != null) tv.setText (title);
+    } 
+    public void onClickHome (View v)
+    {
+        goHome (this);
+    }
+
+
+    public void onClickSearch (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+    }
+
+    public void onClickAbout (View v)
+    {
+        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
+    }
+
+/*** End Dashboard Stuff ***/
 
     /** Called when the activity is first created. */
     @Override
@@ -32,8 +65,10 @@ public class ViewContactTabActivity extends TabActivity
         }
         else {
             setTitle("Contacts > " + contact_name);
+            
         }
 
+        setTitleFromActivityLabel (R.id.title_text, contact_name);
 
         intent = new Intent().setClass(this, ProfileActivity.class);
         intent.putExtra("contact_id", contact_id);
@@ -49,7 +84,7 @@ public class ViewContactTabActivity extends TabActivity
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",
             null).setContent(intent);
-        tabHost.addTab(spec);
+        //tabHost.addTab(spec);
 
 
 		

@@ -115,7 +115,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
-		getListView().setCacheColorHint(color);
+		//getListView().setCacheColorHint(color);
 
 		// TODO: Get rid of this? All feeds are created equal! -BJD
         if(!intent.hasExtra("contact_id")){
@@ -204,6 +204,9 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                         public void onAppSelected(String pkg, String arg, Intent localLaunch) {
                                             DbObject obj = new AppReference(pkg, arg);
                                             Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
+                                            localLaunch.putExtra("mobisocial.db.FEED", mFeedUri);
+                                            localLaunch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
+	                                        localLaunch.putExtra("mobisocial.db.PACKAGE", pkg);
                                             startActivity(localLaunch);
                                         }
                                     });

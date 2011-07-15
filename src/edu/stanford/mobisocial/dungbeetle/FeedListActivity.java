@@ -79,6 +79,7 @@ public class FeedListActivity extends ListActivity {
         //findViewById(R.id.button_new).setOnClickListener(newFeed());
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
+        Log.w("TAG", getFeedObjectClause());
         mFeeds = new FeedListCursorAdapter(this, c);
         mHelper = new DBHelper(this);
         
@@ -193,7 +194,7 @@ public class FeedListActivity extends ListActivity {
         for (String type : types) {
             allowed.append(",'").append(type).append("'");
         }
-        return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+        return DbObject.TYPE + " in (" + allowed.substring(1) + ") AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'direct' AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'friend'";
     }
 
     private OnClickListener newFeed() {

@@ -108,7 +108,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
-		registerForContextMenu(getListView());
+		//registerForContextMenu(getListView());
 	}
 
     @Override
@@ -382,7 +382,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
 
     private final static int ADD_GROUP = 0;
 
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+    /*public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
         menu.add(0, ADD_GROUP, 0, "Add group");
         menu.add(0, 1, 0, "debug load");
@@ -417,7 +417,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
         default: return false;
         }
     }
-
+*/
     @Override
     public void finish() {
         super.finish();

@@ -17,7 +17,7 @@ import edu.stanford.mobisocial.dungbeetle.google.*;
 
 
 public class SettingsActivity extends ListActivity {
-    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Wipe Data (Keep identity)", "Start from Scratch"};
+    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
     String TAG = "Settings";
 
 

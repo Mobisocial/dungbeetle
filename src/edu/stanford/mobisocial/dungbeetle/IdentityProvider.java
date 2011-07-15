@@ -6,6 +6,7 @@ import java.security.PublicKey;
 public interface IdentityProvider {
 	public String userName();
 	public String userEmail();
+	public String userProfile();
 	public PublicKey userPublicKey();
 	public PrivateKey userPrivateKey();
 	public String userPersonId();
