@@ -37,6 +37,6 @@
 
     <string name="default_intro">This is the default content view for an activity. Be sure to change your activity\'s onCreate method. Use setContentView on a custom layout.</string>
 
-    <string name="about_intro">Icons from http://www.freeiconsweb.com/</string>
+    <string name="about_intro">This application was developed by the Mobisocial Lab at Stanford University. Icons from http://www.freeiconsweb.com/</string>
     <string name="search_intro">Content for the Search page goes here.</string>
 </resources>
