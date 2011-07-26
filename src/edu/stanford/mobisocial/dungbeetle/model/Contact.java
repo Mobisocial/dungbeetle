@@ -74,11 +74,11 @@ public class Contact implements Serializable{
     public int currentPresenceResource(){
         long t = (new Date()).getTime();
         long idleMins = (long)(((double)(t - lastPresenceTime)) / 60000.0);
-        if(presence == Presence.AVAILABLE && idleMins < 10) 
+        if(presence == Presence.AVAILABLE)// && idleMins < 10) 
             return R.drawable.status_green;
-        else if(presence == Presence.AVAILABLE && idleMins > 10) 
+        else if(presence == Presence.AVAILABLE)// && idleMins > 10) 
             return R.drawable.status_yellow;
-        else if(presence == Presence.AVAILABLE && idleMins > 100) 
+        else if(presence == Presence.AVAILABLE)// && idleMins > 100) 
             return R.drawable.status_red;
         else if(presence == Presence.BUSY) return R.drawable.status_yellow;
         else if(presence == Presence.AWAY) return R.drawable.status_red;
