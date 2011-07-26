@@ -32,6 +32,21 @@ import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 import java.io.File;
 import java.io.IOException;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
+import android.content.SharedPreferences;
+
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import java.util.ArrayList;
+import java.util.List;
+
 
 
 public class DungBeetleActivity extends DashboardActivity
@@ -44,6 +59,9 @@ public class DungBeetleActivity extends DashboardActivity
     public static final String AUTO_UPDATE_URL_BASE = "http://mobisocial.stanford.edu/files";
     public static final String AUTO_UPDATE_METADATA_FILE = "dungbeetle_version.json";
     public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";
+
+    public static final String PREFS_NAME = "DungBeetlePrefsFile";
+    
     private Nfc mNfc;
 	private NotificationManager mNotificationManager;
 
@@ -120,6 +138,61 @@ public class DungBeetleActivity extends DashboardActivity
         startService(DBServiceIntent);
 
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        boolean firstLoad = settings.getBoolean("firstLoad", true);
+        if(firstLoad)
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Thank you for trying out Stanford Mobisocial's new software DungBeetle! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                        try{
+                            Uri.Builder b = new Uri.Builder();
+                            b.scheme("http");
+                            b.authority("suif.stanford.edu");
+                            b.path("dungbeetle/emails.php");
+                            Uri uri = b.build();
+
+                            StringBuffer sb = new StringBuffer();
+                            DefaultHttpClient client = new DefaultHttpClient();
+                            HttpPost httpPost = new HttpPost(uri.toString());
+
+                            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+
+                                    
+                            DBHelper helper = new DBHelper(DungBeetleActivity.this);
+                            DBIdentityProvider ident = new DBIdentityProvider(helper);
+                            nameValuePairs.add(new BasicNameValuePair("email", ident.userEmail()));
+                            
+                            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                            
+                            HttpResponse execute = client.execute(httpPost);
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        
+                        Toast.makeText(DungBeetleActivity.this, "Thank you for signing up!",
+                                       Toast.LENGTH_SHORT).show();
+                        dialog.cancel();
+                    }
+                    })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+
+                });
+            AlertDialog alert = builder.create();
+            alert.show();
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putBoolean("firstLoad", false);
+            editor.commit();
+        }
 
         // Create top-level tabs
         //Resources res = getResources();
@@ -322,6 +395,7 @@ public class DungBeetleActivity extends DashboardActivity
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
+        pushContactInfoViaNfc();
 
         // Don't check for updates too frequently...
         /*long t = new Date().getTime();

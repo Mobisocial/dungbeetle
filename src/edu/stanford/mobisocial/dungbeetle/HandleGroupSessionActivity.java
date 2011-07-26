@@ -33,24 +33,46 @@ public class HandleGroupSessionActivity extends Activity {
 		if(scheme != null && scheme.equals(DungBeetleActivity.GROUP_SESSION_SCHEME)){
 			final Uri uri = intent.getData();
 			if(uri != null){
-                Log.i(TAG, "Read uri: " + uri);
-                GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-                String groupName = gp.groupName(uri);
-                mNameText = (TextView)findViewById(R.id.text);
-                mNameText.setText("Would you like to join the group '" + groupName + "'?");
-                Button b1 = (Button)findViewById(R.id.yes_button);
-                b1.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            loadGroup(uri);
-                            finish();
-                        }
-                    });
-                Button b2 = (Button)findViewById(R.id.no_button);
-                b2.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            finish();
-                        }
-                    });
+
+                GroupProviders.GroupProvider gp1 = GroupProviders.forUri(uri);
+                String feedName = gp1.feedName(uri);
+                DBHelper helper = new DBHelper(this);
+                Maybe<Group> mg = helper.groupByFeedName(feedName);
+                long id = -1;
+                try{
+                    // group exists already, load view
+                    Group g = mg.get();
+                    id = g.id;
+
+                    Group.view(HandleGroupSessionActivity.this, g);
+                    finish();
+                }
+                catch(Maybe.NoValError e){
+                    // group does not exist yet, time to prompt for join
+                
+			
+                    Log.i(TAG, "Read uri: " + uri);
+                    GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
+                    String groupName = gp.groupName(uri);
+                    mNameText = (TextView)findViewById(R.id.text);
+                    mNameText.setText("Would you like to join the group '" + groupName + "'?");
+                    Button b1 = (Button)findViewById(R.id.yes_button);
+                    b1.setOnClickListener(new OnClickListener() {
+                            public void onClick(View v) {
+                                loadGroup(uri);
+                                finish();
+                            }
+                        });
+                    Button b2 = (Button)findViewById(R.id.no_button);
+                    b2.setOnClickListener(new OnClickListener() {
+                            public void onClick(View v) {
+                                finish();
+                            }
+                        });
+                }
+
+
+
 			}
 			else{
 				Toast.makeText(this, "Received null url...", Toast.LENGTH_SHORT).show();

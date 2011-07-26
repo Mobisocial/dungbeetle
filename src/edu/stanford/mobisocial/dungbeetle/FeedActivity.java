@@ -189,7 +189,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                                                     Helpers.sendToFeed(
                                                         FeedActivity.this, obj, mFeedUri);
                                                 }
-                                            }, 200, false));
+                                            }, 200, true));
                                 }
                             });
                     
@@ -262,7 +262,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                         qa.addActionItem(camera);
                         qa.addActionItem(application);
                         qa.addActionItem(voice);
-                        qa.addActionItem(feed);
+                        //qa.addActionItem(feed);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();

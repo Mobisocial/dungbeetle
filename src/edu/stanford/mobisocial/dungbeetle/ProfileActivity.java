@@ -215,7 +215,7 @@ public class ProfileActivity extends RichActivity{
                                 public void onResult(byte[] data) {
                                     Helpers.updatePicture(ProfileActivity.this, data);
                                 }
-                            }, 200, true));
+                            }, 200, false));
                 }
             });
 
