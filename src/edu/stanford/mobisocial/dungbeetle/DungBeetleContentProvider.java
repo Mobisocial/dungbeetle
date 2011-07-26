@@ -13,6 +13,8 @@ import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.List;
@@ -215,7 +217,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 db.beginTransaction();
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
-                PublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+                RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
                 String personId = mIdent.personIdForPublicKey(k);
                 if(!personId.equals(mIdent.userPersonId())){
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));

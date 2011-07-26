@@ -7,6 +7,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.widget.Toast;
 
 public class MyLocation {
     Timer timer1;
@@ -27,8 +28,14 @@ public class MyLocation {
         try{network_enabled=lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);}catch(Exception ex){}
 
         //don't start listeners if no provider is enabled
-        if(!gps_enabled && !network_enabled)
+        if(!gps_enabled && !network_enabled) {
+        	Toast.makeText(context, "No location provider available, defaulting to Gates Building, Stanford Univesity.", Toast.LENGTH_SHORT).show();
+        	Location l = new Location("yo' mama");
+        	l.setLongitude(-122.179727);
+        	l.setLatitude(37.426762);
+        	locationResult.gotLocation(l);
             return false;
+        }
 
         if(gps_enabled)
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListenerGps);

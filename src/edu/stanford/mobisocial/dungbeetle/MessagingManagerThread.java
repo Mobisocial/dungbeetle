@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import android.app.Service;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -7,11 +8,14 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
+import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
 import edu.stanford.mobisocial.bumblebee.MessengerService;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
+import edu.stanford.mobisocial.bumblebee.RabbitMQMessengerService;
 import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
@@ -23,8 +27,13 @@ import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -55,7 +64,7 @@ public class MessagingManagerThread extends Thread {
                     return info != null && info.isConnected();
                 }
             };
-		mMessenger = new XMPPMessengerService(wrapIdent(mIdent), status);
+		mMessenger = new RabbitMQMessengerService(wrapIdent(mIdent), status);
 		mMessenger.addStateListener(new StateListener() {
                 public void onReady() {
                     Log.i(TAG, "Connected to message transport!");
@@ -70,6 +79,21 @@ public class MessagingManagerThread extends Thread {
                     handleIncomingMessage(incoming);
                 }
             });        
+		mMessenger.addConnectionStatusListener(new ConnectionStatusListener() {
+			
+			@Override
+			public void onStatus(String msg, Exception e) {
+				StringWriter err = new StringWriter();
+				PrintWriter p = new PrintWriter(err);
+				if(e != null) {
+					p.println(e.toString());
+					p.println(e.getMessage());
+					e.printStackTrace(p);
+				}
+				
+                Log.e(TAG, "Connection Status: " + msg + "\n" + err.toString());
+			}
+		});
 
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
 
@@ -213,8 +237,8 @@ public class MessagingManagerThread extends Thread {
 
     private abstract class OutgoingMsg implements OutgoingMessage{
         protected String mBody;
-        protected List<PublicKey> mPubKeys;
-        public List<PublicKey> toPublicKeys(){ return mPubKeys; }
+        protected List<RSAPublicKey> mPubKeys;
+        public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
     }
@@ -248,19 +272,19 @@ public class MessagingManagerThread extends Thread {
 
     private TransportIdentityProvider wrapIdent(final IdentityProvider ident){
         return new TransportIdentityProvider(){
-            public PublicKey userPublicKey(){
+            public RSAPublicKey userPublicKey(){
                 return ident.userPublicKey();
             }
-            public PrivateKey userPrivateKey(){
+            public RSAPrivateKey userPrivateKey(){
                 return ident.userPrivateKey();
             }
             public String userPersonId(){
                 return ident.userPersonId();
             }
-            public PublicKey publicKeyForPersonId(String id){
+            public RSAPublicKey publicKeyForPersonId(String id){
                 return ident.publicKeyForPersonId(id);
             }
-            public String personIdForPublicKey(PublicKey key){
+            public String personIdForPublicKey(RSAPublicKey key){
                 return ident.personIdForPublicKey(key);
             }
         };
