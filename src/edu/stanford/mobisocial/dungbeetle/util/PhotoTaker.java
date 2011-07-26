@@ -17,13 +17,13 @@ public class PhotoTaker implements ActivityCallout {
 	private final ResultHandler mResultHandler;
 	private final Context mContext;
 	@SuppressWarnings("unused")
-	private final boolean mPortraitMode;
+	private final boolean mSnapshot;
 	private final int mSize;
 
-	public PhotoTaker(Context c, ResultHandler handler, int size, boolean portraitMode) {
+	public PhotoTaker(Context c, ResultHandler handler, int size, boolean snapshot) {
 		mContext = c;
 		mResultHandler = handler;
-        mPortraitMode = portraitMode;
+        mSnapshot = snapshot;
         mSize = size;
 	}
 
@@ -73,9 +73,15 @@ public class PhotoTaker implements ActivityCallout {
 
 			Matrix matrix = new Matrix();
 			matrix.postScale(scaleSize, scaleSize);
-
-			Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, cropSize,
+            Bitmap resizedBitmap;
+            if(mSnapshot){
+                resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
+                                                       height, matrix, true);
+            }
+            else{
+        			resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, cropSize,
                                                        cropSize, matrix, true);
+            }
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);

@@ -15,6 +15,30 @@ import android.widget.TextView;
 import android.util.Log;
 import android.content.Context;
 
+import android.net.Uri;
+
+import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+import android.location.Location;
+import android.app.ProgressDialog;
+import android.app.AlertDialog;
+
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.http.message.BasicNameValuePair;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.InputStream;
+import android.content.DialogInterface;
+
+
+import android.widget.EditText;
 /**
  * Represents a group by showing its feed and members.
  * TODO: Accept only a group_id extra and query for other parameters.
@@ -44,9 +68,162 @@ public class GroupsTabActivity extends TabActivity
     }
 
 
-    public void onClickSearch (View v)
+    public void onClickBroadcast (View v)
     {
-        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
+        final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(GroupsTabActivity.this);
+        builder.setTitle("Choose duration of broadcast");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, final int item) {
+
+
+                AlertDialog.Builder alert = new AlertDialog.Builder(GroupsTabActivity.this);
+                alert.setMessage("Enter a password:");
+                final EditText input = new EditText(GroupsTabActivity.this);
+                alert.setView(input);
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            final String password = input.getText().toString();
+
+                            myLocation = new MyLocation();
+
+                            locationResult = new MyLocation.LocationResult(){
+
+                            
+                                final ProgressDialog dialog = ProgressDialog.show(GroupsTabActivity.this, "", 
+                                            "Preparing broadcast...", true);
+                                              
+                                @Override
+                                public void gotLocation(final Location location){
+                                    //Got the location!
+                                    try {
+                                        int minutes;
+                                        if(item == 0) {
+                                            minutes = 5;
+                                        }
+                                        else if(item == 1) {
+                                            minutes = 15;
+                                        }
+                                        else if(item == 2) {
+                                            minutes = 60;
+                                        }
+                                        else if(item == 3) {
+                                            minutes = 1440;
+                                        }
+                                        else
+                                        {
+                                            minutes = 5;
+                                        }
+                                        Uri.Builder b = new Uri.Builder();
+                                        b.scheme("http");
+                                        b.authority("suif.stanford.edu");
+                                        b.path("dungbeetle/nearby.php");
+                                        Uri uri = b.build();
+                                        
+                                        StringBuffer sb = new StringBuffer();
+                                        DefaultHttpClient client = new DefaultHttpClient();
+                                        HttpPost httpPost = new HttpPost(uri.toString());
+
+                                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+
+                                        Intent intent = getIntent();
+                                        Long group_id = null;
+                                        String group_name = null;
+                                        String feed_name = null;
+                                        String feed_uri = null;
+                                        // TODO: Depracate extras-based access in favor of Data field.
+                                        if (intent.hasExtra("group_id")) {
+                                            group_id = intent.getLongExtra("group_id", -1);
+                                            group_name = intent.getStringExtra("group_name");
+                                            feed_name = group_name;
+                                            Maybe<Group> maybeG = Group.forId(GroupsTabActivity.this, group_id);
+                                            try {
+                                                Group g = maybeG.get();
+                                                feed_name = g.feedName;
+                                            } catch (Exception e) {}
+                                            feed_uri = intent.getStringExtra("group_uri");
+                                        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
+                                            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
+                                            Maybe<Group> maybeG = Group.forId(GroupsTabActivity.this, group_id);
+                                            try {
+                                                Group g = maybeG.get();
+                                                group_name = g.name;
+                                                feed_name = g.feedName;
+                                                feed_uri = g.dynUpdateUri;
+                                            } catch (Exception e) {}
+                                        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
+                                            String feedName = getIntent().getData().getLastPathSegment();
+                                            Maybe<Group>maybeG = Group.forFeed(GroupsTabActivity.this, feedName);
+                                            Group g = null;
+                                            try {
+                                               g = maybeG.get();
+                                                
+                                            } catch (Exception e) {
+                                                g = Group.createForFeed(GroupsTabActivity.this, feedName);
+                                            }
+                                            group_name = g.name;
+                                            feed_name = g.feedName;
+                                            feed_uri = g.dynUpdateUri;
+                                            group_id = g.id;
+                                        }
+
+                                    
+                                        nameValuePairs.add(new BasicNameValuePair("group_name", group_name));
+                                        nameValuePairs.add(new BasicNameValuePair("feed_uri", feed_uri));
+                                        nameValuePairs.add(new BasicNameValuePair("length", Integer.toString(minutes)));
+                                        nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
+                                        nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
+                                        nameValuePairs.add(new BasicNameValuePair("password", password));
+                                        httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                                        try {
+                                            HttpResponse execute = client.execute(httpPost);
+                                            InputStream content = execute.getEntity().getContent();
+                                            BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                                            String s = "";
+                                            while ((s = buffer.readLine()) != null) {
+                                                sb.append(s);
+                                            }
+                                        }
+                                        catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+
+                                        String response = sb.toString();
+                                        if(response.equals("1"))
+                                        {
+                                            Toast.makeText(getApplicationContext(), 
+                                                "Now broadcasting for " + items[item], 
+                                                Toast.LENGTH_SHORT).show();
+                                        }  
+                                        else Log.w(TAG, "Wtf");  
+
+                                        Log.w(TAG, "response: " + response);
+                                    }
+                                    catch(Exception e) {
+                                    }
+
+                                    
+                                    dialog.dismiss();
+                                }
+                            };
+
+                            locationClick();
+                            
+                        }
+                    });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                        }
+                    });
+                alert.show();
+            
+                
+                
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 
     public void onClickAbout (View v)
@@ -55,6 +232,15 @@ public class GroupsTabActivity extends TabActivity
     }
 
 /*** End Dashboard Stuff ***/
+
+    
+    public MyLocation myLocation;
+    public MyLocation.LocationResult locationResult;
+
+    private void locationClick() {
+        myLocation.getLocation(GroupsTabActivity.this, locationResult);
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)

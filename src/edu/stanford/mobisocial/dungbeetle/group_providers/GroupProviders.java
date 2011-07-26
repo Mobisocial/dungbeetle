@@ -9,6 +9,7 @@ import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -28,6 +29,10 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import edu.stanford.mobisocial.dungbeetle.objects.JoinNotificationObj;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class GroupProviders{
 
@@ -63,6 +68,21 @@ public class GroupProviders{
             (new Thread(){
                     public void run(){
                         GroupProvider.this.handle(groupId, uriIn, context, ident, version, true);
+                        
+                        DBHelper helper = new DBHelper(context);
+                        Maybe<Group> mg = helper.groupForGroupId(groupId);
+                        try{
+                            // group exists already, load view
+                            Group g = mg.get();
+                            Uri mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + g.feedName);
+                            Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), mFeedUri);
+                        }
+                        catch(Maybe.NoValError e){
+                            // group does not exist yet, time to prompt for join
+
+                        }
+                        
+                        helper.close();
                     }
                 }).start();
         }
@@ -214,7 +234,7 @@ public class GroupProviders{
                                         values.put(Contact.PUBLIC_KEY, pubKeyStr);
 
                                         String profile = "";
-                                        if(encryptedProfile != "null" && encryptedProfile != "") {
+                                        if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
                                             //Log.w(TAG, "["+encryptedProfile+"]");
                                             profile = Util.decryptAES(encryptedProfile, key);
                                         }

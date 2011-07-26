@@ -103,7 +103,10 @@ public class NearbyGroupsActivity extends ListActivity {
         dialog.setMessage("Fetching nearby Groups. Please wait...");
         dialog.setCancelable(false);
         myLocation = new MyLocation();
+        
+        Intent intent = getIntent();
 
+        final String password = intent.getStringExtra("password");
         
         locationResult = new MyLocation.LocationResult(){
             @Override
@@ -124,6 +127,7 @@ public class NearbyGroupsActivity extends ListActivity {
                 
                     nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
                     nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
+                    nameValuePairs.add(new BasicNameValuePair("password", password));
                     httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                     try {
                         HttpResponse execute = client.execute(httpPost);

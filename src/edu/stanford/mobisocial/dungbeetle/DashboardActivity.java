@@ -198,6 +198,7 @@ public void onClickAbout (View v)
 public void onClickFeature (View v)
 {
     int id = v.getId ();
+        
     Intent intent;
     switch (id) {
       case R.id.home_btn_latest :
@@ -249,7 +250,7 @@ public void onClickFeature (View v)
                     }
                 });
             alert.show();
-           //intent = new Intent().setClass(getApplicationContext(), AboutActivity.class);
+           //intent = new Intent().setClass(getApplicationContext(), NewGroupActivity.class);
            //startActivity (intent);
           break;
       case R.id.home_btn_settings :
@@ -257,8 +258,29 @@ public void onClickFeature (View v)
            startActivity (intent);
           break;
       case R.id.home_btn_nearby :
-           intent = new Intent().setClass(getApplicationContext(), NearbyGroupsActivity.class);
-           startActivity (intent);
+      
+            AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
+            builder.setMessage("Enter password:");
+            final EditText passwordInput = new EditText(DashboardActivity.this);
+            builder.setView(passwordInput);
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        String password = passwordInput.getText().toString();
+                        
+
+                        Intent launch = new Intent();
+                        launch.setClass(DashboardActivity.this, NearbyGroupsActivity.class);
+                        launch.putExtra("password", password);
+                        startActivity(launch);
+                    }
+                });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+            builder.show();
+           //intent = new Intent().setClass(getApplicationContext(), NearbyGroupsActivity.class);
+           //startActivity (intent);
           break;
       default: 
     	   break;
