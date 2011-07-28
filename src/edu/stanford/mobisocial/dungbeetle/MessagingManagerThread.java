@@ -225,7 +225,6 @@ public class MessagingManagerThread extends Thread {
                     sent.add(objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID)));
                     objs.moveToNext();
                 }
-                mHelper.markObjectsAsSent(sent);
                 objs.close();
             }
             catch(Exception e){
@@ -238,13 +237,22 @@ public class MessagingManagerThread extends Thread {
     private abstract class OutgoingMsg implements OutgoingMessage{
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
+        protected long mObjectId;
+        protected OutgoingMsg(Cursor objs) {
+        	mObjectId = objs.getLong(0 /*DbObject._ID*/);
+        }
         public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
+        public void onCommitted() {
+        	mHelper.markObjectAsSent(mObjectId);
+        }
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg{
+    	
         public OutgoingFeedObjectMsg(Cursor objs){
+        	super(objs);
             String feedName = objs.getString(
                 objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
             Cursor subs = mHelper.querySubscribers(feedName);
@@ -262,6 +270,7 @@ public class MessagingManagerThread extends Thread {
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg{
         public OutgoingDirectObjectMsg(Cursor objs){
+        	super(objs);
             String to = objs.getString(
                 objs.getColumnIndexOrThrow(DbObject.DESTINATION));
             List<Long> ids = Util.splitLongsToList(to, ",");

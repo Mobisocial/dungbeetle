@@ -64,7 +64,7 @@ public class GroupManagerThread extends Thread {
                     catch(Exception e){
                         Log.e(TAG, "Screen off wtf", e);
                     }
-                    Thread.sleep(UPDATE_INTERVAL_MS);
+                    Thread.sleep(UPDATE_INTERVAL_MS * 1000);
                 } catch(InterruptedException e) {}
             }
         }

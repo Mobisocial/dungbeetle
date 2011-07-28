@@ -636,6 +636,15 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
+    public void markObjectAsSent(long id) {
+        ContentValues cv = new ContentValues();
+        cv.put(DbObject.SENT, 1);
+        getWritableDatabase().update(
+            DbObject.TABLE, 
+            cv,
+            DbObject._ID + " = " + id,
+            null);
+    }
     public void markObjectsAsSent(Collection<Long> ids) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.SENT, 1);
