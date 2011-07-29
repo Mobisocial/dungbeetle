@@ -249,6 +249,10 @@ public class MessagingManagerThread extends Thread {
         	int encoded_index = objs.getColumnIndexOrThrow(DbObject.ENCODED);
         	mEncoded = objs.getBlob(encoded_index);        	
         }
+		@Override
+		public long getLocalUniqueId() {
+			return mObjectId;
+		}
         public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
@@ -285,6 +289,7 @@ public class MessagingManagerThread extends Thread {
             mPubKeys = mIdent.publicKeysForContactIds(ids);
             mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
         }
+
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg{
