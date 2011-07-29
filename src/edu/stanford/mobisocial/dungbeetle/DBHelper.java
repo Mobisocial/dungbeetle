@@ -23,6 +23,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import java.security.PublicKey;
 import java.util.Iterator;
 import java.util.List;
+
+import org.apache.commons.codec.binary.Hex;
 import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
@@ -46,7 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 30;
+	public static final int VERSION = 31;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -134,6 +136,11 @@ public class DBHelper extends SQLiteOpenHelper {
         if(oldVersion <= 29) {
             Log.w(TAG, "Adding column 'version' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.VERSION + " INTEGER DEFAULT -1");
+        }
+        if(oldVersion <= 30) {
+            Log.w(TAG, "Adding column 'E' to object table.");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
+            createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
         }
 
         db.setVersion(VERSION);
@@ -232,11 +239,13 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.DESTINATION, "TEXT",
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
-                        DbObject.SENT, "INTEGER DEFAULT 0"
+                        DbObject.SENT, "INTEGER DEFAULT 0",
+                        DbObject.ENCODED, "BLOB"
                         );
             createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
+            createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
@@ -407,7 +416,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json){
+    long addObjectByJson(long contactId, JSONObject json, byte[] encoded){
         try{
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
             long timestamp = json.getLong(DbObjects.TIMESTAMP);
@@ -422,6 +431,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, seqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            cv.put(DbObject.ENCODED, encoded);
             cv.put(DbObject.SENT, 1);
             getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
             return seqId;
@@ -616,7 +626,8 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject.TABLE,
             new String[]{ DbObject._ID, DbObject.JSON,
                           DbObject.DESTINATION,
-                          DbObject.FEED_NAME },
+                          DbObject.FEED_NAME,
+                          DbObject.ENCODED},
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0) },
             null,
@@ -624,6 +635,22 @@ public class DBHelper extends SQLiteOpenHelper {
             "timestamp DESC");
     }
 
+    public boolean queryAlreadyReceived(byte[] encoded) {
+        Cursor c = getReadableDatabase().query(
+            DbObject.TABLE,
+            new String[]{ DbObject._ID },
+            DbObject.ENCODED + "= X'" + new String(Hex.encodeHex(encoded)) + "'",
+            null,
+            null,
+            null,
+            "timestamp DESC");
+        c.moveToFirst();
+        if(!c.isAfterLast()) {
+        	return true;
+        } else {
+        	return false;
+        }
+    }
     public Cursor queryDynamicGroups() {
         return getReadableDatabase().query(
             Group.TABLE,
@@ -790,4 +817,13 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
+	public void markEncoded(long id, byte[] encoded) {
+        ContentValues cv = new ContentValues();
+        cv.put(DbObject.ENCODED, encoded);
+        getWritableDatabase().update(
+            DbObject.TABLE, 
+            cv,
+            DbObject._ID + " = " + id,
+            null);
+	}
 }

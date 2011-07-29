@@ -103,21 +103,25 @@ public class MessagingManagerThread extends Thread {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out"), true, mOco);
     }
 
-    // FYI: Invoked on XMPP reader thread
+    // FYI: Invoked on connection reader thread
     private void handleIncomingMessage(final IncomingMessage incoming){
         final String personId = incoming.from();
+        final byte[] encoded = incoming.encoded();
         final String contents = localize(incoming.contents());
         final IncomingMessage localizedMsg = new IncomingMessage(){
                 public String contents(){ return contents; }
                 public String from(){ return personId; }
+                public byte[] encoded() { return encoded; }
             };
         Log.i(TAG, "Localized contents: " + contents);
         try{
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
-            if(contact.isKnown()){
-                mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj);
+        	if(mHelper.queryAlreadyReceived(encoded)) {
+                Log.i(TAG, "Message already received. " + contents);
+        	} else if(contact.isKnown()){
+				mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
                 mContext.getContentResolver().notifyChange(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
                               "/feeds/" + feedName), null);
@@ -238,8 +242,12 @@ public class MessagingManagerThread extends Thread {
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
+        protected byte[] mEncoded;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
+        	//load the iv if it was already picked
+        	int encoded_index = objs.getColumnIndexOrThrow(DbObject.ENCODED);
+        	mEncoded = objs.getBlob(encoded_index);        	
         }
         public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
@@ -247,6 +255,17 @@ public class MessagingManagerThread extends Thread {
         public void onCommitted() {
         	mHelper.markObjectAsSent(mObjectId);
         }
+
+		@Override
+		public void onEncoded(byte[] encoded) {
+			mEncoded = encoded;
+			mHelper.markEncoded(mObjectId, encoded);
+		}
+
+		@Override
+		public byte[] getEncoded() {
+			return mEncoded;
+		}
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg{
