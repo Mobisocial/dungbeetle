@@ -41,6 +41,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+
+import edu.stanford.mobisocial.dungbeetle.objects.JoinNotificationObj;
+
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
     private Context mContext;
@@ -120,7 +127,29 @@ public class MessagingManagerThread extends Thread {
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
         	if(mHelper.queryAlreadyReceived(encoded)) {
                 Log.i(TAG, "Message already received. " + contents);
-        	} else if(contact.isKnown()){
+        	} 
+
+            else if(obj.getString("type") != null && obj.getString("type").equals(JoinNotificationObj.TYPE)){
+                Log.i(TAG, "Message to update group. " + contents);
+                final Uri uri = Uri.parse(obj.getString(JoinNotificationObj.URI));
+                final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
+                Maybe<Group> mg = mHelper.groupByFeedName(feedName);
+                long id = -1;
+                try{
+                    // group exists already, load view
+                    final Group g = mg.get();
+
+                    new Thread(){
+                        public void run(){
+                            h.handle(g.id, uri, mContext, mIdent, g.version, false);
+                        }
+                    }.start();
+                    
+                }
+                catch(Maybe.NoValError e){
+                }
+            }
+        	    else if(contact.isKnown()){
 				mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
                 mContext.getContentResolver().notifyChange(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + 

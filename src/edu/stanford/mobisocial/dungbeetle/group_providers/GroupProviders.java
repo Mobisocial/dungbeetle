@@ -75,7 +75,7 @@ public class GroupProviders{
                             // group exists already, load view
                             Group g = mg.get();
                             Uri mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + g.feedName);
-                            //Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), mFeedUri);
+                            Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), mFeedUri);
                         }
                         catch(Maybe.NoValError e){
                             // group does not exist yet, time to prompt for join

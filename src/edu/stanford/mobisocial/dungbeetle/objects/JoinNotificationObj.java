@@ -14,6 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.net.Uri;
+import android.util.Log;
 
 public class JoinNotificationObj implements DbEntryHandler {
 
@@ -39,7 +40,7 @@ public class JoinNotificationObj implements DbEntryHandler {
     }
 
     public void handleReceived(Context context, Contact from, JSONObject obj){
-        Uri uri = Uri.parse(obj.optString(URI));
+        /*Uri uri = Uri.parse(obj.optString(URI));
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         String feedName = gp.feedName(uri);
         DBHelper helper = new DBHelper(context);
@@ -60,6 +61,8 @@ public class JoinNotificationObj implements DbEntryHandler {
         
         ident.close();
         helper.close();
-        
+
+        Log.w("join notification", "received");
+*/        
     }
 }

@@ -38,7 +38,7 @@ public class GroupManagerThread extends Thread {
          * when the group is initially created on a device.
          */
 
-        while(!interrupted()) {
+        /*while(!interrupted()) {
             if(App.instance().isScreenOn()){
                 try {
                     try{
@@ -67,7 +67,7 @@ public class GroupManagerThread extends Thread {
                     Thread.sleep(UPDATE_INTERVAL_MS * 1000);
                 } catch(InterruptedException e) {}
             }
-        }
+        }*/
         mHelper.close();
     }
 
