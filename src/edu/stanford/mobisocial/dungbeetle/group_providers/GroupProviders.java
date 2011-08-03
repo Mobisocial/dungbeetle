@@ -155,14 +155,18 @@ public class GroupProviders{
                 final String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());
                 final String encryptedPubKey = Util.encryptAES(pubKey,key);
                 final String feedName = uriIn.getQueryParameter("session");
+                
+   
+                sb = new StringBuffer();
+                client = new DefaultHttpClient();
+                httpPost = new HttpPost(uri.toString());
+
+                nameValuePairs = new ArrayList<NameValuePair>(2);
                 nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
                 nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
-                //if(updateProfile){
-                  //  Log.w(TAG, ident.userProfile());
-                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
-                //}
+                
+                nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
                 nameValuePairs.add(new BasicNameValuePair("session", feedName));
-                nameValuePairs.add(new BasicNameValuePair("version", Integer.toString(version)));
                 httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                 try {
                     HttpResponse execute = client.execute(httpPost);
@@ -178,96 +182,66 @@ public class GroupProviders{
                 }
 
                 String response = sb.toString();
-
-                //Log.i(TAG, response);
-
-                if(response.equals("1"))
-                {    
-                    sb = new StringBuffer();
-                    client = new DefaultHttpClient();
-                    httpPost = new HttpPost(uri.toString());
-
-                    nameValuePairs = new ArrayList<NameValuePair>(2);
-                    nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
-                    nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
-                    
-                    nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
-                    nameValuePairs.add(new BasicNameValuePair("session", feedName));
-                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                JSONObject group = new JSONObject(response);
+                version = Integer.parseInt(group.getString("version"));
+                Helpers.updateGroupVersion(context, groupId, version);
+                JSONArray arr = new JSONArray(group.getString("users"));
+                for(int i = 0; i < arr.length(); i++) {
                     try {
-                        HttpResponse execute = client.execute(httpPost);
-                        InputStream content = execute.getEntity().getContent();
-                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                        String s = "";
-                        while ((s = buffer.readLine()) != null) {
-                            sb.append(s);
+                        String objStr = arr.getString(i);
+                        JSONObject o = new JSONObject(objStr);
+                        String encryptedPubK = o.getString("public_key");
+                        final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
+                        final String email = Util.decryptAES(o.getString("email"), key);
+
+                        if(email.equals(ident.userEmail())){
+                            continue;
                         }
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
 
-                    response = sb.toString();
-                    JSONObject group = new JSONObject(response);
-                    version = Integer.parseInt(group.getString("version"));
-                    Helpers.updateGroupVersion(context, groupId, version);
-                    JSONArray arr = new JSONArray(group.getString("users"));
-                    for(int i = 0; i < arr.length(); i++) {
-                        try {
-                            String objStr = arr.getString(i);
-                            JSONObject o = new JSONObject(objStr);
-                            String encryptedPubK = o.getString("public_key");
-                            final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
-                            final String email = Util.decryptAES(o.getString("email"), key);
+                        final String encryptedProfile = o.getString("profile");
+                        //final String groupSession = o.getString("group_session");
+                        final String idInGroup = o.getString("group_id");
+                        (new Handler(context.getMainLooper())).post(new Runnable(){
+                                public void run(){
 
-                            if(email.equals(ident.userEmail())){
-                                continue;
-                            }
+                                    ContentValues values = new ContentValues();
+                                    values.put(Contact.PUBLIC_KEY, pubKeyStr);
 
-                            final String encryptedProfile = o.getString("profile");
-                            //final String groupSession = o.getString("group_session");
-                            final String idInGroup = o.getString("group_id");
-                            (new Handler(context.getMainLooper())).post(new Runnable(){
-                                    public void run(){
-
-                                        ContentValues values = new ContentValues();
-                                        values.put(Contact.PUBLIC_KEY, pubKeyStr);
-
-                                        String profile = "";
-                                        if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
-                                            //Log.w(TAG, "["+encryptedProfile+"]");
-                                            if(key == null){Log.w(TAG, "WTF key null");}
-                                            profile = Util.decryptAES(encryptedProfile, key);
-                                        }
-                                        if(!profile.equals("")) {
-                                            try{
-                                                JSONObject profileJSON = new JSONObject(profile);
-                                                values.put(Contact.NAME, profileJSON.getString("name"));
-                                                Log.w(TAG, profileJSON.getString("picture"));
-                                                values.put(Contact.PICTURE, Base64.decode(profileJSON.getString("picture")));
-                                            }
-                                            catch(Exception e){
-                                            }
-                                        }
-                                        else {
-                                            values.put(Contact.NAME, email);
-                                        }
-                                        values.put(Contact.EMAIL, email);
-                                        values.put(Group.FEED_NAME, feedName);
-                                        values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
-                                        values.put(GroupMember.GROUP_ID, groupId);
-                                        Uri url = Uri.parse(
-                                            DungBeetleContentProvider.CONTENT_URI + 
-                                            "/dynamic_group_member");
-                                        context.getContentResolver().insert(url, values);
+                                    String profile = "";
+                                    if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
+                                        //Log.w(TAG, "["+encryptedProfile+"]");
+                                        if(key == null){Log.w(TAG, "WTF key null");}
+                                        profile = Util.decryptAES(encryptedProfile, key);
                                     }
-                                });
-                        }
-                        catch(Exception e){
-                            Log.e(TAG, "Error processing dynamic group contact.", e);
-                        }
+                                    if(!profile.equals("")) {
+                                        try{
+                                            JSONObject profileJSON = new JSONObject(profile);
+                                            values.put(Contact.NAME, profileJSON.getString("name"));
+                                            Log.w(TAG, profileJSON.getString("picture"));
+                                            values.put(Contact.PICTURE, Base64.decode(profileJSON.getString("picture")));
+                                        }
+                                        catch(Exception e){
+                                        }
+                                    }
+                                    else {
+                                        values.put(Contact.NAME, email);
+                                    }
+                                    values.put(Contact.EMAIL, email);
+                                    values.put(Group.FEED_NAME, feedName);
+                                    values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
+                                    values.put(GroupMember.GROUP_ID, groupId);
+                                    Uri url = Uri.parse(
+                                        DungBeetleContentProvider.CONTENT_URI + 
+                                        "/dynamic_group_member");
+                                    context.getContentResolver().insert(url, values);
+                                }
+                            });
+                    }
+                    catch(Exception e){
+                        Log.e(TAG, "Error processing dynamic group contact.", e);
                     }
                 }
+                
             }
             catch(Exception e){
                 Log.e(TAG, "Error in group provider.", e);
