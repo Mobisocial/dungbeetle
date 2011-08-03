@@ -349,7 +349,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
                     
                         QuickAction qa = new QuickAction(v);
 
-                        qa.addActionItem(sendIM);
+                        //qa.addActionItem(sendIM);
                         qa.addActionItem(startApp);
                         //qa.addActionItem(invite);
                         qa.addActionItem(nearby);

@@ -236,6 +236,7 @@ public class GroupProviders{
                                         String profile = "";
                                         if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
                                             //Log.w(TAG, "["+encryptedProfile+"]");
+                                            if(key == null){Log.w(TAG, "WTF key null");}
                                             profile = Util.decryptAES(encryptedProfile, key);
                                         }
                                         if(!profile.equals("")) {

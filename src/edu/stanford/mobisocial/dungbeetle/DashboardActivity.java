@@ -260,7 +260,7 @@ public void onClickFeature (View v)
       case R.id.home_btn_nearby :
       
             AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
-            builder.setMessage("Enter password:");
+            builder.setMessage("Enter your secret key if you have one:");
             final EditText passwordInput = new EditText(DashboardActivity.this);
             builder.setView(passwordInput);
             builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {

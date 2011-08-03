@@ -33,6 +33,8 @@ import java.io.File;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 
 public class ProfileActivity extends RichActivity{
 
@@ -108,6 +110,8 @@ public class ProfileActivity extends RichActivity{
                     String about = profileAbout.getText().toString();
                     mHelper.setMyName(profileName.getText().toString());
                     Helpers.updateProfile(ProfileActivity.this, name, about);
+                    
+                    //updateProfileToGroups();
                     finish();
                 }
             });
@@ -214,6 +218,7 @@ public class ProfileActivity extends RichActivity{
                                 @Override
                                 public void onResult(byte[] data) {
                                     Helpers.updatePicture(ProfileActivity.this, data);
+                                    //updateProfileToGroups();
                                 }
                             }, 200, false));
                 }
@@ -223,7 +228,29 @@ public class ProfileActivity extends RichActivity{
 
 
 
-
+    private void updateProfileToGroups() {
+        try{
+            Cursor grps = mHelper.queryDynamicGroups();
+            grps.moveToFirst();
+            while(!grps.isAfterLast()){
+                handleUpdate(new Group(grps), true);
+                grps.moveToNext();
+            }
+            
+            grps.close();
+        }
+        catch(Exception e){
+        }
+    }
+    private void handleUpdate(final Group g, final boolean updateProfile){
+        final Uri uri = Uri.parse(g.dynUpdateUri);
+        final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
+        new Thread(){
+            public void run(){
+                h.handle(g.id, uri, ProfileActivity.this, mIdent, g.version, updateProfile);
+            }
+        }.start();
+    }
 
 
     protected void viewProfile(long contactId){
