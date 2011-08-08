@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.actions.iface.FeedAction;
+import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 
 public class LivePhotosAction implements FeedAction {
     private boolean mSharePhotos = false;
@@ -51,6 +53,7 @@ public class LivePhotosAction implements FeedAction {
         public void onReceive(Context context, Intent intent) {
             if (mSharePhotos) {
                 Toast.makeText(context, "click!", 5000).show();
+                Helpers.sendToFeed(mContext, StatusObj.from("got a pic"), mFeedUri);
                 /*
                 String action = intent.getAction();
                 String cmd = intent.getStringExtra("command");

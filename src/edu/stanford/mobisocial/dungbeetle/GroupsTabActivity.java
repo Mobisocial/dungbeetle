@@ -120,7 +120,7 @@ public class GroupsTabActivity extends TabActivity
         Intent share = new Intent(Intent.ACTION_SEND);
         share.putExtra(Intent.EXTRA_TEXT, "Join me in a DungBeetle thread: " +
                 ThreadRequest.getInvitationUri(this, mExternalFeedUri));
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle");
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
         share.setType("text/plain");
         startActivity(share);
     }
