@@ -34,10 +34,10 @@ public class QuickAction extends CustomPopupWindow {
 	private final LayoutInflater inflater;
 	private final Context context;
 	
-	protected static final int ANIM_GROW_FROM_LEFT = 1;
-	protected static final int ANIM_GROW_FROM_RIGHT = 2;
-	protected static final int ANIM_GROW_FROM_CENTER = 3;
-	protected static final int ANIM_AUTO = 4;
+	public static final int ANIM_GROW_FROM_LEFT = 1;
+	public static final int ANIM_GROW_FROM_RIGHT = 2;
+	public static final int ANIM_GROW_FROM_CENTER = 3;
+	public static final int ANIM_AUTO = 4;
 	
 	private int animStyle;
 	private boolean animateTrack;

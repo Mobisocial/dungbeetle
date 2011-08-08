@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
+import edu.stanford.mobisocial.dungbeetle.model.DbActions;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -68,8 +69,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     private Uri mFeedUri;
     private ContactCache mContactCache;
 
-    private boolean shareMusic;
-
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
@@ -92,7 +91,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         }
 
         int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
-        shareMusic = false;
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
         if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
@@ -148,123 +146,10 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                     });*/
 
             final ImageView more = (ImageView)findViewById(R.id.more);
-
             more.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                    
-                        final ActionItem tapBoard = new ActionItem();
-                        tapBoard.setTitle("TapBoard");
-                        tapBoard.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                doActivityForResult(FeedActivity.this, 
-                                    new RemoteActivity(FeedActivity.this, new RemoteActivity.ResultHandler() {
-                                        
-                                        @Override
-                                        public void onResult(String data) {
-                                            // TODO: move this inside RemoteActivity
-                                            // TODO: finish objectification:
-                                            // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
-                                            DbObject obj = StatusObj.from(data);
-                                            Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
-                                        }
-                                    }));
-                                }
-                            });
-                    
-                        final ActionItem camera = new ActionItem();
-                        camera.setTitle("Camera");
-                        camera.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    doActivityForResult(
-                                        FeedActivity.this, 
-                                        new PhotoTaker(
-                                            FeedActivity.this, 
-                                            new PhotoTaker.ResultHandler() {
-                                                @Override
-                                                public void onResult(byte[] data) {
-                                                    DbObject obj = PictureObj.from(data);
-                                                    Helpers.sendToFeed(
-                                                        FeedActivity.this, obj, mFeedUri);
-                                                }
-                                            }, 200, true));
-                                }
-                            });
-                    
-                        final ActionItem application = new ActionItem();
-                        application.setTitle("Application...");
-                        application.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    AppReferenceObj.promptForApplication(
-                                            FeedActivity.this, new AppReferenceObj.Callback() {
-                                        @Override
-                                        public void onAppSelected(String pkg, String arg, Intent localLaunch) {
-                                            DbObject obj = new AppReference(pkg, arg);
-                                            Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
-                                            localLaunch.putExtra("mobisocial.db.FEED", mFeedUri);
-                                            localLaunch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
-	                                        localLaunch.putExtra("mobisocial.db.PACKAGE", pkg);
-                                            startActivity(localLaunch);
-                                        }
-                                    });
-                                }
-                            });
-                    
-                        final ActionItem voice = new ActionItem();
-                        voice.setTitle("Voice");
-                        voice.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
-                                    voiceintent.putExtra("feedUri", mFeedUri.toString());
-                                    startActivity(voiceintent);
-                                }
-                            });
-                    
-                        final ActionItem feed = new ActionItem();
-                        feed.setTitle("Feed");
-                        feed.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    Group g = Group.create(FeedActivity.this);
-                                    Helpers.sendToFeed(FeedActivity.this,
-                                            StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
-                                    Helpers.sendToFeed(FeedActivity.this, FeedObj.from(g), mFeedUri);
-                                }
-                            });
-                    
-                        final ActionItem music = new ActionItem();
-                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_not_sharing));
-                        music.setTitle("Show Music");
-                        music.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    if(shareMusic){
-                                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_not_sharing));
-                                        shareMusic = false;
-                                        showToast("No longer sharing music");
-                                    }
-                                    else if(!shareMusic){
-                                        //music.setIcon(getResources().getDrawable(R.drawable.ic_menu_music_sharing));
-                                        shareMusic = true;
-                                        showToast("Now sharing music");
-                                    }
-                                }
-                            });
-                    
-                        QuickAction qa = new QuickAction(v);
-
-                        //qa.addActionItem(tapBoard);
-                        qa.addActionItem(music);
-                        qa.addActionItem(camera);
-                        qa.addActionItem(application);
-                        qa.addActionItem(voice);
-                        //qa.addActionItem(feed);
-                        qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
-
+                        QuickAction qa = DbActions.getActions(FeedActivity.this, mFeedUri, v);
                         qa.show();
                     }
                 });
@@ -349,34 +234,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         else{
             findViewById(R.id.add_object).setVisibility(View.GONE);
         }
-
-        
-		IntentFilter iF = new IntentFilter();
-		iF.addAction("com.android.music.metachanged");
-		//iF.addAction("com.android.music.playstatechanged");
-		//iF.addAction("com.android.music.playbackcomplete");
-		//iF.addAction("com.android.music.queuechanged");
-		
-		registerReceiver(mReceiver, iF);
     }
-	
-	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent)
-		{
-		    if(shareMusic) {
-			    String action = intent.getAction();
-			    String cmd = intent.getStringExtra("command");
-			    //Log.d("mIntentReceiver.onReceive ", action + " / " + cmd);
-			    String artist = intent.getStringExtra("artist");
-			    String album = intent.getStringExtra("album");
-			    String track = intent.getStringExtra("track");
-			    //Log.d("Music",artist+":"+album+":"+track);
-			    String song = artist + " - " + track;
-    			    Helpers.sendToFeed(FeedActivity.this, StatusObj.from(song), mFeedUri);
-            }
-		}
-	};
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor c = (Cursor)mObjects.getItem(position);
