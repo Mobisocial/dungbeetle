@@ -1,9 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.AlertDialog;
 
 import android.widget.Toast;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,25 +14,17 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
-import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbActions;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
-import edu.stanford.mobisocial.dungbeetle.objects.FeedObj;
-import edu.stanford.mobisocial.dungbeetle.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
-import edu.stanford.mobisocial.dungbeetle.util.RemoteActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
 import org.json.JSONException;
@@ -42,16 +32,6 @@ import org.json.JSONObject;
 import android.content.Intent;
 
 import android.widget.ImageView;
-import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
-
-import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Bundle;
-
-
 
 public class FeedActivity extends RichListActivity implements OnItemClickListener{
 
@@ -135,16 +115,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                     }
                 });
 
-            
-            /*findViewById(R.id.voice)
-            	.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            Intent voiceintent = new Intent(ObjectsActivity.this, VoiceRecorderActivity.class);
-                            voiceintent.putExtra("feedUri", feedUri.toString());
-                            startActivity(voiceintent);
-                        }
-                    });*/
-
             final ImageView more = (ImageView)findViewById(R.id.more);
             more.setOnClickListener(new OnClickListener() {
                     @Override
@@ -153,83 +123,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                         qa.show();
                     }
                 });
-            
-            /*findViewById(R.id.publish)
-            	.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            new AlertDialog.Builder(FeedActivity.this)
-                            .setTitle("Attach")
-                            .setItems(new String[] {
-                                    "TapBoard",
-                                    "Photo",
-                                    "Application...",
-                                    "Voice",
-                                    "Feed"
-                                }, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        switch (which) {
-                                            case 0: {
-                                                doActivityForResult(FeedActivity.this, 
-                                                        new RemoteActivity(FeedActivity.this, new RemoteActivity.ResultHandler() {
-                                                            
-                                                            @Override
-                                                            public void onResult(String data) {
-                                                                // TODO: move this inside RemoteActivity
-                                                                // TODO: finish objectification:
-                                                                // new FeedUpdater().sendToFeed(feedUri, PictureObj.fromJson(data));
-                                                                DbObject obj = StatusObj.from(data);
-                                                                Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
-                                                            }
-                                                        }));
-                                                break;
-                                            }
-                                            case 1: {
-                                                doActivityForResult(
-                                                    FeedActivity.this, 
-                                                    new PhotoTaker(
-                                                        FeedActivity.this, 
-                                                        new PhotoTaker.ResultHandler() {
-                                                            @Override
-                                                            public void onResult(byte[] data) {
-                                                                DbObject obj = PictureObj.from(data);
-                                                                Helpers.sendToFeed(
-                                                                    FeedActivity.this, obj, mFeedUri);
-                                                            }
-                                                        }, 200, false));
-                                                break;
-                                            }
-                                        case 2: {
-                                            AppReferenceObj.promptForApplication(
-                                                    FeedActivity.this, new AppReferenceObj.Callback() {
-                                                @Override
-                                                public void onAppSelected(String pkg, String arg, Intent localLaunch) {
-                                                    DbObject obj = new AppReference(pkg, arg);
-                                                    Helpers.sendToFeed(FeedActivity.this, obj, mFeedUri);
-                                                    startActivity(localLaunch);
-                                                }
-                                            });
-                                            break;
-                                        }
-                                        case 3: {
-                                            Intent voiceintent = new Intent(FeedActivity.this, VoiceRecorderActivity.class);
-                                            voiceintent.putExtra("feedUri", mFeedUri.toString());
-                                            startActivity(voiceintent);
-                                            break;
-                                        }
-                                        case 4: {
-                                            Group g = Group.create(FeedActivity.this);
-                                            Helpers.sendToFeed(FeedActivity.this,
-                                                    StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
-                                            Helpers.sendToFeed(FeedActivity.this, FeedObj.from(g), mFeedUri);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            ).create().show();
-                        }
-                });*/
         }
         else{
             findViewById(R.id.add_object).setVisibility(View.GONE);
