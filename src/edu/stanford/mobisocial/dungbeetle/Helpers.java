@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
 
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -14,6 +16,7 @@ import java.util.Collection;
 import org.json.JSONObject;
 import android.content.ContentValues;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.content.Context;
 
@@ -134,6 +137,23 @@ public class Helpers {
         values.put(DbObject.DESTINATION, buildAddresses(contacts));
         values.put(DbObject.TYPE, InviteToSharedAppFeedObj.TYPE);
         c.getContentResolver().insert(url, values);
+    }
+
+    public static void sendThreadInvite(Context c, Collection<Contact> contacts, Uri threadUri) {
+        long[] ids = new long[contacts.size()];
+        Iterator<Contact> it = contacts.iterator();
+        int i = 0;
+        while(it.hasNext()){
+            Contact me = it.next();
+            ids[i] = me.id;
+            i++;
+        }
+        Maybe<Group> group = Group.forFeed(c, threadUri.toString());
+        try {
+            sendGroupInvite(c, ids, group.get());
+        } catch (NoValError e) {
+            Log.e(TAG, "Could not send group invite; no group for " + threadUri);
+        }
     }
 
     public static void updatePicture(final Context c, final byte[] data) {
