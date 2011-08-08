@@ -43,6 +43,9 @@ public class PickContactsActivity extends TabActivity {
     public static final String INTENT_ACTION_INVITE = 
         "edu.stanford.mobisocial.dungbeetle.INVITE";
 
+    public static final String INTENT_ACTION_INVITE_TO_THREAD = 
+            "edu.stanford.mobisocial.dungbeetle.INVITE_THREAD";
+
     public static final String INTENT_ACTION_PICK_CONTACTS = 
         "edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS";
 
@@ -111,9 +114,8 @@ public class PickContactsActivity extends TabActivity {
         if(mIntent.getAction().equals(Intent.ACTION_SEND)
            && mIntent.getType() != null
            && (data != null || txt != null)){
-            Toast.makeText(
-                this, "Sending to " + mResultContacts.size() + " contacts...", 
-                Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
+                    Toast.LENGTH_SHORT).show();
             String url = "";
             if(data != null) url = data.toString();
             else if(txt != null) url = txt;
@@ -122,9 +124,15 @@ public class PickContactsActivity extends TabActivity {
         else if(mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
                 mIntent.getStringExtra("type").equals("invite_app_feed")){
             Helpers.sendAppFeedInvite(this, 
-                                      mResultContacts, 
-                                      mIntent.getStringExtra("sharedFeedName"),
-                                      mIntent.getStringExtra("packageName"));
+                mResultContacts, 
+                mIntent.getStringExtra("sharedFeedName"),
+                mIntent.getStringExtra("packageName"));
+        }
+        else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
+            Uri threadUri = mIntent.getParcelableExtra("uri");
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
+                    Toast.LENGTH_SHORT).show();
+            Helpers.sendThreadInvite(this, mResultContacts, threadUri);
         }
         else if(mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)){
             long[] ids = new long[mResultContacts.size()];

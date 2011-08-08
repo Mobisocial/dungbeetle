@@ -257,5 +257,7 @@
    </receiver>
    -->
 
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.PickContactsActivity">
+    </activity>
   </application>
 </manifest> 

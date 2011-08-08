@@ -24,7 +24,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.BackupManager.BackupService;
 import edu.stanford.mobisocial.dungbeetle.facebook.FacebookInterfaceActivity;
 import edu.stanford.mobisocial.dungbeetle.google.OAuthFlowApp;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -399,18 +398,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             });
     	
     }
-    
-    private void doLoadDb() {
-    	// Choose 
-    	BackupService backup = new BackupManager.LocalBackupService();
-    	backup.load();
-    }
-    
-    private void doSaveDb() {
-    	BackupService backup = new BackupManager.LocalBackupService();
-    	backup.store();
-    }
-    
+
     private void doSendInviteEmail() {
     	String subject = "Meet me on DungBeetle!";
     	StringBuilder email = new StringBuilder();

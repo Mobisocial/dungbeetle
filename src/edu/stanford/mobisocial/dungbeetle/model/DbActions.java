@@ -11,6 +11,7 @@ import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.actions.CameraAction;
 import edu.stanford.mobisocial.dungbeetle.actions.LaunchApplicationAction;
+import edu.stanford.mobisocial.dungbeetle.actions.LivePhotosAction;
 import edu.stanford.mobisocial.dungbeetle.actions.MusicAction;
 import edu.stanford.mobisocial.dungbeetle.actions.NewFeedAction;
 import edu.stanford.mobisocial.dungbeetle.actions.VoiceAction;
@@ -22,6 +23,7 @@ public class DbActions {
     private static final List<FeedAction> sFeedActions = new ArrayList<FeedAction>();
     static {
         sFeedActions.add(new MusicAction());
+        sFeedActions.add(new LivePhotosAction());
         sFeedActions.add(new CameraAction());
         sFeedActions.add(new LaunchApplicationAction());
         sFeedActions.add(new VoiceAction());
