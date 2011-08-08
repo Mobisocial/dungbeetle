@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.TabActivity;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import android.location.Location;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.AlertDialog;
 
@@ -36,6 +38,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.InputStream;
 import android.content.DialogInterface;
+import android.content.IntentSender.SendIntentException;
 
 
 import android.widget.EditText;
@@ -46,10 +49,11 @@ import android.widget.EditText;
 public class GroupsTabActivity extends TabActivity
 {
     private Nfc mNfc;
+    private Uri mFeedUri;
 
     public final String TAG = "GroupsTabActivity";
 
-/*** Dashbaord stuff ***/
+    /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);
@@ -68,7 +72,56 @@ public class GroupsTabActivity extends TabActivity
     }
 
 
-    public void onClickBroadcast (View v)
+    public void onClickBroadcast(View v) {
+        new AlertDialog.Builder(GroupsTabActivity.this)
+            .setTitle("Share thread...")
+            .setItems(new String[] {"Send to friend", "Broadcast nearby"}, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0:
+                            sendToFriend();
+                            break;
+                        case 1:
+                            broadcastNearby();
+                            break;
+                    }
+                }
+            }).show();
+    }
+
+    public void sendToFriend() {
+        new AlertDialog.Builder(GroupsTabActivity.this)
+        .setTitle("Share thread...")
+        .setItems(new String[] {"From DungBeetle", "Other..."}, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        sendToDbFriend();
+                        break;
+                    case 1:
+                        sendToExternalFriend();
+                        break;
+                }
+            }
+        }).show();
+    }
+
+    private void sendToDbFriend() {
+        
+    }
+
+    private void sendToExternalFriend() {
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.putExtra(Intent.EXTRA_TEXT, "Join me in a DungBeetle thread: " +
+                ThreadRequest.getInvitationUri(this, mFeedUri));
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle");
+        share.setType("text/plain");
+        startActivity(share);
+    }
+
+    public void broadcastNearby()
     {
         final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
 
@@ -301,6 +354,7 @@ public class GroupsTabActivity extends TabActivity
             mNfc.share(NdefFactory.fromUri(feed_uri));
             Log.w(TAG, feed_uri);
         }
+        mFeedUri = Uri.parse(feed_uri);
 
         int color = Feed.colorFor(feed_name);
         

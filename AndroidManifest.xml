@@ -35,7 +35,7 @@
 	<category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
       
-      <intent-filter>
+      <intent-filter android:priority="100">
     <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />

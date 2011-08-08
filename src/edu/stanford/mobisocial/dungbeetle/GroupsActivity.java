@@ -57,7 +57,7 @@ import android.location.Location;
 import android.app.ProgressDialog;
 
 
-public class GroupsActivity extends ListActivity implements OnItemClickListener{
+public class GroupsActivity extends ListActivity implements OnItemClickListener {
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";
 	private static final int REQUEST_INVITE_TO_GROUP = 1;
@@ -65,7 +65,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener{
     private Maybe<Group> mGroup = Maybe.unknown();
     public final String TAG = "GroupsActivity";
 
-/*** Dashbaord stuff ***/
+    /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);

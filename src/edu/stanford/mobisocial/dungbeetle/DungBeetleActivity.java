@@ -17,6 +17,7 @@ import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 import java.util.BitSet;
 import java.util.Date;
@@ -141,8 +142,7 @@ public class DungBeetleActivity extends DashboardActivity
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         boolean firstLoad = settings.getBoolean("firstLoad", true);
-        if(firstLoad)
-        {
+        if (firstLoad) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Thank you for trying out Stanford Mobisocial's new software DungBeetle! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
                 .setCancelable(false)
@@ -272,7 +272,6 @@ public class DungBeetleActivity extends DashboardActivity
             });
         
         pushContactInfoViaNfc();
-        acceptInboundContactInfo();
     }
 
     public Uri uriFromNdef(NdefMessage... messages) {
@@ -313,7 +312,7 @@ public class DungBeetleActivity extends DashboardActivity
                     return;
                 }
     		}
-        } else {
+        } else if  (!acceptInboundContactInfo()) {
             Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
         }
 
@@ -372,15 +371,24 @@ public class DungBeetleActivity extends DashboardActivity
         //Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
     }
 
-    public void acceptInboundContactInfo() {
+    public boolean acceptInboundContactInfo() {
         if (getIntent().getData() == null) {
             // TODO: convert if(getFoo().doBar()) into if (getFoo() != null && getFoo().doBar())
-            return;
+            return false;
         }
         if (getIntent().getData().getAuthority().equals("mobisocial.stanford.edu")) {
-            FriendRequest.acceptFriendRequest(this, getIntent().getData());
+            Uri uri = getIntent().getData();
+            List<String> segments = uri.getPathSegments();
+            if (segments.contains("join")) {
+                FriendRequest.acceptFriendRequest(this, getIntent().getData());
+                return true;
+            } else if (segments.contains("thread")) {
+                ThreadRequest.acceptThreadRequest(this, getIntent().getData());
+                return true;
+            }
             // TODO, update bigtime
         }
+        return false;
     }
 
     @Override
