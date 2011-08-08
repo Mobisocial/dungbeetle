@@ -11,13 +11,16 @@ import android.widget.AdapterView;
 import android.content.Context;
 import android.util.Log;
 import android.content.Intent;
-
+import java.io.*;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.google.*;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import android.os.Environment;
 
 
 
 public class SettingsActivity extends ListActivity {
-    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
+    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Backup to SD card", "Restore from SD card"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
     String TAG = "Settings";
 
 
@@ -83,8 +86,50 @@ public class SettingsActivity extends ListActivity {
                         startActivity(intent); 
                         break;
                     case 2:
+                        try{
+                            DBHelper mHelper = new DBHelper(SettingsActivity.this);
+                            mHelper.getReadableDatabase().close();
+                            File data = Environment.getDataDirectory();
+                            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/";
+                            
+                            File backupDB = new File(extStorageDirectory, "DUNG_HEAP.db");
+                            File fileDirectory = new File(extStorageDirectory);
+                            fileDirectory.mkdirs();
+                            
+                            File currentDB = new File(data, currentDBPath);
+                            InputStream in = new FileInputStream(currentDB);
+                            OutputStream out = new FileOutputStream(backupDB); 
+                            byte[] buf = new byte[1024];
+                            int len;
+                            while ((len = in.read(buf)) > 0){
+                                out.write(buf, 0, len);
+                            }
+                            in.close();
+                            out.close();
+                            showToast("backed up");
+                        }
+                        catch(Exception e){
+                            showToast("failed to back up");
+                        }
+                        
                         break;
                     case 3:
+                        try{
+                            DBHelper mHelper = new DBHelper(SettingsActivity.this);
+                            mHelper.getReadableDatabase().close();
+                            File data = Environment.getDataDirectory();
+                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/";
+                            
+                            
+                            mHelper.importDatabaseFromSD(extStorageDirectory+"DUNG_HEAP.db");
+                            showToast("restored");
+                        }
+                        catch(Exception e){
+                            showToast("failed to restore");
+                        }
+                        break;
+                    case 4:
                         intent = new Intent(SettingsActivity.this, OAuthFlowApp.class);
                         startActivity(intent);
                         break;
@@ -94,4 +139,10 @@ public class SettingsActivity extends ListActivity {
         });
     }
 
+
+
+    public void showToast(String msg) {
+        Toast error = Toast.makeText(this, msg, Toast.LENGTH_LONG);
+        error.show();
+    }
 }

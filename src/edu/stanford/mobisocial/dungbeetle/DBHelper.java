@@ -93,6 +93,30 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         return false;
     }
+	
+    public boolean importDatabaseFromSD(String dbPath) throws IOException {
+
+        // Close the SQLiteOpenHelper so it will commit the created empty
+        // database to internal storage.
+        close();
+        
+        File data = Environment.getDataDirectory();
+        File newDb = new File(dbPath);
+        File oldDb = new File(data, DB_PATH+DB_NAME);
+        if (newDb.exists()) {
+            Util.copyFile(new FileInputStream(newDb), new FileOutputStream(oldDb));
+            // Access the copied database so SQLiteHelper will cache it and mark
+            // it as created.
+            getWritableDatabase().close();
+            checkEncodedExists(getReadableDatabase());
+                
+            Intent DBServiceIntent = new Intent(mContext, DungBeetleService.class);
+            mContext.stopService(DBServiceIntent);
+            mContext.startService(DBServiceIntent);
+            return true;
+        }
+        return false;
+    }
 
     private void checkEncodedExists(SQLiteDatabase db) {
         	Cursor c = db.rawQuery("SELECT * FROM " + DbObject.TABLE, null);
