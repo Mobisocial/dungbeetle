@@ -132,7 +132,7 @@ public class GroupsTabActivity extends TabActivity
     public void broadcastNearby() {
         new AlertDialog.Builder(GroupsTabActivity.this)
             .setTitle("Share thread...")
-            .setItems(new String[] {"Use Bluetooth", "Use GPS", "Post Notice"}, new DialogInterface.OnClickListener() {
+            .setItems(new String[] {"Use Bluetooth", "Use GPS"}, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     switch (which) {
