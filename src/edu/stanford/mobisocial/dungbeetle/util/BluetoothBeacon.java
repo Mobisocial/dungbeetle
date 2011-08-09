@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle.util;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
@@ -43,7 +42,7 @@ public class BluetoothBeacon {
             System.arraycopy(receivedBytes, 0, returnBytes, 0, r);
             discovered.onDiscovered(returnBytes);
         } catch (IOException e) {
-            toast(activity, "Couldn't connect to " + device.getName());
+            //toast(activity, "Couldn't connect to " + device.getName());
             Log.d(TAG, "failed bluetooth connection", e);
         }
     }
@@ -77,7 +76,6 @@ public class BluetoothBeacon {
             BluetoothServerSocket tmp = null;
 
             // Create a new listening server socket
-            int listeningPort = -1;
             try {
                 tmp = getServerSocket(NEAR_PORT, NEAR_GROUPS);
             } catch (IOException e) {
@@ -90,30 +88,21 @@ public class BluetoothBeacon {
             setName("AcceptThread");
             BluetoothSocket socket = null;
 
-            // Wait for one connection.
-            int port = getBluetoothListeningPort(mmServerSocket);
-            toast(mmContext, "Listening on " + port + "...");
-            try {
-                socket = mmServerSocket.accept(1000*mmDuration);
-                toast(mmContext, "Connected!");
-            } catch (IOException e) {
-                toast(mmContext, "Accept() failed");
-                if (DBG) Log.e(TAG, "accept() failed", e);
-                return;
+            while (true) {
+                try {
+                    socket = mmServerSocket.accept(1000 * mmDuration);
+                } catch (IOException e) {
+                    if (DBG) Log.e(TAG, "accept() failed", e);
+                    return;
+                }
+    
+                if (socket == null) {
+                    if (DBG) Log.e(TAG, "no socket.");
+                    return;
+                }
+    
+                doConnection(socket);
             }
-
-            if (socket == null) {
-                toast(mmContext, "Failed.");
-                return;
-            }
-
-            doConnection(socket);
-
-            try {
-                mmServerSocket.close();
-            } catch (IOException e) {
-            }
-            
         }
 
         public void cancel() {
@@ -124,7 +113,6 @@ public class BluetoothBeacon {
         }
 
         private void doConnection(BluetoothSocket socket) {
-            toast(mmContext, "Sending over bluetooth.");
             try {
                 socket.getOutputStream().write(mmData);
                 socket.getOutputStream().flush();
