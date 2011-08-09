@@ -125,7 +125,29 @@ public class GroupsTabActivity extends TabActivity
         startActivity(share);
     }
 
-    public void broadcastNearby()
+    public void broadcastNearby() {
+        new AlertDialog.Builder(GroupsTabActivity.this)
+            .setTitle("Share thread...")
+            .setItems(new String[] {"Use Bluetooth", "Use GPS", "Post Notice"}, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0:
+                            broadcastBluetooth();
+                            break;
+                        case 1:
+                            broadcastGps();
+                            break;
+                    }
+                }
+            }).show();
+    }
+
+    public void broadcastBluetooth() {
+        
+    }
+
+    public void broadcastGps()
     {
         final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
 
