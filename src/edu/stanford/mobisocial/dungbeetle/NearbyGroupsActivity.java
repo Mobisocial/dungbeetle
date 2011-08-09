@@ -1,21 +1,29 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.view.View;
+import android.content.BroadcastReceiver;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.ListView;
-import android.widget.AdapterView;
+import android.widget.Toast;
 import android.content.Context;
 import android.util.Log;
-import android.content.Intent;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.location.Location;
 import android.app.ProgressDialog;
-
-import edu.stanford.mobisocial.dungbeetle.google.*;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 
 import android.net.Uri;
 import org.apache.http.HttpResponse;
@@ -26,8 +34,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-import org.apache.http.message.BasicNameValuePair;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.InputStream;
@@ -42,12 +50,11 @@ import android.view.View.OnClickListener;
 
 public class NearbyGroupsActivity extends ListActivity {
     String[] listItems = {"sup dawg", "Restore from Dropbox", "Wipe Data (Keep identity)", "Start from Scratch"};
-    ArrayList<GroupItem> groupList = new ArrayList<GroupItem>();
+    ArrayList<GroupItem> mGroupList = new ArrayList<GroupItem>();
     
     String TAG = "Nearby Groups";
 
-
-/*** Dashbaord stuff ***/
+    /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);
@@ -83,10 +90,11 @@ public class NearbyGroupsActivity extends ListActivity {
     public MyLocation.LocationResult locationResult;
     
     ProgressDialog dialog;
+    private GroupAdapter mAdapter;
 
     private void locationClick() {
         dialog.show();
-        groupList.clear();
+        mGroupList.clear();
         myLocation.getLocation(this, locationResult);
     }
 
@@ -97,68 +105,30 @@ public class NearbyGroupsActivity extends ListActivity {
         setContentView(R.layout.nearby_groups);
         setTitleFromActivityLabel (R.id.title_text);
         //setListAdapter(new ArrayAdapter(this, android.R.layout.simple_list_item_1, listItems));
-        final GroupAdapter adapter = new GroupAdapter(this, R.layout.nearby_groups_item, groupList);
-        setListAdapter(adapter);
-        dialog = new ProgressDialog(NearbyGroupsActivity.this);
-        dialog.setMessage("Fetching nearby Groups. Please wait...");
-        dialog.setCancelable(false);
-        myLocation = new MyLocation();
-        
-        Intent intent = getIntent();
+        mAdapter = new GroupAdapter(this, R.layout.nearby_groups_item, mGroupList);
+        setListAdapter(mAdapter);
 
-        final String password = intent.getStringExtra("password");
-        
-        locationResult = new MyLocation.LocationResult(){
-            @Override
-            public void gotLocation(final Location location){
-                //Got the location!
-                try {
-                    Uri.Builder b = new Uri.Builder();
-                    b.scheme("http");
-                    b.authority("suif.stanford.edu");
-                    b.path("dungbeetle/nearby.php");
-                    Uri uri = b.build();
-                    
-                    StringBuffer sb = new StringBuffer();
-                    DefaultHttpClient client = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost(uri.toString());
-
-                    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                
-                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
-                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
-                    nameValuePairs.add(new BasicNameValuePair("password", password));
-                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-                    try {
-                        HttpResponse execute = client.execute(httpPost);
-                        InputStream content = execute.getEntity().getContent();
-                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                        String s = "";
-                        while ((s = buffer.readLine()) != null) {
-                            sb.append(s);
-                        }
+        new AlertDialog.Builder(this)
+            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        finish();
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
+                })
+            .setTitle("Choose method...")
+            .setItems(new String[] { "Bluetooth" , "Gps" }, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0:
+                            findBluetooth();
+                            break;
+                        case 1:
+                            promptGps();
+                            break;
                     }
-
-                    String response = sb.toString();
-                    JSONArray groupsJSON = new JSONArray(response);
-                    for(int i = 0; i < groupsJSON.length(); i++) {
-                        JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        groupList.add(new GroupItem(group.optString("group_name"), group.optString("feed_uri")));
-                    }
-                    adapter.notifyDataSetChanged();
                 }
-                catch(Exception e) {
-                }
-
-                
-                dialog.dismiss();
-            }
-        };
-
-        locationClick();
+            }).create().show();
     }
 
     
@@ -202,5 +172,148 @@ public class NearbyGroupsActivity extends ListActivity {
         }
     }
 
+    private void findBluetooth() {
+        // Create a BroadcastReceiver for ACTION_FOUND
+        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+
+        final BroadcastReceiver receiver = new BroadcastReceiver() {
+            public void onReceive(final Context context, final Intent intent) {
+                String action = intent.getAction();
+                // When discovery finds a device
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    new Thread() {
+                        public void run() {
+                            BluetoothBeacon.OnDiscovered discovered = new BluetoothBeacon.OnDiscovered() {
+                                @Override
+                                public void onDiscovered(final byte[] data) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                JSONObject obj = new JSONObject(new String(data));
+                                                mGroupList.add(new GroupItem(
+                                                        obj.getString("name"), obj.getString("dynuri")));
+                                                mAdapter.notifyDataSetChanged();
+                                            } catch (JSONException e) {
+                                                Log.e(TAG, "Error getting group info over bluetooth", e);
+                                            }
+                                        }
+                                    });
+                                }
+                            };
+                            // Get the BluetoothDevice object from the Intent
+                            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            BluetoothBeacon.discover(NearbyGroupsActivity.this, device, discovered);
+                        };
+                    }.start();
+                }
+                if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                    unregisterReceiver(this);
+                }
+            }
+        };
+
+        
+        registerReceiver(receiver, filter); // Don't forget to unregister during onDestroy   
+        BluetoothAdapter.getDefaultAdapter().startDiscovery();
+        Toast.makeText(this, "Scanning Bluetooth...", 500).show();
+    }
+
+    private void promptGps() {
+        // Get password
+        AlertDialog.Builder builder = new AlertDialog.Builder(NearbyGroupsActivity.this);
+        builder.setMessage("Enter your secret key if you have one:");
+        final EditText passwordInput = new EditText(NearbyGroupsActivity.this);
+        builder.setView(passwordInput);
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    String password = passwordInput.getText().toString();
+                    findGps(password);
+                }
+            });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    finish();
+                }
+            });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                finish();
+            }
+        });
+        builder.show();
+    }
+
+    private void findGps(final String password) {
+        dialog = new ProgressDialog(NearbyGroupsActivity.this);
+        dialog.setMessage("Fetching nearby Groups. Please wait...");
+        dialog.setCancelable(false);
+        myLocation = new MyLocation();
+        
+        Intent intent = getIntent();
+
+        locationResult = new MyLocation.LocationResult(){
+            @Override
+            public void gotLocation(final Location location){
+                //Got the location!
+                try {
+                    Uri.Builder b = new Uri.Builder();
+                    b.scheme("http");
+                    b.authority("suif.stanford.edu");
+                    b.path("dungbeetle/nearby.php");
+                    Uri uri = b.build();
+                    
+                    StringBuffer sb = new StringBuffer();
+                    DefaultHttpClient client = new DefaultHttpClient();
+                    HttpPost httpPost = new HttpPost(uri.toString());
+
+                    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                
+                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
+                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
+                    nameValuePairs.add(new BasicNameValuePair("password", password));
+                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                    try {
+                        HttpResponse execute = client.execute(httpPost);
+                        InputStream content = execute.getEntity().getContent();
+                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                        String s = "";
+                        while ((s = buffer.readLine()) != null) {
+                            sb.append(s);
+                        }
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    String response = sb.toString();
+                    JSONArray groupsJSON = new JSONArray(response);
+                    for(int i = 0; i < groupsJSON.length(); i++) {
+                        JSONObject group = new JSONObject(groupsJSON.get(i).toString());
+                        mGroupList.add(new GroupItem(group.optString("group_name"), group.optString("feed_uri")));
+                    }
+                    mAdapter.notifyDataSetChanged();
+                }
+                catch(Exception e) {
+                }
+
+                
+                dialog.dismiss();
+            }
+        };
+
+        locationClick();
+    }
+
+    private void toast(final String text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(NearbyGroupsActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }
 
