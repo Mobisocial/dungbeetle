@@ -48,8 +48,6 @@ import org.apache.http.message.BasicNameValuePair;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
 public class DungBeetleActivity extends DashboardActivity
 {
     private static final boolean DBG = true;
@@ -133,6 +131,7 @@ public class DungBeetleActivity extends DashboardActivity
                 getIntent().setData(Uri.parse(getIntent().getStringExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)));
             }
         } catch (ClassCastException e) {}
+        
 
         setContentView(R.layout.activity_home);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
@@ -272,8 +271,30 @@ public class DungBeetleActivity extends DashboardActivity
             });
         
         pushContactInfoViaNfc();
+
+
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        String action = intent.getAction();
+
+        // if this is from the share menu
+        if (Intent.ACTION_SEND.equals(action))
+        {
+            if (extras.containsKey(Intent.EXTRA_STREAM))
+            {
+                try
+                {
+                    UIHelpers.showGroupPicker(DungBeetleActivity.this, null, intent);
+                } catch (Exception e)
+                {
+                    Log.e(this.getClass().getName(), e.toString());
+                }
+
+            }
+        }
     }
 
+	
     public Uri uriFromNdef(NdefMessage... messages) {
         if(messages.length == 0){
             return null;

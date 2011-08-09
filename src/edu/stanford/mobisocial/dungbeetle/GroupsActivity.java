@@ -108,7 +108,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
-		//registerForContextMenu(getListView());
+		registerForContextMenu(getListView());
 	}
 
     @Override

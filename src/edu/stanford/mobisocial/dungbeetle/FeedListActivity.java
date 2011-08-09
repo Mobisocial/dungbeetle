@@ -194,7 +194,7 @@ public class FeedListActivity extends ListActivity {
         for (String type : types) {
             allowed.append(",'").append(type).append("'");
         }
-        return DbObject.TYPE + " in (" + allowed.substring(1) + ") AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'direct' AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'friend'";
+        return DbObject.TYPE + " in (" + allowed.substring(1) + ") AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'direct' AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != 'friend' AND " + DbObject.TABLE + "." + DbObject.FEED_NAME + " != ''";
     }
 
     private OnClickListener newFeed() {

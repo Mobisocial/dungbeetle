@@ -253,7 +253,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                 public void onClick(View v) {
                                     UIHelpers.showGroupPicker(
                                         ContactsActivity.this, 
-                                        c);
+                                        c,
+                                        null);
                                 }
                             });
 
