@@ -258,29 +258,9 @@ public void onClickFeature (View v)
            startActivity (intent);
           break;
       case R.id.home_btn_nearby :
-      
-            AlertDialog.Builder builder = new AlertDialog.Builder(DashboardActivity.this);
-            builder.setMessage("Enter your secret key if you have one:");
-            final EditText passwordInput = new EditText(DashboardActivity.this);
-            builder.setView(passwordInput);
-            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        String password = passwordInput.getText().toString();
-                        
-
-                        Intent launch = new Intent();
-                        launch.setClass(DashboardActivity.this, NearbyGroupsActivity.class);
-                        launch.putExtra("password", password);
-                        startActivity(launch);
-                    }
-                });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                    }
-                });
-            builder.show();
-           //intent = new Intent().setClass(getApplicationContext(), NearbyGroupsActivity.class);
-           //startActivity (intent);
+            Intent launch = new Intent();
+            launch.setClass(DashboardActivity.this, NearbyGroupsActivity.class);
+            startActivity(launch);
           break;
       default: 
     	   break;

@@ -34,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collections;
@@ -177,6 +178,16 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     }
 
+    public void onClickNew(View v) {
+        Intent share = new Intent(Intent.ACTION_SEND);
+        Uri friendRequest = FriendRequest.getInvitationUri(this);
+        share.putExtra(Intent.EXTRA_TEXT,
+                "Be my friend on DungBeetle! Click here from your Android device: "
+                + friendRequest);
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
+        share.setType("text/plain");
+        startActivity(share);
+    }
 
     private class ContactListCursorAdapter extends CursorAdapter {
 

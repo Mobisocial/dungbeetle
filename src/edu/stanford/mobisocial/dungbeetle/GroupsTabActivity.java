@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.TabActivity;
 import android.content.Intent;
@@ -19,10 +20,11 @@ import android.content.Context;
 import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.location.Location;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 
 
 import org.apache.http.HttpResponse;
@@ -31,14 +33,15 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.http.message.BasicNameValuePair;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.InputStream;
 import android.content.DialogInterface;
-import android.content.IntentSender.SendIntentException;
 
 
 import android.widget.EditText;
@@ -51,6 +54,7 @@ public class GroupsTabActivity extends TabActivity
     private Nfc mNfc;
     private Uri mExternalFeedUri;
     private Uri mInternalFeedUri;
+    private static final int NEAR_CODE = 2;
 
     public final String TAG = "GroupsTabActivity";
 
@@ -120,12 +124,64 @@ public class GroupsTabActivity extends TabActivity
         Intent share = new Intent(Intent.ACTION_SEND);
         share.putExtra(Intent.EXTRA_TEXT, "Join me in a DungBeetle thread: " +
                 ThreadRequest.getInvitationUri(this, mExternalFeedUri));
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle");
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
         share.setType("text/plain");
         startActivity(share);
     }
 
-    public void broadcastNearby()
+    public void broadcastNearby() {
+        new AlertDialog.Builder(GroupsTabActivity.this)
+            .setTitle("Share thread...")
+            .setItems(new String[] {"Use Bluetooth", "Use GPS"}, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0:
+                            requestBluetooth();
+                            break;
+                        case 1:
+                            broadcastGps();
+                            break;
+                    }
+                }
+            }).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == NEAR_CODE) {
+            if (resultCode < 0) {
+                Toast.makeText(this, "Failed to enable Bluetooth.", 500).show();
+            } else {
+                Toast.makeText(this, "Bluetooth sharing enabled.", 500).show();
+                broadcastBluetooth();
+            }
+        }
+    }
+
+    public void requestBluetooth() {
+        final int DISCO_LENGTH = 300;
+        Intent discoverableIntent = new
+        Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCO_LENGTH);
+        startActivityForResult(discoverableIntent, NEAR_CODE);
+    }
+
+    public void broadcastBluetooth() {
+        // BluetoothNdef.share
+        Maybe<Group> group = Group.forFeed(this, mInternalFeedUri.toString());
+        try {
+            Group g = group.get();
+            JSONObject json = new JSONObject();
+            json.put("name", g.name);
+            json.put("dynuri", g.dynUpdateUri);
+            BluetoothBeacon.share(this, json.toString().getBytes(), 300);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not send group invite; no group for " + mInternalFeedUri);
+        }
+    }
+
+    public void broadcastGps()
     {
         final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
 
@@ -420,7 +476,13 @@ public class GroupsTabActivity extends TabActivity
     }
 
     public void toast(final String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(GroupsTabActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 }
 

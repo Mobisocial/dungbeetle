@@ -17,6 +17,11 @@
             android:contentDescription="@string/description_about"
             android:src="@drawable/title_about"
             android:onClick="onClickAbout" />
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_broadcast"
+            android:src="@drawable/title_broadcast"
+            android:layout_height="fill_parent"
+            android:onClick="onClickNew" />
         <!--<ImageButton style="@style/TitleBarAction"
             android:contentDescription="@string/description_search"
             android:src="@drawable/title_search"

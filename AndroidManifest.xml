@@ -7,6 +7,7 @@
     <uses-sdk android:minSdkVersion="6" />
 
   <uses-permission android:name="android.permission.BLUETOOTH" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.READ_CONTACTS" />
   <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -60,7 +61,6 @@
 			<action android:name="mobisocial.db.action.PUBLISH" />
 		</intent-filter>
 	</receiver>
-
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
 	      android:label="Dungbeetle Status"
