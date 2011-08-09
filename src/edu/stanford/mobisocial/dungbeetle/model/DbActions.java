@@ -25,9 +25,9 @@ public class DbActions {
         sFeedActions.add(new MusicAction());
         sFeedActions.add(new LivePhotosAction());
         sFeedActions.add(new CameraAction());
-        sFeedActions.add(new LaunchApplicationAction());
         sFeedActions.add(new VoiceAction());
         sFeedActions.add(new NewFeedAction());
+        sFeedActions.add(new LaunchApplicationAction());
     }
 
     public static final QuickAction getActions(final Context c, final Uri feedUri, final View v) {
