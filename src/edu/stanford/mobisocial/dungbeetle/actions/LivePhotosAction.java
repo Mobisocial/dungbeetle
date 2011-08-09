@@ -82,10 +82,7 @@ public class LivePhotosAction implements FeedAction {
         int width = sourceBitmap.getWidth();
         int height = sourceBitmap.getHeight();
         int cropSize = Math.min(width, height);
-        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 
-                                             0, 0, 
-                                             cropSize,
-                                             cropSize);
+        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
     
         int targetSize = 200;
         float scaleSize = ((float) targetSize) / cropSize;
