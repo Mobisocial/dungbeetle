@@ -20,12 +20,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToSharedAppFeedObj;
-import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import java.util.Collection;
 

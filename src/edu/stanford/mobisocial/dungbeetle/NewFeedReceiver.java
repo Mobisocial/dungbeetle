@@ -1,8 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

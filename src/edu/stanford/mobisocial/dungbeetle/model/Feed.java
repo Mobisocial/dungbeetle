@@ -3,7 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import org.json.JSONObject;
 
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.objects.FeedObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedObj;
 import android.graphics.Color;
 import android.net.Uri;
 

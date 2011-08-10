@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import android.content.Intent;
 
-import edu.stanford.mobisocial.dungbeetle.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 
 public class AppReference extends DbObject {
     public static final String EXTRA_APPLICATION_ARGUMENT = "android.intent.extra.APPLICATION_ARGUMENT";

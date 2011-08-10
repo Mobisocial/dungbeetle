@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import edu.stanford.mobisocial.dungbeetle.feed.objects.*;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -8,7 +9,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.objects.*;
 
 import java.util.Collections;
 import java.util.Iterator;

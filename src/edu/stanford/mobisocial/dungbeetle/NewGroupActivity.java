@@ -16,8 +16,8 @@ import android.widget.Toast;
 import android.content.Intent;
 import android.widget.EditText;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
 public class NewGroupActivity extends Activity {

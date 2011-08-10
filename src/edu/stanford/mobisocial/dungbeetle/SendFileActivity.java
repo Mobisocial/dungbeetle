@@ -3,8 +3,8 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.content.Intent;
 
 import mobisocial.nfc.Nfc;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FileObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.objects.FileObj;
 import android.app.Activity;
 import edu.stanford.mobisocial.dungbeetle.util.AndroidActivityHelpers;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;

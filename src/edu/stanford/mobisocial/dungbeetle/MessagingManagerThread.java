@@ -21,9 +21,7 @@ import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -41,12 +39,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-import edu.stanford.mobisocial.dungbeetle.objects.JoinNotificationObj;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";

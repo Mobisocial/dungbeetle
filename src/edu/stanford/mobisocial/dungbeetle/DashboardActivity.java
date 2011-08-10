@@ -24,10 +24,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 
 import android.content.DialogInterface;
 import android.widget.EditText;

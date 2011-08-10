@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -18,7 +19,6 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import java.security.PublicKey;
 import java.util.Iterator;

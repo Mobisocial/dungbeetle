@@ -1,10 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.app.ListActivity;
 import android.content.Context;

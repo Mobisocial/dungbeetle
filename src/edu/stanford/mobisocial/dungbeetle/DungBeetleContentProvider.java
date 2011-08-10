@@ -1,11 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
 import android.database.sqlite.SQLiteDatabase;  
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.Activity;
 import android.app.ActivityManager;

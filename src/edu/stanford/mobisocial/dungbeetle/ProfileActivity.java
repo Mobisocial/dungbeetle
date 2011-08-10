@@ -24,8 +24,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
-import edu.stanford.mobisocial.dungbeetle.objects.PresenceObj;
-import edu.stanford.mobisocial.dungbeetle.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RichActivity;
@@ -34,6 +32,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 
 public class ProfileActivity extends RichActivity{

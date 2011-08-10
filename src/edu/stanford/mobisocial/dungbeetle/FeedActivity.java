@@ -16,12 +16,12 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
-import edu.stanford.mobisocial.dungbeetle.model.DbActions;
+import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.objects.iface.Activator;
 
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
