@@ -20,7 +20,8 @@
             android:contentDescription="@string/description_broadcast"
             android:src="@drawable/title_broadcast"
             android:layout_height="fill_parent"
-            android:onClick="onClickBroadcast" />
+            android:onClick="onClickBroadcast"
+            android:id="@+id/btn_broadcast"/>
         <!--<ImageButton style="@style/TitleBarAction"
             android:contentDescription="@string/description_search"
             android:src="@drawable/title_search"
