@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,11 +10,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 
 public class PhotoTaker implements ActivityCallout {
+    private static final String TAG = "phototaker";
 	private final ResultHandler mResultHandler;
 	private final Context mContext;
 	@SuppressWarnings("unused")
@@ -51,13 +55,13 @@ public class PhotoTaker implements ActivityCallout {
 		if (!path.exists()) {
 			path.mkdir();
 		}
+
 		file = new File(path, "image.tmp");
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
 			options.inSampleSize = 8;
 			Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(),
                                                            options);
-
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();
@@ -69,6 +73,14 @@ public class PhotoTaker implements ActivityCallout {
 			float scaleSize = ((float) targetSize) / cropSize;
 
 			Matrix matrix = new Matrix();
+			try {
+			    ExifInterface exif = new ExifInterface(file.getAbsolutePath());
+                int rotation = (int) exifOrientationToDegrees(exif.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL));
+                matrix.preRotate(rotation);
+			} catch (IOException e) {
+			    Log.e(TAG, "Error checking exif", e);
+			}
 			matrix.postScale(scaleSize, scaleSize);
             Bitmap resizedBitmap;
             if(mSnapshot) {
@@ -102,4 +114,15 @@ public class PhotoTaker implements ActivityCallout {
 		}
 		return new File(path, "image.tmp");
 	}
+
+	private static float exifOrientationToDegrees(int exifOrientation) {
+        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270;
+        }
+        return 0;
+    }
 }
