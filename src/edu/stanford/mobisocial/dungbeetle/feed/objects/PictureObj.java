@@ -61,9 +61,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject msg) {
-        // TODO Auto-generated method stub
-        
+    public void handleReceived(Context context, Contact from, JSONObject msg) {   
     }
 
 }

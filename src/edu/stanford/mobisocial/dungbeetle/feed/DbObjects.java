@@ -10,6 +10,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToWebSessionObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
@@ -48,6 +49,7 @@ public final class DbObjects {
         objs.add(new ProfileObj());
         objs.add(new PresenceObj());
         objs.add(new StatusObj());
+        objs.add(new LocationObj());
         objs.add(new ProfilePictureObj());
         objs.add(new PictureObj());
         objs.add(new VoiceObj());

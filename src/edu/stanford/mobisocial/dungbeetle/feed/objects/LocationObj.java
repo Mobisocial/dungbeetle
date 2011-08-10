@@ -1,0 +1,74 @@
+package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.location.Location;
+import android.net.Uri;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
+    public static final String TYPE = "loc";
+    public static final String COORD_LAT = "lat";
+    public static final String COORD_LONG = "lon";
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
+
+    public static DbObject from(Location location) {
+        return new DbObject(TYPE, json(location));
+    }
+
+    public static JSONObject json(Location location){
+        JSONObject obj = new JSONObject();
+        try{
+            obj.put(COORD_LAT, location.getLatitude());
+            obj.put(COORD_LONG, location.getLongitude());
+        }catch(JSONException e){}
+        return obj;
+    }
+
+    public void handleReceived(Context context, Contact from, JSONObject obj){
+
+    }
+
+    public void render(Context context, ViewGroup frame, JSONObject content) {
+        Log.d("dbgps", "RENDERING GPS");
+        TextView valueTV = new TextView(context);
+
+        String lat = "" + content.optDouble(COORD_LAT);
+        lat = lat.substring(0, lat.indexOf(".") + 5);
+        String lon = "" + content.optDouble(COORD_LONG);
+        lon = lon.substring(0, lon.indexOf(".") + 5);
+        String loc = "I'm at " + lat + ", " + lon;
+
+        valueTV.setText(loc);
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
+    }
+
+    @Override
+    public void activate(Uri feed, Context context, JSONObject content) {
+        String loc = "geo:" + content.optDouble(COORD_LAT) + "," + content.optDouble(COORD_LONG);
+        Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));
+        context.startActivity(map);
+    }
+}
