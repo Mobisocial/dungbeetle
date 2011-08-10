@@ -6,10 +6,12 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FileObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToWebSessionObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
@@ -55,6 +57,8 @@ public final class DbObjects {
         objs.add(new VoiceObj());
         objs.add(new ActivityPullObj());
         objs.add(new FeedObj());
+        objs.add(new JoinNotificationObj());
+        objs.add(new FriendAcceptObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
@@ -75,11 +79,12 @@ public final class DbObjects {
         return null;
 	}
 
-	public static DbEntryHandler getIncomingMessageHandler(Contact c, JSONObject json) {
-        for(DbEntryHandler obj : objs){
-            if(obj instanceof DbEntryHandler) {
+	public static DbEntryHandler getIncomingMessageHandler(JSONObject json) {
+	    String type = json.optString("type");
+        for (DbEntryHandler obj : objs) {
+            if (obj instanceof DbEntryHandler) {
                 DbEntryHandler o = (DbEntryHandler)obj;
-                if (o.getType().equals(json.optString("type"))) {
+                if (o.getType().equals(type)) {
                     return o;
                 }
             }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -14,13 +15,13 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Images;
 import android.util.Log;
 
 public class PhotoTaker implements ActivityCallout {
     private static final String TAG = "phototaker";
 	private final ResultHandler mResultHandler;
 	private final Context mContext;
-	@SuppressWarnings("unused")
 	private final boolean mSnapshot;
 	private final int mSize;
 
@@ -115,7 +116,29 @@ public class PhotoTaker implements ActivityCallout {
 		return new File(path, "image.tmp");
 	}
 
-	public static float exifOrientationToDegrees(int exifOrientation) {
+	public static float rotationForImage(Context context, Uri uri) {
+	    if (uri.getScheme().equals("content")) {
+            String[] projection = { Images.ImageColumns.ORIENTATION };
+            Cursor c = context.getContentResolver().query(
+                    uri, projection, null, null, null);
+            if (c.moveToFirst()) {
+                return c.getInt(0);
+            }
+        } else if (uri.getScheme().equals("file")) {
+            try {
+                ExifInterface exif = new ExifInterface(uri.getPath());
+                int rotation = (int) PhotoTaker.exifOrientationToDegrees(
+                        exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_NORMAL));
+                return rotation;
+            } catch (IOException e) {
+                Log.e(TAG, "Error checking exif", e);
+            }
+        }
+	    return 0f;
+	}
+
+	private static float exifOrientationToDegrees(int exifOrientation) {
         if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
             return 90;
         } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {

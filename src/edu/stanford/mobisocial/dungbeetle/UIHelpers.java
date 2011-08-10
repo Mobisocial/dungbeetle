@@ -155,37 +155,18 @@ public class UIHelpers {
 			        int width = sourceBitmap.getWidth();
 			        int height = sourceBitmap.getHeight();
 			        int cropSize = Math.min(width, height);
-			        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
 
 			        int targetSize = 200;
 			        float scaleSize = ((float) targetSize) / cropSize;
 
 			        Matrix matrix = new Matrix();
 			        matrix.postScale(scaleSize, scaleSize);
-			        if (uri.getScheme().equals("content")) {
-			            String[] projection = { Images.ImageColumns.ORIENTATION };
-			            Cursor c = context.getContentResolver().query(
-			                    uri, projection, null, null, null);
-			            if (c.moveToFirst()) {
-			                int rotation = c.getInt(0);
-			                if (rotation != 0f) {
-			                    matrix.preRotate(rotation);
-			                }
-			            }
-			        } else if (uri.getScheme().equals("file")) {
-			            try {
-	                        ExifInterface exif = new ExifInterface(uri.getPath());
-	                        int rotation = (int) PhotoTaker.exifOrientationToDegrees(
-	                                exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-	                                        ExifInterface.ORIENTATION_NORMAL));
-	                        matrix.preRotate(rotation);
-	                    } catch (IOException e) {
-	                        Log.e(TAG, "Error checking exif", e);
-	                    }
+			        float rotation = PhotoTaker.rotationForImage(context, uri);
+			        if (rotation != 0f) {
+	                    matrix.preRotate(rotation);
 			        }
-                    Bitmap resizedBitmap;
-                    
-                    resizedBitmap = Bitmap.createBitmap(
+
+                    Bitmap resizedBitmap = Bitmap.createBitmap(
                             sourceBitmap, 0, 0, width, height, matrix, true);
                     
 
@@ -193,8 +174,6 @@ public class UIHelpers {
 			        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 			        data = baos.toByteArray();
 
-
-                    
                     DbObject obj = PictureObj.from(data);
                     
                     for(int i = 0; i < using.length; i++) {

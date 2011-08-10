@@ -1,5 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Service;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -8,7 +19,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
@@ -18,34 +28,15 @@ import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
 import edu.stanford.mobisocial.bumblebee.RabbitMQMessengerService;
 import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
-import edu.stanford.mobisocial.bumblebee.XMPPMessengerService;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 
 public class MessagingManagerThread extends Thread {
@@ -121,35 +112,21 @@ public class MessagingManagerThread extends Thread {
                 public byte[] encoded() { return encoded; }
             };
         Log.i(TAG, "Localized contents: " + contents);
-        try{
+        try {
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
-        	if(mHelper.queryAlreadyReceived(encoded)) {
+            if (mHelper.queryAlreadyReceived(encoded)) {
                 Log.i(TAG, "Message already received. " + contents);
-        	} 
-
-            else if(obj.getString("type") != null && obj.getString("type").equals(JoinNotificationObj.TYPE)){
-                Log.i(TAG, "Message to update group. " + contents);
-                final Uri uri = Uri.parse(obj.getString(JoinNotificationObj.URI));
-                final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
-                Maybe<Group> mg = mHelper.groupByFeedName(feedName);
-                long id = -1;
-                try{
-                    // group exists already, load view
-                    final Group g = mg.get();
-
-                    new Thread(){
-                        public void run(){
-                            h.handle(g.id, uri, mContext, mIdent, g.version, false);
-                        }
-                    }.start();
-                    
-                }
-                catch(Maybe.NoValError e){
-                }
+                return;
             }
-        	    else if(contact.isKnown()){
+
+            DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
+            if (h != null && h instanceof UnprocessedMessageHandler) {
+                ((UnprocessedMessageHandler)h).handleUnprocessed(mContext, obj);
+            }
+
+            if (contact.isKnown()) {
 				mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
                 mContext.getContentResolver().notifyChange(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
@@ -161,11 +138,9 @@ public class MessagingManagerThread extends Thread {
                             }
                         });
                 }
-            }
-            else{
+            } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
             }
-
         }
         catch(Exception e){
             Log.e(TAG, "Error handling incoming message: " + e.toString());
@@ -385,13 +360,11 @@ public class MessagingManagerThread extends Thread {
             final Contact c = mHelper.contactForPersonId(incoming.from()).get();
             try{
                 JSONObject obj = new JSONObject(contents);
-
                 long time = obj.optLong(DbObject.TIMESTAMP);
                 Helpers.updateLastPresence(mContext, c, time);
 
-                final DbEntryHandler h = 
-                    DbObjects.getIncomingMessageHandler(c, obj);
-                if(h != null){
+                final DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
+                if(h != null) {
                     h.handleReceived(mContext, c, obj);
                 }
             }
@@ -401,6 +374,4 @@ public class MessagingManagerThread extends Thread {
             Log.e(TAG, "Oops, no contact for message " + contents);
         }
     }
-
-
 }

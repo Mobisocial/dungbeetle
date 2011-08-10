@@ -1,23 +1,24 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import android.content.Context;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.net.Uri;
 import android.util.Log;
 
-public class JoinNotificationObj implements DbEntryHandler {
-
+public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHandler {
+    private static final String TAG = "dbJoin";
+    private static boolean DBG = false;
     public static final String TYPE = "join_notification";
     public static final String URI = "uri";
 
@@ -39,30 +40,29 @@ public class JoinNotificationObj implements DbEntryHandler {
         return obj;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
-        /*Uri uri = Uri.parse(obj.optString(URI));
-        GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-        String feedName = gp.feedName(uri);
+    @Override
+    public void handleReceived(final Context context, Contact from, JSONObject obj) {
+    }
+
+    @Override
+    public void handleUnprocessed(final Context context, JSONObject obj) {
+        if (DBG) Log.i(TAG, "Message to update group. ");
+        String feedName = obj.optString("feedName");
+        final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
+        final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
         DBHelper helper = new DBHelper(context);
-        DBIdentityProvider ident = new DBIdentityProvider(helper);
+        final IdentityProvider ident = new DBIdentityProvider(helper);
         Maybe<Group> mg = helper.groupByFeedName(feedName);
-        long id = -1;
-        try{
+        try {
             // group exists already, load view
-            Group g = mg.get();
-            id = g.id;
-            int version = -1;
-            gp.forceUpdate(id, uri, context, ident, version);
-        }
-        catch(Maybe.NoValError e){
-            // group does not exist yet, time to prompt for join
+            final Group g = mg.get();
 
+            new Thread(){
+                public void run(){
+                    h.handle(g.id, uri, context, ident, g.version, false);
+                }
+            }.start();
         }
-        
-        ident.close();
-        helper.close();
-
-        Log.w("join notification", "received");
-*/        
+        catch(Maybe.NoValError e) { }
     }
 }
