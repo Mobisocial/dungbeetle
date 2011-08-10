@@ -22,6 +22,7 @@ import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.location.Location;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -54,7 +55,8 @@ public class GroupsTabActivity extends TabActivity
     private Nfc mNfc;
     private Uri mExternalFeedUri;
     private Uri mInternalFeedUri;
-    private static final int NEAR_CODE = 2;
+    private static final int REQUEST_BT_BROADCAST = 2;
+    private static final int REQUEST_BT_ENABLE = 3;
 
     public final String TAG = "GroupsTabActivity";
 
@@ -149,22 +151,35 @@ public class GroupsTabActivity extends TabActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == NEAR_CODE) {
-            if (resultCode < 0) {
-                Toast.makeText(this, "Failed to enable Bluetooth.", 500).show();
-            } else {
+        if (requestCode == REQUEST_BT_BROADCAST) {
+            if (resultCode > 0) {
                 Toast.makeText(this, "Bluetooth sharing enabled.", 500).show();
                 broadcastBluetooth();
+            } else {
+                return;
+            }
+        }
+        if (requestCode == REQUEST_BT_ENABLE) {
+            if (resultCode != Activity.RESULT_OK) {
+                return;
+            } else {
+                requestBluetooth();
             }
         }
     }
 
     public void requestBluetooth() {
+        if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+            Intent bt = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(bt, REQUEST_BT_ENABLE);
+            return;
+        }
+
         final int DISCO_LENGTH = 300;
         Intent discoverableIntent = new
         Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCO_LENGTH);
-        startActivityForResult(discoverableIntent, NEAR_CODE);
+        startActivityForResult(discoverableIntent, REQUEST_BT_BROADCAST);
     }
 
     public void broadcastBluetooth() {

@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.os.Bundle;
@@ -50,6 +51,8 @@ public class NearbyGroupsActivity extends ListActivity {
     private int mNearbyMethod = -1;
     private static final int NEARBY_GPS = 1;
     private static final int NEARBY_BLUETOOTH = 2;
+
+    private static final int RESULT_BT_ENABLE = 1;
 
     /*** Dashboard stuff ***/
     public void goHome(Context context) 
@@ -142,6 +145,17 @@ public class NearbyGroupsActivity extends ListActivity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == RESULT_BT_ENABLE){
+            if (resultCode == Activity.RESULT_CANCELED) {
+                finish();
+            } else {
+                findBluetooth();
+            }
+        }
+    }
+
     private class GroupAdapter extends ArrayAdapter<GroupItem> {
         private ArrayList<GroupItem> groups;
         
@@ -174,6 +188,12 @@ public class NearbyGroupsActivity extends ListActivity {
     }
 
     private void findBluetooth() {
+        if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+            Intent bt = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(bt, RESULT_BT_ENABLE);
+            return;
+        }
+
         mNearbyMethod = NEARBY_BLUETOOTH;
         // Create a BroadcastReceiver for ACTION_FOUND
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
