@@ -115,7 +115,7 @@ public class PhotoTaker implements ActivityCallout {
 		return new File(path, "image.tmp");
 	}
 
-	private static float exifOrientationToDegrees(int exifOrientation) {
+	public static float exifOrientationToDegrees(int exifOrientation) {
         if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
             return 90;
         } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {

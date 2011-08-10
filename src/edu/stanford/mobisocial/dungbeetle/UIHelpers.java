@@ -1,10 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
 
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.widget.EditText;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
@@ -23,7 +23,9 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import android.os.Bundle;
+import android.provider.MediaStore.Images;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -104,21 +106,6 @@ public class UIHelpers {
             groupNames, tempSelected, 
             new DialogInterface.OnMultiChoiceClickListener() {
                 public void onClick(DialogInterface dialog, int item, boolean isChecked) {
-                    /*Long groupId = groupIds[item];
-                    Long contactId = contact.id;
-                    if(isChecked) {
-                        ContentValues values = new ContentValues();
-                        values.put(GroupMember.GROUP_ID, groupId);
-                        values.put(GroupMember.CONTACT_ID, contactId);
-                        context.getContentResolver().insert(
-                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"), values);
-                    }
-                    else {
-                        context.getContentResolver().delete(
-                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
-                            GroupMember.GROUP_ID + "=? AND " + GroupMember.CONTACT_ID + "=?",
-                            new String[]{ String.valueOf(groupId), String.valueOf(contactId)});
-                    }*/
                 }
             });
 
@@ -136,11 +123,6 @@ public class UIHelpers {
     }
 
     private static void handleGroupsIntent(Context context, Intent intent, Uri[] uris, boolean[] using) {
-        /*for(int i = 0; i < using.length; i++) {
-            if(using[i]) {                    
-               
-            }
-        }*/
         Bundle extras = intent.getExtras();
         String action = intent.getAction();
 
@@ -181,6 +163,26 @@ public class UIHelpers {
 
 			        Matrix matrix = new Matrix();
 			        matrix.postScale(scaleSize, scaleSize);
+			        if (uri.getScheme().equals("content")) {
+			            String[] projection = { Images.ImageColumns.ORIENTATION };
+			            Cursor c = context.getContentResolver().query(uri, projection, null, null, null);
+			            if (c.moveToFirst()) {
+			                int rotation = c.getInt(0);
+			                if (rotation != 0f) {
+			                    matrix.preRotate(rotation);
+			                }
+			            }
+			        } else if (uri.getScheme().equals("file")) {
+			            try {
+	                        ExifInterface exif = new ExifInterface(uri.getPath());
+	                        int rotation = (int) PhotoTaker.exifOrientationToDegrees(
+	                                exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+	                                        ExifInterface.ORIENTATION_NORMAL));
+	                        matrix.preRotate(rotation);
+	                    } catch (IOException e) {
+	                        Log.e(TAG, "Error checking exif", e);
+	                    }
+			        }
                     Bitmap resizedBitmap;
                     
                     resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
