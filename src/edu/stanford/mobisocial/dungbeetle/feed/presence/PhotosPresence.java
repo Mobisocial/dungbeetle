@@ -18,15 +18,12 @@ import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 public class PhotosPresence extends FeedPresence {
     private static final String TAG = "livephotos";
     private boolean mSharePhotos = false;
-    private Uri mFeedUri;
 
     @Override
     public String getName() {
@@ -62,7 +59,10 @@ public class PhotosPresence extends FeedPresence {
         public void onReceive(Context context, Intent intent) {
             if (mSharePhotos) {
                 try {
-                    Helpers.sendToFeed(context, pictureFromUri(context, intent.getData()), mFeedUri);
+                    DbObject obj = pictureFromUri(context, intent.getData());
+                    for (Uri uri : getFeedsWithPresence()) {
+                        Helpers.sendToFeed(context, obj, uri);
+                    }
                 } catch (IOException e) {}
             }
         }
@@ -70,7 +70,7 @@ public class PhotosPresence extends FeedPresence {
 
     private DbObject pictureFromUri(Context context, Uri img) throws FileNotFoundException {
         Bitmap sourceBitmap = BitmapFactory.decodeStream(
-                context.getContentResolver().openInputStream(img));
+                context.getApplicationContext().getContentResolver().openInputStream(img));
         int width = sourceBitmap.getWidth();
         int height = sourceBitmap.getHeight();
 
