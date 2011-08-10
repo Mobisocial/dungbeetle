@@ -1,24 +1,31 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
+import android.content.Context;
 import android.net.Uri;
 
 public abstract class FeedPresence {
-    public Set<Uri> mActiveFeeds = new HashSet<Uri>();
+    public final LinkedHashSet<Uri> mActiveFeeds = new LinkedHashSet<Uri>();
 
     public abstract String getName();
 
-    public void setFeedPresence(Uri feed, boolean present) {
+    public final void setFeedPresence(Context context, Uri feed, boolean present) {
         if (present) {
             mActiveFeeds.add(feed);
         } else {
             mActiveFeeds.remove(feed);
         }
+        onPresenceUpdated(context, feed, present);
     }
 
-    public Set<Uri> getFeedsWithPresence() {
+    protected abstract void onPresenceUpdated(Context context, Uri feed, boolean present);
+
+    public final LinkedHashSet<Uri> getFeedsWithPresence() {
         return mActiveFeeds;
+    }
+
+    public boolean isPresent(Uri feedUri) {
+        return mActiveFeeds.contains(feedUri);
     }
 }

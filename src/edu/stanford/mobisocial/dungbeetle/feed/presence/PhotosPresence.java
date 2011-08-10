@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed.action;
+package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -19,49 +19,42 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class LivePhotosAction implements FeedAction {
+public class PhotosPresence extends FeedPresence {
     private static final String TAG = "livephotos";
     private boolean mSharePhotos = false;
-    private Context mContext;
     private Uri mFeedUri;
 
     @Override
     public String getName() {
-        return "Live Photos";
+        return "Photos";
     }
 
     @Override
-    public void onClick(final Context context, final Uri feedUri) {
-        boolean sharePhotos = !mSharePhotos;
-        synchronized(this) {
-            mFeedUri = feedUri;
-            mContext = context.getApplicationContext();
-            mSharePhotos = sharePhotos;
-        }
-
-        if (sharePhotos) {
-            IntentFilter iF = new IntentFilter();
-            iF.addAction("com.android.camera.NEW_PICTURE");
-            try {
-                iF.addDataType("*/*");
-            } catch (MalformedMimeTypeException e) {
-                Log.wtf(TAG, "Bad mime", e);
+    public void onPresenceUpdated(final Context context, final Uri feedUri, boolean present) {
+        if (mSharePhotos) {
+            if (getFeedsWithPresence().size() == 0) {
+                context.getApplicationContext().unregisterReceiver(mReceiver);
+                Toast.makeText(context, "No longer sharing photos", Toast.LENGTH_SHORT).show();
+                mSharePhotos = false;
             }
-            mContext.registerReceiver(mReceiver, iF);
-
-            Toast.makeText(context, "Now sharing new photos", Toast.LENGTH_SHORT).show();
         } else {
-            mContext.unregisterReceiver(mReceiver);
-            Toast.makeText(context, "No longer sharing photos", Toast.LENGTH_SHORT).show();
+            if (getFeedsWithPresence().size() > 0) {
+                IntentFilter iF = new IntentFilter();
+                iF.addAction("com.android.camera.NEW_PICTURE");
+                try {
+                    iF.addDataType("*/*");
+                } catch (MalformedMimeTypeException e) {
+                    Log.wtf(TAG, "Bad mime", e);
+                }
+                context.getApplicationContext().registerReceiver(mReceiver, iF);
+                Toast.makeText(context, "Now sharing new photos", Toast.LENGTH_SHORT).show();
+                mSharePhotos = true;
+            }
         }
-    }
-
-    @Override
-    public boolean isActive() {
-        return true;
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -69,7 +62,7 @@ public class LivePhotosAction implements FeedAction {
         public void onReceive(Context context, Intent intent) {
             if (mSharePhotos) {
                 try {
-                    Helpers.sendToFeed(mContext, pictureFromUri(context, intent.getData()), mFeedUri);
+                    Helpers.sendToFeed(context, pictureFromUri(context, intent.getData()), mFeedUri);
                 } catch (IOException e) {}
             }
         }
