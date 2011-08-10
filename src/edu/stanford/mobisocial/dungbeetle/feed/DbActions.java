@@ -29,7 +29,7 @@ public class DbActions {
     }
 
     public static final QuickAction getActions(final Context c, final Uri feedUri, final View v) {
-        QuickAction qa = new QuickAction(v);
+        final QuickAction qa = new QuickAction(v);
         for (final FeedAction action : sFeedActions) {
             if (!action.isActive()) continue;
 
@@ -38,6 +38,7 @@ public class DbActions {
             item.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    qa.dismiss();
                     action.onClick(c, feedUri);
                 }
             });
