@@ -76,20 +76,15 @@ public class LivePhotosAction implements FeedAction {
     private DbObject pictureFromUri(Context context, Uri img) throws FileNotFoundException {
         Bitmap sourceBitmap = BitmapFactory.decodeStream(
                 context.getContentResolver().openInputStream(img));
-
-        // Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
-        // Uri.fromFile(file) );
         int width = sourceBitmap.getWidth();
         int height = sourceBitmap.getHeight();
-        int cropSize = Math.min(width, height);
-        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
-    
-        int targetSize = 200;
-        float scaleSize = ((float) targetSize) / cropSize;
-    
+
+        int newWidth = 250;
+        float scale = ((float)newWidth)/width;
+
         Matrix matrix = new Matrix();
-        matrix.postScale(scaleSize, scaleSize);
-        Bitmap resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, width,
+        matrix.postScale(scale, scale);
+        Bitmap resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
                 height, matrix, true);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);

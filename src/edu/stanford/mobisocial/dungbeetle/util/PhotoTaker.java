@@ -63,10 +63,7 @@ public class PhotoTaker implements ActivityCallout {
 			int width = sourceBitmap.getWidth();
 			int height = sourceBitmap.getHeight();
 			int cropSize = Math.min(width, height);
-			Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 
-                                                 0, 0, 
-                                                 cropSize,
-                                                 cropSize);
+			Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
 
 			int targetSize = mSize;
 			float scaleSize = ((float) targetSize) / cropSize;
@@ -74,13 +71,12 @@ public class PhotoTaker implements ActivityCallout {
 			Matrix matrix = new Matrix();
 			matrix.postScale(scaleSize, scaleSize);
             Bitmap resizedBitmap;
-            if(mSnapshot){
-                resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
-                                                       height, matrix, true);
-            }
-            else{
-        			resizedBitmap = Bitmap.createBitmap(cropped, 0, 0, cropSize,
-                                                       cropSize, matrix, true);
+            if(mSnapshot) {
+                resizedBitmap = Bitmap.createBitmap(
+                        sourceBitmap, 0, 0,width, height, matrix, true);
+            } else {
+    			resizedBitmap = Bitmap.createBitmap(
+    			        cropped, 0, 0, cropSize, cropSize, matrix, true);
             }
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
