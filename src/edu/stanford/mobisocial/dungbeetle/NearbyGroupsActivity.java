@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.view.View;
@@ -15,11 +14,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Context;
 import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.location.Location;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -34,7 +30,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -49,12 +44,14 @@ import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 
 public class NearbyGroupsActivity extends ListActivity {
-    String[] listItems = {"sup dawg", "Restore from Dropbox", "Wipe Data (Keep identity)", "Start from Scratch"};
     ArrayList<GroupItem> mGroupList = new ArrayList<GroupItem>();
     
     String TAG = "Nearby Groups";
+    private int mNearbyMethod = -1;
+    private static final int NEARBY_GPS = 1;
+    private static final int NEARBY_BLUETOOTH = 2;
 
-    /*** Dashbaord stuff ***/
+    /*** Dashboard stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);
@@ -84,7 +81,7 @@ public class NearbyGroupsActivity extends ListActivity {
         startActivity (new Intent(getApplicationContext(), AboutActivity.class));
     }
 
-/*** End Dashboard Stuff ***/
+    /*** End Dashboard Stuff ***/
 
     public MyLocation myLocation;
     public MyLocation.LocationResult locationResult;
@@ -93,9 +90,13 @@ public class NearbyGroupsActivity extends ListActivity {
     private GroupAdapter mAdapter;
 
     private void locationClick() {
-        dialog.show();
-        mGroupList.clear();
-        myLocation.getLocation(this, locationResult);
+        if (mNearbyMethod == NEARBY_BLUETOOTH) {
+            findBluetooth();
+        } else if (mNearbyMethod == NEARBY_GPS) {
+            dialog.show();
+            mGroupList.clear();
+            myLocation.getLocation(this, locationResult);   
+        }
     }
 
     /** Called when the activity is first created. */
@@ -173,6 +174,7 @@ public class NearbyGroupsActivity extends ListActivity {
     }
 
     private void findBluetooth() {
+        mNearbyMethod = NEARBY_BLUETOOTH;
         // Create a BroadcastReceiver for ACTION_FOUND
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -221,6 +223,7 @@ public class NearbyGroupsActivity extends ListActivity {
     }
 
     private void promptGps() {
+        mNearbyMethod = NEARBY_GPS;
         // Get password
         AlertDialog.Builder builder = new AlertDialog.Builder(NearbyGroupsActivity.this);
         builder.setMessage("Enter your secret key if you have one:");
