@@ -18,6 +18,7 @@ import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
