@@ -1,16 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
-import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -48,7 +44,6 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     public void render(Context context, ViewGroup frame, JSONObject content) {
-        Log.d("dbgps", "RENDERING GPS");
         TextView valueTV = new TextView(context);
 
         String lat = "" + content.optDouble(COORD_LAT);
