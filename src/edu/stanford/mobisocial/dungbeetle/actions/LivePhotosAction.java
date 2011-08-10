@@ -9,10 +9,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.provider.MediaStore.Images;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -83,6 +86,18 @@ public class LivePhotosAction implements FeedAction {
         float scale = ((float)newWidth)/width;
 
         Matrix matrix = new Matrix();
+
+        if (img.getScheme().equals("content")) {
+            String[] projection = { Images.ImageColumns.ORIENTATION };
+            Cursor c = context.getContentResolver().query(img, projection, null, null, null);
+            if (c.moveToFirst()) {
+                int rotation = c.getInt(0);
+                if (rotation != 0f) {
+                    matrix.preRotate(rotation);
+                }
+            }
+        }
+
         matrix.postScale(scale, scale);
         Bitmap resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
                 height, matrix, true);
