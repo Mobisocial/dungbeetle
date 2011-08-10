@@ -122,7 +122,8 @@ public class UIHelpers {
         alert.show();
     }
 
-    private static void handleGroupsIntent(Context context, Intent intent, Uri[] uris, boolean[] using) {
+    private static void handleGroupsIntent(
+            Context context, Intent intent, Uri[] uris, boolean[] using) {
         Bundle extras = intent.getExtras();
         String action = intent.getAction();
 
@@ -146,17 +147,15 @@ public class UIHelpers {
 
                     BitmapFactory.Options options = new BitmapFactory.Options();
 			        options.inSampleSize = 8;
-			        Bitmap sourceBitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+			        Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
+			                data, 0, data.length, options);
 
 			        // Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			        // Uri.fromFile(file) );
 			        int width = sourceBitmap.getWidth();
 			        int height = sourceBitmap.getHeight();
 			        int cropSize = Math.min(width, height);
-			        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 
-                                                         0, 0, 
-                                                         cropSize,
-                                                         cropSize);
+			        Bitmap cropped = Bitmap.createBitmap(sourceBitmap, 0, 0, cropSize, cropSize);
 
 			        int targetSize = 200;
 			        float scaleSize = ((float) targetSize) / cropSize;
@@ -165,7 +164,8 @@ public class UIHelpers {
 			        matrix.postScale(scaleSize, scaleSize);
 			        if (uri.getScheme().equals("content")) {
 			            String[] projection = { Images.ImageColumns.ORIENTATION };
-			            Cursor c = context.getContentResolver().query(uri, projection, null, null, null);
+			            Cursor c = context.getContentResolver().query(
+			                    uri, projection, null, null, null);
 			            if (c.moveToFirst()) {
 			                int rotation = c.getInt(0);
 			                if (rotation != 0f) {
@@ -185,8 +185,8 @@ public class UIHelpers {
 			        }
                     Bitmap resizedBitmap;
                     
-                    resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
-                                                               height, matrix, true);
+                    resizedBitmap = Bitmap.createBitmap(
+                            sourceBitmap, 0, 0, width, height, matrix, true);
                     
 
 			        ByteArrayOutputStream baos = new ByteArrayOutputStream();
