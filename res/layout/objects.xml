@@ -38,6 +38,8 @@
 	android:layout_toLeftOf="@id/add_object"
 	android:maxLines="1"
 	android:hint="What's up?"
+	android:singleLine="true"
+	android:inputType="textShortMessage|textAutoCorrect|textCapSentences"
 	/>
     
   </RelativeLayout>
