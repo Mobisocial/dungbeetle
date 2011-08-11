@@ -20,13 +20,10 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
-
-import android.widget.Toast;
 
 public final class DbObjects {
 
@@ -62,8 +59,9 @@ public final class DbObjects {
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
+	    String type = json.optString("type");
 	    for (DbEntryHandler obj : objs) {
-            if (obj instanceof FeedRenderer && obj.getType().equals(json.optString("type"))) {
+            if (obj instanceof FeedRenderer && obj.getType().equals(type)) {
                 return (FeedRenderer)obj;
             }
         }
@@ -71,8 +69,9 @@ public final class DbObjects {
 	}
 
 	public static Activator getActivator(JSONObject json) {
+	    String type = json.optString("type");
         for (DbEntryHandler obj : objs) {
-            if (obj instanceof Activator && obj.getType().equals(json.optString("type"))) {
+            if (obj instanceof Activator && obj.getType().equals(type)) {
                 return (Activator)obj;
             }
         }

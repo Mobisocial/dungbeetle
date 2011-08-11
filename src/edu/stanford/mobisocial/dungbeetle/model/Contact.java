@@ -1,7 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+
 import java.io.Serializable;
+
+import android.content.Context;
 import android.database.Cursor;
 import java.util.Date;
 
@@ -54,6 +59,13 @@ public class Contact implements Serializable{
 
     public static Contact NA(){
         return new Contact(-1L, "NA", "NA", "NA", 1, 0, "NA");
+    }
+
+    public static Maybe<Contact> forId(Context context, long id) {
+        DBHelper helper = new DBHelper(context);
+        Maybe<Contact> contact = helper.contactForContactId(id);
+        helper.close();
+        return contact;
     }
 
     

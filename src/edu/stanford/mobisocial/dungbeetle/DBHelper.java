@@ -753,7 +753,7 @@ public class DBHelper extends SQLiteOpenHelper {
         else return Maybe.unknown();
     }
 
-	public Maybe<Contact> contactForContactId(Long id){
+	public Maybe<Contact> contactForContactId(Long id) {
         List<Contact> cs = contactsForContactIds(Collections.singletonList(id));
         if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
         else return Maybe.unknown();

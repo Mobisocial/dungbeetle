@@ -1,43 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.TabActivity;
-import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.os.Bundle;
-import android.util.Log;
-import android.widget.TabHost;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
-import edu.stanford.mobisocial.dungbeetle.model.AppReference;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
-import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
-import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
+import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Date;
+import java.util.List;
+
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
-import org.json.JSONException;
-
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import org.json.JSONObject;
-
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.os.Environment;
-import java.io.File;
-import java.io.IOException;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-
-import android.content.SharedPreferences;
-
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -45,8 +12,29 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import java.util.ArrayList;
-import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.AppReference;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 
 public class DungBeetleActivity extends DashboardActivity
 {
@@ -304,22 +292,20 @@ public class DungBeetleActivity extends DashboardActivity
     }
 
     protected void doHandleInput(Uri uri){
-        if(uri == null){
+        if (uri == null){
             return;
         }
 
-        if (DBG) Log.d(TAG, "launching dungbeetle with uri " + uri);
         if(uri.getScheme().equals(SHARE_SCHEME)
-                || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)){
-            Intent intent = new Intent().setClass(this, HandleNfcContact.class);
-            intent.setData(uri);
+                || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
+            Intent intent = new Intent(getIntent());
+            intent.setClass(this, HandleNfcContact.class);
             startActivity(intent);
-        } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)){
+        } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
             Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
             intent.setData(uri);
             startActivity(intent);
-        }
-        else if (uri.getScheme().equals("content")) {
+        } else if (uri.getScheme().equals("content")) {
             if (uri.getAuthority().equals("vnd.mobisocial.db")) {
                 if (uri.getPath().startsWith("/feed")) {
                     Intent view = new Intent(Intent.ACTION_VIEW);
@@ -374,14 +360,6 @@ public class DungBeetleActivity extends DashboardActivity
     }
 
     public void pushContactInfoViaNfc(){
-    	
-    	/*
-    	BloomFilter friendsFilter = Helpers.getFriendsBloomFilter(this);
-    	builder.appendQueryParameter("filterData", Base64.encodeToString(toByteArray(friendsFilter.getBitSet()), Base64.DEFAULT));
-        builder.appendQueryParameter("bitSetSize", Integer.toString(friendsFilter.size()));
-        builder.appendQueryParameter("expectedNumberOfFilterElements", Integer.toString(friendsFilter.getExpectedNumberOfElements()));
-        builder.appendQueryParameter("actualNumberOfFilterElements", Integer.toString(friendsFilter.count()));
-        */  
     	Uri uri = FriendRequest.getInvitationUri(this);
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
@@ -389,7 +367,6 @@ public class DungBeetleActivity extends DashboardActivity
             uri.toString().getBytes());
         NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
         mNfc.share(ndef);
-        //Toast.makeText(this, "Touch phones with your friend!", Toast.LENGTH_SHORT).show();
     }
 
     public boolean acceptInboundContactInfo() {
@@ -402,7 +379,6 @@ public class DungBeetleActivity extends DashboardActivity
             List<String> segments = uri.getPathSegments();
             if (segments.contains("join")) {
                 FriendRequest.acceptFriendRequest(this, getIntent().getData());
-                return true;
             } else if (segments.contains("thread")) {
                 ThreadRequest.acceptThreadRequest(this, getIntent().getData());
                 return true;
@@ -440,6 +416,7 @@ public class DungBeetleActivity extends DashboardActivity
         if (mNfc.onNewIntent(this, intent)) {
             return;
         }
+        setIntent(intent);
     }
 
     @Override

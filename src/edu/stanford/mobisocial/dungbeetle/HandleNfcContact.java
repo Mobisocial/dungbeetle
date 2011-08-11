@@ -1,17 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
-import edu.stanford.mobisocial.dungbeetle.util.Gravatar;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Intent;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.widget.Toast;
 import java.util.BitSet;
 import org.json.JSONObject;
@@ -23,7 +22,6 @@ public class HandleNfcContact extends Activity {
     private static final String TAG = "HandleNfcContact";
 
 	public void onCreate(Bundle savedInstanceState) {
-	    Log.d(TAG, "join request");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.handle_give);
 		Intent intent = getIntent();
@@ -56,23 +54,23 @@ public class HandleNfcContact extends Activity {
             nameView.setText("Would you like to be friends with " + mName + "?");
 
             final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
-
-                
 		    saveButton.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
-                        
                         DBHelper helper = new DBHelper(HandleNfcContact.this);
                         IdentityProvider ident = new DBIdentityProvider(helper);
 
-                        try{
+                        try {
                             JSONObject profile = new JSONObject(ident.userProfile());
                             byte[] data = Base64.decode(profile.getString("picture"));
                             
                             Helpers.updatePicture(HandleNfcContact.this, data);
+                        } catch(Exception e) { }
+
+                        // If asymmetric friend request, send public key.
+                        if (!NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+                            FriendRequest.sendFriendRequest(HandleNfcContact.this, cid);
                         }
-                        catch(Exception e)
-                        {
-                        }
+
                         Toast.makeText(HandleNfcContact.this, "Added " + mName + " as a friend.", Toast.LENGTH_SHORT).show();
                         finish();
 				    }
@@ -81,7 +79,6 @@ public class HandleNfcContact extends Activity {
 		    cancelButton.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
 				        Helpers.deleteContact(HandleNfcContact.this, cid);
-				        
 					    finish();
 				    }
 			    });
