@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.Context;
 import android.database.Cursor;
 import android.util.Log;
 import android.view.View;
@@ -51,7 +52,17 @@ public class DbObject {
         return mJson;
     }
 
-    public static void bindView(View v, Activity activity, Cursor c, ContactCache contactCache) {
+    public static DbObject fromCursor(Cursor c) {
+        String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        try {
+            JSONObject json = new JSONObject(jsonStr);
+            return new DbObject(json.optString("type"), json);
+        } catch (JSONException e) {
+            Log.wtf("Bad json from db", e);
+            return null;
+        }
+    }
+    public static void bindView(View v, Context context, Cursor c, ContactCache contactCache) {
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
         Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
         Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
@@ -63,7 +74,8 @@ public class DbObject {
             nameText.setText(contact.name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            ((App)activity.getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+            // TODO: this is horrible
+            ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
             try {
                 JSONObject content = new JSONObject(jsonSrc);
@@ -75,7 +87,7 @@ public class DbObject {
                 frame.removeAllViews();
                 FeedRenderer renderer = DbObjects.getFeedRenderer(content);
                 if(renderer != null){
-                    renderer.render(activity, frame, content);
+                    renderer.render(context, frame, content);
                 }
             } catch (JSONException e) {
                 Log.e("db", "error opening json");

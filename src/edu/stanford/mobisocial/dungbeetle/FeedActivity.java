@@ -16,10 +16,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
@@ -43,7 +46,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 	public static final String CMDPREVIOUS = "previous";
 	public static final String CMDNEXT = "next";
 
-	private ObjectListCursorAdapter mObjects;
+	private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = null;
     private Uri mFeedUri;
@@ -72,7 +75,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 
         int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
-        if(intent.hasExtra("contactId")) {
+        /*if(intent.hasExtra("contactId")) {
             Long contactId = intent.getLongExtra("contact_id", -1);
             c = getContentResolver().query(
                 mFeedUri,
@@ -87,9 +90,10 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
                 null, 
                 getFeedObjectClause(), null,
                 DbObject._ID + " DESC");
-		}
+		}*/
 
-		mObjects = new ObjectListCursorAdapter(this, c);
+        FeedProcessor processor = new DefaultFeedProcessor(mContactCache);
+		mObjects = processor.getListAdapter(this, mFeedUri);
 		setListAdapter(mObjects);
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
@@ -145,42 +149,12 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         Log.i(TAG, "Clicked object: " + jsonSrc);
     }
 
-    private class ObjectListCursorAdapter extends CursorAdapter {
-
-        public ObjectListCursorAdapter (Context context, Cursor c) {
-            super(context, c);
-        }
-
-        @Override
-        public View newView(Context context, Cursor c, ViewGroup parent) {
-            final LayoutInflater inflater = LayoutInflater.from(context);
-            View v = inflater.inflate(R.layout.objects_item, parent, false);
-            bindView(v, context, c);
-            return v;
-        }
-
-        @Override
-        public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, FeedActivity.this, c, mContactCache);
-        }
-    }
-    
     @Override
     public void finish() {
         super.finish();
         mContactCache.close();
     }
 
-    private String getFeedObjectClause() {
-    	String[] types = DbObjects.getRenderableTypes();
-    	StringBuffer allowed = new StringBuffer();
-    	for (String type : types) {
-    		allowed.append(",'").append(type).append("'");
-    	}
-    	return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
-    }
-
-    
     private void showToast(String msg) {
         Toast error = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
         error.show();

@@ -260,5 +260,10 @@
 
     <activity android:name=".PickContactsActivity">
     </activity>
+
+    <!--  TODO: external apps. -->
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.StatView"
+	      android:label="Stat View">
+    </activity>
   </application>
 </manifest> 

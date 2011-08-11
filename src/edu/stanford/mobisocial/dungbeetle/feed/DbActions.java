@@ -13,6 +13,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.action.CameraAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.NewFeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.PresenceAction;
+import edu.stanford.mobisocial.dungbeetle.feed.action.ViewAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.VoiceAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 
@@ -21,6 +22,7 @@ public class DbActions {
     // TODO: Use reflection.
     private static final List<FeedAction> sFeedActions = new ArrayList<FeedAction>();
     static {
+        sFeedActions.add(new ViewAction());
         sFeedActions.add(new PresenceAction());
         sFeedActions.add(new CameraAction());
         sFeedActions.add(new VoiceAction());

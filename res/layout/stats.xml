@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	      android:orientation="vertical"
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent">
+    
+    <LinearLayout style="@style/TitleBar">
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_home"
+            android:src="@drawable/title_home"
+            android:onClick="onClickHome" />
+
+        <ImageView style="@style/TitleBarSeparator" />
+        <TextView style="@style/TitleBarText" />
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_about"
+            android:src="@drawable/title_about"
+            android:onClick="onClickAbout" />
+    </LinearLayout>
+<TextView android:id="@+id/stats_text" android:textSize="18dip"/>
+</LinearLayout>
+
