@@ -6,6 +6,7 @@ import java.util.List;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.LocationPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.MusicPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.PhonePresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.PhotosPresence;
 
 public class DbPresence {
@@ -14,6 +15,7 @@ public class DbPresence {
         sFeedPresence.add(new MusicPresence());
         sFeedPresence.add(new PhotosPresence());
         sFeedPresence.add(new LocationPresence());
+        sFeedPresence.add(new PhonePresence());
     }
 
     public static List<FeedPresence> getPresenceTypes() {

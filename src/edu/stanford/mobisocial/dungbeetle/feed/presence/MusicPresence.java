@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.MusicObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 
 public class MusicPresence extends FeedPresence {
@@ -45,9 +46,8 @@ public class MusicPresence extends FeedPresence {
                 String artist = intent.getStringExtra("artist");
                 // String album = intent.getStringExtra("album");
                 String track = intent.getStringExtra("track");
-                String song = artist + " - " + track;
                 for (Uri feedUri : getFeedsWithPresence()) {
-                    Helpers.sendToFeed(context.getApplicationContext(), StatusObj.from(song), feedUri);
+                    Helpers.sendToFeed(context.getApplicationContext(), MusicObj.from(artist, track), feedUri);
                 }
             }
         }

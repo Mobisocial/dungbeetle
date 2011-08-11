@@ -15,7 +15,7 @@ import android.widget.Toast;
 
 public class BluetoothBeacon {
     public static final UUID NEAR_GROUPS = UUID.fromString("1aba3c40-c2a5-11e0-962b-0800200c9a66");
-    public static final int NEAR_PORT = 27; // bluetooth uuid service discovery not working.
+    public static final int NEAR_PORT = -1; // bluetooth uuid service discovery not working.
     private static final String TAG = "btbeacon";
     private static final boolean DBG = true;
 

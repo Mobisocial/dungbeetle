@@ -13,6 +13,8 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToWebSessionObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.MusicObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
@@ -56,6 +58,8 @@ public final class DbObjects {
         objs.add(new FeedObj());
         objs.add(new JoinNotificationObj());
         objs.add(new FriendAcceptObj());
+        objs.add(new PhoneStateObj());
+        objs.add(new MusicObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {
