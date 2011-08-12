@@ -378,7 +378,7 @@ public class DungBeetleActivity extends DashboardActivity
             Uri uri = getIntent().getData();
             List<String> segments = uri.getPathSegments();
             if (segments.contains("join")) {
-                FriendRequest.acceptFriendRequest(this, getIntent().getData());
+                FriendRequest.acceptFriendRequest(this, getIntent().getData(), false);
             } else if (segments.contains("thread")) {
                 ThreadRequest.acceptThreadRequest(this, getIntent().getData());
                 return true;

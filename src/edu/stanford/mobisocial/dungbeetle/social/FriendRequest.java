@@ -1,7 +1,10 @@
 
 package edu.stanford.mobisocial.dungbeetle.social;
 
+import java.math.BigInteger;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.UUID;
 
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
@@ -13,18 +16,35 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
 import org.json.JSONObject;
 
 public class FriendRequest {
+    private static SecureRandom sSecureRandom;
     private static final String TAG = "DbFriendRequest";
     private static final boolean DBG = false;
+    public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
     public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/dungbeetle/join";
 
     public static Uri getInvitationUri(Context c) {
+        return getInvitationUri(c, true);
+    }
+
+    private static Uri getInvitationUri(Context c, boolean appendCapability) {
+        if (sSecureRandom == null) {
+            sSecureRandom = new SecureRandom();
+        }
+        SharedPreferences p = c.getSharedPreferences("main", 0);
+        String cap = p.getString(PREF_FRIEND_CAPABILITY, null);
+        if (cap == null) {
+            String capability = new BigInteger(130, sSecureRandom).toString(32);
+            p.edit().putString(PREF_FRIEND_CAPABILITY, capability).commit();
+            cap = capability;
+        }
         DBHelper helper = new DBHelper(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         // String name = ident.userName();
@@ -34,14 +54,17 @@ public class FriendRequest {
         PublicKey pubKey = ident.userPublicKey();
         helper.close();
 
-        return new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
+        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
                 .path("dungbeetle/join").appendQueryParameter("profile", profile)
                 .appendQueryParameter("email", email)
-                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey))
-                .build();
+                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
+        if (appendCapability) {
+            builder.appendQueryParameter("cap", cap);
+        }
+        return builder.build();
     }
 
-    public static long acceptFriendRequest(Context c, Uri friendRequest) {
+    public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
         String email = friendRequest.getQueryParameter("email");
         String name = email;
 
@@ -55,6 +78,23 @@ public class FriendRequest {
         String pubKeyStr = friendRequest.getQueryParameter("publicKey");
         DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw
                                                            // exception
+        String cap = friendRequest.getQueryParameter("cap");
+        if (requireCapability) {
+            if (cap == null) {
+                Log.w(TAG, "Unapproved friend request");
+                return -1;
+            }
+            SharedPreferences p = c.getSharedPreferences("main", 0);
+            String myCap = p.getString(PREF_FRIEND_CAPABILITY, null);
+            if (myCap == null) {
+                Log.w(TAG, "No capability available");
+                return -1;
+            }
+            if (!cap.equals(myCap)) {
+                Log.w(TAG, "Capability mismatch");
+                return -1;
+            }
+        }
 
         Uri uri = Helpers.insertContact(c, pubKeyStr, name, email);
         long contactId = Long.valueOf(uri.getLastPathSegment());
@@ -62,11 +102,14 @@ public class FriendRequest {
         return contactId;
     }
 
-    public static void sendFriendRequest(Context context, long contactId) {
+    public static void sendFriendRequest(Context context, long contactId, String capability) {
         Maybe<Contact> contactSortOf = Contact.forId(context, contactId);
         try {
             Contact contact = contactSortOf.get();
-            Uri uri = getInvitationUri(context);
+            Uri uri = getInvitationUri(context, false);
+            if (capability != null) {
+                uri = uri.buildUpon().appendQueryParameter("cap", capability).build();
+            }
             DbObject obj = FriendAcceptObj.from(uri);
             Helpers.sendMessage(context, contact, obj);
             if (DBG) Log.d(TAG, "Sent friend request uri " + uri);

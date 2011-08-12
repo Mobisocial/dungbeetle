@@ -47,6 +47,6 @@ public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandle
     public void handleUnprocessed(Context context, JSONObject msg) {
         Uri uri = Uri.parse(msg.optString(URI));
         // TODO: prompt instead of auto-acccept?
-        FriendRequest.acceptFriendRequest(context, uri);
+        FriendRequest.acceptFriendRequest(context, uri, true);
     }
 }
