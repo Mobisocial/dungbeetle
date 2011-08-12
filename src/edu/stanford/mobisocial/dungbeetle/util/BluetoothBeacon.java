@@ -28,13 +28,19 @@ public class BluetoothBeacon {
             //BluetoothSocket socket = device.createInsecureRfcommSocketToServiceRecord(NEAR_GROUPS);
             BluetoothSocket socket = null;
             try {
-                Method listener = device.getClass().getMethod("createInsecureRfcommSocket", int.class);
-                socket = (BluetoothSocket) listener.invoke(device, NEAR_PORT);
+                if (NEAR_PORT > 0) {
+                    socket = device.createInsecureRfcommSocketToServiceRecord(NEAR_GROUPS);
+                } else {
+                    Method listener = device.getClass().getMethod("createInsecureRfcommSocket", int.class);
+                    socket = (BluetoothSocket) listener.invoke(device, NEAR_PORT);
+                }
             } catch (Exception e) {
                 if (DBG) Log.w(TAG, "Could not connect to channel.", e);
             }
         
-            
+            if (socket == null) {
+                throw new IOException("null socket");
+            }
             socket.connect();
             byte[] receivedBytes = new byte[2048];
             int r = socket.getInputStream().read(receivedBytes);
