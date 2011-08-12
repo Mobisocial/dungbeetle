@@ -37,15 +37,25 @@ public class LocationPresence extends FeedPresence {
             }
         } else {
             if (getFeedsWithPresence().size() > 0) {
+                String provider;
+                if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    provider = LocationManager.GPS_PROVIDER;
+                } else if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    provider = LocationManager.NETWORK_PROVIDER;
+                } else {
+                    Toast.makeText(context, "No location provider available.",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 mLocationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER, THREE_MINUTES, 0, mLocationListener);
+                        provider, TWO_MINUTES, 10, mLocationListener);
                 Toast.makeText(context, "Now sharing location", Toast.LENGTH_SHORT).show();
                 mShareLocation = true;
             }
         }
     }
 
-    private static final int THREE_MINUTES = 1000 * 60 * 3;
+    private static final int TWO_MINUTES = 1000 * 60 * 2;
 
     /** Determines whether one Location reading is better than the current Location fix
       * @param location  The new Location that you want to evaluate
@@ -59,8 +69,8 @@ public class LocationPresence extends FeedPresence {
 
         // Check whether the new location fix is newer or older
         long timeDelta = location.getTime() - currentBestLocation.getTime();
-        boolean isSignificantlyNewer = timeDelta > THREE_MINUTES;
-        boolean isSignificantlyOlder = timeDelta < -THREE_MINUTES;
+        boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
+        boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
         boolean isNewer = timeDelta > 0;
 
         // If it's been more than two minutes since the current location, use the new location
@@ -102,8 +112,18 @@ public class LocationPresence extends FeedPresence {
     }
 
     private LocationListener mLocationListener = new LocationListener() {
+        private Location mmLastLocation;
         @Override
         public void onLocationChanged(Location location) {
+            if (mmLastLocation != null) {
+                if (Math.abs(location.getTime() - mmLastLocation.getTime()) < 60*1000) {
+                    return;
+                }
+                if (mmLastLocation.distanceTo(location) < 10) {
+                    return;
+                }
+            }
+            mmLastLocation = location;
             for (Uri uri : getFeedsWithPresence()) {
                 Helpers.sendToFeed(mContext, LocationObj.from(location), uri);
             }
