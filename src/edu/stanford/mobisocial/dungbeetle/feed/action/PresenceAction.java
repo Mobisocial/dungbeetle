@@ -38,7 +38,7 @@ public class PresenceAction implements FeedAction {
                     newPresence[which] = isChecked;
                 }
             })
-            .setTitle("Share presence")
+            .setTitle("Sharing...")
             .setPositiveButton("Okay", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {

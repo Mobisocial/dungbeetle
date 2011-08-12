@@ -99,7 +99,7 @@ public class SettingsActivity extends ListActivity {
                             
                             File currentDB = new File(data, currentDBPath);
                             InputStream in = new FileInputStream(currentDB);
-                            OutputStream out = new FileOutputStream(backupDB); 
+                            OutputStream out = new FileOutputStream(backupDB);
                             byte[] buf = new byte[1024];
                             int len;
                             while ((len = in.read(buf)) > 0){
