@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.DbPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;

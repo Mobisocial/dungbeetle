@@ -1,22 +1,24 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import android.widget.Toast;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View.OnClickListener;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android.widget.CursorAdapter;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -25,16 +27,9 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.Intent;
-
-import android.widget.ImageView;
 
 public class FeedActivity extends RichListActivity implements OnItemClickListener{
 
@@ -55,14 +50,15 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
-		
-        Cursor c;
+
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
         if(feedName == null && intent.hasExtra("group_id")) {
         	try {
 	        	Long groupId = intent.getLongExtra("group_id", -1);
-	        	feedName = new DBHelper(this).groupForGroupId(groupId).get().feedName;
+	            DBHelper dbHelper = new DBHelper(this);
+	            feedName = dbHelper.groupForGroupId(groupId).get().feedName;
+	            dbHelper.close();
         	} catch (Maybe.NoValError e) {
         		Log.w(TAG, "Tried to view a group with bad group id");
         	}
