@@ -265,5 +265,8 @@
     <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.StatView"
 	      android:label="Stat View">
     </activity>
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.MapView"
+      android:label="Map View">
+    </activity>
   </application>
 </manifest> 
