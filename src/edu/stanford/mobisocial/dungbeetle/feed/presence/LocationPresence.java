@@ -116,11 +116,10 @@ public class LocationPresence extends FeedPresence {
         @Override
         public void onLocationChanged(Location location) {
             if (mmLastLocation != null) {
-                if (Math.abs(location.getTime() - mmLastLocation.getTime()) < 60*1000) {
-                    return;
-                }
-                if (mmLastLocation.distanceTo(location) < 10) {
-                    return;
+                if (Math.abs(location.getTime() - mmLastLocation.getTime()) < 60*2*1000) {
+                    if (mmLastLocation.distanceTo(location) < 10) {
+                        return;
+                    }
                 }
             }
             mmLastLocation = location;
