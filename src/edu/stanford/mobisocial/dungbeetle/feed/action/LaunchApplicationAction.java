@@ -28,7 +28,9 @@ public class LaunchApplicationAction implements FeedAction {
                 DbObject obj = new AppReference(pkg, arg);
                 Helpers.sendToFeed(context, obj, feedUri);
                 localLaunch.putExtra("mobisocial.db.FEED", feedUri);
-                localLaunch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
+                if (arg != null) {
+                    localLaunch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
+                }
                 localLaunch.putExtra("mobisocial.db.PACKAGE", pkg);
                 context.startActivity(localLaunch);
             }

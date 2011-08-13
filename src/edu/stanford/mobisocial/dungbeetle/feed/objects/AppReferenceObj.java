@@ -44,6 +44,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
     public static final String ARG = "arg";
     public static final String STATE = "state";
     public static final String THUMB_JPG = "b64jpgthumb";
+    public static final String THUMB_TEXT = "txt";
     public static final String PACKAGE_NAME = "packageName";
     public static final String PARTICIPANTS = "participants";
     public static final String FEED_NAME = "feedName";
@@ -66,7 +67,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         return obj;
     }
 
-    public static JSONObject json(String packageName, String arg, String state, String b64JpgThumb){
+    public static JSONObject json(String packageName, String arg, String state, String b64JpgThumb, String thumbText){
         JSONObject obj = new JSONObject();
         try{
             obj.put(PACKAGE_NAME, packageName);
@@ -76,6 +77,9 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
             }
             if (b64JpgThumb != null) {
                 obj.put(THUMB_JPG, b64JpgThumb);
+            }
+            if (thumbText != null) {
+                obj.put(THUMB_TEXT, thumbText);
             }
         }catch(JSONException e){}
         return obj;
@@ -125,8 +129,12 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	        App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
 	        frame.addView(imageView);
 	    } else {
+	        String text = ref.getThumbnailText();
+	        if (ref.getThumbnailText() == null) {
+	            text = content.optString(ARG);
+	        }
             TextView valueTV = new TextView(context);
-            valueTV.setText(content.optString(ARG));
+            valueTV.setText(text);
             valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                         LinearLayout.LayoutParams.WRAP_CONTENT,
                                         LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -173,64 +181,87 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 
 	public static void promptForApplication(final Context context, final Callback callback) {
 	    final PackageManager mgr = context.getPackageManager();
-        Intent i = new Intent("android.intent.action.CONFIGURE");
+	    final List<ResolveInfo> availableAppInfos = new ArrayList<ResolveInfo>();
+	    Intent i = new Intent();
+
+	    /** 2-player applications **/
+	    List<ResolveInfo> infos;
+	    i.setAction("mobisocial.intent.action.TWO_PLAYER");
+        i.addCategory("android.intent.category.LAUNCHER");
+        i.addCategory("android.intent.category.DEFAULT");
+        infos = mgr.queryIntentActivities(i, 0);
+        availableAppInfos.addAll(infos);
+        final int numTwoPlayer = infos.size();
+
+	    /** Negotiate p2p connectivity out-of-band **/
+        i.removeCategory("android.intent.category.LAUNCHER");
+        i.setAction("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
-        final List<ResolveInfo> infos = mgr.queryBroadcastReceivers(i, 0);
-        if(infos.size() > 0){
-            ArrayList<String> names = new ArrayList<String>();
-            for(ResolveInfo info : infos){
-                Log.d(TAG, "looking at " + info);
-                names.add(info.loadLabel(mgr).toString());
-            }
-            final CharSequence[] items = names.toArray(new CharSequence[]{});
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setTitle("Share application:");
-            builder.setItems(items, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int item) {
-                        final ResolveInfo info = infos.get(item);
-                        Intent i = new Intent();
-                        i.setClassName(info.activityInfo.packageName, 
-                                       info.activityInfo.name);
+        infos = mgr.queryBroadcastReceivers(i, 0);
+        availableAppInfos.addAll(infos);
+        if (availableAppInfos.isEmpty()) {
+            Toast.makeText(context.getApplicationContext(),
+                    "Sorry, couldn't find any compatible apps.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ArrayList<String> names = new ArrayList<String>();
+        for(ResolveInfo info : availableAppInfos){
+            Log.d(TAG, "looking at " + info);
+            names.add(info.loadLabel(mgr).toString());
+        }
+        final CharSequence[] items = names.toArray(new CharSequence[]{});
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Share application:");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                    final ResolveInfo info = availableAppInfos.get(item);
+                    Intent i = new Intent();
+                    i.setClassName(info.activityInfo.packageName, 
+                                   info.activityInfo.name);
+                    if (item < numTwoPlayer) {
+                        i.setAction("mobisocial.intent.action.TWO_PLAYER");
+                        i.addCategory("android.intent.category.LAUNCHER");
+                        callback.onAppSelected(info.activityInfo.packageName, null, i);
+                        return;
+                    } else {
                         i.setAction("android.intent.action.CONFIGURE");
                         i.addCategory("android.intent.category.P2P");
-                        BroadcastReceiver rec = new BroadcastReceiver(){
-                                public void onReceive(Context c, Intent i){
-                                    Intent launch = new Intent();
-                                    launch.setAction(Intent.ACTION_MAIN);
-                                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                                    launch.setPackage(info.activityInfo.packageName);
-                                    List<ResolveInfo> resolved = 
-                                        mgr.queryIntentActivities(launch, 0);
-                                    if (resolved.size() > 0) {
-                                        ActivityInfo info = resolved.get(0).activityInfo;
-                                        String arg = getResultData();
-                                        launch.setComponent(new ComponentName(
-                                                                info.packageName,
-                                                                info.name));
-                                        launch.putExtra("creator", true);
-                                        launch.putExtra(
-                                            "android.intent.extra.APPLICATION_ARGUMENT",
-                                            arg);
-                                        callback.onAppSelected(info.packageName, arg, launch);
-                                    }
-                                    else{
-                                        Toast.makeText(context, 
-                                                       "No applications found.",
-                                                       Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            };
-                        context.sendOrderedBroadcast(i, null, rec, null, Activity.RESULT_OK, null, null);
                     }
-                });
-            AlertDialog alert = builder.create();
-            alert.show();
-        }
-        else{
-            Toast.makeText(context.getApplicationContext(), 
-                           "Sorry, couldn't find any compatible apps.", 
-                           Toast.LENGTH_SHORT).show();
-        }
+
+                    BroadcastReceiver rec = new BroadcastReceiver() {
+                            public void onReceive(Context c, Intent i){
+                                Intent launch = new Intent();
+                                launch.setAction(Intent.ACTION_MAIN);
+                                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                                launch.setPackage(info.activityInfo.packageName);
+                                List<ResolveInfo> resolved = 
+                                    mgr.queryIntentActivities(launch, 0);
+                                if (resolved.size() > 0) {
+                                    ActivityInfo info = resolved.get(0).activityInfo;
+                                    String arg = getResultData();
+                                    launch.setComponent(new ComponentName(
+                                                            info.packageName,
+                                                            info.name));
+                                    launch.putExtra("creator", true);
+                                    launch.putExtra(
+                                        "android.intent.extra.APPLICATION_ARGUMENT",
+                                        arg);
+                                    callback.onAppSelected(info.packageName, arg, launch);
+                                }
+                                else{
+                                    Toast.makeText(context, 
+                                                   "No applications found.",
+                                                   Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        };
+
+                    context.sendOrderedBroadcast(i, null, rec, null, Activity.RESULT_OK, null, null);
+                }
+            });
+        AlertDialog alert = builder.create();
+        alert.show();
 	}
 
 	public interface Callback {
