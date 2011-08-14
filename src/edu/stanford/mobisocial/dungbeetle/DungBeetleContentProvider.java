@@ -35,6 +35,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
+	static final boolean DBG = true;
 	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
@@ -117,7 +118,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                     values.getAsString(DbObject.TYPE),
                     new JSONObject(values.getAsString(DbObject.JSON)));
                 getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/" + feedName), null);
-                
+                Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
@@ -324,10 +325,9 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
 
-        Log.d(TAG, "Processing query: " + uri);
-
         final String appId = getCallingActivityId();
-        if(appId == null){
+        Log.d(TAG, "Processing query: " + uri + " from appId " + appId);
+        if(appId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
@@ -407,12 +407,15 @@ public class DungBeetleContentProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
         final String appId = getCallingActivityId();
-        if(appId == null){
+        if (appId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return 0;
         }
         if(!appId.equals(SUPER_APP_ID)) return 0;
         List<String> segs = uri.getPathSegments();
+        String appRestriction = DbObject.APP_ID + "='" + appId + "'";
+        selection = DBHelper.andClauses(selection, appRestriction);
+        if (DBG) Log.d(TAG, "Updating uri " + uri + " with " + values);
         mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
         getContext().getContentResolver().notifyChange(uri, null);
         return 0;
