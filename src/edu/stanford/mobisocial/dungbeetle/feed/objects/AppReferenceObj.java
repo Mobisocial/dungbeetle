@@ -128,10 +128,13 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    // TODO: This should be cleaned up.
 	    // The given content represents an application. If we have a corresponding app
 	    // feed, pull the latest app state from it.
-	    JSONObject appState = getAppState(context, content);
-	    if (appState != null) {
-	        content = appState;
-	    }
+	    if (!content.has(THUMB_JPG)) {
+	        // TODO: hack to show object history in app feeds
+	        JSONObject appState = getAppState(context, content);
+	        if (appState != null) {
+	            content = appState;
+	        }
+        }
 
 	    AppReference ref = new AppReference(content);
 	    String thumbnail = ref.getThumbnailImage();
@@ -165,7 +168,6 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    Uri appFeed;
 	    if (content.has(APP_IDENTIFIER)) {
 	        appFeed = Feed.uriForName(content.optString(APP_IDENTIFIER));
-	        content = getAppState(context, content);
 	    } else {
 	        Log.w(TAG, "Warning: no dedicated app feed; using parent feed.");
 	        appFeed = feed;
