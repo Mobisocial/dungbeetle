@@ -413,8 +413,11 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         if(!appId.equals(SUPER_APP_ID)) return 0;
         List<String> segs = uri.getPathSegments();
-        String appRestriction = DbObject.APP_ID + "='" + appId + "'";
-        selection = DBHelper.andClauses(selection, appRestriction);
+
+        // TODO: If uri is a feed:
+        //String appRestriction = DbObject.APP_ID + "='" + appId + "'";
+        //selection = DBHelper.andClauses(selection, appRestriction);
+
         if (DBG) Log.d(TAG, "Updating uri " + uri + " with " + values);
         mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
         getContext().getContentResolver().notifyChange(uri, null);
