@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import android.content.Context;
+import android.net.Uri;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -9,6 +10,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -17,18 +19,22 @@ import org.json.JSONObject;
 public class FeedAnchorObj implements DbEntryHandler, FeedRenderer {
 
     public static final String TYPE = "feed-anchor";
+    public static final String PARENT = "parent";
 
     @Override
     public String getType() {
         return TYPE;
     }
 
-    public static DbObject create() {
-        return new DbObject(TYPE, json());
+    public static DbObject create(String parentFeedName) {
+        return new DbObject(TYPE, json(parentFeedName));
     }
 
-    public static JSONObject json(){
+    public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
+        try {
+            obj.put(PARENT, parentFeedName);
+        } catch (JSONException e) {}
         return obj;
     }
 

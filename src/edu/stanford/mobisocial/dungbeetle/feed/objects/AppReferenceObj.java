@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.ImageView;
@@ -123,7 +124,15 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
             contentIntent);
     }
 
-	public void render(final Context context, final ViewGroup frame, final JSONObject content) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content) {
+	    // TODO: This should be cleaned up.
+	    // The given content represents an application. If we have a corresponding app
+	    // feed, pull the latest app state from it.
+	    JSONObject appState = getAppState(context, content);
+	    if (appState != null) {
+	        content = appState;
+	    }
+
 	    AppReference ref = new AppReference(content);
 	    String thumbnail = ref.getThumbnailImage();
 	    if (thumbnail != null) {
@@ -156,6 +165,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    Uri appFeed;
 	    if (content.has(APP_IDENTIFIER)) {
 	        appFeed = Feed.uriForName(content.optString(APP_IDENTIFIER));
+	        content = getAppState(context, content);
 	    } else {
 	        Log.w(TAG, "Warning: no dedicated app feed; using parent feed.");
 	        appFeed = feed;
@@ -207,7 +217,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         final int numTwoPlayer = infos.size();
 
 	    /** Negotiate p2p connectivity out-of-band **/
-        i.removeCategory("android.intent.category.LAUNCHER");
+        i = new Intent();
         i.setAction("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
         infos = mgr.queryBroadcastReceivers(i, 0);
@@ -275,6 +285,25 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
         AlertDialog alert = builder.create();
         alert.show();
 	}
+
+   private JSONObject getAppState(Context context, JSONObject appReference) {
+        if (appReference.has(APP_IDENTIFIER)) {
+            String feedName = appReference.optString(APP_IDENTIFIER);
+            Uri feedUri = Feed.uriForName(feedName);
+            String selection = "type = '" + TYPE + "'";
+            String[] projection = new String[] {"json"};
+            String order = "_id desc LIMIT 1";
+            Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
+            if (c.moveToFirst()) {
+                try {
+                    return new JSONObject(c.getString(0));
+                } catch (JSONException e) {
+                    Log.wtf(TAG, "not really json", e);
+                }
+            }
+        }
+        return null;
+    }
 
 	public interface Callback {
 	    public void onAppSelected(String pkg, String arg, Intent localLaunch);

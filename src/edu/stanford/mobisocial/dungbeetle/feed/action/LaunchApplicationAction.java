@@ -27,7 +27,7 @@ public class LaunchApplicationAction implements FeedAction {
                 // Start new application feed:
                 Group g = Group.create(context);
                 Uri appFeedUri = Feed.uriForName(g.feedName);
-                DbObject anchor = FeedAnchorObj.create();
+                DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
                 Helpers.sendToFeed(context, anchor, appFeedUri);
 
                 // App reference in parent feed:
