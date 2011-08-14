@@ -23,17 +23,20 @@ public class BluetoothBeacon {
         new AcceptThread(context, data, duration).start();
     }
 
+    @SuppressWarnings("unused")
     public static void discover(Activity activity, BluetoothDevice device, OnDiscovered discovered) {
         try {
-            //BluetoothSocket socket = device.createInsecureRfcommSocketToServiceRecord(NEAR_GROUPS);
             BluetoothSocket socket = null;
             try {
                 if (NEAR_PORT > 0) {
-                    socket = device.createInsecureRfcommSocketToServiceRecord(NEAR_GROUPS);
-                } else {
                     Method listener = device.getClass().getMethod("createInsecureRfcommSocket", int.class);
                     socket = (BluetoothSocket) listener.invoke(device, NEAR_PORT);
+                } else {
+                    socket = device.createInsecureRfcommSocketToServiceRecord(NEAR_GROUPS);
                 }
+            } catch (NoSuchMethodError e) {
+                Log.w(TAG, "Falling back to secure connection.", e);
+                socket = device.createRfcommSocketToServiceRecord(NEAR_GROUPS);
             } catch (Exception e) {
                 if (DBG) Log.w(TAG, "Could not connect to channel.", e);
             }
