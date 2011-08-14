@@ -1,34 +1,28 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.database.sqlite.SQLiteDatabase;  
-import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.os.Binder;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.List;
+
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.net.Uri;
-
-
-
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.os.Environment;
-import java.io.File;
+import android.net.Uri;
+import android.os.Binder;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = 
@@ -101,8 +95,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                     "friend",
                     values.getAsString(DbObject.TYPE),
                     new JSONObject(values.getAsString(DbObject.JSON)));
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/me"), null);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/friend"), null);
+                getContext().getContentResolver().notifyChange(Feed.uriForName("me"), null);
+                getContext().getContentResolver().notifyChange(Feed.uriForName("friend"), null);
                 return Uri.parse(uri.toString());
             }
             catch(JSONException e){
@@ -117,7 +111,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                     feedName,
                     values.getAsString(DbObject.TYPE),
                     new JSONObject(values.getAsString(DbObject.JSON)));
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/feeds/" + feedName), null);
+                getContext().getContentResolver().notifyChange(Feed.uriForName(feedName), null);
                 Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString());
             }

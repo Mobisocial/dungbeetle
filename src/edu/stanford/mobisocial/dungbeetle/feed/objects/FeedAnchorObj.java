@@ -16,10 +16,9 @@ import org.json.JSONObject;
 /**
  * Metadata marking the beginning of a feed.
  */
-public class FeedAnchorObj implements DbEntryHandler, FeedRenderer {
+public class FeedAnchorObj implements DbEntryHandler {
 
     public static final String TYPE = "feed-anchor";
-    public static final String PARENT = "parent";
 
     @Override
     public String getType() {
@@ -32,23 +31,10 @@ public class FeedAnchorObj implements DbEntryHandler, FeedRenderer {
 
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
-        try {
-            obj.put(PARENT, parentFeedName);
-        } catch (JSONException e) {}
         return obj;
     }
 
     public void handleReceived(Context context, Contact from, JSONObject obj){
 
-    }
-
-    public void render(Context context, ViewGroup frame, JSONObject content) {
-        TextView valueTV = new TextView(context);
-        valueTV.setText("This is only the beginning.");
-        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT));
-        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-        frame.addView(valueTV);
     }
 }

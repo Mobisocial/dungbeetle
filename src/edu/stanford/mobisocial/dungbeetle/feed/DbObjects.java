@@ -4,6 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
@@ -60,6 +61,7 @@ public final class DbObjects {
         objs.add(new FriendAcceptObj());
         objs.add(new PhoneStateObj());
         objs.add(new MusicObj());
+        objs.add(new FeedAnchorObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {

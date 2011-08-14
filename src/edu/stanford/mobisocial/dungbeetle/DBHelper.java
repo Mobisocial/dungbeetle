@@ -1,49 +1,46 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
-import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import android.accounts.AccountManager;
-import android.accounts.Account;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
-import java.security.PublicKey;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONObject;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
-import android.database.sqlite.SQLiteQueryBuilder;
-import android.content.Intent;
-
-
-import android.database.sqlite.SQLiteException;
 import android.os.Environment;
-import java.io.IOException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
@@ -594,7 +591,7 @@ public class DBHelper extends SQLiteOpenHelper {
             .toString();
         String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
         String orderBy = DbObject.TIMESTAMP + " desc";
-        Log.d(TAG, "THE QUERY IS " + tables);
+
         return getReadableDatabase().query(tables, projection, selection, selectionArgs, 
                 groupBy, null, orderBy, null);
     }
