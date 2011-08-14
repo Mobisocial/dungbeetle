@@ -2,10 +2,10 @@ package edu.stanford.mobisocial.dungbeetle.model;
 
 import org.json.JSONObject;
 
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedObj;
 import android.graphics.Color;
 import android.net.Uri;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 
 public class Feed extends DbObject {
     public static final int BACKGROUND_ALPHA = 150;
@@ -14,7 +14,7 @@ public class Feed extends DbObject {
     }
 
     public String id() {
-        return mJson.optString(FeedObj.FEED_ID);
+        return mJson.optString(FeedRefObj.FEED_ID);
     }
 
     public static int colorFor(String name) {
@@ -39,7 +39,7 @@ public class Feed extends DbObject {
     }
 
     private Feed(Group g) {
-        super(FeedObj.TYPE, FeedObj.json(g));
+        super(FeedRefObj.TYPE, FeedRefObj.json(g));
     }
 
     public static Feed forGroup(Group g) {
@@ -47,6 +47,6 @@ public class Feed extends DbObject {
     }
 
     public Feed(JSONObject json) {
-        super(FeedObj.TYPE, json);
+        super(FeedRefObj.TYPE, json);
     }
 }

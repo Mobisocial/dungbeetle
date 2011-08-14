@@ -3,15 +3,14 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.view.View;
-import edu.stanford.mobisocial.dungbeetle.ActionItem;
-import edu.stanford.mobisocial.dungbeetle.FeedActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 public class LaunchApplicationAction implements FeedAction {
 
@@ -25,13 +24,21 @@ public class LaunchApplicationAction implements FeedAction {
         AppReferenceObj.promptForApplication(context, new AppReferenceObj.Callback() {
             @Override
             public void onAppSelected(String pkg, String arg, Intent localLaunch) {
-                DbObject obj = new AppReference(pkg, arg);
+                // Start new application feed:
+                Group g = Group.create(context);
+                Uri appFeedUri = Feed.uriForName(g.feedName);
+                DbObject anchor = FeedAnchorObj.create();
+                Helpers.sendToFeed(context, anchor, appFeedUri);
+
+                // App reference in parent feed:
+                DbObject obj = new AppReference(pkg, arg, g.feedName);
                 Helpers.sendToFeed(context, obj, feedUri);
-                localLaunch.putExtra("mobisocial.db.FEED", feedUri);
+
+                localLaunch.putExtra(AppReference.EXTRA_FEED_URI, appFeedUri);
                 if (arg != null) {
                     localLaunch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, arg);
                 }
-                localLaunch.putExtra("mobisocial.db.PACKAGE", pkg);
+                localLaunch.putExtra(AppReference.EXTRA_APPLICATION_PACKAGE, pkg);
                 context.startActivity(localLaunch);
             }
         });

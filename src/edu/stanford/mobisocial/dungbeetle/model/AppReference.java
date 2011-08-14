@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import org.json.JSONObject;
 
 import android.content.Intent;
+import android.net.Uri;
 
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 
@@ -12,6 +13,7 @@ public class AppReference extends DbObject {
     public static final String EXTRA_APPLICATION_STATE = "mobisocial.db.STATE";
     public static final String EXTRA_APPLICATION_IMG = "mobisocial.db.THUMBNAIL_IMAGE";
     public static final String EXTRA_APPLICATION_TEXT = "mobisocial.db.THUMBNAIL_TEXT";
+    public static final String EXTRA_FEED_URI = "mobisocial.db.FEED";
     public AppReference(JSONObject json) {
         super(AppReferenceObj.TYPE, json);
     }
@@ -22,19 +24,22 @@ public class AppReference extends DbObject {
         String state = intent.getStringExtra(EXTRA_APPLICATION_STATE);
         String thumbImg = intent.getStringExtra(EXTRA_APPLICATION_IMG);
         String thumbText = intent.getStringExtra(EXTRA_APPLICATION_TEXT);
-        return new AppReference(pkg, arg, state, thumbImg, thumbText);
+        Uri feedUri = (Uri)intent.getParcelableExtra(EXTRA_FEED_URI);
+        return new AppReference(pkg, arg, state, thumbImg, thumbText, feedUri.getLastPathSegment());
     }
 
     public String pkg() {
         return this.mJson.optString("packageName");
     }
 
-    public AppReference(String pkg, String arg) {
-        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg));
+    public AppReference(String pkg, String arg, String feedName) {
+        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg, feedName));
     }
 
-    public AppReference(String pkg, String arg, String state, String b64JpgThumbnail, String thumbText) {
-        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg, state, b64JpgThumbnail, thumbText));
+    public AppReference(String pkg, String arg,
+            String state, String b64JpgThumbnail, String thumbText, String feedName) {
+        super(AppReferenceObj.TYPE, AppReferenceObj.json(
+                pkg, arg, state, b64JpgThumbnail, thumbText, feedName));
     }
 
     public String getThumbnailImage() {

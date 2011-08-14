@@ -6,6 +6,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.UUID;
 
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -23,7 +24,6 @@ import android.util.Log;
 import org.json.JSONObject;
 
 public class FriendRequest {
-    private static SecureRandom sSecureRandom;
     private static final String TAG = "DbFriendRequest";
     private static final boolean DBG = false;
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
@@ -35,13 +35,10 @@ public class FriendRequest {
     }
 
     private static Uri getInvitationUri(Context c, boolean appendCapability) {
-        if (sSecureRandom == null) {
-            sSecureRandom = new SecureRandom();
-        }
         SharedPreferences p = c.getSharedPreferences("main", 0);
         String cap = p.getString(PREF_FRIEND_CAPABILITY, null);
         if (cap == null) {
-            String capability = new BigInteger(130, sSecureRandom).toString(32);
+            String capability = App.instance().getRandomString();
             p.edit().putString(PREF_FRIEND_CAPABILITY, capability).commit();
             cap = capability;
         }

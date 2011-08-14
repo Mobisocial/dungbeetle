@@ -27,10 +27,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
-import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -227,7 +224,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                                      Collections.singletonList(c));
                                 }
                             });
-                    
+                        /*
                         final ActionItem start_app = new ActionItem();
                         start_app.setTitle("Start App");
                         start_app.setOnClickListener(new OnClickListener() {
@@ -236,12 +233,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                     AppReferenceObj.promptForApplication(ContactsActivity.this, new AppReferenceObj.Callback() {
                                         @Override
                                         public void onAppSelected(String packageName, String arg, Intent localLaunch) {
-                                            /*Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c),
-                                                    new DbObject(InviteToSharedAppFeedObj.TYPE,
-                                                            AppReferenceObj.json(packageName, arg)));
-                                            ContactsActivity.this.startActivity(localLaunch);*/
-
-                                            
                                             DbObject obj = new AppReference(packageName, arg);
                                             Helpers.sendMessage(ContactsActivity.this, Collections.singletonList(c), obj);
                                             startActivity(localLaunch);
@@ -249,7 +240,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                     });
                                 }
                             });
-                    
+                    */
                         final ActionItem manage_groups = new ActionItem();
                         manage_groups.setTitle("Show Groups");
                         manage_groups.setOnClickListener(new OnClickListener() {
@@ -274,7 +265,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                         QuickAction qa = new QuickAction(v);
 
                         //qa.addActionItem(send_im);
-                        qa.addActionItem(start_app);
+                        //qa.addActionItem(start_app);
                         qa.addActionItem(manage_groups);
                         //qa.addActionItem(join_activity);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);

@@ -209,7 +209,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
                                 }
                             });
                     
-                        final ActionItem startApp = new ActionItem();
+                        /*final ActionItem startApp = new ActionItem();
                         startApp.setTitle("Start App");
                         startApp.setOnClickListener(new OnClickListener() {
                                 @Override
@@ -224,7 +224,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
                                         }
                                     });
                                 }
-                            });
+                            });*/
 
                         final ActionItem invite = new ActionItem();
                         invite.setTitle("Invite Contacts");
@@ -350,7 +350,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
                         QuickAction qa = new QuickAction(v);
 
                         //qa.addActionItem(sendIM);
-                        qa.addActionItem(startApp);
+                        //qa.addActionItem(startApp);
                         //qa.addActionItem(invite);
                         qa.addActionItem(nearby);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);

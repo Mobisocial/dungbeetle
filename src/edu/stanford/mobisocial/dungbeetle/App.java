@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -14,6 +17,7 @@ public class App extends Application {
     private ScreenState mScreenState;
 
     private static App instance;
+    private SecureRandom secureRandom;
 
     public static App instance(){
         if(instance != null) return instance;
@@ -24,6 +28,10 @@ public class App extends Application {
         return !mScreenState.isOff;
     }
 
+    public String getRandomString() {
+        return new BigInteger(130, secureRandom).toString(32);
+    }
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -32,6 +40,7 @@ public class App extends Application {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         mScreenState = new ScreenState();
         getApplicationContext().registerReceiver(mScreenState, filter);
+        secureRandom = new SecureRandom();
 	}
 
 	@Override

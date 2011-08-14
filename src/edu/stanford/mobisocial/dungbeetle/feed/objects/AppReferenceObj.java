@@ -32,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
 import java.util.Iterator;
@@ -46,28 +47,29 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
     public static final String THUMB_JPG = "b64jpgthumb";
     public static final String THUMB_TEXT = "txt";
     public static final String PACKAGE_NAME = "packageName";
-    public static final String PARTICIPANTS = "participants";
-    public static final String FEED_NAME = "feedName";
+    public static final String APP_IDENTIFIER = "sid";
 
     @Override
     public String getType() {
         return TYPE;
     }
 
-    public static AppReference from(String packageName, String arg) {
-        return new AppReference(json(packageName, arg));
+    public static AppReference from(String packageName, String arg, String feedName) {
+        return new AppReference(json(packageName, arg, feedName));
     }
 
-    public static JSONObject json(String packageName, String arg){
+    public static JSONObject json(String packageName, String arg, String feedName) {
         JSONObject obj = new JSONObject();
         try{
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
+            obj.put(APP_IDENTIFIER, feedName);
         }catch(JSONException e){}
         return obj;
     }
 
-    public static JSONObject json(String packageName, String arg, String state, String b64JpgThumb, String thumbText){
+    public static JSONObject json(String packageName,
+            String arg, String state, String b64JpgThumb, String thumbText, String feedName) {
         JSONObject obj = new JSONObject();
         try{
             obj.put(PACKAGE_NAME, packageName);
@@ -81,7 +83,10 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
             if (thumbText != null) {
                 obj.put(THUMB_TEXT, thumbText);
             }
-        }catch(JSONException e){}
+            if (feedName != null) {
+                obj.put(APP_IDENTIFIER, feedName);
+            }
+        } catch(JSONException e) {}
         return obj;
     }
 
@@ -148,7 +153,15 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	    AppReference app = new AppReference(content);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
 	    launch.addCategory(Intent.CATEGORY_LAUNCHER);
-	    launch.putExtra("mobisocial.db.FEED", feed);
+	    Uri appFeed;
+	    if (content.has(APP_IDENTIFIER)) {
+	        appFeed = Feed.uriForName(content.optString(APP_IDENTIFIER));
+	    } else {
+	        Log.w(TAG, "Warning: no dedicated app feed; using parent feed.");
+	        appFeed = feed;
+	    }
+	    launch.putExtra(AppReference.EXTRA_FEED_URI, appFeed);
+
 	    if (content.has(ARG)) {
 	        launch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, content.optString(ARG));
 	    }
@@ -207,7 +220,6 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 
         ArrayList<String> names = new ArrayList<String>();
         for(ResolveInfo info : availableAppInfos){
-            Log.d(TAG, "looking at " + info);
             names.add(info.loadLabel(mgr).toString());
         }
         final CharSequence[] items = names.toArray(new CharSequence[]{});

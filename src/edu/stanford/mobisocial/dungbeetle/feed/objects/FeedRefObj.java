@@ -25,7 +25,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Base64;
 
-public class FeedObj implements DbEntryHandler, FeedRenderer, Activator {
+public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 
     public static final String TAG = "FeedObj";
 
