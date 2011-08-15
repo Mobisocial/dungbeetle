@@ -18,6 +18,7 @@ public class AppReference extends DbObject {
         super(AppReferenceObj.TYPE, json);
     }
 
+    @Deprecated
     public static AppReference fromIntent(Intent intent) {
         String arg = intent.getStringExtra(EXTRA_APPLICATION_ARGUMENT);
         String pkg = intent.getStringExtra(EXTRA_APPLICATION_PACKAGE);
@@ -25,21 +26,21 @@ public class AppReference extends DbObject {
         String thumbImg = intent.getStringExtra(EXTRA_APPLICATION_IMG);
         String thumbText = intent.getStringExtra(EXTRA_APPLICATION_TEXT);
         Uri feedUri = (Uri)intent.getParcelableExtra(EXTRA_FEED_URI);
-        return new AppReference(pkg, arg, state, thumbImg, thumbText, feedUri.getLastPathSegment());
+        return new AppReference(pkg, arg, state, thumbImg, thumbText, feedUri.getLastPathSegment(), null);
     }
 
     public String pkg() {
         return this.mJson.optString("packageName");
     }
 
-    public AppReference(String pkg, String arg, String feedName) {
-        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg, feedName));
+    public AppReference(String pkg, String arg, String feedName, String groupUri) {
+        super(AppReferenceObj.TYPE, AppReferenceObj.json(pkg, arg, feedName, groupUri));
     }
 
-    public AppReference(String pkg, String arg,
-            String state, String b64JpgThumbnail, String thumbText, String feedName) {
+    public AppReference(String pkg, String arg, String state, String b64JpgThumbnail,
+            String thumbText, String feedName, String  groupUri) {
         super(AppReferenceObj.TYPE, AppReferenceObj.json(
-                pkg, arg, state, b64JpgThumbnail, thumbText, feedName));
+                pkg, arg, state, b64JpgThumbnail, thumbText, feedName, groupUri));
     }
 
     public String getThumbnailImage() {

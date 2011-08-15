@@ -19,6 +19,7 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -33,6 +34,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -46,7 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 31;
+	public static final int VERSION = 32;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -181,6 +183,11 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
             createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
         }
+        if(oldVersion <= 31) {
+            Log.w(TAG, "Adding column 'child_feed' to object table.");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.CHILD_FEED_NAME + " TEXT");
+            createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
+        }
 
         db.setVersion(VERSION);
     }
@@ -224,39 +231,6 @@ public class DBHelper extends SQLiteOpenHelper {
     
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-        /*Log.w(TAG, "dbhelper oncreate");
-
-        File data = Environment.getDataDirectory();
-        String newDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME+"new.db";
-        File newDB = new File(data, newDBPath);
-        if(newDB.exists()){
-        // and open the database
-    
-            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
-            File currentDB = new File(data, currentDBPath);
-            currentDB.delete();
-            currentDB = new File(data, currentDBPath);
-            if(newDB.renameTo(currentDB)){
-                Log.w(TAG, "renamed file");
-            }
-            else {
-                Log.w(TAG, "did not rename file");
-            }
-            Log.w(TAG, "size of file: " + currentDB.length());
-            currentDB = new File(data, currentDBPath);
-
-            Log.w(TAG, "attempting to open database file");
-            db = SQLiteDatabase.openDatabase(currentDB.getAbsolutePath(), null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
-            if(db == null){
-                Log.w(TAG, "database null");
-            }
-            else {
-                Log.w(TAG, db.toString());
-            }
-            Log.w(TAG, "version: " + Integer.toString(db.getVersion()));
-            this.onOpen(db);
-        }
-        else {*/
 		    db.beginTransaction();
 
             createTable(db, MyInfo.TABLE, null,
@@ -436,6 +410,7 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put(DbObjects.SEQUENCE_ID, nextSeqId);
             json.put(DbObjects.TIMESTAMP, timestamp);
             json.put(DbObjects.APP_ID, appId);
+
             ContentValues cv = new ContentValues();
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
@@ -444,10 +419,13 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            if (json.has(DbObject.CHILD_FEED_NAME)) {
+                cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
+            }
             getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
             return nextSeqId;
         }
-        catch(Exception e){
+        catch(Exception e) {
             // TODO, too spammy
             //e.printStackTrace(System.err);
             return -1;
@@ -472,7 +450,17 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.ENCODED, encoded);
             cv.put(DbObject.SENT, 1);
+            if (json.has(DbObject.CHILD_FEED_NAME)) {
+                cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
+            }
             getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+
+            ContentResolver resolver = mContext.getContentResolver();
+            Cursor c = getFeedDependencies(feedName);
+            while (c.moveToNext()) {
+                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+            }
+
             return seqId;
         }
         catch(Exception e){
@@ -589,23 +577,40 @@ public class DBHelper extends SQLiteOpenHelper {
             .append(".")
             .append(Group.FEED_NAME)
             .toString();
-        String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
-        String orderBy = DbObject.TIMESTAMP + " desc";
 
-        return getReadableDatabase().query(tables, projection, selection, selectionArgs, 
-                groupBy, null, orderBy, null);
+        // Ignore "secondary feeds" such as application-specific feeds.
+        StringBuilder removeChildren = new StringBuilder();
+        removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
+            .append(" NOT IN (SELECT ").append(DbObject.CHILD_FEED_NAME)
+            .append(" FROM ").append(DbObject.TABLE)
+            .append(" WHERE ").append(DbObject.CHILD_FEED_NAME).append(" IS NOT NULL)");
+        selection = andClauses(selection, removeChildren.toString());
+
+        String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
+        if (sortOrder == null) {
+            sortOrder = DbObject.TIMESTAMP + " desc";
+        }
+        return getReadableDatabase().query(tables, projection, selection, selectionArgs,
+                groupBy, null, sortOrder, null);
     }
 
-    public Cursor queryFeed(String appId, 
-                            String feedName,
-                            String[] projection, String selection,
-                            String[] selectionArgs, String sortOrder
-                            ){
+    public Cursor queryFeed(String appId, String feedName, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder) {
+
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
         select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
-        return getReadableDatabase().query(DbObject.TABLE, projection, 
-                                           select, selectionArgs, 
-                                           null, null, sortOrder, null);
+        return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+                null, null, sortOrder, null);
+    }
+
+    Cursor getFeedDependencies(String feedName) {
+        String table = DbObject.TABLE;
+        String[] columns = new String[] { DbObject.FEED_NAME };
+        String selection = DbObject.CHILD_FEED_NAME + " = ?";
+        String[] selectionArgs = new String[] { feedName };
+        String groupBy = DbObject.FEED_NAME;
+        return getReadableDatabase().query(
+                table, columns, selection, selectionArgs, groupBy, null, null);
     }
 
     public Cursor queryFeedLatest(String appId,

@@ -28,18 +28,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppReference;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 import java.util.Iterator;
 
 
-public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator {
+public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "InviteToSharedAppObj";
 
     public static final String TYPE = "invite_app_session";
@@ -48,31 +53,32 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
     public static final String THUMB_JPG = "b64jpgthumb";
     public static final String THUMB_TEXT = "txt";
     public static final String PACKAGE_NAME = "packageName";
-    public static final String APP_IDENTIFIER = "sid";
+    public static final String GROUP_URI = "groupuri";
 
     @Override
     public String getType() {
         return TYPE;
     }
 
-    public static AppReference from(String packageName, String arg, String feedName) {
-        return new AppReference(json(packageName, arg, feedName));
+    public static AppReference from(String packageName, String arg, String feedName, String groupUri) {
+        return new AppReference(json(packageName, arg, feedName, groupUri));
     }
 
-    public static JSONObject json(String packageName, String arg, String feedName) {
+    public static JSONObject json(String packageName, String arg, String feedName, String groupUri) {
         JSONObject obj = new JSONObject();
-        try{
+        try {
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
-            obj.put(APP_IDENTIFIER, feedName);
-        }catch(JSONException e){}
+            obj.put(DbObject.CHILD_FEED_NAME, feedName);
+            obj.put(GROUP_URI, groupUri);
+        } catch(JSONException e){}
         return obj;
     }
 
-    public static JSONObject json(String packageName,
-            String arg, String state, String b64JpgThumb, String thumbText, String feedName) {
+    public static JSONObject json(String packageName, String arg, String state,
+            String b64JpgThumb, String thumbText, String feedName, String groupUri) {
         JSONObject obj = new JSONObject();
-        try{
+        try {
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
             if (state != null) {
@@ -85,13 +91,17 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
                 obj.put(THUMB_TEXT, thumbText);
             }
             if (feedName != null) {
-                obj.put(APP_IDENTIFIER, feedName);
+                obj.put(DbObject.CHILD_FEED_NAME, feedName);
+            }
+            if (groupUri != null) {
+                obj.put(GROUP_URI, groupUri);
             }
         } catch(JSONException e) {}
         return obj;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
+    @Override
+    public void handleReceived(Context context, Contact from, JSONObject obj) {
         String packageName = obj.optString(PACKAGE_NAME);
         String arg = obj.optString(ARG);
         Log.i(TAG, "Received invite with arg: " + arg);
@@ -162,18 +172,23 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 
 	@Override
 	public void activate(Uri feed, Context context, JSONObject content) {
+	    JSONObject appContent = getAppState(context, content);
+	    if (appContent != null) {
+	        content = appContent;
+	    }
+
 	    AppReference app = new AppReference(content);
-	    Intent launch = new Intent(Intent.ACTION_MAIN);
-	    launch.addCategory(Intent.CATEGORY_LAUNCHER);
 	    Uri appFeed;
-	    if (content.has(APP_IDENTIFIER)) {
-	        appFeed = Feed.uriForName(content.optString(APP_IDENTIFIER));
+	    if (content.has(DbObject.CHILD_FEED_NAME)) {
+	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
 	    } else {
 	        Log.w(TAG, "Warning: no dedicated app feed; using parent feed.");
 	        appFeed = feed;
 	    }
-	    launch.putExtra(AppReference.EXTRA_FEED_URI, appFeed);
 
+	    Intent launch = new Intent(Intent.ACTION_MAIN);
+        launch.addCategory(Intent.CATEGORY_LAUNCHER);
+	    launch.putExtra(AppReference.EXTRA_FEED_URI, appFeed);
 	    if (content.has(ARG)) {
 	        launch.putExtra(AppReference.EXTRA_APPLICATION_ARGUMENT, content.optString(ARG));
 	    }
@@ -289,8 +304,8 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	}
 
    private JSONObject getAppState(Context context, JSONObject appReference) {
-        if (appReference.has(APP_IDENTIFIER)) {
-            String feedName = appReference.optString(APP_IDENTIFIER);
+        if (appReference.has(DbObject.CHILD_FEED_NAME)) {
+            String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
             Uri feedUri = Feed.uriForName(feedName);
             String selection = "type = '" + TYPE + "'";
             String[] projection = new String[] {"json"};
@@ -310,4 +325,22 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator 
 	public interface Callback {
 	    public void onAppSelected(String pkg, String arg, Intent localLaunch);
 	}
+
+    /**
+     * Subscribe to the application feed automatically.
+     * TODO, work out observers vs. players.
+     */
+    @Override
+    public void handleFeedMessage(Context context, Uri feedUri, JSONObject obj) {
+        if (obj.has(DbObject.CHILD_FEED_NAME)) {
+            String feedName = obj.optString(DbObject.CHILD_FEED_NAME);
+            DBHelper helper = new DBHelper(context);
+            Maybe<Group> mg = helper.groupByFeedName(feedName);
+            helper.close();
+            if (!mg.isKnown() && obj.has(GROUP_URI)) {
+                Uri gUri = Uri.parse(obj.optString(GROUP_URI));
+                Group.join(context, gUri);
+            }
+        }
+    }
 }

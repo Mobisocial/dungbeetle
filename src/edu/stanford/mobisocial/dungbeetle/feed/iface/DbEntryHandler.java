@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
 import android.content.Context;
+import android.net.Uri;
+
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 

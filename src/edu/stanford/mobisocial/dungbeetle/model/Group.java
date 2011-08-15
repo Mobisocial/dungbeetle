@@ -9,6 +9,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -113,5 +114,25 @@ public class Group{
         Uri ref = Uri.parse("content://mobisocial.db/group").buildUpon().appendPath(""+group.id).build();
         launch.setDataAndType(ref, Group.MIME_TYPE);
         context.startActivity(launch);
+    }
+
+    public static void join(Context context, Uri dynGroupUri) {
+        Uri gUri = Helpers.addDynamicGroup(context, dynGroupUri);
+
+        // Force an immediate update
+        long id = Long.valueOf(gUri.getLastPathSegment());
+        if(id > -1){
+            GroupProviders.GroupProvider gp = GroupProviders.forUri(dynGroupUri);
+            DBHelper helper = new DBHelper(context);
+            DBIdentityProvider ident = new DBIdentityProvider(helper);
+            int version = -1;
+            gp.forceUpdate(id, dynGroupUri, context, ident, version);
+            ident.close();
+            helper.close();
+        }
+        try {
+            Maybe<Group> group = Group.forId(context, id);
+            Group.view(context, group.get());
+        } catch (NoValError e) {}
     }
 }

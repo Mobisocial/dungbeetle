@@ -30,9 +30,11 @@ import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
@@ -41,6 +43,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
+    public static final boolean DBG = false;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
@@ -73,7 +76,7 @@ public class MessagingManagerThread extends Thread {
             });
 		mMessenger.addMessageListener(new MessageListener() {
                 public void onMessage(IncomingMessage incoming) {
-                    Log.i(TAG, "Got incoming message " + incoming);
+                    if (DBG) Log.i(TAG, "Got incoming message " + incoming);
                     handleIncomingMessage(incoming);
                 }
             });        
@@ -111,16 +114,16 @@ public class MessagingManagerThread extends Thread {
                 public String from(){ return personId; }
                 public byte[] encoded() { return encoded; }
             };
-        Log.i(TAG, "Localized contents: " + contents);
+        if (DBG) Log.i(TAG, "Localized contents: " + contents);
         try {
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
-            Maybe<Contact> contact = mHelper.contactForPersonId(personId);
             if (mHelper.queryAlreadyReceived(encoded)) {
-                Log.i(TAG, "Message already received. " + contents);
+                if (DBG) Log.i(TAG, "Message already received. " + contents);
                 return;
             }
 
+            Maybe<Contact> contact = mHelper.contactForPersonId(personId);
             DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
             if (h != null && h instanceof UnprocessedMessageHandler) {
                 ((UnprocessedMessageHandler)h).handleUnprocessed(mContext, obj);
@@ -128,15 +131,18 @@ public class MessagingManagerThread extends Thread {
 
             if (contact.isKnown()) {
 				mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
-                mContext.getContentResolver().notifyChange(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
-                              "/feeds/" + feedName), null);
-                if(feedName.equals("direct") || feedName.equals("friend")){
+				Uri feedUri = Feed.uriForName(feedName);
+                mContext.getContentResolver().notifyChange(feedUri, null);
+                if (feedName.equals("direct") || feedName.equals("friend")) {
                     mMainThreadHandler.post(new Runnable(){
-                            public void run(){
+                            public void run() {
                                 handleSpecialMessage(localizedMsg);
                             }
                         });
+                } else {
+                    if (h != null && h instanceof FeedMessageHandler) {
+                        ((FeedMessageHandler)h).handleFeedMessage(mContext, feedUri, obj);
+                    }
                 }
             } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
@@ -354,7 +360,7 @@ public class MessagingManagerThread extends Thread {
 
 
     // FYI: Must be invoked from main app thread. See above.
-    private void handleSpecialMessage(IncomingMessage incoming){
+    private void handleSpecialMessage(IncomingMessage incoming) {
         String contents = incoming.contents();
         try{
             final Contact c = mHelper.contactForPersonId(incoming.from()).get();
@@ -364,7 +370,7 @@ public class MessagingManagerThread extends Thread {
                 Helpers.updateLastPresence(mContext, c, time);
 
                 final DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
-                if(h != null) {
+                if (h != null) {
                     h.handleReceived(mContext, c, obj);
                 }
             }

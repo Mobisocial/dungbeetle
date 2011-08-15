@@ -34,6 +34,7 @@ public class DbObject {
     public static final String APP_ID = "app_id";
     public static final String SENT = "sent";
 	public static final String ENCODED = "encoded";
+	public static final String CHILD_FEED_NAME = "child_feed";
 
     public static final String EXTRA_FEED_URI = "feed_uri";
 

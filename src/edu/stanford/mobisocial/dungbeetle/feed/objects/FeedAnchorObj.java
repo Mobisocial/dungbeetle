@@ -19,6 +19,7 @@ import org.json.JSONObject;
 public class FeedAnchorObj implements DbEntryHandler {
 
     public static final String TYPE = "feed-anchor";
+    public static final String PARENT_FEED_NAME = "parent";
 
     @Override
     public String getType() {
@@ -31,6 +32,9 @@ public class FeedAnchorObj implements DbEntryHandler {
 
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
+        try {
+            obj.put(PARENT_FEED_NAME, parentFeedName);
+        } catch (JSONException e) {}
         return obj;
     }
 

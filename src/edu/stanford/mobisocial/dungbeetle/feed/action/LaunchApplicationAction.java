@@ -31,7 +31,7 @@ public class LaunchApplicationAction implements FeedAction {
                 Helpers.sendToFeed(context, anchor, appFeedUri);
 
                 // App reference in parent feed:
-                DbObject obj = new AppReference(pkg, arg, g.feedName);
+                DbObject obj = new AppReference(pkg, arg, g.feedName, g.dynUpdateUri);
                 Helpers.sendToFeed(context, obj, feedUri);
 
                 localLaunch.putExtra(AppReference.EXTRA_FEED_URI, appFeedUri);
