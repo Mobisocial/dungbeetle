@@ -31,7 +31,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	static final boolean DBG = false;
-	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
+	static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
@@ -315,12 +315,14 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         ContentResolver resolver = getContext().getContentResolver();
-        final String appId = getCallingActivityId();
-        Log.d(TAG, "Processing query: " + uri + " from appId " + appId);
-        if(appId == null) {
+        final String realAppId = getCallingActivityId();
+
+        if (realAppId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
+
+        if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feedlist")) {
@@ -334,7 +336,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             String select = isMe ? DBHelper.andClauses(
                 selection, 
                 DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeed(appId, feedName, projection, select, selectionArgs, sortOrder);
+            Cursor c = mHelper.queryFeed(realAppId, feedName, projection, select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Feed.uriForName(feedName));
             if (isMe) c.setNotificationUri(resolver, Feed.uriForName("me"));
             return c;
@@ -344,21 +346,21 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
                 selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeedLatest(appId, feedName, projection,
+            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
                     select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         }
         else if(match(uri, "groups_membership", ".+")) {
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long contactId = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupsMembership(contactId);
             c.setNotificationUri(resolver, uri);
             return c;
         }
         else if(match(uri, "group_contacts", ".+")) {
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long group_id = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupContacts(group_id);
             c.setNotificationUri(resolver, uri);
@@ -369,7 +371,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 match(uri, "groups") ||
                 match(uri, "group_members")){
 
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
 
             Cursor c = mHelper.getReadableDatabase().query(
                     segs.get(0), projection, selection, selectionArgs, null, null, sortOrder);
