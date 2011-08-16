@@ -4,12 +4,10 @@ import java.util.Collections;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Html;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -43,7 +41,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
 
-/*** Dashbaord stuff ***/
+    /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);
