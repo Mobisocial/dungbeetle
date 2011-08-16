@@ -165,17 +165,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     }
 
-    public void onClickNew(View v) {
-        Intent share = new Intent(Intent.ACTION_SEND);
-        Uri friendRequest = FriendRequest.getInvitationUri(this);
-        share.putExtra(Intent.EXTRA_TEXT,
-                "Be my friend on DungBeetle! Click here from your Android device: "
-                + friendRequest);
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
-        share.setType("text/plain");
-        startActivity(share);
-    }
-
     private class ContactListCursorAdapter extends CursorAdapter {
 
         public ContactListCursorAdapter (Context context, Cursor c) {
@@ -290,23 +279,19 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");
-                try{
+                try {
                     Helpers.sendGroupInvite(this, contactIds, mGroup.get());
-                }catch(Maybe.NoValError e){}
+                } catch(Maybe.NoValError e) {}
             }
         }
     }
     
     private final void toast(final String text) {
     	runOnUiThread(new Runnable() {
-			
-                @Override
-                public void run() {
-                    Toast.makeText(ContactsActivity.this, text, Toast.LENGTH_SHORT).show();
-                }
-            });
-    	
+            @Override
+            public void run() {
+                Toast.makeText(ContactsActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
-
-

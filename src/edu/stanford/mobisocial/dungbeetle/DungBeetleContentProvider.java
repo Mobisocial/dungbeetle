@@ -105,11 +105,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "feeds", ".+")){
             String feedName = segs.get(1);
             try{
-                mHelper.addToFeed(
-                    appId,
-                    feedName,
-                    values.getAsString(DbObject.TYPE),
-                    new JSONObject(values.getAsString(DbObject.JSON)));
+                mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
+                        new JSONObject(values.getAsString(DbObject.JSON)));
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString());
@@ -121,11 +118,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "out")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                mHelper.addToOutgoing(
-                    appId,
-                    values.getAsString(DbObject.DESTINATION),
-                    values.getAsString(DbObject.TYPE),
-                    obj);
+                mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
+                        values.getAsString(DbObject.TYPE), obj);
                 resolver.notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }
@@ -156,24 +150,21 @@ public class DungBeetleContentProvider extends ContentProvider {
             if(!appId.equals(SUPER_APP_ID)) return null;
             long id = mHelper.insertGroupMember(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_contacts"), null);
+            getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/group_contacts"), null);
             return uriWithId(uri, id);
         }
 
-        else if(match(uri, "group_invitations")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        else if (match(uri, "group_invitations")) {
+            if (!appId.equals(SUPER_APP_ID))
+                return null;
             String groupName = values.getAsString(InviteToGroupObj.GROUP_NAME);
             Uri dynUpdateUri = Uri.parse(values.getAsString(InviteToGroupObj.DYN_UPDATE_URI));
             long gid = values.getAsLong("groupId");
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            mHelper.addToOutgoing(
-                db,
-                appId,
-                values.getAsString(InviteToGroupObj.PARTICIPANTS),
-                InviteToGroupObj.TYPE,
-                InviteToGroupObj.json(groupName, dynUpdateUri));
-            getContext().getContentResolver().notifyChange(
-                Uri.parse(CONTENT_URI + "/out"), null);
+            mHelper.addToOutgoing(db, appId, values.getAsString(InviteToGroupObj.PARTICIPANTS),
+                    InviteToGroupObj.TYPE, InviteToGroupObj.json(groupName, dynUpdateUri));
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
             return uriWithId(uri, gid);
         }
 
@@ -184,64 +175,64 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = gp.feedName(gUri);
             Maybe<Group> mg = mHelper.groupByFeedName(feedName);
             long id = -1;
-            try{
+            try {
                 Group g = mg.get();
                 id = g.id;
-            }
-            catch(Maybe.NoValError e){
+            } catch (Maybe.NoValError e) {
                 ContentValues cv = new ContentValues();
                 cv.put(Group.NAME, gp.groupName(gUri));
                 cv.put(Group.FEED_NAME, feedName);
                 cv.put(Group.DYN_UPDATE_URI, gUri.toString());
                 id = mHelper.insertGroup(cv);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+                getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"),
+                        null);
             }
             return uriWithId(uri, id);
         }
 
-
-        else if(match(uri, "dynamic_group_member")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        else if (match(uri, "dynamic_group_member")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            try{
+            try {
                 db.beginTransaction();
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
                 RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
                 String personId = mIdent.personIdForPublicKey(k);
-                if(!personId.equals(mIdent.userPersonId())){
+                if (!personId.equals(mIdent.userPersonId())) {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
-                    if(values.getAsString(Contact.PICTURE) != null) {
+                    if (values.getAsString(Contact.PICTURE) != null) {
                         cv.put(Contact.PICTURE, values.getAsByteArray(Contact.PICTURE));
                     }
 
                     long cid = -1;
                     Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
-                    if(contact.id > -1){ 
+                    if (contact.id > -1) {
                         cid = contact.id;
-                    }
-                    else{
+                    } else {
                         cid = mHelper.insertContact(db, cv);
                     }
 
-                    if(cid > -1){ 
+                    if (cid > -1) {
 
                         ContentValues gv = new ContentValues();
-                        gv.put(GroupMember.GLOBAL_CONTACT_ID, 
-                               values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
-                        gv.put(GroupMember.GROUP_ID, 
-                               values.getAsLong(GroupMember.GROUP_ID));
+                        gv.put(GroupMember.GLOBAL_CONTACT_ID,
+                                values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
+                        gv.put(GroupMember.GROUP_ID, values.getAsLong(GroupMember.GROUP_ID));
                         gv.put(GroupMember.CONTACT_ID, cid);
                         mHelper.insertGroupMember(db, gv);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/group_members"), null);
+                                Uri.parse(CONTENT_URI + "/group_members"), null);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/contacts"), null);
+                                Uri.parse(CONTENT_URI + "/contacts"), null);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/group_contacts"), null);
+                                Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
                         // Add subscription to this private group feed
                         ContentValues sv = new ContentValues();
@@ -254,25 +245,21 @@ public class DungBeetleContentProvider extends ContentProvider {
                         xv.put(Subscriber.CONTACT_ID, cid);
                         xv.put(Subscriber.FEED_NAME, "friend");
                         mHelper.insertSubscriber(db, xv);
-                        
-                        getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/subscribers"), null);
 
+                        getContext().getContentResolver().notifyChange(
+                                Uri.parse(CONTENT_URI + "/subscribers"), null);
 
                         db.setTransactionSuccessful();
                     }
                     return uriWithId(uri, cid);
-                }
-                else{
+                } else {
                     Log.i(TAG, "Omitting self.");
                     return uriWithId(uri, Contact.MY_ID);
                 }
-            }
-            finally{
+            } finally {
                 db.endTransaction();
             }
-        }
-        else{
+        } else {
             return null;
         }
     }
