@@ -56,4 +56,11 @@ public class AppReference extends DbObject {
         }
         return null;
     }
+
+    public String getThumbnailHtml() {
+        if (mJson.has(AppReferenceObj.THUMB_HTML)) {
+            return mJson.optString(AppReferenceObj.THUMB_HTML);
+        }
+        return null;
+    }
 }

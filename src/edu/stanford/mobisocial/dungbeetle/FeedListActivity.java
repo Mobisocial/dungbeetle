@@ -169,14 +169,29 @@ public class FeedListActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         String feedId = (String)v.getTag(R.id.feed_label);
-        String groupName = (String)v.getTag(R.id.group_name);
+        while (feedId == null) {
+            v = (View)v.getParent();
+            if (v == null) {
+                Log.w(TAG, "No feed information found.");
+                break;
+            }
+            feedId = (String)v.getTag(R.id.feed_label);
+        }
+        String groupName = null;
+        Long groupId = null;
+        String groupUri = null;
+        if (v != null) {
+            groupName = (String)v.getTag(R.id.group_name);
+            groupId = (Long)v.getTag(R.id.group_id);
+            groupUri = (String)v.getTag(R.id.group_uri);
+        }
 
         Intent launch = new Intent();
         if (groupName != null) {
             launch.setClass(FeedListActivity.this, GroupsTabActivity.class);
             launch.putExtra("group_name", groupName);
-            launch.putExtra("group_id", (Long)v.getTag(R.id.group_id));
-            launch.putExtra("group_uri", (String)v.getTag(R.id.group_uri));
+            launch.putExtra("group_id", groupId);
+            launch.putExtra("group_uri", groupUri);
         } else {
             launch.setClass(FeedListActivity.this, FeedActivity.class);
             launch.putExtra("feed_id", feedId);

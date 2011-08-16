@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
@@ -22,13 +24,16 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -54,6 +59,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     public static final String STATE = "state";
     public static final String THUMB_JPG = "b64jpgthumb";
     public static final String THUMB_TEXT = "txt";
+    public static final String THUMB_HTML = "html";
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";
 
@@ -106,7 +112,6 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     public void handleReceived(Context context, Contact from, JSONObject obj) {
         String packageName = obj.optString(PACKAGE_NAME);
         String arg = obj.optString(ARG);
-        Log.i(TAG, "Received invite with arg: " + arg);
         Intent launch = new Intent();
         launch.setAction(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -169,6 +174,19 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
             frame.addView(valueTV);
 	    }
+
+	    thumbnail = ref.getThumbnailHtml();
+        if (thumbnail != null) {
+            rendered = true;
+            WebView webview = new WebView(context);
+            webview.loadData(thumbnail, "text/html", "UTF-8");
+            webview.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+            Object o = frame.getTag(R.id.object_entry);
+            webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
+            frame.addView(webview);
+        }
 
 	    if (!rendered) {
 	        String appName = content.optString(PACKAGE_NAME);
@@ -233,11 +251,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	    }
 
         Iterator<?> keyIter = content.keys();
-        while(keyIter.hasNext())
-        {
-            Log.d(TAG, keyIter.next().toString());
+        if (DBG) {
+            while(keyIter.hasNext()) {
+                Log.d(TAG, keyIter.next().toString());
+            }
         }
-
         Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id="+content.optString("packageName")));
         context.startActivity(market);
 	    //Toast.makeText(context, "No activity found.", Toast.LENGTH_SHORT).show();
@@ -303,19 +321,16 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
                                 if (resolved.size() > 0) {
                                     ActivityInfo info = resolved.get(0).activityInfo;
                                     String arg = getResultData();
-                                    launch.setComponent(new ComponentName(
-                                                            info.packageName,
-                                                            info.name));
+                                    launch.setComponent(new ComponentName(info.packageName,
+                                            info.name));
                                     launch.putExtra("creator", true);
                                     launch.putExtra(
-                                        "android.intent.extra.APPLICATION_ARGUMENT",
-                                        arg);
+                                        "android.intent.extra.APPLICATION_ARGUMENT", arg);
                                     callback.onAppSelected(info.packageName, arg, launch);
                                 }
                                 else{
-                                    Toast.makeText(context, 
-                                                   "No applications found.",
-                                                   Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context, "No applications found.",
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             }
                         };
@@ -365,6 +380,45 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
                 Uri gUri = Uri.parse(obj.optString(GROUP_URI));
                 Group.join(context, gUri);
             }
+        }
+    }
+
+    private class WebViewClickListener implements View.OnTouchListener {
+        private int position;
+        private ViewGroup vg;
+        private ViewGroup frame;
+        private ListView lv;
+
+        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
+            this.vg = vg;
+            this.position = position;
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getAction();
+
+            switch (action) {
+                case MotionEvent.ACTION_CANCEL:
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    sendClick();
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void sendClick() {
+            if (lv == null) {
+                while (!(vg instanceof ListView)) {
+                    if (null != vg.getTag(R.id.object_entry)) {
+                        frame = vg;
+                    }
+                    vg = (ViewGroup)vg.getParent();
+                }
+                lv = (ListView) vg;
+            }
+            lv.performItemClick(frame, position, 0);
         }
     }
 }

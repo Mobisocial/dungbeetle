@@ -86,6 +86,7 @@ public class DbObject {
 
                 ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                 frame.removeAllViews();
+                frame.setTag(R.id.object_entry, c.getPosition());
                 FeedRenderer renderer = DbObjects.getFeedRenderer(content);
                 if(renderer != null){
                     renderer.render(context, frame, content);
