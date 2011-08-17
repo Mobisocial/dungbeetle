@@ -207,7 +207,7 @@ public class GroupsTabActivity extends TabActivity
 
 
                 AlertDialog.Builder alert = new AlertDialog.Builder(GroupsTabActivity.this);
-                alert.setMessage("Enter a password:");
+                alert.setMessage("Enter a secret key if you want to:");
                 final EditText input = new EditText(GroupsTabActivity.this);
                 alert.setView(input);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {

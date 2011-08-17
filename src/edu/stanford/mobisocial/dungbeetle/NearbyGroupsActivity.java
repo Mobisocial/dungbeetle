@@ -199,8 +199,15 @@ public class NearbyGroupsActivity extends ListActivity {
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
 
+        dialog = new ProgressDialog(NearbyGroupsActivity.this);
+        dialog.setMessage("Fetching nearby Groups. Please wait...");
+        dialog.setCancelable(true);
+        dialog.show();
+
         final BroadcastReceiver receiver = new BroadcastReceiver() {
             public void onReceive(final Context context, final Intent intent) {
+            
+                dialog.dismiss();
                 String action = intent.getAction();
                 // When discovery finds a device
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
