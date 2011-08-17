@@ -253,12 +253,14 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
-                        DbObject.ENCODED, "BLOB"
+                        DbObject.ENCODED, "BLOB",
+                        DbObject.CHILD_FEED_NAME, "TEXT"
                         );
             createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
             createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
+            createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
