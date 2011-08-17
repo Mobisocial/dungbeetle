@@ -4,6 +4,8 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
+import edu.stanford.mobisocial.dungbeetle.ViewContactTabActivity;
 
 import java.io.Serializable;
 
@@ -104,9 +106,29 @@ public class Contact implements Serializable{
     }
 
     public static void view(Context context, Long contactId) {
-        Intent launch = new Intent(Intent.ACTION_VIEW);
-        Uri ref = Uri.parse("content://mobisocial.db/contact").buildUpon().appendPath(""+contactId).build();
-        launch.setDataAndType(ref, Contact.MIME_TYPE);
+        Intent launch = null;
+        
+            
+        if (contactId == MY_ID) {
+            launch = new Intent().setClass(context, ProfileActivity.class);
+            launch.putExtra("contact_id", Contact.MY_ID);
+        }
+        else {
+            launch = new Intent(context, ViewContactTabActivity.class);
+            launch.putExtra("contact_id", contactId);
+
+            
+            try {
+                Maybe<Contact> maybeContact = forId(context, contactId);
+                launch.putExtra("contact_name", maybeContact.get().name);
+            }
+            catch (Exception e) {
+            }
+            
+            /*launch = new Intent(Intent.ACTION_VIEW);
+            Uri ref = Uri.parse("content://mobisocial.db/contact").buildUpon().appendPath(""+contactId).build();
+            launch.setDataAndType(ref, Contact.MIME_TYPE);*/
+        }
         context.startActivity(launch);
     }
 }
