@@ -15,7 +15,7 @@ public class DbPresence {
         sFeedPresence.add(new MusicPresence());
         sFeedPresence.add(new PhotosPresence());
         sFeedPresence.add(new LocationPresence());
-        sFeedPresence.add(new PhonePresence());
+        //sFeedPresence.add(new PhonePresence());
     }
 
     public static List<FeedPresence> getPresenceTypes() {

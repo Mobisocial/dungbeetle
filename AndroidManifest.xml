@@ -22,6 +22,8 @@
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <uses-permission android:name="android.permission.READ_PHONE_STATE" />
   <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
+  
+  <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
   <application 
       android:theme="@style/Theme.D1"
