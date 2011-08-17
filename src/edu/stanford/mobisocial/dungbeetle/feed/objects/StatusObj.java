@@ -34,19 +34,13 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
     public static JSONObject json(String status){
         JSONObject obj = new JSONObject();
         try{
-            obj.put("text", status);
+            obj.put(TEXT, status);
         }catch(JSONException e){}
         return obj;
     }
 
     public void handleReceived(Context context, Contact from, JSONObject obj){
-        String status = obj.optString(TEXT);
-        String id = Long.toString(from.id);
-        ContentValues values = new ContentValues();
-        values.put(Contact.STATUS, status);
-        context.getContentResolver().update(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            values, "_id=?", new String[]{id});
+
     }
 
     public void render(Context context, ViewGroup frame, JSONObject content) {
