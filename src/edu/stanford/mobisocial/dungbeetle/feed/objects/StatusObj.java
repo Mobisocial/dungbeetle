@@ -11,11 +11,13 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import android.content.Intent;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class StatusObj implements DbEntryHandler, FeedRenderer {
+public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
 
     public static final String TYPE = "status";
     public static final String TEXT = "text";
@@ -55,5 +57,18 @@ public class StatusObj implements DbEntryHandler, FeedRenderer {
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
+    }
+
+	@Override
+    public void activate(Uri feed, Context context, JSONObject content){
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        String text = content.optString(TEXT);
+        Uri uri = Uri.parse(text);
+        String scheme = uri.getScheme();
+
+        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+            intent.setData(Uri.parse(content.optString(TEXT)));
+            context.startActivity(intent);
+        }
     }
 }

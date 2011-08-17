@@ -268,7 +268,7 @@ public class DungBeetleActivity extends DashboardActivity
         // if this is from the share menu
         if (Intent.ACTION_SEND.equals(action))
         {
-            if (extras.containsKey(Intent.EXTRA_STREAM))
+            if (extras.containsKey(Intent.EXTRA_STREAM) || extras.containsKey(Intent.EXTRA_TEXT))
             {
                 try
                 {

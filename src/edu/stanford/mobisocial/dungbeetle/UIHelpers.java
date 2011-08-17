@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -126,6 +127,17 @@ public class UIHelpers {
         // if this is from the share menu
         if (Intent.ACTION_SEND.equals(action))
         {
+            if (extras.containsKey(Intent.EXTRA_TEXT)) {
+                Uri uri = Uri.parse(extras.getCharSequence(Intent.EXTRA_TEXT).toString());
+                
+                DbObject obj = StatusObj.from(uri.toString());
+                
+                for(int i = 0; i < using.length; i++) {
+                    if(using[i]) {                    
+                        Helpers.sendToFeed(context, obj, uris[i]);
+                    }
+                }
+            }
             if (extras.containsKey(Intent.EXTRA_STREAM))
             {
                 try
