@@ -31,7 +31,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	static final boolean DBG = false;
-	private static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
+	static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
@@ -105,11 +105,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "feeds", ".+")){
             String feedName = segs.get(1);
             try{
-                mHelper.addToFeed(
-                    appId,
-                    feedName,
-                    values.getAsString(DbObject.TYPE),
-                    new JSONObject(values.getAsString(DbObject.JSON)));
+                mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
+                        new JSONObject(values.getAsString(DbObject.JSON)));
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString());
@@ -121,11 +118,8 @@ public class DungBeetleContentProvider extends ContentProvider {
         else if(match(uri, "out")){
             try{
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                mHelper.addToOutgoing(
-                    appId,
-                    values.getAsString(DbObject.DESTINATION),
-                    values.getAsString(DbObject.TYPE),
-                    obj);
+                mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
+                        values.getAsString(DbObject.TYPE), obj);
                 resolver.notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }
@@ -156,24 +150,21 @@ public class DungBeetleContentProvider extends ContentProvider {
             if(!appId.equals(SUPER_APP_ID)) return null;
             long id = mHelper.insertGroupMember(values);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_contacts"), null);
+            getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/group_contacts"), null);
             return uriWithId(uri, id);
         }
 
-        else if(match(uri, "group_invitations")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        else if (match(uri, "group_invitations")) {
+            if (!appId.equals(SUPER_APP_ID))
+                return null;
             String groupName = values.getAsString(InviteToGroupObj.GROUP_NAME);
             Uri dynUpdateUri = Uri.parse(values.getAsString(InviteToGroupObj.DYN_UPDATE_URI));
             long gid = values.getAsLong("groupId");
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            mHelper.addToOutgoing(
-                db,
-                appId,
-                values.getAsString(InviteToGroupObj.PARTICIPANTS),
-                InviteToGroupObj.TYPE,
-                InviteToGroupObj.json(groupName, dynUpdateUri));
-            getContext().getContentResolver().notifyChange(
-                Uri.parse(CONTENT_URI + "/out"), null);
+            mHelper.addToOutgoing(db, appId, values.getAsString(InviteToGroupObj.PARTICIPANTS),
+                    InviteToGroupObj.TYPE, InviteToGroupObj.json(groupName, dynUpdateUri));
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
             return uriWithId(uri, gid);
         }
 
@@ -184,64 +175,64 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = gp.feedName(gUri);
             Maybe<Group> mg = mHelper.groupByFeedName(feedName);
             long id = -1;
-            try{
+            try {
                 Group g = mg.get();
                 id = g.id;
-            }
-            catch(Maybe.NoValError e){
+            } catch (Maybe.NoValError e) {
                 ContentValues cv = new ContentValues();
                 cv.put(Group.NAME, gp.groupName(gUri));
                 cv.put(Group.FEED_NAME, feedName);
                 cv.put(Group.DYN_UPDATE_URI, gUri.toString());
                 id = mHelper.insertGroup(cv);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+                getContext().getContentResolver().notifyChange(
+                        Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"),
+                        null);
             }
             return uriWithId(uri, id);
         }
 
-
-        else if(match(uri, "dynamic_group_member")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        else if (match(uri, "dynamic_group_member")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            try{
+            try {
                 db.beginTransaction();
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
                 RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
                 String personId = mIdent.personIdForPublicKey(k);
-                if(!personId.equals(mIdent.userPersonId())){
+                if (!personId.equals(mIdent.userPersonId())) {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
                     cv.put(Contact.NAME, values.getAsString(Contact.NAME));
                     cv.put(Contact.EMAIL, values.getAsString(Contact.EMAIL));
-                    if(values.getAsString(Contact.PICTURE) != null) {
+                    if (values.getAsString(Contact.PICTURE) != null) {
                         cv.put(Contact.PICTURE, values.getAsByteArray(Contact.PICTURE));
                     }
 
                     long cid = -1;
                     Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
-                    if(contact.id > -1){ 
+                    if (contact.id > -1) {
                         cid = contact.id;
-                    }
-                    else{
+                    } else {
                         cid = mHelper.insertContact(db, cv);
                     }
 
-                    if(cid > -1){ 
+                    if (cid > -1) {
 
                         ContentValues gv = new ContentValues();
-                        gv.put(GroupMember.GLOBAL_CONTACT_ID, 
-                               values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
-                        gv.put(GroupMember.GROUP_ID, 
-                               values.getAsLong(GroupMember.GROUP_ID));
+                        gv.put(GroupMember.GLOBAL_CONTACT_ID,
+                                values.getAsString(GroupMember.GLOBAL_CONTACT_ID));
+                        gv.put(GroupMember.GROUP_ID, values.getAsLong(GroupMember.GROUP_ID));
                         gv.put(GroupMember.CONTACT_ID, cid);
                         mHelper.insertGroupMember(db, gv);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/group_members"), null);
+                                Uri.parse(CONTENT_URI + "/group_members"), null);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/contacts"), null);
+                                Uri.parse(CONTENT_URI + "/contacts"), null);
                         getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/group_contacts"), null);
+                                Uri.parse(CONTENT_URI + "/group_contacts"), null);
 
                         // Add subscription to this private group feed
                         ContentValues sv = new ContentValues();
@@ -254,25 +245,21 @@ public class DungBeetleContentProvider extends ContentProvider {
                         xv.put(Subscriber.CONTACT_ID, cid);
                         xv.put(Subscriber.FEED_NAME, "friend");
                         mHelper.insertSubscriber(db, xv);
-                        
-                        getContext().getContentResolver().notifyChange(
-                            Uri.parse(CONTENT_URI + "/subscribers"), null);
 
+                        getContext().getContentResolver().notifyChange(
+                                Uri.parse(CONTENT_URI + "/subscribers"), null);
 
                         db.setTransactionSuccessful();
                     }
                     return uriWithId(uri, cid);
-                }
-                else{
+                } else {
                     Log.i(TAG, "Omitting self.");
                     return uriWithId(uri, Contact.MY_ID);
                 }
-            }
-            finally{
+            } finally {
                 db.endTransaction();
             }
-        }
-        else{
+        } else {
             return null;
         }
     }
@@ -315,26 +302,27 @@ public class DungBeetleContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         ContentResolver resolver = getContext().getContentResolver();
-        final String appId = getCallingActivityId();
-        Log.d(TAG, "Processing query: " + uri + " from appId " + appId);
-        if(appId == null) {
+        final String realAppId = getCallingActivityId();
+
+        if (realAppId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
+
+        if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/"));
             return c;
-        }
-        else if(match(uri, "feeds", ".+")){
+        } else if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
-            String select = isMe ? DBHelper.andClauses(
-                selection, 
-                DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeed(appId, feedName, projection, select, selectionArgs, sortOrder);
+            String select = isMe ? DBHelper.andClauses(selection, DbObject.CONTACT_ID + "="
+                    + Contact.MY_ID) : selection;
+            Cursor c = mHelper.queryFeed(realAppId,
+                    feedName, projection, select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Feed.uriForName(feedName));
             if (isMe) c.setNotificationUri(resolver, Feed.uriForName("me"));
             return c;
@@ -344,21 +332,21 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
                 selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeedLatest(appId, feedName, projection,
+            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
                     select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         }
         else if(match(uri, "groups_membership", ".+")) {
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long contactId = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupsMembership(contactId);
             c.setNotificationUri(resolver, uri);
             return c;
         }
         else if(match(uri, "group_contacts", ".+")) {
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long group_id = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupContacts(group_id);
             c.setNotificationUri(resolver, uri);
@@ -369,7 +357,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 match(uri, "groups") ||
                 match(uri, "group_members")){
 
-            if(!appId.equals(SUPER_APP_ID)) return null;
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
 
             Cursor c = mHelper.getReadableDatabase().query(
                     segs.get(0), projection, selection, selectionArgs, null, null, sortOrder);

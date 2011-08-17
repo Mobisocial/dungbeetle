@@ -7,13 +7,16 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -38,28 +41,50 @@ public class DbObject {
 
     public static final String EXTRA_FEED_URI = "feed_uri";
 
+    private final Cursor mCursor;
     protected final String mType;
-    protected final JSONObject mJson;
+    protected JSONObject mJson;
+    private Long mTimestamp;
+    private static OnClickViewProfile sViewProfileAction;
 
     public DbObject(String type, JSONObject json) {
+        mCursor = null;
         mType = type;
         mJson = json;
+    }
+
+    private DbObject(Cursor c) {
+        mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
+        mCursor = c;
     }
 
     public String getType() {
         return mType;
     }
     public JSONObject getJson() {
+        if (mJson == null && mCursor != null) {
+            String jsonStr = mCursor.getString(mCursor.getColumnIndexOrThrow(DbObject.JSON));
+            try {
+                mJson = new JSONObject(jsonStr);
+            } catch (JSONException e) {
+                Log.wtf("DB", "Bad json from database.");
+            }
+        }
         return mJson;
     }
 
+    public Long getTimestamp() {
+        if (mTimestamp == null && mCursor != null) {
+            mTimestamp = mCursor.getLong(mCursor.getColumnIndexOrThrow(DbObject.TIMESTAMP));
+        }
+        return mTimestamp;
+    }
+
     public static DbObject fromCursor(Cursor c) {
-        String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
         try {
-            JSONObject json = new JSONObject(jsonStr);
-            return new DbObject(json.optString("type"), json);
-        } catch (JSONException e) {
-            Log.wtf("Bad json from db", e);
+            return new DbObject(c);
+        } catch (Exception e) {
+            Log.wtf("Bad data from db", e);
             return null;
         }
     }
@@ -75,6 +100,11 @@ public class DbObject {
             nameText.setText(contact.name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            if (sViewProfileAction == null) {
+                sViewProfileAction = new OnClickViewProfile(context);
+            }
+            icon.setTag(contactId);
+            icon.setOnClickListener(sViewProfileAction);
             // TODO: this is horrible
             ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
@@ -86,6 +116,7 @@ public class DbObject {
 
                 ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                 frame.removeAllViews();
+                frame.setTag(R.id.object_entry, c.getPosition());
                 FeedRenderer renderer = DbObjects.getFeedRenderer(content);
                 if(renderer != null){
                     renderer.render(context, frame, content);
@@ -96,4 +127,18 @@ public class DbObject {
         }
         catch(Maybe.NoValError e){}
     }
+
+    public static class OnClickViewProfile implements View.OnClickListener {
+        private final Context mmContext;
+
+        @Override
+        public void onClick(View v) {
+            Long contactId = (Long)v.getTag();
+            Contact.view(mmContext, contactId);
+        }
+
+        public OnClickViewProfile(Context c) {
+            mmContext = c;
+        }
+    };
 }

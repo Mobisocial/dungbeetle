@@ -1,13 +1,18 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 import java.io.Serializable;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
+import android.view.View;
+
 import java.util.Date;
 
 
@@ -24,6 +29,7 @@ public class Contact implements Serializable{
     public static final String LAST_PRESENCE_TIME = "last_presence_time";
     public static final String STATUS = "status";
     public static final String PICTURE = "picture";
+    public static final String MIME_TYPE = "vnd.mobisocial.db/contact";
 
     public final String name;
     public final String email;
@@ -97,5 +103,10 @@ public class Contact implements Serializable{
         else return R.drawable.status_yellow;
     }
 
-
+    public static void view(Context context, Long contactId) {
+        Intent launch = new Intent(Intent.ACTION_VIEW);
+        Uri ref = Uri.parse("content://mobisocial.db/contact").buildUpon().appendPath(""+contactId).build();
+        launch.setDataAndType(ref, Contact.MIME_TYPE);
+        context.startActivity(launch);
+    }
 }

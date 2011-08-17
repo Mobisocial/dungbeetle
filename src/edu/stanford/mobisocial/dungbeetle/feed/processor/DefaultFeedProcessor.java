@@ -8,11 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.ListAdapter;
-import edu.stanford.mobisocial.dungbeetle.FeedActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 

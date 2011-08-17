@@ -1,34 +1,30 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.database.Cursor;
-import android.media.ExifInterface;
-import android.net.Uri;
-import android.widget.EditText;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import android.content.Intent;
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
 
+import android.app.AlertDialog;
 import android.content.ContentResolver;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import android.os.Bundle;
-import android.provider.MediaStore.Images;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.EditText;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 public class UIHelpers {
 

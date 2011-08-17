@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.util.Log;
 import android.view.View;
 import android.content.Context;
 
@@ -48,7 +49,7 @@ public class ViewContactTabActivity extends TabActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
-
+        Log.d("DBCONTACT", "VIEWING " + getIntent().getData());
         // Create top-level tabs
         //Resources res = getResources();
         // res.getDrawable(R.drawable.icon)
@@ -57,7 +58,12 @@ public class ViewContactTabActivity extends TabActivity
         TabHost.TabSpec spec;  
 
         Intent intent = getIntent();
-        Long contact_id = intent.getLongExtra("contact_id", -1);
+        Long contact_id;
+        if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+            contact_id = Long.parseLong(intent.getData().getLastPathSegment());
+        } else {
+            contact_id = intent.getLongExtra("contact_id", -1);
+        }
         String contact_name = intent.getStringExtra("contact_name");
 
         if(intent.hasExtra("group_name")) {

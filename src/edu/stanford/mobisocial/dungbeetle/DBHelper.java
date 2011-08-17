@@ -594,11 +594,14 @@ public class DBHelper extends SQLiteOpenHelper {
                 groupBy, null, sortOrder, null);
     }
 
-    public Cursor queryFeed(String appId, String feedName, String[] projection, String selection,
+    public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
 
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
-        select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
+        if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
+            select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
+        }
+
         return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
     }
