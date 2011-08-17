@@ -7,13 +7,16 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -42,6 +45,7 @@ public class DbObject {
     protected final String mType;
     protected JSONObject mJson;
     private Long mTimestamp;
+    private static OnClickViewProfile sViewProfileAction;
 
     public DbObject(String type, JSONObject json) {
         mCursor = null;
@@ -96,6 +100,11 @@ public class DbObject {
             nameText.setText(contact.name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            if (sViewProfileAction == null) {
+                sViewProfileAction = new OnClickViewProfile(context);
+            }
+            icon.setTag(contactId);
+            icon.setOnClickListener(sViewProfileAction);
             // TODO: this is horrible
             ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
@@ -118,4 +127,18 @@ public class DbObject {
         }
         catch(Maybe.NoValError e){}
     }
+
+    public static class OnClickViewProfile implements View.OnClickListener {
+        private final Context mmContext;
+
+        @Override
+        public void onClick(View v) {
+            Long contactId = (Long)v.getTag();
+            Contact.view(mmContext, contactId);
+        }
+
+        public OnClickViewProfile(Context c) {
+            mmContext = c;
+        }
+    };
 }
