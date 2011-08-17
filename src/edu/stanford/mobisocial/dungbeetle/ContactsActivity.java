@@ -70,6 +70,17 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         startActivity (new Intent(getApplicationContext(), AboutActivity.class));
     }
 
+    public void onClickNew(View v) {
+        Intent share = new Intent(Intent.ACTION_SEND);
+        Uri friendRequest = FriendRequest.getInvitationUri(this);
+        share.putExtra(Intent.EXTRA_TEXT,
+                "Be my friend on DungBeetle! Click here from your Android device: "
+                + friendRequest);
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
+        share.setType("text/plain");
+        startActivity(share);
+    }
+
     /*** End Dashboard Stuff ***/
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

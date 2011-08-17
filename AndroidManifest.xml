@@ -35,8 +35,8 @@
 	      android:windowSoftInputMode="stateHidden"
 	      android:screenOrientation="portrait">
       <intent-filter>
-	<action android:name="android.intent.action.MAIN" />
-	<category android:name="android.intent.category.LAUNCHER" />
+	    <action android:name="android.intent.action.MAIN" />
+	    <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -46,7 +46,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-            <data android:mimeType="text/plain" />
+                <data android:mimeType="text/plain" />
         </intent-filter>
       
       <intent-filter android:priority="100">
