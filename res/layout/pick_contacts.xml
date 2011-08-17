@@ -49,6 +49,11 @@
 	      android:layout_height="fill_parent"
 	      android:orientation="vertical"
 	      android:id="@+id/tab2">
+      <ListView
+		android:id="@+id/groups_list"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		/>
 	  </LinearLayout>
 
 	</FrameLayout>

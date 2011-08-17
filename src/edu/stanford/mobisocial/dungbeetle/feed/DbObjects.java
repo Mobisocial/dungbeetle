@@ -6,7 +6,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.FileObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
@@ -47,7 +47,7 @@ public final class DbObjects {
 		objs.add(new AppReferenceObj());
         objs.add(new InviteToSharedAppFeedObj());
         objs.add(new InviteToGroupObj());
-        objs.add(new FileObj());
+        objs.add(new LinkObj());
         objs.add(new ProfileObj());
         objs.add(new PresenceObj());
         objs.add(new StatusObj());

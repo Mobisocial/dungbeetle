@@ -2,21 +2,35 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.widget.ListView;
+import android.content.ContentResolver;
 import android.content.Intent;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import mobisocial.nfc.Nfc;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.content.Context;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.FileObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import android.widget.TabHost;
 import android.app.TabActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Bundle;
@@ -33,8 +47,10 @@ import android.widget.CheckBox;
 public class PickContactsActivity extends TabActivity {
 
 	private ContactListCursorAdapter mContacts;
+	private GroupListCursorAdapter mGroups;
     private Intent mIntent;
     private Set<Contact> mResultContacts = new HashSet<Contact>();
+    private Set<Group> mResultGroups = new HashSet<Group>();
 	protected final BitmapManager mgr = new BitmapManager(20);
 	private Nfc mNfc;
 
@@ -57,32 +73,47 @@ public class PickContactsActivity extends TabActivity {
 		mIntent = getIntent();
 		mNfc = new Nfc(this);
 
-        Cursor c = getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
-            null, null, null, null);
+		/** Contacts **/
+        Cursor c = getContentResolver().query(Uri.parse(
+                DungBeetleContentProvider.CONTENT_URI + "/contacts"), null, null, null, null);
 		mContacts = new ContactListCursorAdapter(this, c);
-
-        ListView contactsV = (ListView) findViewById(R.id.contacts_list);
+		ListView contactsV = (ListView) findViewById(R.id.contacts_list);
         contactsV.setAdapter(mContacts);
-        contactsV.setOnItemClickListener(new OnItemClickListener(){
-                public void onItemClick(AdapterView<?> parent,
-                                        View view,
-                                        int position,
-                                        long id){
-                    Cursor cursor = (Cursor)mContacts.getItem(position);
-                    Contact c = new Contact(cursor);
-                    final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
-                    if (checkBox.isChecked()) {
-                        checkBox.setChecked(false);
-                        mResultContacts.remove(c);
-                    }
-                    else {
-                        checkBox.setChecked(true);
-                        mResultContacts.add(c);
-                    }
+        contactsV.setOnItemClickListener(new OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Cursor cursor = (Cursor)mContacts.getItem(position);
+                Contact c = new Contact(cursor);
+                final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
+                if (checkBox.isChecked()) {
+                    checkBox.setChecked(false);
+                    mResultContacts.remove(c);
+                } else {
+                    checkBox.setChecked(true);
+                    mResultContacts.add(c);
                 }
-            });
+            }
+        });
 
+        /** Groups **/
+        Cursor d = getContentResolver().query(Uri.parse(
+                DungBeetleContentProvider.CONTENT_URI + "/groups"), null, null, null, null);
+        mGroups = new GroupListCursorAdapter(this, d);
+        ListView groupsV = (ListView) findViewById(R.id.groups_list);
+        groupsV.setAdapter(mGroups);
+        groupsV.setOnItemClickListener(new OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Cursor cursor = (Cursor)mGroups.getItem(position);
+                Group g = new Group(cursor);
+                final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
+                if (checkBox.isChecked()) {
+                    checkBox.setChecked(false);
+                    mResultGroups.remove(g);
+                } else {
+                    checkBox.setChecked(true);
+                    mResultGroups.add(g);
+                }
+            }
+        });
 
         TabHost tabHost = getTabHost();
         TabHost.TabSpec spec = tabHost.newTabSpec("contacts").setIndicator(
@@ -92,7 +123,6 @@ public class PickContactsActivity extends TabActivity {
         spec = tabHost.newTabSpec("groups").setIndicator(
             "Groups",null).setContent(R.id.tab2);
         tabHost.addTab(spec);
-
         tabHost.setCurrentTab(0);
 
         Button okButton = (Button)findViewById(R.id.ok_button);
@@ -108,33 +138,69 @@ public class PickContactsActivity extends TabActivity {
     }
 
 
-    private void handleOk(){
+    private void handleOk() {
         Uri data = mIntent.getData();
         String txt = mIntent.getStringExtra(Intent.EXTRA_TEXT);
-        if(mIntent.getAction().equals(Intent.ACTION_SEND)
-           && mIntent.getType() != null
-           && (data != null || txt != null)){
-            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
-                    Toast.LENGTH_SHORT).show();
-            String url = "";
-            if(data != null) url = data.toString();
-            else if(txt != null) url = txt;
-            Helpers.sendMessage(this, mResultContacts, FileObj.from(mIntent.getType(), url));
-        } 
-        else if(mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
-                mIntent.getStringExtra("type").equals("invite_app_feed")){
-            Helpers.sendAppFeedInvite(this, 
-                mResultContacts, 
-                mIntent.getStringExtra("sharedFeedName"),
-                mIntent.getStringExtra("packageName"));
-        }
-        else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
+        Log.d(TAG,"sharing " + mIntent.getType() + ", " + mIntent.getData());
+        if (mIntent.getAction().equals(Intent.ACTION_SEND) && mIntent.getType() != null
+                && (data != null || txt != null || mIntent.hasExtra(Intent.EXTRA_STREAM))) {
+            if (mResultContacts.size() == 0 && mResultGroups.size() == 0) {
+                Toast.makeText(this, "No contacts chosen for sharing.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (mResultGroups.size() == 0) {
+                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
+                        Toast.LENGTH_SHORT).show();
+            } else if (mResultContacts.size() == 0) {
+                Toast.makeText(this, "Sending to " + mResultGroups.size() + " feeds...",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts and " +
+                        mResultGroups.size() + " groups...", Toast.LENGTH_SHORT).show();
+            }
+
+            DbObject outboundObj = null;
+            if (mIntent.getType().startsWith("image/") && mIntent.hasExtra(Intent.EXTRA_STREAM)) {
+                try {
+                    outboundObj = PictureObj.from(this, mIntent);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error reading photo data.", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error reading photo data.", e);
+                }
+            } else {
+                String url = "";
+                if (data != null) {
+                    url = data.toString();
+                } else if (txt != null) {
+                    url = txt;
+                }
+                outboundObj = LinkObj.from(url, mIntent.getType());
+            }
+
+            if (outboundObj == null) {
+                Log.i(TAG, "no content to share.");
+                return;
+            }
+            if (mResultContacts.size() > 0) {
+                Helpers.sendMessage(this, mResultContacts, outboundObj);
+            }
+            if (mResultGroups.size() > 0) {
+                for (Group g : mResultGroups) {
+                    Helpers.sendToFeed(this, outboundObj, Feed.uriForName(g.feedName));
+                }
+            }
+        } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
+                mIntent.getStringExtra("type").equals("invite_app_feed")) {
+            // TODO: Remove?
+            Helpers.sendAppFeedInvite(this, mResultContacts,
+                    mIntent.getStringExtra("sharedFeedName"),
+                    mIntent.getStringExtra("packageName"));
+        } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
             Uri threadUri = mIntent.getParcelableExtra("uri");
             Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
                     Toast.LENGTH_SHORT).show();
             Helpers.sendThreadInvite(this, mResultContacts, threadUri);
-        }
-        else if(mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)){
+        } else if (mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)) {
             long[] ids = new long[mResultContacts.size()];
             Iterator<Contact> it = mResultContacts.iterator();
             int i = 0;
@@ -145,13 +211,13 @@ public class PickContactsActivity extends TabActivity {
             }
             mIntent.putExtra("contacts", ids);
         }
+
         setResult(RESULT_OK, mIntent);
         finish();
     }
 
 
     private class ContactListCursorAdapter extends CursorAdapter {
-
         public ContactListCursorAdapter (Context context, Cursor c) {
             super(context, c);
         }
@@ -178,7 +244,35 @@ public class PickContactsActivity extends TabActivity {
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
             checkBox.setChecked(mResultContacts.contains(contact));
         }
+    }
 
+    private class GroupListCursorAdapter extends CursorAdapter {
+        public GroupListCursorAdapter (Context context, Cursor c) {
+            super(context, c);
+        }
+
+        @Override
+        public View newView(Context context, Cursor c, ViewGroup parent) {
+            final LayoutInflater inflater = LayoutInflater.from(context);
+            View v = inflater.inflate(R.layout.contacts_picker_item, parent, false);
+            bindView(v, context, c);
+            return v;
+        }
+
+        @Override
+        public void bindView(View v, Context context, Cursor c) {
+            Group group = new Group(c);
+            String name = group.name;
+            TextView nameText = (TextView) v.findViewById(R.id.name_text);
+            nameText.setText(name);
+
+            //final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            //icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            //((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+
+            final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
+            checkBox.setChecked(mResultGroups.contains(group));
+        }
     }
 
     @Override

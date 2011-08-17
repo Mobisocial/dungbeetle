@@ -1,4 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -10,13 +15,18 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Log;
 
 public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
 	public static final String TAG = "PictureObj";
@@ -31,6 +41,48 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
 
     public static DbObject from(byte[] data) {
         return new DbObject(TYPE, PictureObj.json(data));
+    }
+
+    public static DbObject from(Context context, Intent intent) throws IOException {
+        // Get resource path from intent callee
+        Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+
+        // Query gallery for camera picture via
+        // Android ContentResolver interface
+        ContentResolver cr = context.getContentResolver();
+        InputStream is = cr.openInputStream(uri);
+        // Get binary bytes for encode
+        byte[] data = getBytesFromFile(is);
+
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = 8;
+        Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
+                data, 0, data.length, options);
+
+        // Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
+        // Uri.fromFile(file) );
+        int width = sourceBitmap.getWidth();
+        int height = sourceBitmap.getHeight();
+        int cropSize = Math.min(width, height);
+
+        int targetSize = 200;
+        float scaleSize = ((float) targetSize) / cropSize;
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleSize, scaleSize);
+        float rotation = PhotoTaker.rotationForImage(context, uri);
+        if (rotation != 0f) {
+            matrix.preRotate(rotation);
+        }
+
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                sourceBitmap, 0, 0, width, height, matrix, true);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        data = baos.toByteArray();
+        return from(data);
     }
 
     public static JSONObject json(byte[] data){
@@ -64,4 +116,20 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
     public void handleReceived(Context context, Contact from, JSONObject msg) {   
     }
 
+    private static byte[] getBytesFromFile(InputStream is) {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[16384];
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+
+            buffer.flush();
+            return buffer.toByteArray();
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading bytes from file", e);
+            return null;
+        }
+    }
 }

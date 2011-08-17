@@ -257,29 +257,8 @@ public class DungBeetleActivity extends DashboardActivity
                         }); 
                 }
             });
-        
+
         pushContactInfoViaNfc();
-
-
-        Intent intent = getIntent();
-        Bundle extras = intent.getExtras();
-        String action = intent.getAction();
-
-        // if this is from the share menu
-        if (Intent.ACTION_SEND.equals(action))
-        {
-            if (extras.containsKey(Intent.EXTRA_STREAM) || extras.containsKey(Intent.EXTRA_TEXT))
-            {
-                try
-                {
-                    UIHelpers.showGroupPicker(DungBeetleActivity.this, null, intent);
-                } catch (Exception e)
-                {
-                    Log.e(this.getClass().getName(), e.toString());
-                }
-
-            }
-        }
     }
 
 	
