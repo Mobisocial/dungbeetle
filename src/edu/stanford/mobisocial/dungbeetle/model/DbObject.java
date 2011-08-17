@@ -38,28 +38,49 @@ public class DbObject {
 
     public static final String EXTRA_FEED_URI = "feed_uri";
 
+    private final Cursor mCursor;
     protected final String mType;
-    protected final JSONObject mJson;
+    protected JSONObject mJson;
+    private Long mTimestamp;
 
     public DbObject(String type, JSONObject json) {
+        mCursor = null;
         mType = type;
         mJson = json;
+    }
+
+    private DbObject(Cursor c) {
+        mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
+        mCursor = c;
     }
 
     public String getType() {
         return mType;
     }
     public JSONObject getJson() {
+        if (mJson == null && mCursor != null) {
+            String jsonStr = mCursor.getString(mCursor.getColumnIndexOrThrow(DbObject.JSON));
+            try {
+                mJson = new JSONObject(jsonStr);
+            } catch (JSONException e) {
+                Log.wtf("DB", "Bad json from database.");
+            }
+        }
         return mJson;
     }
 
+    public Long getTimestamp() {
+        if (mTimestamp == null && mCursor != null) {
+            mTimestamp = mCursor.getLong(mCursor.getColumnIndexOrThrow(DbObject.TIMESTAMP));
+        }
+        return mTimestamp;
+    }
+
     public static DbObject fromCursor(Cursor c) {
-        String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
         try {
-            JSONObject json = new JSONObject(jsonStr);
-            return new DbObject(json.optString("type"), json);
-        } catch (JSONException e) {
-            Log.wtf("Bad json from db", e);
+            return new DbObject(c);
+        } catch (Exception e) {
+            Log.wtf("Bad data from db", e);
             return null;
         }
     }
