@@ -5,7 +5,6 @@
 	      android:layout_height="fill_parent"
 	      >
 
-
   <RelativeLayout
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
@@ -40,6 +39,9 @@
 	android:hint="What's up?"
 	android:singleLine="true"
 	android:inputType="textShortMessage|textAutoCorrect|textCapSentences"
+	android:imeOptions="actionSend|flagNoEnterAction"
+	android:autoText="true"
+	android:capitalize="sentences"
 	/>
     
   </RelativeLayout>

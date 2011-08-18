@@ -1,20 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Color;
-
-import android.content.DialogInterface;
-import android.widget.EditText;
-import android.app.AlertDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,12 +13,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CursorAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.view.Menu;
-import android.view.MenuItem;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
@@ -39,7 +34,7 @@ public class FeedListActivity extends ListActivity {
     private ContactCache mContactCache;
     private DBHelper mHelper;
 
-/*** Dashbaord stuff ***/
+    /*** Dashboard stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, DungBeetleActivity.class);
