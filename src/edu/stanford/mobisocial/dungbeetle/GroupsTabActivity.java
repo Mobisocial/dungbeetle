@@ -100,7 +100,7 @@ public class GroupsTabActivity extends TabActivity
     public void sendToFriend() {
         new AlertDialog.Builder(GroupsTabActivity.this)
         .setTitle("Share thread...")
-        .setItems(new String[] {"From DungBeetle", "Other..."}, new DialogInterface.OnClickListener() {
+        .setItems(new String[] {"From Musubi", "Other..."}, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
@@ -124,9 +124,9 @@ public class GroupsTabActivity extends TabActivity
 
     private void sendToExternalFriend() {
         Intent share = new Intent(Intent.ACTION_SEND);
-        share.putExtra(Intent.EXTRA_TEXT, "Join me in a DungBeetle thread: " +
+        share.putExtra(Intent.EXTRA_TEXT, "Join me in a Musubi thread: " +
                 ThreadRequest.getInvitationUri(this, mExternalFeedUri));
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on DungBeetle!");
+        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
         share.setType("text/plain");
         startActivity(share);
     }

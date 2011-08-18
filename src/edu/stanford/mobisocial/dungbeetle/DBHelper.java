@@ -46,7 +46,9 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
-	public static final String DB_NAME = "DUNG_HEAP.db";
+	public static final String DB_NAME = "MUSUBI.db";
+	//for legacy purposes
+	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
 	public static final int VERSION = 32;
     private final Context mContext;

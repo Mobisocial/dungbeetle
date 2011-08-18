@@ -8,13 +8,13 @@ import android.net.Uri;
 import android.widget.Toast;
 
 public class ThreadRequest {
-    public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/dungbeetle/thread";
+    public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/thread";
 
 	public static Uri getInvitationUri(Context c, Uri threadUri) {
         return new Uri.Builder()
         	.scheme("http")
         	.authority("mobisocial.stanford.edu")
-        	.path("dungbeetle/thread")
+        	.path("musubi/thread")
         	.appendQueryParameter("uri", threadUri.toString())
         	.build();
 	}

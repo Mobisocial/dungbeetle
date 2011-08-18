@@ -28,7 +28,7 @@ public class FriendRequest {
     private static final boolean DBG = false;
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
-    public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/dungbeetle/join";
+    public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/join";
 
     public static Uri getInvitationUri(Context c) {
         return getInvitationUri(c, true);
@@ -52,7 +52,7 @@ public class FriendRequest {
         helper.close();
 
         Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
-                .path("dungbeetle/join").appendQueryParameter("profile", profile)
+                .path("musubi/join").appendQueryParameter("profile", profile)
                 .appendQueryParameter("email", email)
                 .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
         if (appendCapability) {
