@@ -107,6 +107,12 @@ public class SettingsActivity extends ListActivity {
                             }
                             in.close();
                             out.close();
+
+                            
+                            File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
+                            if(legacyDB.exists()) {
+                                legacyDB.delete();
+                            }
                             showToast("backed up");
                         }
                         catch(Exception e){
@@ -119,17 +125,17 @@ public class SettingsActivity extends ListActivity {
                             DBHelper mHelper = new DBHelper(SettingsActivity.this);
                             mHelper.getReadableDatabase().close();
                             File data = Environment.getDataDirectory();
-                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/Musubi/";
+                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
                             
-                            File legacyDB = new File(data, Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
+                            File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
                             if(legacyDB.exists()) {
+                                Log.w(TAG, "legacy db exists, backup from here then delete");
                                 mHelper.importDatabaseFromSD(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
                                 legacyDB.delete();
 
                                 
                                 
                                 String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
-                                String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
                                 
                                 File backupDB = new File(extStorageDirectory, DBHelper.DB_NAME);
                                 File fileDirectory = new File(extStorageDirectory);
