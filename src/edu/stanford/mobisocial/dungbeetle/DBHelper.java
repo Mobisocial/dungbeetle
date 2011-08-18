@@ -48,7 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 32;
+	public static final int VERSION = 33;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -187,6 +187,11 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'child_feed' to object table.");
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.CHILD_FEED_NAME + " TEXT");
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
+        }
+        if(oldVersion <= 32) {
+            // Bug fix.
+            db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.CHILD_FEED_NAME +
+                    " = NULL WHERE " + DbObject.CHILD_FEED_NAME + " = " + DbObject.FEED_NAME);
         }
 
         db.setVersion(VERSION);
