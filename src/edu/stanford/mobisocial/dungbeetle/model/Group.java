@@ -71,6 +71,7 @@ public class Group{
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
         gp.forceUpdate(id, uri, context, ident, version);
+        ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
@@ -91,6 +92,7 @@ public class Group{
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
         gp.forceUpdate(id, uri, context, ident, version);
+        ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
@@ -106,6 +108,7 @@ public class Group{
         int version = -1;
         gp.forceUpdate(id, uri, context, ident, version);
         helper.close();
+        ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
 

@@ -1,13 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import org.json.JSONException;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -24,17 +20,19 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -47,12 +45,10 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
-import java.util.Iterator;
-
 
 public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "InviteToSharedAppObj";
-	private static final boolean DBG = true;
+	private static final boolean DBG = false;
 
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
@@ -142,7 +138,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
 	public void render(final Context context, final ViewGroup frame, JSONObject content) {
-	 // TODO: hack to show object history in app feeds
+	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
             content = appState;
@@ -205,28 +201,29 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
 	@Override
-	public void activate(Uri feed, Context context, JSONObject content) {
+	public void activate(Uri feed, Context context, final JSONObject content) {
 	    if (DBG) Log.d(TAG, "activating " + content);
+
+	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
+            Log.wtf(TAG, "Bad app reference found.");
+            Toast.makeText(context, "Could not launch application.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
 	    String arg = content.optString(ARG);
 	    String state = content.optString(STATE);
 
+	    String appId;
 	    Uri appFeed = feed;
+
+	    appId = content.optString(PACKAGE_NAME);
+	    appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
 	    JSONObject appContent = getAppState(context, content);
 	    if (appContent != null) {
-	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
-	        content = appContent;
-	        if (DBG) Log.d(TAG, "transformed to " + content);
-            arg = content.optString(ARG);
-            state = content.optString(STATE);
+	        if (DBG) Log.d(TAG, "transformed to " + appContent);
+            arg = appContent.optString(ARG);
+            state = appContent.optString(STATE);
 	    }
-
-       String appId;
-       if (content.has(PACKAGE_NAME)) {
-           appId = content.optString(PACKAGE_NAME);
-       } else {
-           appId = content.optString(DbObjects.APP_ID); // NOTE: NOT DbObject.APP_ID!
-       }
-
 
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
@@ -250,13 +247,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        }
 	    }
 
-        Iterator<?> keyIter = content.keys();
-        if (DBG) {
-            while(keyIter.hasNext()) {
-                Log.d(TAG, keyIter.next().toString());
-            }
-        }
-        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id="+content.optString("packageName")));
+        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appId));
         context.startActivity(market);
 	    //Toast.makeText(context, "No activity found.", Toast.LENGTH_SHORT).show();
 	}
@@ -355,7 +346,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
                     return new JSONObject(c.getString(0));
                 } catch (JSONException e) {
                     Log.wtf(TAG, "not really json", e);
+                } finally {
+                    c.close();
                 }
+            } else {
+                c.close();
             }
         }
         return null;

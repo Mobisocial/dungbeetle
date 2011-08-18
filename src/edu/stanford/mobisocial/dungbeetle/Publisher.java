@@ -10,10 +10,8 @@ public class Publisher extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        // TODO: security
         AppReference app = AppReference.fromIntent(intent);
         Uri feed = intent.getParcelableExtra(AppReference.EXTRA_FEED_URI);
         Helpers.sendToFeed(context, app, feed);
     }
-
 }

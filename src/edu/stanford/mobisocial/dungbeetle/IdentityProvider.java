@@ -15,4 +15,5 @@ public interface IdentityProvider {
 	public RSAPublicKey publicKeyForPersonId(String id);
 	public List<RSAPublicKey> publicKeysForContactIds(List<Long> ids);
 	public String personIdForPublicKey(RSAPublicKey key);
+	public void close();
 }

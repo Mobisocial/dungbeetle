@@ -2,10 +2,13 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import org.json.JSONException;
@@ -43,13 +46,14 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
-    public static final boolean DBG = false;
+    public static final boolean DBG = true;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
+    private final Set<Long>mSentObjects = new HashSet<Long>();
 
     public MessagingManagerThread(final Context context){
         mContext = context;
@@ -191,64 +195,81 @@ public class MessagingManagerThread extends Thread {
         };
 
     private StringSearchAndReplacer mContactLocalizer = new StringSearchAndReplacer("\"@g([^\"]+)\""){
-            protected String replace(Matcher m){
-                String personId = m.group(1);
-                if(personId.equals(mIdent.userPersonId())){
-                    return String.valueOf(Contact.MY_ID);
-                }
-                else{
-                    Maybe<Contact> c = mHelper.contactForPersonId(personId);
-                    return String.valueOf(c.otherwise(Contact.NA()).id);
-                }
+        protected String replace(Matcher m){
+            String personId = m.group(1);
+            if(personId.equals(mIdent.userPersonId())){
+                return String.valueOf(Contact.MY_ID);
             }
-        };
-
+            else{
+                Maybe<Contact> c = mHelper.contactForPersonId(personId);
+                return String.valueOf(c.otherwise(Contact.NA()).id);
+            }
+        }
+    };
 
     @Override
-    public void run(){
+    public void run() {
+        Set<Long> notSendingObjects = new HashSet<Long>();
         Log.i(TAG, "Running...");
         mMessenger.init();
-        while(!interrupted()) {
-            try{
-                mOco.waitForChange();
-                Log.i(TAG, "Noticed change...");
-                mOco.clearChanged();
-                Cursor objs = mHelper.queryUnsentObjects();
+        while (!interrupted()) {
+            mOco.waitForChange();
+            Log.i(TAG, "Noticed change...");
+            mOco.clearChanged();
+            Cursor objs = mHelper.queryUnsentObjects();
+            try {
                 Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
-                ArrayList<Long> sent = new ArrayList<Long>();
-                while(!objs.isAfterLast()){
-                    String to = objs.getString(
-                        objs.getColumnIndexOrThrow(DbObject.DESTINATION));
-                    if(to != null){
+                while (!objs.isAfterLast()) {
+                    Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
+                    if (mSentObjects.contains(objId)) {
+                        if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
+                        objs.moveToNext();
+                        continue;
+                    }
+                    String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
+                    if (to != null) {
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
-                        Log.i(TAG, "Sending direct message " + m);
-                        if(m.toPublicKeys().isEmpty()){
-                            Log.e(TAG, "Empty addressees!");
+                        if (DBG) Log.i(TAG, "Sending direct message " + m);
+                        if (m.toPublicKeys().isEmpty()) {
+                            Log.w(TAG, "No addressees for direct message " + objId);
+                            notSendingObjects.add(objId);
+                        } else {
+                            synchronized (mSentObjects) {
+                                mSentObjects.add(objId);
+                            }
+                            mMessenger.sendMessage(m);
                         }
-                        mMessenger.sendMessage(m);
-                    }
-                    else{
+                    } else {
                         OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
-                        Log.i(TAG, "Sending feed object " + m);
-                        if(m.toPublicKeys().isEmpty()){
-                            Log.e(TAG, "Empty addressees!");
+                        if (DBG) Log.i(TAG, "Sending feed object " + objId + ": " + m);
+                        if(m.toPublicKeys().isEmpty()) {
+                            Log.i(TAG, "No addresses for feed message " + objId);
+                            notSendingObjects.add(objId);
+                        } else {
+                            synchronized (mSentObjects) {
+                                mSentObjects.add(objId);
+                            }
+                            mMessenger.sendMessage(m);
                         }
-                        mMessenger.sendMessage(m);
                     }
-                    sent.add(objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID)));
                     objs.moveToNext();
                 }
-                objs.close();
-            }
-            catch(Exception e){
+                if (notSendingObjects.size() > 0) {
+                    if (DBG) Log.d(TAG, "Marking " + notSendingObjects.size() + " objects sent");
+                    mHelper.markObjectsAsSent(notSendingObjects);
+                    notSendingObjects.clear();
+                }
+            } catch (Exception e) {
                 Log.e(TAG, "wtf", e);
+            } finally {
+                objs.close();
             }
         }
         mHelper.close();
     }
 
-    private abstract class OutgoingMsg implements OutgoingMessage{
+    private abstract class OutgoingMsg implements OutgoingMessage {
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
@@ -267,7 +288,12 @@ public class MessagingManagerThread extends Thread {
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
         public void onCommitted() {
-        	mHelper.markObjectAsSent(mObjectId);
+            mHelper.markObjectAsSent(mObjectId);
+            if (mSentObjects.contains(mObjectId)) {
+                synchronized (mSentObjects) {
+                    mSentObjects.remove(mObjectId);
+                }
+            }
         }
 
 		@Override
@@ -282,8 +308,7 @@ public class MessagingManagerThread extends Thread {
 		}
     }
 
-    private class OutgoingFeedObjectMsg extends OutgoingMsg{
-    	
+    private class OutgoingFeedObjectMsg extends OutgoingMsg {
         public OutgoingFeedObjectMsg(Cursor objs){
         	super(objs);
             String feedName = objs.getString(
@@ -299,16 +324,19 @@ public class MessagingManagerThread extends Thread {
             mPubKeys = mIdent.publicKeysForContactIds(ids);
             mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
         }
-
     }
 
-    private class OutgoingDirectObjectMsg extends OutgoingMsg{
-        public OutgoingDirectObjectMsg(Cursor objs){
-        	super(objs);
-            String to = objs.getString(
-                objs.getColumnIndexOrThrow(DbObject.DESTINATION));
-            List<Long> ids = Util.splitLongsToList(to, ",");
-            mPubKeys = mIdent.publicKeysForContactIds(ids);
+    private class OutgoingDirectObjectMsg extends OutgoingMsg {
+        public OutgoingDirectObjectMsg(Cursor objs) {
+            super(objs);
+            String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
+            try {
+                List<Long> ids = Util.splitLongsToList(to, ",");
+                mPubKeys = mIdent.publicKeysForContactIds(ids);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Bad destination found: '" + to + "'");
+                mPubKeys = new ArrayList<RSAPublicKey>();
+            }
             mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
         }
     }
@@ -362,9 +390,9 @@ public class MessagingManagerThread extends Thread {
     // FYI: Must be invoked from main app thread. See above.
     private void handleSpecialMessage(IncomingMessage incoming) {
         String contents = incoming.contents();
-        try{
+        try {
             final Contact c = mHelper.contactForPersonId(incoming.from()).get();
-            try{
+            try {
                 JSONObject obj = new JSONObject(contents);
                 long time = obj.optLong(DbObject.TIMESTAMP);
                 Helpers.updateLastPresence(mContext, c, time);
@@ -373,10 +401,10 @@ public class MessagingManagerThread extends Thread {
                 if (h != null) {
                     h.handleReceived(mContext, c, obj);
                 }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
-            catch(JSONException e){ throw new RuntimeException(e); }
-        }
-        catch(Maybe.NoValError e){
+        } catch (Maybe.NoValError e) {
             Log.e(TAG, "Oops, no contact for message " + contents);
         }
     }
