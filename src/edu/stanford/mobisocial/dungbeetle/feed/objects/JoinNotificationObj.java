@@ -64,5 +64,6 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
             }.start();
         }
         catch(Maybe.NoValError e) { }
+        ident.close();
     }
 }
