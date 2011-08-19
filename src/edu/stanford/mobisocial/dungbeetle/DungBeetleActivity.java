@@ -31,14 +31,14 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.model.AppReference;
+import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 
 public class DungBeetleActivity extends DashboardActivity
 {
-    private static final boolean DBG = true;
+    public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
     public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
@@ -115,8 +115,8 @@ public class DungBeetleActivity extends DashboardActivity
 
         // TODO: Hack.
         try {
-            if (getIntent().hasExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)) {
-                getIntent().setData(Uri.parse(getIntent().getStringExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)));
+            if (getIntent().hasExtra(AppState.EXTRA_APPLICATION_ARGUMENT)) {
+                getIntent().setData(Uri.parse(getIntent().getStringExtra(AppState.EXTRA_APPLICATION_ARGUMENT)));
             }
         } catch (ClassCastException e) {}
         

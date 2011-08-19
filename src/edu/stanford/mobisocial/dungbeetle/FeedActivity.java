@@ -120,9 +120,10 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         }
     }
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        if (DungBeetleActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
@@ -133,7 +134,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         catch(JSONException e){
             Log.e(TAG, "Couldn't parse obj.", e);
         }
-        Log.i(TAG, "Clicked object: " + jsonSrc);
     }
 
     @Override

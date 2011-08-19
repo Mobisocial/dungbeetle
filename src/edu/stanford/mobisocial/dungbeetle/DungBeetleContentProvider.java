@@ -31,7 +31,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	static final boolean DBG = false;
-	static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
+	public static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
@@ -82,41 +82,40 @@ public class DungBeetleContentProvider extends ContentProvider {
         Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
 
         final String appId = getCallingActivityId();
-        if(appId == null){
+        if (appId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return null;
         }
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feeds", "me")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
-            try{
+        if (match(uri, "feeds", "me")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
+            try {
                 mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
                     new JSONObject(values.getAsString(DbObject.JSON)));
 
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
                 return Uri.parse(uri.toString());
-            }
-            catch(JSONException e){
+            } catch(JSONException e){
                 return null;
             }
-        }
-        else if(match(uri, "feeds", ".+")){
+        } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
-            try{
+            try {
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
                         new JSONObject(values.getAsString(DbObject.JSON)));
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString());
             }
-            catch(JSONException e){
+            catch(JSONException e) {
                 return null;
             }
-        }
-        else if(match(uri, "out")){
-            try{
+        } else if(match(uri, "out")) {
+            try {
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
                         values.getAsString(DbObject.TYPE), obj);
@@ -126,38 +125,42 @@ public class DungBeetleContentProvider extends ContentProvider {
             catch(JSONException e){
                 return null;
             }
-        }
-        else if(match(uri, "contacts")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        } else if (match(uri, "contacts")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
             long id = mHelper.insertContact(values);
             resolver.notifyChange(Uri.parse(CONTENT_URI + "/contacts"), null);
             return uriWithId(uri, id);
-        }
-        else if(match(uri, "subscribers")){
+        } else if (match(uri, "subscribers")) {
             // Question: Should this be restricted?
             // if(!appId.equals(SUPER_APP_ID)) return null;
             long id = mHelper.insertSubscriber(values);
             resolver.notifyChange(Uri.parse(CONTENT_URI + "/subscribers"), null);
             return uriWithId(uri, id);
-        }
-        else if(match(uri, "groups")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        } else if (match(uri, "groups")) {
+            if (!appId.equals(SUPER_APP_ID))
+                return null;
             long id = mHelper.insertGroup(values);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
+            getContext().getContentResolver()
+                    .notifyChange(Uri.parse(CONTENT_URI + "/groups"), null);
             return uriWithId(uri, id);
-        }
-        else if(match(uri, "group_members")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        } else if (match(uri, "group_members")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
             long id = mHelper.insertGroupMember(values);
-            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/group_members"), null);
+            getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/group_members"), null);
             getContext().getContentResolver().notifyChange(
                     Uri.parse(CONTENT_URI + "/group_contacts"), null);
             return uriWithId(uri, id);
         }
 
         else if (match(uri, "group_invitations")) {
-            if (!appId.equals(SUPER_APP_ID))
+            if (!appId.equals(SUPER_APP_ID)) {
                 return null;
+            }
             String groupName = values.getAsString(InviteToGroupObj.GROUP_NAME);
             Uri dynUpdateUri = Uri.parse(values.getAsString(InviteToGroupObj.DYN_UPDATE_URI));
             long gid = values.getAsLong("groupId");
@@ -168,8 +171,10 @@ public class DungBeetleContentProvider extends ContentProvider {
             return uriWithId(uri, gid);
         }
 
-        else if(match(uri, "dynamic_groups")){
-            if(!appId.equals(SUPER_APP_ID)) return null;
+        else if (match(uri, "dynamic_groups")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
             Uri gUri = Uri.parse(values.getAsString("uri"));
             GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
             String feedName = gp.feedName(gUri);
@@ -373,7 +378,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     @Override
     public int update(Uri uri, ContentValues values, String selection,
-                      String[] selectionArgs) {
+            String[] selectionArgs) {
         final String appId = getCallingActivityId();
         if (appId == null) {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
@@ -402,8 +407,8 @@ public class DungBeetleContentProvider extends ContentProvider {
     private boolean match(Uri uri, String... regexes){
         List<String> segs = uri.getPathSegments();
         if(segs.size() == regexes.length){
-            for(int i = 0; i < regexes.length; i++){
-                if(!segs.get(i).matches(regexes[i])){
+            for (int i = 0; i < regexes.length; i++) {
+                if (!segs.get(i).matches(regexes[i])) {
                     return false;
                 }
             }
@@ -414,10 +419,8 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     private String getCallingActivityId(){
         int pid = Binder.getCallingPid();
-
         ActivityManager am = (ActivityManager) 
             getContext().getSystemService(Activity.ACTIVITY_SERVICE); 
-
         List<ActivityManager.RunningAppProcessInfo> lstAppInfo = 
             am.getRunningAppProcesses();
 

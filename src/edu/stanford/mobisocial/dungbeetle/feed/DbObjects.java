@@ -4,6 +4,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
@@ -39,8 +40,9 @@ public final class DbObjects {
 
     private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
 
-    static{
-		objs.add(new AppReferenceObj());
+    static {
+        objs.add(new AppStateObj());
+        objs.add(new AppReferenceObj());
 		objs.add(new SubscribeReqObj());
 		objs.add(new IMObj());
 		objs.add(new InviteToWebSessionObj());

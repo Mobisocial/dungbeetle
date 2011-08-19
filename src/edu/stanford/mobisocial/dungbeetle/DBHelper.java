@@ -192,6 +192,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         if(oldVersion <= 32) {
             // Bug fix.
+            Log.w(TAG, "Updating app state objects.");
             db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.CHILD_FEED_NAME +
                     " = NULL WHERE " + DbObject.CHILD_FEED_NAME + " = " + DbObject.FEED_NAME);
         }
@@ -589,6 +590,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
         // Ignore "secondary feeds" such as application-specific feeds.
         StringBuilder removeChildren = new StringBuilder();
+        removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
+            .append(" NOT IN ('direct','friend') AND ");
         removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
             .append(" NOT IN (SELECT ").append(DbObject.CHILD_FEED_NAME)
             .append(" FROM ").append(DbObject.TABLE)
