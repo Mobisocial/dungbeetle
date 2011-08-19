@@ -4,18 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.IntentFilter.MalformedMimeTypeException;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Handler;
 import android.provider.MediaStore.Images;
-import android.util.Log;
+import android.provider.MediaStore.Images.ImageColumns;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
@@ -25,6 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 public class PhotosPresence extends FeedPresence {
     private static final String TAG = "livephotos";
     private boolean mSharePhotos = false;
+    private PhotoContentObserver mPhotoObserver;
 
     @Override
     public String getName() {
@@ -35,39 +34,21 @@ public class PhotosPresence extends FeedPresence {
     public void onPresenceUpdated(final Context context, final Uri feedUri, boolean present) {
         if (mSharePhotos) {
             if (getFeedsWithPresence().size() == 0) {
-                context.getApplicationContext().unregisterReceiver(mReceiver);
                 Toast.makeText(context, "No longer sharing photos", Toast.LENGTH_SHORT).show();
+                context.getContentResolver().unregisterContentObserver(mPhotoObserver);
                 mSharePhotos = false;
+                mPhotoObserver = null;
             }
         } else {
             if (getFeedsWithPresence().size() > 0) {
-                IntentFilter iF = new IntentFilter();
-                iF.addAction("com.android.camera.NEW_PICTURE");
-                try {
-                    iF.addDataType("*/*");
-                } catch (MalformedMimeTypeException e) {
-                    Log.wtf(TAG, "Bad mime", e);
-                }
-                context.getApplicationContext().registerReceiver(mReceiver, iF);
-                Toast.makeText(context, "Now sharing new photos", Toast.LENGTH_SHORT).show();
                 mSharePhotos = true;
+                mPhotoObserver = new PhotoContentObserver(context);
+                context.getContentResolver().registerContentObserver(
+                        Images.Media.EXTERNAL_CONTENT_URI, true, mPhotoObserver);
+                Toast.makeText(context, "Now sharing new photos", Toast.LENGTH_SHORT).show();
             }
         }
     }
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (mSharePhotos) {
-                try {
-                    DbObject obj = pictureFromUri(context, intent.getData());
-                    for (Uri uri : getFeedsWithPresence()) {
-                        Helpers.sendToFeed(context, obj, uri);
-                    }
-                } catch (IOException e) {}
-            }
-        }
-    };
 
     private DbObject pictureFromUri(Context context, Uri img) throws FileNotFoundException {
         Bitmap sourceBitmap = BitmapFactory.decodeStream(
@@ -99,4 +80,46 @@ public class PhotosPresence extends FeedPresence {
         byte[] data = baos.toByteArray();
         return PictureObj.from(data);
     }
+
+    class PhotoContentObserver extends ContentObserver {
+        private final Context mmContext;
+        private Uri mLastShared;
+
+        public PhotoContentObserver(Context context) {
+            super(new Handler(context.getMainLooper()));
+            mmContext = context;
+        }
+
+        public void onChange(boolean selfChange) {
+            if (mSharePhotos) {
+                try {
+                    Uri photo = getLatestCameraPhoto();
+                    if (photo != null && photo.equals(mLastShared)) {
+                        return;
+                    }
+                    mLastShared = photo;
+                    DbObject obj = pictureFromUri(mmContext, photo);
+                    for (Uri uri : getFeedsWithPresence()) {
+                        Helpers.sendToFeed(mmContext, obj, uri);
+                    }
+                } catch (IOException e) {}
+            }
+        };
+
+        private Uri getLatestCameraPhoto() {
+            String selection = ImageColumns.BUCKET_DISPLAY_NAME + " = 'Camera'";
+            String[] selectionArgs = null;
+            String sort = ImageColumns.DATE_TAKEN + " desc";
+            Cursor c =
+                android.provider.MediaStore.Images.Media.query(mmContext.getContentResolver(),
+                        Images.Media.EXTERNAL_CONTENT_URI,
+                        new String[] { ImageColumns._ID }, selection, selectionArgs, sort );
+
+            int idx = c.getColumnIndex(ImageColumns._ID);
+            if (c.moveToFirst()) {
+                return Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI, c.getString(idx));
+            }
+            return null;
+        }
+    };
 }
