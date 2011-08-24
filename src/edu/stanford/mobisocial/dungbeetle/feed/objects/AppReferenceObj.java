@@ -133,8 +133,15 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
         }
 
 	    JSONObject appContent = getAppState(context, content);
-	    if (appContent != null) {
-	        if (DBG) Log.d(TAG, "transformed to " + appContent);
+	    if (appContent == null) {
+	        Uri appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
+	        String appId = content.optString(PACKAGE_NAME);
+	        String arg = content.optString(ARG);
+	        String state = null;
+	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
+	        context.startActivity(launch);
+	    } else {
+            if (DBG) Log.d(TAG, "pulled app state " + appContent);
             mAppStateObj.activate(feed, context, appContent);
 	    }
 	}
