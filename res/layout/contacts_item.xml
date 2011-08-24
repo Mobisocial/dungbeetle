@@ -32,6 +32,14 @@
           android:src="@drawable/status_green"
           android:scaleType="fitCenter"
           />
+        <ImageView
+          android:id="@+id/nearby_icon"
+          android:layout_width="10dip"
+          android:layout_height="10dip"
+	  android:layout_marginRight="4dip"
+          android:src="@drawable/status_nearby"
+          android:scaleType="fitCenter"
+          />
 	      
         <TextView
 	        android:id="@+id/name_text"

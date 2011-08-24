@@ -92,7 +92,7 @@ public class DBIdentityProvider implements IdentityProvider {
         long id = Contact.MY_ID;
         String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
         String email = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
-        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, "");
+        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, "");
         contact.picture = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
         c.close();
         return contact;
