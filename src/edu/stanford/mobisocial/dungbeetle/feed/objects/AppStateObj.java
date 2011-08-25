@@ -176,31 +176,35 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator, Fee
 	        appId = content.optString(PACKAGE_NAME);
 	    }
 	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
+	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+	    context.startActivity(launch);
+	}
 
+	public static Intent getLaunchIntent(Context context, String appId,
+	        String arg, String state, Uri appFeed) {
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
-	    launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
-	    if (arg != null) {
-	        launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
-	    }
-	    // TODO: optimize!
-	    List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
-	    for (ResolveInfo r : resolved) {
-	        ActivityInfo activity = r.activityInfo;
-	        if (activity.packageName.equals(appId)) {
-	            launch.setClassName(activity.packageName, activity.name);
-	            launch.putExtra("mobisocial.db.PACKAGE", activity.packageName);
-	            if (state != null) {
-	                launch.putExtra("mobisocial.db.STATE", state);
-	            }
-	            context.startActivity(launch);
-	            return;
-	        }
-	    }
+        launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+        if (arg != null) {
+            launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
+        }
+        // TODO: optimize!
+        List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
+        for (ResolveInfo r : resolved) {
+            ActivityInfo activity = r.activityInfo;
+            if (activity.packageName.equals(appId)) {
+                launch.setClassName(activity.packageName, activity.name);
+                launch.putExtra("mobisocial.db.PACKAGE", activity.packageName);
+                if (state != null) {
+                    launch.putExtra("mobisocial.db.STATE", state);
+                }
+                return launch;
+            }
+        }
 
         Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appId));
-        context.startActivity(market);
+        return market;
 	}
 
    private JSONObject getAppState(Context context, JSONObject appReference) {

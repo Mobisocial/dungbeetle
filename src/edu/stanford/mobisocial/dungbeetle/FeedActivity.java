@@ -151,9 +151,9 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             Editable editor = mStatusText.getText();
             String update = editor.toString();
             if(update.length() != 0){
+                editor.clear();
                 Helpers.sendToFeed(FeedActivity.this,
                         StatusObj.from(update), mFeedUri);
-                editor.clear();
             }
             InputMethodManager imm = (InputMethodManager)getSystemService(
                 Context.INPUT_METHOD_SERVICE);
