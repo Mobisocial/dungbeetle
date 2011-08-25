@@ -24,7 +24,7 @@ public class SharedSecretObj implements DbEntryHandler {
 
     public static byte[] getOrPushSecret(Context context, Contact other) {
     	if(other.secret != null) {
-    		return other.secret.toByteArray();
+    		return other.secret;
     	}
         ContentValues values = new ContentValues();
         byte[] ss = new byte[32];
@@ -59,7 +59,7 @@ public class SharedSecretObj implements DbEntryHandler {
 			return;
 		}
         byte[] ss = Base64.decode(raw_b64);
-        if(from.secret != null && from.secret.compareTo(new BigInteger(ss)) > 0) {
+        if(from.secret != null && new BigInteger(from.secret).compareTo(new BigInteger(ss)) > 0) {
         	//ignore the new key according to a time independent metric...
         	return;
         }
