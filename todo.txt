@@ -4,4 +4,4 @@ let's use xep-0033 to send to multiple people in openfire
 start service on boot (and install?)
 how do apps refer to other feed objects?
 NAT for object and contact ids -- revokable per app
-HMAC the body of the messages!
+HMAC the body of the messages
