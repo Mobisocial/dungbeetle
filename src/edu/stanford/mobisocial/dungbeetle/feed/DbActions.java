@@ -10,6 +10,7 @@ import android.view.View;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.CameraAction;
+import edu.stanford.mobisocial.dungbeetle.feed.action.GalleryAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.NewFeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.PresenceAction;
@@ -25,6 +26,7 @@ public class DbActions {
         sFeedActions.add(new ViewAction());
         sFeedActions.add(new PresenceAction());
         sFeedActions.add(new CameraAction());
+        sFeedActions.add(new GalleryAction());
         sFeedActions.add(new VoiceAction());
         sFeedActions.add(new NewFeedAction());
         sFeedActions.add(new LaunchApplicationAction());
