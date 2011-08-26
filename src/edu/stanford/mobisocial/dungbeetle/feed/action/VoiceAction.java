@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 
 public class VoiceAction implements FeedAction {
 

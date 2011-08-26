@@ -34,7 +34,7 @@
       
       <uses-library android:name="com.google.android.maps" android:required="false"/>
 
-    <activity android:name="DungBeetleActivity"
+    <activity android:name=".ui.HomeActivity"
 	      android:label="@string/app_name"
 	      android:windowSoftInputMode="stateHidden"
 	      >
@@ -53,7 +53,7 @@
  
     </activity>
 
-	<activity android:name="FeedListActivity"
+	<activity android:name=".ui.FeedListActivity"
 	      android:label="@string/title_latest">
     </activity>
 
@@ -71,7 +71,7 @@
 	      android:label="@string/title_friends">
     </activity>
 
-    <activity android:name=".feed.activity.ViewActivity"
+    <activity android:name=".ui.FeedViewActivity"
 	      android:label="@string/title_group">
     </activity>
 
@@ -269,11 +269,11 @@
     </activity>
 
     <!--  TODO: external apps. -->
-    <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.StatsActivity"
+    <activity android:name=".ui.FeedStatsActivity"
 	      android:label="Stat View">
     </activity>
-    <activity android:name=".feed.activity.MapActivity"
-      android:label="Map View">
+    <activity android:name=".ui.FeedMapActivity" 
+          android:label="Map View">
     </activity>
   </application>
 </manifest> 

@@ -24,6 +24,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RichActivity;
@@ -47,7 +48,7 @@ public class ProfileActivity extends RichActivity{
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity (intent);
     }

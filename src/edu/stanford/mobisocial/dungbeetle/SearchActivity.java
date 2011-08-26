@@ -16,6 +16,7 @@
 
 package edu.stanford.mobisocial.dungbeetle;
 
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 import android.os.Bundle;
 
 /**
@@ -24,7 +25,7 @@ import android.os.Bundle;
  *
  */
 
-public class SearchActivity extends DashboardActivity 
+public class SearchActivity extends DashboardBaseActivity 
 {
 
 /**

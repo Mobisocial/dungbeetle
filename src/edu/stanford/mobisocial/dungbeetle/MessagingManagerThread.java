@@ -39,6 +39,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -50,7 +51,6 @@ import android.app.PendingIntent;
 
 import android.content.ComponentName;
 import android.content.Intent;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
@@ -161,7 +161,7 @@ public class MessagingManagerThread extends Thread {
 	                    launch.setAction(Intent.ACTION_MAIN);
 	                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
 	                    launch.setComponent(new ComponentName(mContext.getPackageName(),
-                                                          DungBeetleActivity.class.getName()));
+                                                          HomeActivity.class.getName()));
                         PendingIntent contentIntent = PendingIntent.getActivity(
                             mContext, 0,
                             launch, PendingIntent.FLAG_CANCEL_CURRENT);

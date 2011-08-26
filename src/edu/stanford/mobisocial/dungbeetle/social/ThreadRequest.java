@@ -1,7 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.social;
 
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -21,7 +21,7 @@ public class ThreadRequest {
 
 	public static void acceptThreadRequest(Context c, Uri uri) {
 	    Uri threadUri = Uri.parse(uri.getQueryParameter("uri"));
-	    if (threadUri != null && threadUri.getScheme().equals(DungBeetleActivity.GROUP_SESSION_SCHEME)) {
+	    if (threadUri != null && threadUri.getScheme().equals(HomeActivity.GROUP_SESSION_SCHEME)) {
             Intent intent = new Intent().setClass(c, HandleGroupSessionActivity.class);
             intent.setData(threadUri);
             c.startActivity(intent);

@@ -1,13 +1,14 @@
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,104 +18,53 @@ import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
  *
  */
-public class FeedListActivity extends ListActivity {
+public class FeedListFragment extends ListFragment {
     private static final String TAG = "DungBeetle";
     private FeedListCursorAdapter mFeeds;
     private ContactCache mContactCache;
     private DBHelper mHelper;
 
-    /*** Dashboard stuff ***/
-    public void goHome(Context context) 
-    {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity (intent);
-    }
-
-    public void setTitleFromActivityLabel (int textViewId)
-    {
-        TextView tv = (TextView) findViewById (textViewId);
-        if (tv != null) tv.setText (getTitle ());
-    } 
-    public void onClickHome (View v)
-    {
-        goHome (this);
-    }
-
-
-    public void onClickSearch (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
-    }
-
-    public void onClickAbout (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
-    }
-
-/*** End Dashboard Stuff ***/
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mContactCache = new ContactCache(this);
-        setContentView(R.layout.feeds);
-        setTitleFromActivityLabel (R.id.title_text);
-        //findViewById(R.id.button_new).setOnClickListener(newFeed());
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        mContactCache = new ContactCache(getActivity());
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
-        Cursor c = getContentResolver().query(feedlist, null, getFeedObjectClause(), null, null);
-        mFeeds = new FeedListCursorAdapter(this, c);
-        mHelper = new DBHelper(this);
-        
+        Cursor c = getActivity().getContentResolver().query(
+                feedlist, null, getFeedObjectClause(), null, null);
+        mFeeds = new FeedListCursorAdapter(getActivity(), c);
+        mHelper = new DBHelper(getActivity());
+
         setListAdapter(mFeeds);
     }
 
     @Override
-    public void finish() {
-        super.finish();
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_feed_list, container, false);
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
         mContactCache.close();
     }
-/**** THIS HAS BEEN MOVED TO SettingsActivity.java
-    private final static int BACKUP = 0;
-    private final static int RESTORE = 1;
-
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
-        menu.clear();
-        menu.add(0, BACKUP, 0, "Backup");
-        menu.add(1, RESTORE, 1, "Restore");
-        //menu.add(1, ANON, 1, "Add anon profile");
-        return true;
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
-        case BACKUP: {
-            Intent intent = new Intent(this, DropboxBackupActivity.class);
-            intent.putExtra("action", 0);
-            startActivity(intent); 
-            return true;
-        }
-        case RESTORE: {
-            Intent intent = new Intent(this, DropboxBackupActivity.class);
-            intent.putExtra("action", 1);
-            startActivity(intent); 
-            return true;
-        }
-        default: return false;
-        }
-    }*/
 
     private class FeedListCursorAdapter extends CursorAdapter {
         public FeedListCursorAdapter (Context context, Cursor c) {
@@ -139,12 +89,12 @@ public class FeedListActivity extends ListActivity {
                     break;
                 }
             }
-            
+
             String feedName = c.getString(feedCol);
             String groupName = c.getString(c.getColumnIndexOrThrow(Group.NAME));
-            
+
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
-            DbObject.bindView(v, FeedListActivity.this, c, mContactCache);
+            DbObject.bindView(v, getActivity(), c, mContactCache);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
                 Group g = new Group(c);
@@ -163,7 +113,7 @@ public class FeedListActivity extends ListActivity {
     }
 
     @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
+    public void onListItemClick(ListView l, View v, int position, long id) {
         String feedId = (String)v.getTag(R.id.feed_label);
         while (feedId == null) {
             v = (View)v.getParent();
@@ -184,12 +134,12 @@ public class FeedListActivity extends ListActivity {
 
         Intent launch = new Intent();
         if (groupName != null) {
-            launch.setClass(FeedListActivity.this, GroupsTabActivity.class);
+            launch.setClass(getActivity(), GroupsTabActivity.class);
             launch.putExtra("group_name", groupName);
             launch.putExtra("group_id", groupId);
             launch.putExtra("group_uri", groupUri);
         } else {
-            launch.setClass(FeedListActivity.this, ViewActivity.class);
+            launch.setClass(getActivity(), FeedViewActivity.class);
             launch.putExtra("feed_id", feedId);
         }
 
@@ -212,23 +162,24 @@ public class FeedListActivity extends ListActivity {
         return new OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder alert = new AlertDialog.Builder(FeedListActivity.this);
+                AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                 alert.setMessage("Enter group name:");
-                final EditText input = new EditText(FeedListActivity.this);
+                final EditText input = new EditText(getActivity());
                 alert.setView(input);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             String groupName = input.getText().toString();
                             Group g;
                             if(groupName.length() > 0) {
-                                g = Group.create(FeedListActivity.this, groupName, mHelper);
+                                g = Group.create(getActivity(), groupName, mHelper);
                             }
                             else {
-                                g = Group.create(FeedListActivity.this);
+                                g = Group.create(getActivity());
                             }
                             
-                            Helpers.sendToFeed(FeedListActivity.this,
-                            StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
+                            Helpers.sendToFeed(getActivity(),
+                                    StatusObj.from("Welcome to " + g.name + "!"),
+                                    Feed.uriForName(g.feedName));
                         }
                     });
                 alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -236,10 +187,6 @@ public class FeedListActivity extends ListActivity {
                         }
                     });
                 alert.show();
-                
-                /*Group g = Group.create(FeedListActivity.this);
-                Helpers.sendToFeed(FeedListActivity.this,
-                        StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));*/
             }
         };
     }

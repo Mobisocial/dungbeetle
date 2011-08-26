@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed.activity;
+package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,12 +8,15 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ListFragment;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -24,9 +27,7 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
@@ -38,12 +39,11 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
-public class ViewActivity extends RichListActivity
+public class FeedViewFragment extends ListFragment
         implements OnItemClickListener, OnEditorActionListener, TextWatcher {
 
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
@@ -58,32 +58,40 @@ public class ViewActivity extends RichListActivity
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 
-    public void onCreate(Bundle savedInstanceState) {
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.feed_view);
+		View view = inflater.inflate(R.layout.fragment_feed_view, container, false);
 
-		mStatusText = (EditText)findViewById(R.id.status_text);
-		mStatusText.setOnEditorActionListener(ViewActivity.this);
-		mStatusText.addTextChangedListener(ViewActivity.this);
+		mStatusText = (EditText)view.findViewById(R.id.status_text);
+		mStatusText.setOnEditorActionListener(FeedViewFragment.this);
+		mStatusText.addTextChangedListener(FeedViewFragment.this);
 
-		mSendTextButton = (ImageView)findViewById(R.id.send_text);
+		mSendTextButton = (ImageView)view.findViewById(R.id.send_text);
         mSendTextButton.setVisibility(View.GONE);
         mSendTextButton.setOnClickListener(mSendStatus);
 
-        mSendObjectButton = (ImageView)findViewById(R.id.more);
+        mSendObjectButton = (ImageView)view.findViewById(R.id.more);
         mSendObjectButton.setOnClickListener(mSendObject);
 
-        Intent intent = getIntent();
-        mContactCache = new ContactCache(this);
-        if(feedName == null && intent.hasExtra("group_id")) {
-        	try {
-	        	Long groupId = intent.getLongExtra("group_id", -1);
-	            DBHelper dbHelper = new DBHelper(this);
-	            feedName = dbHelper.groupForGroupId(groupId).get().feedName;
-	            dbHelper.close();
-        	} catch (Maybe.NoValError e) {
-        		Log.w(TAG, "Tried to view a group with bad group id");
-        	}
+		return view;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        Intent intent = getActivity().getIntent();
+        mContactCache = new ContactCache(getActivity());
+        if (feedName == null && intent.hasExtra("group_id")) {
+            try {
+                Long groupId = intent.getLongExtra("group_id", -1);
+                DBHelper dbHelper = new DBHelper(getActivity());
+                feedName = dbHelper.groupForGroupId(groupId).get().feedName;
+                dbHelper.close();
+            } catch (Maybe.NoValError e) {
+                Log.w(TAG, "Tried to view a group with bad group id");
+            }
         } else if (intent.hasExtra("feed_id")) {
             feedName = intent.getStringExtra("feed_id");
         }
@@ -91,26 +99,26 @@ public class ViewActivity extends RichListActivity
             feedName = "friend";
         }
 
-        int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
+        //int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
 
         FeedProcessor processor = new DefaultFeedProcessor(mContactCache);
-		mObjects = processor.getListAdapter(this, mFeedUri);
-		setListAdapter(mObjects);
-		getListView().setOnItemClickListener(this);
-		getListView().setFastScrollEnabled(true);
-		//getListView().setCacheColorHint(color);
+        mObjects = processor.getListAdapter(getActivity(), mFeedUri);
+        setListAdapter(mObjects);
+        getListView().setOnItemClickListener(this);
+        getListView().setFastScrollEnabled(true);
+        //getListView().setCacheColorHint(color);
     }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        if (DungBeetleActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
+        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(mFeedUri, ViewActivity.this, obj);
+                activator.activate(mFeedUri, getActivity(), obj);
             }
         }
         catch(JSONException e){
@@ -119,14 +127,9 @@ public class ViewActivity extends RichListActivity
     }
 
     @Override
-    public void finish() {
-        super.finish();
+    public void onDetach() {
+        super.onDetach();
         mContactCache.close();
-    }
-
-    private void showToast(String msg) {
-        Toast error = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
-        error.show();
     }
 
     @Override
@@ -143,10 +146,10 @@ public class ViewActivity extends RichListActivity
             String update = editor.toString();
             if(update.length() != 0){
                 editor.clear();
-                Helpers.sendToFeed(ViewActivity.this,
+                Helpers.sendToFeed(getActivity(),
                         StatusObj.from(update), mFeedUri);
             }
-            InputMethodManager imm = (InputMethodManager)getSystemService(
+            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(mStatusText.getWindowToken(), 0);
         }
@@ -165,23 +168,19 @@ public class ViewActivity extends RichListActivity
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        // TODO Auto-generated method stub
         
     }
 
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
-        // TODO Auto-generated method stub
-        
+
     }
 
     private View.OnClickListener mSendObject = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            QuickAction qa = DbActions.getActions(ViewActivity.this, mFeedUri, v);
+            QuickAction qa = DbActions.getActions(getActivity(), mFeedUri, v);
             qa.show();
         }
     };
 }
-
-

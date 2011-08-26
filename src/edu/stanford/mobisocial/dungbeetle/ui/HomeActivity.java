@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -10,37 +10,34 @@ import java.util.Set;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
+import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
+import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
+import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.R.layout;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
-import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 
-public class DungBeetleActivity extends DashboardActivity
-{
+public class HomeActivity extends DashboardBaseActivity {
     public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
@@ -53,63 +50,8 @@ public class DungBeetleActivity extends DashboardActivity
     public static final String PREFS_NAME = "DungBeetlePrefsFile";
     
     private Nfc mNfc;
-	private NotificationManager mNotificationManager;
-
 	private Intent DBServiceIntent;
 
-    private class CheckForUpdatesTask extends HTTPDownloadTextFileTask {
-        @Override
-        public void onPostExecute(String result) {
-            try{
-                JSONObject obj = new JSONObject(result);
-                int versionCode = obj.getInt("versionCode");
-                String versionName = obj.getString("versionName");
-                try {
-                    PackageInfo pInfo = getPackageManager().getPackageInfo(
-                        getPackageName(),PackageManager.GET_META_DATA);
-                    if(pInfo.versionCode < versionCode){
-                        Toast.makeText(DungBeetleActivity.this,
-                                       "Newer version, " + versionName + 
-                                       ", found. See notification.", 
-                                       Toast.LENGTH_SHORT).show();
-                        notifyApkDownload(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_APK_FILE);
-                    }
-                    else if(pInfo.versionCode == versionCode){
-                        Log.i(TAG, "Up to date.");
-                    }
-                    else {
-                        Toast.makeText(DungBeetleActivity.this, 
-                                       "Weird. Local version newer than autoupdate version.", 
-                                       Toast.LENGTH_SHORT).show();
-                    }
-                    
-                } catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
-            }
-            catch(JSONException e){
-                Log.e(TAG, "Failed to load auto-update info.", e);
-            }
-        }
-    }
-
-    private void notifyApkDownload(String url){
-        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        Notification notification = new Notification(
-            R.drawable.icon, 
-            "Update available.", System.currentTimeMillis());
-        PendingIntent contentIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-        notification.setLatestEventInfo(
-            this, 
-            "Update available.", 
-            "Click to download latest version.", contentIntent);
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.notify(0, notification);
-    }
-
-    
-  
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -122,13 +64,10 @@ public class DungBeetleActivity extends DashboardActivity
                 getIntent().setData(Uri.parse(getIntent().getStringExtra(AppState.EXTRA_APPLICATION_ARGUMENT)));
             }
         } catch (ClassCastException e) {}
-        
 
         setContentView(R.layout.activity_home);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
-
-        mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         boolean firstLoad = settings.getBoolean("firstLoad", true);
@@ -146,36 +85,30 @@ public class DungBeetleActivity extends DashboardActivity
                             b.path("dungbeetle/emails.php");
                             Uri uri = b.build();
 
-                            StringBuffer sb = new StringBuffer();
                             DefaultHttpClient client = new DefaultHttpClient();
                             HttpPost httpPost = new HttpPost(uri.toString());
 
                             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 
                                     
-                            DBHelper helper = new DBHelper(DungBeetleActivity.this);
+                            DBHelper helper = new DBHelper(HomeActivity.this);
                             DBIdentityProvider ident = new DBIdentityProvider(helper);
                             nameValuePairs.add(new BasicNameValuePair("email", ident.userEmail()));
                             
                             httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-                            
-                            HttpResponse execute = client.execute(httpPost);
-                        }
-                        catch (Exception e) {
+                            client.execute(httpPost);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
 
-                        
-                        Toast.makeText(DungBeetleActivity.this, "Thank you for signing up!",
-                                       Toast.LENGTH_SHORT).show();
+                        Toast.makeText(HomeActivity.this, "Thank you for signing up!",
+                                Toast.LENGTH_SHORT).show();
                         dialog.cancel();
                     }
-                    })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                }).setNegativeButton("No", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dialog.cancel();
                     }
-
                 });
             AlertDialog alert = builder.create();
             alert.show();
@@ -184,53 +117,12 @@ public class DungBeetleActivity extends DashboardActivity
             editor.commit();
         }
 
-        // Create top-level tabs
-        //Resources res = getResources();
-        // res.getDrawable(R.drawable.icon)
-
-        /*TabHost tabHost = getTabHost();
-        TabHost.TabSpec spec;  
-        Intent intent;  
-
-
-        intent = new Intent().setClass(this, FeedListActivity.class);
-        spec = tabHost.newTabSpec("objects").setIndicator(
-            "Feeds",
-            null).setContent(intent);
-        tabHost.addTab(spec);
-
-
-        // Create an Intent to launch an Activity for the tab (to be reused)
-        intent = new Intent().setClass(this, ContactsActivity.class);
-        spec = tabHost.newTabSpec("contacts").setIndicator(
-            "Contacts",
-            null).setContent(intent);
-        tabHost.addTab(spec);
-
-		
-        // Do the same for the other tabs
-        
-        intent = new Intent().setClass(this, ProfileActivity.class);
-        intent.putExtra("contact_id", Contact.MY_ID);
-        spec = tabHost.newTabSpec("view_profile").setIndicator("Profile",
-                                                               null)
-            .setContent(intent);
-        tabHost.addTab(spec);
-
-        intent = new Intent().setClass(this, GroupsActivity.class);
-        spec = tabHost.newTabSpec("groups").setIndicator("Groups",
-                                                         null)
-            .setContent(intent);
-        tabHost.addTab(spec);
-        
-        tabHost.setCurrentTab(0);*/
-
         mNfc = new Nfc(this);
         // TODO: Combine doHandleInput calls in onNewIntent.
         doHandleInput(getIntent().getData());
         mNfc.addNdefHandler(new NdefHandler() {
                 public int handleNdef(final NdefMessage[] messages){
-                    DungBeetleActivity.this.runOnUiThread(new Runnable(){
+                    HomeActivity.this.runOnUiThread(new Runnable(){
                             public void run(){
                                 doHandleInput(uriFromNdef(messages));
                             }
@@ -240,32 +132,30 @@ public class DungBeetleActivity extends DashboardActivity
             });
 
         mNfc.setOnTagWriteListener(new Nfc.OnTagWriteListener(){
-                public void onTagWrite(final int status){
-                    DungBeetleActivity.this.runOnUiThread(new Runnable(){
-                            public void run(){
-                                if(status == WRITE_OK){
-                                    Toast.makeText(DungBeetleActivity.this, "Wrote successfully!",
-                                                   Toast.LENGTH_SHORT).show();
-                                }
-                                else if(status == WRITE_ERROR_READ_ONLY){
-                                    Toast.makeText(DungBeetleActivity.this, "Can't write read-only tag!",
-                                                   Toast.LENGTH_SHORT).show();
-                                }
-                                else{
-                                    Toast.makeText(DungBeetleActivity.this, "Failed to write!",
-                                                   Toast.LENGTH_SHORT).show();
-                                }
-                                pushContactInfoViaNfc();
-                            }
-                        }); 
-                }
-            });
+            public void onTagWrite(final int status){
+                HomeActivity.this.runOnUiThread(new Runnable(){
+                    public void run(){
+                        if (status == WRITE_OK) {
+                            Toast.makeText(HomeActivity.this, "Wrote successfully!",
+                                    Toast.LENGTH_SHORT).show();
+                        } else if(status == WRITE_ERROR_READ_ONLY) {
+                            Toast.makeText(HomeActivity.this, "Can't write read-only tag!",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(HomeActivity.this, "Failed to write!",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                        pushContactInfoViaNfc();
+                    }
+                }); 
+            }
+        });
 
         pushContactInfoViaNfc();
         /* sample code for demonstration of the nearby functionality without
          * a real hookup to the service.
          */
-        DBHelper helper = new DBHelper(DungBeetleActivity.this);
+        DBHelper helper = new DBHelper(HomeActivity.this);
         Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
         
         Set<byte[]> ks = pkss.keySet();
@@ -286,8 +176,8 @@ public class DungBeetleActivity extends DashboardActivity
        return Uri.parse(new String(messages[0].getRecords()[0].getPayload()));
     }
 
-    protected void doHandleInput(Uri uri){
-        if (uri == null){
+    protected void doHandleInput(Uri uri) {
+        if (uri == null) {
             return;
         }
 
@@ -322,16 +212,15 @@ public class DungBeetleActivity extends DashboardActivity
         pushContactInfoViaNfc();
     }
 
-    public void writeGroupToTag(Uri uri){
+    public void writeGroupToTag(Uri uri) {
         NdefRecord urlRecord = new NdefRecord(
-            NdefRecord.TNF_ABSOLUTE_URI, 
-            NdefRecord.RTD_URI, new byte[] {},
-            uri.toString().getBytes());
+                NdefRecord.TNF_ABSOLUTE_URI, 
+                NdefRecord.RTD_URI, new byte[] {},
+                uri.toString().getBytes());
         NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
         mNfc.enableTagWriteMode(ndef);
-        Toast.makeText(this, 
-                       "Touch a tag to write the group...", 
-                       Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Touch a tag to write the group...", 
+                Toast.LENGTH_SHORT).show();
     }
     
 
@@ -345,7 +234,7 @@ public class DungBeetleActivity extends DashboardActivity
         return bytes;
     }
 
-    public void pushGroupInfoViaNfc(Uri uri){
+    public void pushGroupInfoViaNfc(Uri uri) {
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
             NdefRecord.RTD_URI, new byte[] {},
@@ -354,7 +243,7 @@ public class DungBeetleActivity extends DashboardActivity
         mNfc.share(ndef);
     }
 
-    public void pushContactInfoViaNfc(){
+    public void pushContactInfoViaNfc() {
     	Uri uri = FriendRequest.getInvitationUri(this);
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
@@ -389,21 +278,11 @@ public class DungBeetleActivity extends DashboardActivity
         mNfc.onPause(this);
     }
 
-
-    private long lastUpdateCheckTime = 0;
     @Override
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
         pushContactInfoViaNfc();
-
-        // Don't check for updates too frequently...
-        /*long t = new Date().getTime();
-        if((t - lastUpdateCheckTime) > 30000){
-            CheckForUpdatesTask task = new CheckForUpdatesTask();
-            task.execute(AUTO_UPDATE_URL_BASE + "/" + AUTO_UPDATE_METADATA_FILE);
-            lastUpdateCheckTime = t;
-        }*/
     }
 
     @Override
@@ -415,21 +294,7 @@ public class DungBeetleActivity extends DashboardActivity
     }
 
     @Override
-    public void onDestroy(){
+    public void onDestroy() {
         super.onDestroy();
-        //stopService(DBServiceIntent);
-        //android.os.Process.killProcess(android.os.Process.myPid());
     }
-
-    public Uri ANULL (Uri u) {
-        return (u == null) ? Uri.parse("urn:"): u;
-    }
-
-   /* private void toast(final String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }*/
 }
-
-
-
-

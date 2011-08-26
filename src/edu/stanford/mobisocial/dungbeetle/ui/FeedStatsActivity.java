@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed.activity;
+package edu.stanford.mobisocial.dungbeetle.ui;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class StatsActivity extends Activity {
+public class FeedStatsActivity extends Activity {
     TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

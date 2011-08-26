@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 
@@ -23,7 +24,7 @@ public class HandleGroupSessionActivity extends Activity {
 		setContentView(R.layout.handle_group);
 		Intent intent = getIntent();
 		final String scheme=intent.getScheme();
-		if (!DungBeetleActivity.GROUP_SESSION_SCHEME.equals(scheme)) {
+		if (!HomeActivity.GROUP_SESSION_SCHEME.equals(scheme)) {
 		    Toast.makeText(this, "Failed to receive url :(", Toast.LENGTH_SHORT).show();
 		    return;
 		}

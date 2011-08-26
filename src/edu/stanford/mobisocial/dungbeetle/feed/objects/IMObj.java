@@ -11,11 +11,11 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 
 public class IMObj implements DbEntryHandler, FeedRenderer {
     public static final String TYPE = "instant_message";
@@ -39,7 +39,7 @@ public class IMObj implements DbEntryHandler, FeedRenderer {
 		launch.setAction(Intent.ACTION_MAIN);
 		launch.addCategory(Intent.CATEGORY_LAUNCHER);
 		launch.setComponent(new ComponentName(context.getPackageName(),
-                                              DungBeetleActivity.class.getName()));
+                                              HomeActivity.class.getName()));
 		PendingIntent contentIntent = PendingIntent.getActivity(
             context, 0,
             launch, PendingIntent.FLAG_CANCEL_CURRENT);

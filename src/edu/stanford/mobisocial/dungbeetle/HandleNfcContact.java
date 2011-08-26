@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,7 +33,7 @@ public class HandleNfcContact extends Activity {
 		mutualFriendsButton.setVisibility(View.GONE);
 
 		if(uri != null && 
-		        (uri.getScheme().equals(DungBeetleActivity.SHARE_SCHEME) ||
+		        (uri.getScheme().equals(HomeActivity.SHARE_SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
 			
 	        mEmail = uri.getQueryParameter("email");

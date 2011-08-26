@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.util.Log;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
@@ -16,6 +15,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -115,7 +115,7 @@ public class GroupProviders{
 
         public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName){
             Uri.Builder builder = new Uri.Builder();
-            builder.scheme(DungBeetleActivity.GROUP_SESSION_SCHEME);
+            builder.scheme(HomeActivity.GROUP_SESSION_SCHEME);
             builder.authority("suif.stanford.edu");
             builder.appendPath("dungbeetle");
             builder.appendPath("index.php");

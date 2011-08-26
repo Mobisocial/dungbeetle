@@ -1,8 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.app.TabActivity;
@@ -64,7 +65,7 @@ public class GroupsTabActivity extends TabActivity
     /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity (intent);
     }
@@ -451,7 +452,7 @@ public class GroupsTabActivity extends TabActivity
         //tabHost.setBackgroundColor(color);
         //tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
             
-        intent = new Intent().setClass(this, ViewActivity.class);
+        intent = new Intent().setClass(this, FeedViewActivity.class);
         intent.putExtra("group_id", group_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",

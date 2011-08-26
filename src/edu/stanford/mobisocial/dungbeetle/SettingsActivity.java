@@ -14,6 +14,7 @@ import android.content.Intent;
 import java.io.*;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.google.*;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import android.os.Environment;
 
@@ -27,7 +28,7 @@ public class SettingsActivity extends ListActivity {
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity (intent);
     }

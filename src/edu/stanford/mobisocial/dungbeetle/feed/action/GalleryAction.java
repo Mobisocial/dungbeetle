@@ -10,13 +10,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
@@ -58,7 +58,7 @@ public class GalleryAction implements FeedAction {
                             Helpers.sendToFeed(mmContext, outboundObj, mmFeedUri);
                         } catch (IOException e) {
                             Toast.makeText(mmContext, "Error reading photo data.", Toast.LENGTH_SHORT).show();
-                            Log.e(DungBeetleActivity.TAG, "Error reading photo data.", e);
+                            Log.e(HomeActivity.TAG, "Error reading photo data.", e);
                         }
                     }
                 }.start();

@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,7 +16,7 @@ public class ViewContactTabActivity extends TabActivity
 /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity (intent);
     }
@@ -87,7 +88,7 @@ public class ViewContactTabActivity extends TabActivity
 
                 
         // Create an Intent to launch an Activity for the tab (to be reused)
-        intent = new Intent().setClass(this, ViewActivity.class);
+        intent = new Intent().setClass(this, FeedViewActivity.class);
         intent.putExtra("contact_id", contact_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",

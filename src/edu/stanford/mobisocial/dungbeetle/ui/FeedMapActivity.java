@@ -1,20 +1,16 @@
-package edu.stanford.mobisocial.dungbeetle.feed.activity;
+package edu.stanford.mobisocial.dungbeetle.ui;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
-import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class MapActivity extends Activity {
+public class FeedMapActivity extends Activity {
     TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

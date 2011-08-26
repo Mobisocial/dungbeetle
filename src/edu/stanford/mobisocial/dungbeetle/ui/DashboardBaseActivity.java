@@ -14,7 +14,7 @@
  * limitations under the License.
  */
  
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.ui;
 
 import android.app.Activity;
 import android.content.Context;
@@ -24,6 +24,18 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.AboutActivity;
+import edu.stanford.mobisocial.dungbeetle.ContactsActivity;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
+import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
+import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
+import edu.stanford.mobisocial.dungbeetle.R.id;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -41,7 +53,7 @@ import android.app.AlertDialog;
  *
  */
 
-public abstract class DashboardActivity extends Activity 
+public abstract class DashboardBaseActivity extends Activity 
 {
 
 /**
@@ -219,26 +231,26 @@ public void onClickFeature (View v)
            startActivity (intent);
           break;
       case R.id.home_btn_new_group :
-            AlertDialog.Builder alert = new AlertDialog.Builder(DashboardActivity.this);
+            AlertDialog.Builder alert = new AlertDialog.Builder(DashboardBaseActivity.this);
             alert.setMessage("Enter group name:");
-            final EditText input = new EditText(DashboardActivity.this);
+            final EditText input = new EditText(DashboardBaseActivity.this);
             alert.setView(input);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         String groupName = input.getText().toString();
                         Group g;
                         if(groupName.length() > 0) {
-                            g = Group.create(DashboardActivity.this, groupName, mHelper);
+                            g = Group.create(DashboardBaseActivity.this, groupName, mHelper);
                         }
                         else {
-                            g = Group.create(DashboardActivity.this);
+                            g = Group.create(DashboardBaseActivity.this);
                         }
                         
-                        Helpers.sendToFeed(DashboardActivity.this,
+                        Helpers.sendToFeed(DashboardBaseActivity.this,
                         StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
 
                         Intent launch = new Intent();
-                        launch.setClass(DashboardActivity.this, GroupsTabActivity.class);
+                        launch.setClass(DashboardBaseActivity.this, GroupsTabActivity.class);
                         launch.putExtra("group_name", g.name);
                         launch.putExtra("group_id", g.id);
                         launch.putExtra("group_uri", g.dynUpdateUri);
@@ -259,7 +271,7 @@ public void onClickFeature (View v)
           break;
       case R.id.home_btn_nearby :
             Intent launch = new Intent();
-            launch.setClass(DashboardActivity.this, NearbyGroupsActivity.class);
+            launch.setClass(DashboardBaseActivity.this, NearbyGroupsActivity.class);
             startActivity(launch);
           break;
       default: 
@@ -281,7 +293,7 @@ public void onClickFeature (View v)
 
 public void goHome(Context context) 
 {
-    final Intent intent = new Intent(context, DungBeetleActivity.class);
+    final Intent intent = new Intent(context, HomeActivity.class);
     intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
     context.startActivity (intent);
 }

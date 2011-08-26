@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Context;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import android.location.Location;
@@ -57,7 +58,7 @@ public class NearbyGroupsActivity extends ListActivity {
     /*** Dashboard stuff ***/
     public void goHome(Context context) 
     {
-        final Intent intent = new Intent(context, DungBeetleActivity.class);
+        final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity (intent);
     }
