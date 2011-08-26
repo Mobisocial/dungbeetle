@@ -131,7 +131,7 @@ public class DungBeetleActivity extends DashboardActivity
         boolean firstLoad = settings.getBoolean("firstLoad", true);
         if (firstLoad) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Thank you for trying out Stanford Mobisocial's new software DungBeetle! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
+            builder.setMessage("Thank you for trying out Stanford Mobisocial's new software Musubi! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
                 .setCancelable(false)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
