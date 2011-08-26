@@ -3,9 +3,9 @@ package edu.stanford.mobisocial.dungbeetle.feed;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.stanford.mobisocial.dungbeetle.feed.activity.MapView;
+import edu.stanford.mobisocial.dungbeetle.feed.activity.StatView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.MapView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.StatView;
 
 public class DbViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();

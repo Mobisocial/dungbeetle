@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
@@ -450,7 +451,7 @@ public class GroupsTabActivity extends TabActivity
         //tabHost.setBackgroundColor(color);
         //tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
             
-        intent = new Intent().setClass(this, FeedActivity.class);
+        intent = new Intent().setClass(this, ViewActivity.class);
         intent.putExtra("group_id", group_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",

@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed.view;
+package edu.stanford.mobisocial.dungbeetle.feed.activity;
 
 import java.util.HashMap;
 import java.util.Map;

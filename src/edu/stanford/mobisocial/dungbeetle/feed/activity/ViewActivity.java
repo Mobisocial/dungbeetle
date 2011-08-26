@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.feed.activity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,10 +9,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -23,6 +25,14 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.QuickAction;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.R.id;
+import edu.stanford.mobisocial.dungbeetle.R.layout;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -35,7 +45,12 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
-public class FeedActivity extends RichListActivity implements OnItemClickListener, OnEditorActionListener {
+public class ViewActivity extends RichListActivity
+        implements OnItemClickListener, OnEditorActionListener, TextWatcher {
+
+    LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
+            LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
+
 	private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = null;
@@ -45,10 +60,11 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.objects);
+		setContentView(R.layout.feed_view);
 
 		mStatusText = (EditText)findViewById(R.id.status_text);
-		mStatusText.setOnEditorActionListener(FeedActivity.this);
+		mStatusText.setOnEditorActionListener(ViewActivity.this);
+		mStatusText.addTextChangedListener(ViewActivity.this);
 
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
@@ -102,7 +118,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             more.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    QuickAction qa = DbActions.getActions(FeedActivity.this, mFeedUri, v);
+                    QuickAction qa = DbActions.getActions(ViewActivity.this, mFeedUri, v);
                     qa.show();
                 }
             });
@@ -119,7 +135,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(mFeedUri, FeedActivity.this, obj);
+                activator.activate(mFeedUri, ViewActivity.this, obj);
             }
         }
         catch(JSONException e){
@@ -152,7 +168,7 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             String update = editor.toString();
             if(update.length() != 0){
                 editor.clear();
-                Helpers.sendToFeed(FeedActivity.this,
+                Helpers.sendToFeed(ViewActivity.this,
                         StatusObj.from(update), mFeedUri);
             }
             InputMethodManager imm = (InputMethodManager)getSystemService(
@@ -160,6 +176,25 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
             imm.hideSoftInputFromWindow(mStatusText.getWindowToken(), 0);
         }
     };
+
+    @Override
+    public void afterTextChanged(Editable s) {
+        if (s.length() > 0) {
+            // TODO: larger compose view.
+        }
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+        // TODO Auto-generated method stub
+        
+    }
 }
 
 

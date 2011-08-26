@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle;
+import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -86,7 +87,7 @@ public class ViewContactTabActivity extends TabActivity
 
                 
         // Create an Intent to launch an Activity for the tab (to be reused)
-        intent = new Intent().setClass(this, FeedActivity.class);
+        intent = new Intent().setClass(this, ViewActivity.class);
         intent.putExtra("contact_id", contact_id);
         spec = tabHost.newTabSpec("objects").setIndicator(
             "Feed",

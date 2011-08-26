@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.activity.ViewActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -188,7 +189,7 @@ public class FeedListActivity extends ListActivity {
             launch.putExtra("group_id", groupId);
             launch.putExtra("group_uri", groupUri);
         } else {
-            launch.setClass(FeedListActivity.this, FeedActivity.class);
+            launch.setClass(FeedListActivity.this, ViewActivity.class);
             launch.putExtra("feed_id", feedId);
         }
 
