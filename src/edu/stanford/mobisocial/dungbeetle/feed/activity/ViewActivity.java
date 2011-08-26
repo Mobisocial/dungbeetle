@@ -19,11 +19,11 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.TextView;
-import android.widget.TextView.OnEditorActionListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
@@ -31,8 +31,6 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.R.id;
-import edu.stanford.mobisocial.dungbeetle.R.layout;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -95,22 +93,6 @@ public class ViewActivity extends RichListActivity
 
         int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
-        /*if(intent.hasExtra("contactId")) {
-            Long contactId = intent.getLongExtra("contact_id", -1);
-            c = getContentResolver().query(
-                mFeedUri,
-                null, 
-                getFeedObjectClause() + " AND " + DbObject.CONTACT_ID + "=?", new String[]{ 
-                    String.valueOf(contactId) }, 
-                DbObject._ID + " DESC");
-		}
-        else {
-            c = getContentResolver().query(
-                mFeedUri,
-                null, 
-                getFeedObjectClause(), null,
-                DbObject._ID + " DESC");
-		}*/
 
         FeedProcessor processor = new DefaultFeedProcessor(mContactCache);
 		mObjects = processor.getListAdapter(this, mFeedUri);
