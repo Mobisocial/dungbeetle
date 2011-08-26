@@ -43,14 +43,11 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         return new DbObject(TYPE, PictureObj.json(data));
     }
 
-    public static DbObject from(Context context, Intent intent) throws IOException {
-        // Get resource path from intent callee
-        Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-
+    public static DbObject from(Context context, Uri imageUri) throws IOException {
         // Query gallery for camera picture via
         // Android ContentResolver interface
         ContentResolver cr = context.getContentResolver();
-        InputStream is = cr.openInputStream(uri);
+        InputStream is = cr.openInputStream(imageUri);
         // Get binary bytes for encode
         byte[] data = getBytesFromFile(is);
 
@@ -71,7 +68,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
 
         Matrix matrix = new Matrix();
         matrix.postScale(scaleSize, scaleSize);
-        float rotation = PhotoTaker.rotationForImage(context, uri);
+        float rotation = PhotoTaker.rotationForImage(context, imageUri);
         if (rotation != 0f) {
             matrix.preRotate(rotation);
         }

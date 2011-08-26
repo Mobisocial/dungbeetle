@@ -162,7 +162,8 @@ public class PickContactsActivity extends TabActivity {
             DbObject outboundObj = null;
             if (mIntent.getType().startsWith("image/") && mIntent.hasExtra(Intent.EXTRA_STREAM)) {
                 try {
-                    outboundObj = PictureObj.from(this, mIntent);
+                    outboundObj = PictureObj.from(this,
+                            (Uri)mIntent.getParcelableExtra(Intent.EXTRA_STREAM));
                 } catch (IOException e) {
                     Toast.makeText(this, "Error reading photo data.", Toast.LENGTH_SHORT).show();
                     Log.e(TAG, "Error reading photo data.", e);

@@ -207,6 +207,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());
 
+            final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
+        	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
+
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {

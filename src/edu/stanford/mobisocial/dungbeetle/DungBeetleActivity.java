@@ -1,7 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
@@ -27,18 +31,17 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.model.AppReference;
+import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.HTTPDownloadTextFileTask;
 
 public class DungBeetleActivity extends DashboardActivity
 {
-    private static final boolean DBG = true;
+    public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
     public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
@@ -115,8 +118,8 @@ public class DungBeetleActivity extends DashboardActivity
 
         // TODO: Hack.
         try {
-            if (getIntent().hasExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)) {
-                getIntent().setData(Uri.parse(getIntent().getStringExtra(AppReference.EXTRA_APPLICATION_ARGUMENT)));
+            if (getIntent().hasExtra(AppState.EXTRA_APPLICATION_ARGUMENT)) {
+                getIntent().setData(Uri.parse(getIntent().getStringExtra(AppState.EXTRA_APPLICATION_ARGUMENT)));
             }
         } catch (ClassCastException e) {}
         
@@ -259,6 +262,19 @@ public class DungBeetleActivity extends DashboardActivity
             });
 
         pushContactInfoViaNfc();
+        /* sample code for demonstration of the nearby functionality without
+         * a real hookup to the service.
+         */
+        DBHelper helper = new DBHelper(DungBeetleActivity.this);
+        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
+        
+        Set<byte[]> ks = pkss.keySet();
+    	Iterator<byte[]> j = ks.iterator();
+        HashSet<byte[]> hks = new HashSet<byte[]>();
+        for(int i = 0; i < ks.size() / 2; ++i) {
+        	hks.add(j.next());
+        }
+		helper.updateNearby(hks);
     }
 
 	

@@ -11,8 +11,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONObject;
@@ -32,6 +35,7 @@ import android.database.sqlite.SQLiteQuery;
 import android.os.Environment;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -42,6 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class DBHelper extends SQLiteOpenHelper {
@@ -50,7 +55,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 33;
+	public static final int VERSION = 35;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -192,10 +197,19 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         if(oldVersion <= 32) {
             // Bug fix.
+            Log.w(TAG, "Updating app state objects.");
             db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.CHILD_FEED_NAME +
                     " = NULL WHERE " + DbObject.CHILD_FEED_NAME + " = " + DbObject.FEED_NAME);
         }
-
+        if(oldVersion <= 33) {
+            Log.w(TAG, "Adding column 'nearby' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.NEARBY + " INTEGER DEFAULT 0");
+        }
+        if(oldVersion <= 34) {
+            Log.w(TAG, "Adding column 'secret' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.SHARED_SECRET + " BLOB");
+            
+        }
         db.setVersion(VERSION);
     }
 
@@ -273,10 +287,12 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact._ID, "INTEGER PRIMARY KEY",
                         Contact.NAME, "TEXT",
                         Contact.PUBLIC_KEY, "TEXT",
+                        Contact.SHARED_SECRET, "BLOB",
                         Contact.PERSON_ID, "TEXT",
                         Contact.EMAIL, "TEXT",
                         Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
                         Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
+                        Contact.NEARBY, "INTEGER DEFAULT 0",
                         Contact.STATUS, "TEXT",
                         Contact.PICTURE, "BLOB");
             createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
@@ -590,6 +606,8 @@ public class DBHelper extends SQLiteOpenHelper {
         // Ignore "secondary feeds" such as application-specific feeds.
         StringBuilder removeChildren = new StringBuilder();
         removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
+            .append(" NOT IN ('direct','friend') AND ");
+        removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
             .append(" NOT IN (SELECT ").append(DbObject.CHILD_FEED_NAME)
             .append(" FROM ").append(DbObject.TABLE)
             .append(" WHERE ").append(DbObject.CHILD_FEED_NAME).append(" IS NOT NULL)");
@@ -786,6 +804,7 @@ public class DBHelper extends SQLiteOpenHelper {
             result.add(new Contact(c));
             c.moveToNext();
         }
+        c.close();
         return result;
     }
 
@@ -810,6 +829,7 @@ public class DBHelper extends SQLiteOpenHelper {
             result.add(new Contact(c));
             c.moveToNext();
         }
+        c.close();
         return result;
     }
 
@@ -882,4 +902,41 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject._ID + " = " + id,
             null);
 	}
-}
+    public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
+    	HashMap<byte[], byte[]> key_ss = new HashMap<byte[], byte[]>();
+        Cursor c = getReadableDatabase().query(
+                Contact.TABLE, 
+                new String[] {Contact._ID, Contact.PUBLIC_KEY, Contact.SHARED_SECRET},
+                null, null,null,null,null);
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+        	byte[] pk = c.getBlob(1);
+        	byte[] ss = c.getBlob(2);
+        	if(ss == null) {
+        		Contact contact;
+				try {
+					contact = contactForContactId(c.getLong(0)).get();
+	        		ss = SharedSecretObj.getOrPushSecret(mContext, contact);
+				} catch (NoValError e) {
+					e.printStackTrace();
+				}
+        	}
+        	key_ss.put(pk, ss);
+            c.moveToNext();
+        }
+        c.close();
+        return key_ss;	
+    }
+    public void updateNearby(Set<byte[]> nearby) {
+    	StringBuilder kl = new StringBuilder(" ");
+    	for (byte[] bs : nearby) {
+			kl.append("'");
+			kl.append(Hex.encodeHex(bs));
+			//WTF- this hex encoder suxs and adds extra 00s at the end
+			kl.delete(kl.length() - 2, kl.length());
+			kl.append("'");
+			kl.append(",");
+		}
+    	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = HEX(" + Contact.PUBLIC_KEY + ") in (" + kl.substring(0, kl.length() - 1).toUpperCase() +  ")");
+    }
+ }

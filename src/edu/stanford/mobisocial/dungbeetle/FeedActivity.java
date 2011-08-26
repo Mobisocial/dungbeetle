@@ -10,11 +10,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
@@ -31,16 +35,20 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
-public class FeedActivity extends RichListActivity implements OnItemClickListener{
+public class FeedActivity extends RichListActivity implements OnItemClickListener, OnEditorActionListener {
 	private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private String feedName = null;
     private Uri mFeedUri;
     private ContactCache mContactCache;
+    private EditText mStatusText;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.objects);
+
+		mStatusText = (EditText)findViewById(R.id.status_text);
+		mStatusText.setOnEditorActionListener(FeedActivity.this);
 
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
@@ -89,40 +97,24 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
 		// TODO: Get rid of this? All feeds are created equal! -BJD
         if(!intent.hasExtra("contact_id")){
             ImageView addObject = (ImageView)findViewById(R.id.add_object);
-            addObject.setOnClickListener(new OnClickListener() {
-                    public void onClick(View v) {
-                        EditText ed = (EditText)findViewById(R.id.status_text);
-                    	Editable editor = ed.getText();
-                    	String update = editor.toString();
-                        if(update.length() != 0){
-                            Helpers.sendToFeed(FeedActivity.this, 
-                                               StatusObj.from(update), 
-                                               mFeedUri);
-                            editor.clear();
-                        }
-                        InputMethodManager imm = (InputMethodManager)getSystemService(
-                            Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(ed.getWindowToken(), 0);
-                    }
-                });
-
+            addObject.setOnClickListener(mSendStatus);
             final ImageView more = (ImageView)findViewById(R.id.more);
             more.setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        QuickAction qa = DbActions.getActions(FeedActivity.this, mFeedUri, v);
-                        qa.show();
-                    }
-                });
-        }
-        else{
+                @Override
+                public void onClick(View v) {
+                    QuickAction qa = DbActions.getActions(FeedActivity.this, mFeedUri, v);
+                    qa.show();
+                }
+            });
+        } else {
             findViewById(R.id.add_object).setVisibility(View.GONE);
         }
     }
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        if (DungBeetleActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
@@ -133,7 +125,6 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         catch(JSONException e){
             Log.e(TAG, "Couldn't parse obj.", e);
         }
-        Log.i(TAG, "Clicked object: " + jsonSrc);
     }
 
     @Override
@@ -147,7 +138,28 @@ public class FeedActivity extends RichListActivity implements OnItemClickListene
         error.show();
     }
 
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        if (actionId == EditorInfo.IME_ACTION_SEND) {
+            mSendStatus.onClick(v);
+        }
+        return true;
+    }
 
+    private final View.OnClickListener mSendStatus = new OnClickListener() {
+        public void onClick(View v) {
+            Editable editor = mStatusText.getText();
+            String update = editor.toString();
+            if(update.length() != 0){
+                editor.clear();
+                Helpers.sendToFeed(FeedActivity.this,
+                        StatusObj.from(update), mFeedUri);
+            }
+            InputMethodManager imm = (InputMethodManager)getSystemService(
+                Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(mStatusText.getWindowToken(), 0);
+        }
+    };
 }
 
 
