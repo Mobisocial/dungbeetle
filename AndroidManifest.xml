@@ -269,7 +269,7 @@
     </activity>
 
     <!--  TODO: external apps. -->
-    <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.StatActivity"
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.feed.view.StatsActivity"
 	      android:label="Stat View">
     </activity>
     <activity android:name=".feed.activity.MapActivity"

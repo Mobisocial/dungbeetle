@@ -14,7 +14,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class MapView extends Activity {
+public class MapActivity extends Activity {
     TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

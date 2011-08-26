@@ -12,7 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.TextView;
 
-public class StatView extends Activity {
+public class StatsActivity extends Activity {
     TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

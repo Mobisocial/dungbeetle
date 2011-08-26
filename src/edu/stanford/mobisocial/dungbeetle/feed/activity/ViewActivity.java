@@ -57,6 +57,8 @@ public class ViewActivity extends RichListActivity
     private Uri mFeedUri;
     private ContactCache mContactCache;
     private EditText mStatusText;
+    private ImageView mSendTextButton;
+    private ImageView mSendObjectButton;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -65,6 +67,13 @@ public class ViewActivity extends RichListActivity
 		mStatusText = (EditText)findViewById(R.id.status_text);
 		mStatusText.setOnEditorActionListener(ViewActivity.this);
 		mStatusText.addTextChangedListener(ViewActivity.this);
+
+		mSendTextButton = (ImageView)findViewById(R.id.send_text);
+        mSendTextButton.setVisibility(View.GONE);
+        mSendTextButton.setOnClickListener(mSendStatus);
+
+        mSendObjectButton = (ImageView)findViewById(R.id.more);
+        mSendObjectButton.setOnClickListener(mSendObject);
 
         Intent intent = getIntent();
         mContactCache = new ContactCache(this);
@@ -109,22 +118,6 @@ public class ViewActivity extends RichListActivity
 		getListView().setOnItemClickListener(this);
 		getListView().setFastScrollEnabled(true);
 		//getListView().setCacheColorHint(color);
-
-		// TODO: Get rid of this? All feeds are created equal! -BJD
-        if(!intent.hasExtra("contact_id")){
-            ImageView addObject = (ImageView)findViewById(R.id.add_object);
-            addObject.setOnClickListener(mSendStatus);
-            final ImageView more = (ImageView)findViewById(R.id.more);
-            more.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    QuickAction qa = DbActions.getActions(ViewActivity.this, mFeedUri, v);
-                    qa.show();
-                }
-            });
-        } else {
-            findViewById(R.id.add_object).setVisibility(View.GONE);
-        }
     }
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -179,8 +172,12 @@ public class ViewActivity extends RichListActivity
 
     @Override
     public void afterTextChanged(Editable s) {
-        if (s.length() > 0) {
-            // TODO: larger compose view.
+        if (s.length() == 0) {
+            mSendTextButton.setVisibility(View.GONE);
+            mSendObjectButton.setVisibility(View.VISIBLE);
+        } else {
+            mSendTextButton.setVisibility(View.VISIBLE);
+            mSendObjectButton.setVisibility(View.GONE);
         }
     }
 
@@ -195,6 +192,14 @@ public class ViewActivity extends RichListActivity
         // TODO Auto-generated method stub
         
     }
+
+    private View.OnClickListener mSendObject = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            QuickAction qa = DbActions.getActions(ViewActivity.this, mFeedUri, v);
+            qa.show();
+        }
+    };
 }
 
 

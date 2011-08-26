@@ -21,12 +21,13 @@
       />
     
   <ImageView
-      android:id="@+id/add_object"
+      android:id="@+id/send_text"
       android:layout_width="50dip"
       android:layout_height="50dip"
       android:src="@drawable/ic_menu_dialog" 
       android:scaleType="fitCenter"
       android:layout_toLeftOf="@id/more"
+      android:layout_alignParentRight="true"
       />
 	
 	
@@ -34,7 +35,7 @@
     android:id="@+id/status_text"
     android:layout_width="fill_parent"
 	android:layout_height="50dip"
-	android:layout_toLeftOf="@id/add_object"
+	android:layout_toLeftOf="@id/send_text"
 	android:maxLines="3"
 	android:hint="What's up?"
 	android:inputType="textShortMessage|textAutoCorrect|textCapSentences|textMultiLine"
