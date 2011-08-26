@@ -1,7 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
@@ -27,7 +31,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -131,7 +134,7 @@ public class DungBeetleActivity extends DashboardActivity
         boolean firstLoad = settings.getBoolean("firstLoad", true);
         if (firstLoad) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Thank you for trying out Stanford Mobisocial's new software DungBeetle! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
+            builder.setMessage("Thank you for trying out Stanford Mobisocial's new software Musubi! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
                 .setCancelable(false)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
@@ -259,6 +262,19 @@ public class DungBeetleActivity extends DashboardActivity
             });
 
         pushContactInfoViaNfc();
+        /* sample code for demonstration of the nearby functionality without
+         * a real hookup to the service.
+         */
+        DBHelper helper = new DBHelper(DungBeetleActivity.this);
+        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
+        
+        Set<byte[]> ks = pkss.keySet();
+    	Iterator<byte[]> j = ks.iterator();
+        HashSet<byte[]> hks = new HashSet<byte[]>();
+        for(int i = 0; i < ks.size() / 2; ++i) {
+        	hks.add(j.next());
+        }
+		helper.updateNearby(hks);
     }
 
 	

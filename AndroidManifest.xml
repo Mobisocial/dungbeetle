@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="41"
+	  android:versionCode="45"
 	  android:versionName="0.2"
 	  android:installLocation="auto"
 	  >
@@ -47,7 +47,7 @@
     <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
-	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/dungbeetle" />
+	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
       </intent-filter>
 
  

@@ -318,6 +318,8 @@ public class DungBeetleContentProvider extends ContentProvider {
 
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feedlist")) {
+            mHelper.getWritableDatabase().execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.CHILD_FEED_NAME +
+                    " = NULL WHERE " + DbObject.CHILD_FEED_NAME + " = " + DbObject.FEED_NAME);
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/"));
             return c;

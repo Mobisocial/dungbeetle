@@ -43,6 +43,14 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+
+import android.app.PendingIntent;
+
+import android.content.ComponentName;
+import android.content.Intent;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleActivity;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
@@ -118,6 +126,7 @@ public class MessagingManagerThread extends Thread {
                 public String from(){ return personId; }
                 public byte[] encoded() { return encoded; }
             };
+            
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
         try {
             JSONObject obj = new JSONObject(contents);
@@ -143,7 +152,26 @@ public class MessagingManagerThread extends Thread {
                                 handleSpecialMessage(localizedMsg);
                             }
                         });
-                } else {
+                } 
+                else {
+                    
+                    Maybe<Group> group = mHelper.groupForFeedName(feedName);
+                    if (group.isKnown()) {
+                        Intent launch = new Intent();
+	                    launch.setAction(Intent.ACTION_MAIN);
+	                    launch.addCategory(Intent.CATEGORY_LAUNCHER);
+	                    launch.setComponent(new ComponentName(mContext.getPackageName(),
+                                                          DungBeetleActivity.class.getName()));
+                        PendingIntent contentIntent = PendingIntent.getActivity(
+                            mContext, 0,
+                            launch, PendingIntent.FLAG_CANCEL_CURRENT);
+
+                        (new PresenceAwareNotify(mContext)).notify(
+                            "New Musubi message",
+                            "New Musubi message", 
+                            "In " + ((Group) group.get()).name, 
+                            contentIntent);
+                    }
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler)h).handleFeedMessage(mContext, feedUri, obj);
                     }
