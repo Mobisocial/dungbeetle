@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -27,8 +26,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedTabActivity;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
@@ -151,6 +148,7 @@ public class FeedListFragment extends ListFragment {
             DbObject.TABLE + "." + DbObject.FEED_NAME + " NOT IN ('direct', 'friend', '')";
     }
 
+    @SuppressWarnings("unused")
     private OnClickListener newFeed() {
         return new OnClickListener() {
             @Override

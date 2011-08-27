@@ -19,7 +19,6 @@ import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
  */
 public class FeedListActivity extends FragmentActivity
         implements FeedListFragment.OnFeedSelectedListener {
-    private static final String TAG = "DungBeetle";
 
     public void goHome(Context context) {
         final Intent intent = new Intent(context, HomeActivity.class);

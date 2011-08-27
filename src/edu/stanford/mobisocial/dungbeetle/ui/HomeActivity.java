@@ -31,7 +31,6 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.R.layout;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;

@@ -17,11 +17,14 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
@@ -33,15 +36,10 @@ import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
-import edu.stanford.mobisocial.dungbeetle.R.id;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-
-import android.content.DialogInterface;
-import android.widget.EditText;
-import android.app.AlertDialog;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 /**
  * This is the base class for activities in the dashboard application.
  * It implements methods that are useful to all top level activities.

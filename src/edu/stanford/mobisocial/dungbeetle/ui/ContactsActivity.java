@@ -100,14 +100,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 		super.onCreate(savedInstanceState);
         mHelper = new DBHelper(this);
         Intent intent = getIntent();
-        String groupName = "";
 
         if (intent.hasExtra("group_id")) {    
     		setContentView(R.layout.group_contacts);
             long groupId = intent.getLongExtra("group_id", -1);
             try {
                 mGroup = mHelper.groupForGroupId(groupId);
-                groupName = mGroup.get().name;
                 long gid = mGroup.get().id;
                 Cursor c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
@@ -304,7 +302,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             }
         }
     }
-    
+
+    @SuppressWarnings("unused")
     private final void toast(final String text) {
     	runOnUiThread(new Runnable() {
             @Override
