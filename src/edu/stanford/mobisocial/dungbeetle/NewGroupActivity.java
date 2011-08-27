@@ -19,6 +19,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedTabActivity;
 
 public class NewGroupActivity extends Activity {
 
@@ -49,7 +50,7 @@ public class NewGroupActivity extends Activity {
                         StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
 
                         Intent launch = new Intent();
-                        launch.setClass(NewGroupActivity.this, GroupsTabActivity.class);
+                        launch.setClass(NewGroupActivity.this, FeedTabActivity.class);
                         launch.putExtra("group_name", g.name);
                         launch.putExtra("group_id", g.id);
                         launch.putExtra("group_uri", g.dynUpdateUri);

@@ -1,48 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.AlertDialog;
-import android.app.ListActivity;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView;
-import android.widget.CursorAdapter;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import java.util.Collection;
-
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
-import java.util.UUID;
-import android.app.AlertDialog;
-
-import android.util.Log;
-import mobisocial.nfc.NdefFactory;
-
-import org.apache.http.message.BasicNameValuePair;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import mobisocial.nfc.NdefFactory;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -50,12 +14,40 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import java.util.ArrayList;
-import java.util.List;
 
-import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
-import android.location.Location;
+import android.app.AlertDialog;
+import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
+import android.location.Location;
+import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CursorAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedTabActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
 
 public class GroupsActivity extends ListActivity implements OnItemClickListener {
@@ -154,7 +146,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id){
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
-        Intent viewGroupIntent = new Intent(GroupsActivity.this, GroupsTabActivity.class);
+        Intent viewGroupIntent = new Intent(GroupsActivity.this, FeedTabActivity.class);
         viewGroupIntent.putExtra("group_id", g.id);
         viewGroupIntent.putExtra("group_name", g.name);
         viewGroupIntent.putExtra("group_uri", g.dynUpdateUri);
@@ -165,6 +157,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         public GroupListCursorAdapter (Context context, Cursor c) {
             super(context, c);
         }
+
         @Override
         public View newView(Context context, Cursor c, ViewGroup parent) {
             final LayoutInflater inflater = LayoutInflater.from(context);
@@ -173,8 +166,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
             return v;
         }
 
-        
-              
         public MyLocation myLocation;
         public MyLocation.LocationResult locationResult;
 
@@ -257,7 +248,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
                                         public void onClick(DialogInterface dialog, final int item) {
                                             
                                             myLocation = new MyLocation();
-
                                             locationResult = new MyLocation.LocationResult(){
 
                                             
@@ -384,44 +374,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         return true;
     }
 
-    private final static int ADD_GROUP = 0;
-
-    /*public boolean onPreparePanel(int featureId, View view, Menu menu) {
-        menu.clear();
-        menu.add(0, ADD_GROUP, 0, "Add group");
-        menu.add(0, 1, 0, "debug load");
-        return true;
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
-        case ADD_GROUP: {
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            alert.setMessage("Enter group name:");
-            final EditText input = new EditText(this);
-            alert.setView(input);
-            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        Group.create(GroupsActivity.this, input.getText().toString(), mHelper);
-                    }
-                });
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                    }
-                });
-            alert.show();
-            return true;
-        }
-        case 1: {
-            Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-            intent.setData(Uri.parse("dungbeetle-group-session://suif.stanford.edu/dungbeetle/index.php?session=519e513d66bc89f4cbbfb1f127ae2c40&groupName=cs294s&key=WwBUcE4Rf8LKQebVfgsp9g%3D%3D"));
-            startActivity(intent);
-            return true;
-        }
-        default: return false;
-        }
-    }
-*/
     @Override
     public void finish() {
         super.finish();
@@ -432,6 +384,3 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         return NdefFactory.fromUri(g.dynUpdateUri);
     }
 }
-
-
-

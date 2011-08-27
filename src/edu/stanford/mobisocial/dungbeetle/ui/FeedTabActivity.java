@@ -1,34 +1,12 @@
-package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
-import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import android.app.TabActivity;
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-import android.view.ViewParent;
-import android.widget.TabHost;
-import android.widget.Toast;
+package edu.stanford.mobisocial.dungbeetle.ui;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
-import android.widget.TextView;
-import android.util.Log;
-import android.content.Context;
-
-import android.net.Uri;
-
-import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
-import android.location.Location;
-import android.app.Activity;
-import android.app.ProgressDialog;
-import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
-
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -38,21 +16,41 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.InputStream;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.app.TabActivity;
+import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.DialogInterface;
-
-
+import android.content.Intent;
+import android.location.Location;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewParent;
 import android.widget.EditText;
+import android.widget.TabHost;
+import android.widget.TextView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.AboutActivity;
+import edu.stanford.mobisocial.dungbeetle.ContactsActivity;
+import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.R.id;
+import edu.stanford.mobisocial.dungbeetle.R.layout;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 /**
  * Represents a group by showing its feed and members.
  * TODO: Accept only a group_id extra and query for other parameters.
  */
-public class GroupsTabActivity extends TabActivity
+public class FeedTabActivity extends TabActivity
 {
     private Nfc mNfc;
     private Uri mExternalFeedUri;
@@ -82,7 +80,7 @@ public class GroupsTabActivity extends TabActivity
 
 
     public void onClickBroadcast(View v) {
-        new AlertDialog.Builder(GroupsTabActivity.this)
+        new AlertDialog.Builder(FeedTabActivity.this)
             .setTitle("Share thread...")
             .setItems(new String[] {"Send to friend", "Broadcast nearby"}, new DialogInterface.OnClickListener() {
                 @Override
@@ -100,7 +98,7 @@ public class GroupsTabActivity extends TabActivity
     }
 
     public void sendToFriend() {
-        new AlertDialog.Builder(GroupsTabActivity.this)
+        new AlertDialog.Builder(FeedTabActivity.this)
         .setTitle("Share thread...")
         .setItems(new String[] {"From Musubi", "Other..."}, new DialogInterface.OnClickListener() {
             @Override
@@ -134,7 +132,7 @@ public class GroupsTabActivity extends TabActivity
     }
 
     public void broadcastNearby() {
-        new AlertDialog.Builder(GroupsTabActivity.this)
+        new AlertDialog.Builder(FeedTabActivity.this)
             .setTitle("Share thread...")
             .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
                 @Override
@@ -202,54 +200,43 @@ public class GroupsTabActivity extends TabActivity
     {
         final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(GroupsTabActivity.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(FeedTabActivity.this);
         builder.setTitle("Choose duration of broadcast");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, final int item) {
-
-
-                AlertDialog.Builder alert = new AlertDialog.Builder(GroupsTabActivity.this);
+                AlertDialog.Builder alert = new AlertDialog.Builder(FeedTabActivity.this);
                 alert.setMessage("Enter a secret key if you want to:");
-                final EditText input = new EditText(GroupsTabActivity.this);
+                final EditText input = new EditText(FeedTabActivity.this);
                 alert.setView(input);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             final String password = input.getText().toString();
-
                             myLocation = new MyLocation();
-
-                            locationResult = new MyLocation.LocationResult(){
-
-                            
-                                final ProgressDialog dialog = ProgressDialog.show(GroupsTabActivity.this, "", 
+                            locationResult = new MyLocation.LocationResult() {
+                                final ProgressDialog dialog = ProgressDialog.show(FeedTabActivity.this, "", 
                                             "Preparing broadcast...", true);
-                                              
+
                                 @Override
                                 public void gotLocation(final Location location){
                                     //Got the location!
                                     try {
                                         int minutes;
-                                        if(item == 0) {
+                                        if (item == 0) {
                                             minutes = 5;
-                                        }
-                                        else if(item == 1) {
+                                        } else if (item == 1) {
                                             minutes = 15;
-                                        }
-                                        else if(item == 2) {
+                                        } else if (item == 2) {
                                             minutes = 60;
-                                        }
-                                        else if(item == 3) {
+                                        } else if (item == 3) {
                                             minutes = 1440;
-                                        }
-                                        else
-                                        {
+                                        } else {
                                             minutes = 5;
                                         }
-                                        Uri.Builder b = new Uri.Builder();
-                                        b.scheme("http");
-                                        b.authority("suif.stanford.edu");
-                                        b.path("dungbeetle/nearby.php");
-                                        Uri uri = b.build();
+
+                                        Uri uri = new Uri.Builder()
+                                            .scheme("http")
+                                            .authority("suif.stanford.edu")
+                                            .path("dungbeetle/nearby.php").build();
                                         
                                         StringBuffer sb = new StringBuffer();
                                         DefaultHttpClient client = new DefaultHttpClient();
@@ -267,7 +254,7 @@ public class GroupsTabActivity extends TabActivity
                                             group_id = intent.getLongExtra("group_id", -1);
                                             group_name = intent.getStringExtra("group_name");
                                             feed_name = group_name;
-                                            Maybe<Group> maybeG = Group.forId(GroupsTabActivity.this, group_id);
+                                            Maybe<Group> maybeG = Group.forId(FeedTabActivity.this, group_id);
                                             try {
                                                 Group g = maybeG.get();
                                                 feed_name = g.feedName;
@@ -275,7 +262,7 @@ public class GroupsTabActivity extends TabActivity
                                             feed_uri = intent.getStringExtra("group_uri");
                                         } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
                                             group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-                                            Maybe<Group> maybeG = Group.forId(GroupsTabActivity.this, group_id);
+                                            Maybe<Group> maybeG = Group.forId(FeedTabActivity.this, group_id);
                                             try {
                                                 Group g = maybeG.get();
                                                 group_name = g.name;
@@ -284,13 +271,13 @@ public class GroupsTabActivity extends TabActivity
                                             } catch (Exception e) {}
                                         } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
                                             String feedName = getIntent().getData().getLastPathSegment();
-                                            Maybe<Group>maybeG = Group.forFeed(GroupsTabActivity.this, feedName);
+                                            Maybe<Group>maybeG = Group.forFeed(FeedTabActivity.this, feedName);
                                             Group g = null;
                                             try {
                                                g = maybeG.get();
                                                 
                                             } catch (Exception e) {
-                                                g = Group.createForFeed(GroupsTabActivity.this, feedName);
+                                                g = Group.createForFeed(FeedTabActivity.this, feedName);
                                             }
                                             group_name = g.name;
                                             feed_name = g.feedName;
@@ -347,9 +334,6 @@ public class GroupsTabActivity extends TabActivity
                         }
                     });
                 alert.show();
-            
-                
-                
             }
         });
         AlertDialog alert = builder.create();
@@ -368,7 +352,7 @@ public class GroupsTabActivity extends TabActivity
     public MyLocation.LocationResult locationResult;
 
     private void locationClick() {
-        myLocation.getLocation(GroupsTabActivity.this, locationResult);
+        myLocation.getLocation(FeedTabActivity.this, locationResult);
     }
 
     /** Called when the activity is first created. */
@@ -496,14 +480,8 @@ public class GroupsTabActivity extends TabActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(GroupsTabActivity.this, text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(FeedTabActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 }
-
-
-
-
-

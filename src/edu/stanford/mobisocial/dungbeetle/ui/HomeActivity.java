@@ -28,7 +28,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
-import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -198,7 +197,7 @@ public class HomeActivity extends DashboardBaseActivity {
                     view.setData(uri);
                     // TODO: fix in AndroidManifest.
                     //view.setClass(this, FeedActivity.class);
-                    view.setClass(this, GroupsTabActivity.class);
+                    view.setClass(this, FeedTabActivity.class);
                     startActivity(view);
                     finish();
                     return;

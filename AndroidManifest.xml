@@ -116,7 +116,7 @@
     <activity android:name="FriendsActivity"  android:label="@string/title_friends" ></activity>
     <activity android:name="GroupsActivity"  android:label="@string/title_groups" ></activity> 
     <activity 
-    	android:name="GroupsTabActivity"
+    	android:name=".ui.FeedTabActivity"
     	android:label="@string/title_groups"
 	    android:windowSoftInputMode="stateHidden">
 	      

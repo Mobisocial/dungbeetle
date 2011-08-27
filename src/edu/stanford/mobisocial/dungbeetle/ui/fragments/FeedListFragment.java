@@ -20,7 +20,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
@@ -28,6 +27,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedTabActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
@@ -134,7 +134,7 @@ public class FeedListFragment extends ListFragment {
 
         Intent launch = new Intent();
         if (groupName != null) {
-            launch.setClass(getActivity(), GroupsTabActivity.class);
+            launch.setClass(getActivity(), FeedTabActivity.class);
             launch.putExtra("group_name", groupName);
             launch.putExtra("group_id", groupId);
             launch.putExtra("group_uri", groupUri);

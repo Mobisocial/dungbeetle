@@ -28,7 +28,6 @@ import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.ContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
-import edu.stanford.mobisocial.dungbeetle.GroupsTabActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
@@ -250,7 +249,7 @@ public void onClickFeature (View v)
                         StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
 
                         Intent launch = new Intent();
-                        launch.setClass(DashboardBaseActivity.this, GroupsTabActivity.class);
+                        launch.setClass(DashboardBaseActivity.this, FeedTabActivity.class);
                         launch.putExtra("group_name", g.name);
                         launch.putExtra("group_id", g.id);
                         launch.putExtra("group_uri", g.dynUpdateUri);
