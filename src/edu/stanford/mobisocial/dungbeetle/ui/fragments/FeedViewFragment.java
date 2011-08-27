@@ -84,7 +84,7 @@ public class FeedViewFragment extends ListFragment
 
         Intent intent = getActivity().getIntent();
         mContactCache = new ContactCache(getActivity());
-        if (getArguments().containsKey(ARG_FEED_URI)) {
+        if (getArguments() != null && getArguments().containsKey(ARG_FEED_URI)) {
             mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
         } else if (intent.hasExtra("group_id")) {
             try {
