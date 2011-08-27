@@ -778,6 +778,22 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[] { String.valueOf(groupId) });
     }
 
+    public Cursor queryFeedMembers(String feedName, String appId) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
+            .append(" FROM " + Contact.TABLE + " C, ")
+            .append(GroupMember.TABLE + " M, ")
+            .append(Group.TABLE + " G")
+            .append(" WHERE ")
+            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+            .append(" AND ")
+            .append("G." + Group.FEED_NAME + " = ? AND " )
+            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { feedName });
+    }
 
 	public Maybe<Contact> contactForPersonId(String personId){
         List<Contact> cs = contactsForPersonIds(Collections.singletonList(personId));

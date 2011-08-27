@@ -110,10 +110,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 groupName = mGroup.get().name;
                 long gid = mGroup.get().id;
                 Cursor c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + 
-                              "/group_contacts/" + gid),
-                    null,
-                    null, null, Contact.NAME + " ASC");
+                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
+                    null, null, null, Contact.NAME + " ASC");
                 mContacts = new ContactListCursorAdapter(this, c);
             } catch(Maybe.NoValError e) {
                 Log.i(TAG, "group not found!");
