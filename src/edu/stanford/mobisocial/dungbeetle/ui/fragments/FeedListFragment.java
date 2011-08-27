@@ -70,6 +70,14 @@ public class FeedListFragment extends ListFragment {
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (null != getActivity().findViewById(R.id.feed_view)) {
+            getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        }
+    }
+
+    @Override
     public void onDetach() {
         super.onDetach();
         mContactCache.close();
@@ -92,6 +100,7 @@ public class FeedListFragment extends ListFragment {
         public void bindView(final View v, final Context context, final Cursor c) {
             String[] cols = c.getColumnNames();
             int feedCol = -1;
+            // There are two selected 'feed_name' columns, one can be null.
             for (int i = 0; i < cols.length; i++) {
                 if (cols[i].equals(DbObject.FEED_NAME)) {
                     feedCol = i;
@@ -123,6 +132,7 @@ public class FeedListFragment extends ListFragment {
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
+        getListView().setItemChecked(position, true);
         String feedName = (String)v.getTag(R.id.feed_label);
         while (feedName == null) {
             v = (View)v.getParent();

@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mobisocial.appmanifest.ApplicationManifest;
+import org.mobisocial.appmanifest.platforms.PlatformReference;
 
 import com.android.apps.tag.record.UriRecord;
 
@@ -20,8 +22,6 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.appmanifest.ApplicationManifest;
-import edu.stanford.mobisocial.appmanifest.platforms.PlatformReference;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;

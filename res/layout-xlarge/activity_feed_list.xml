@@ -21,9 +21,25 @@
 		        android:src="@drawable/title_search"
 		        android:onClick="onClickSearch" />-->
 		</LinearLayout>
-		<FrameLayout
-		   android:layout_width="fill_parent"
-		   android:layout_height="fill_parent"
-           android:id="@+id/feed_list">
-		</FrameLayout>
+		<LinearLayout android:orientation="horizontal"
+					android:layout_width="fill_parent"
+					android:layout_height="fill_parent">
+			<FrameLayout
+			   android:layout_width="350dip"
+			   android:layout_height="fill_parent"
+	           android:id="@+id/feed_list">
+			</FrameLayout>
+			<View
+			    android:layout_width="3dip"
+			    android:layout_height="fill_parent"
+			    android:background="#FF666666"
+			/>
+			<FrameLayout
+			   android:orientation="vertical"
+			   android:layout_width="fill_parent"
+			   android:layout_height="fill_parent"
+	           android:id="@+id/feed_view"
+	           android:padding="4dp">
+			</FrameLayout>
+		</LinearLayout>
 </LinearLayout>

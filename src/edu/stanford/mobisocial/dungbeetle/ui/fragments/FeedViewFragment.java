@@ -39,6 +39,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -46,12 +47,12 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 public class FeedViewFragment extends ListFragment
         implements OnItemClickListener, OnEditorActionListener, TextWatcher {
 
+    public static final String ARG_FEED_URI = "feed_uri";
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
             LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
 
 	private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
-    private String feedName = null;
     private Uri mFeedUri;
     private ContactCache mContactCache;
     private EditText mStatusText;
@@ -83,24 +84,25 @@ public class FeedViewFragment extends ListFragment
 
         Intent intent = getActivity().getIntent();
         mContactCache = new ContactCache(getActivity());
-        if (feedName == null && intent.hasExtra("group_id")) {
+        if (getArguments().containsKey(ARG_FEED_URI)) {
+            mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
+        } else if (intent.hasExtra("group_id")) {
             try {
                 Long groupId = intent.getLongExtra("group_id", -1);
                 DBHelper dbHelper = new DBHelper(getActivity());
-                feedName = dbHelper.groupForGroupId(groupId).get().feedName;
-                dbHelper.close();
+                String feedName = dbHelper.groupForGroupId(groupId).get().feedName;
+                mFeedUri = Feed.uriForName(feedName);
             } catch (Maybe.NoValError e) {
                 Log.w(TAG, "Tried to view a group with bad group id");
             }
         } else if (intent.hasExtra("feed_id")) {
-            feedName = intent.getStringExtra("feed_id");
+            mFeedUri = Feed.uriForName(intent.getStringExtra("feed_id"));
         }
-        if (feedName == null) {
-            feedName = "friend";
+        if (mFeedUri == null) {
+            mFeedUri = Feed.uriForName("friend");
         }
 
         //int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
-        mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + feedName);
 
         FeedProcessor processor = new DefaultFeedProcessor(mContactCache);
         mObjects = processor.getListAdapter(getActivity(), mFeedUri);
