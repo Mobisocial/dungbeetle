@@ -67,7 +67,7 @@
 	      android:label="Dungbeetle Status">
     </activity>
 
-    <activity android:name="edu.stanford.mobisocial.dungbeetle.ContactsActivity"
+    <activity android:name=".ui.ContactsActivity"
 	      android:label="@string/title_friends">
     </activity>
 

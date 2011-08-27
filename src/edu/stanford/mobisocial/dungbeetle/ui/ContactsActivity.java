@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.Collections;
 
 import android.app.ListActivity;
@@ -24,15 +24,30 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.AboutActivity;
+import edu.stanford.mobisocial.dungbeetle.ActionItem;
+import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.QuickAction;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.UIHelpers;
+import edu.stanford.mobisocial.dungbeetle.ViewContactTabActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
-
+/**
+ * Displays a list of contacts. If the intent used to create
+ * this activity as Long extra "group_id", contacts are chosen
+ * from this group. Otherwise, lists all known contacts.
+ *
+ */
 public class ContactsActivity extends ListActivity implements OnItemClickListener{
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
@@ -42,7 +57,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
 
-    /*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
@@ -82,17 +96,16 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         startActivity(share);
     }
 
-    /*** End Dashboard Stuff ***/
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
         mHelper = new DBHelper(this);
         Intent intent = getIntent();
         String groupName = "";
 
-        if(intent.hasExtra("group_id")){    
-        		setContentView(R.layout.group_contacts);
+        if (intent.hasExtra("group_id")) {    
+    		setContentView(R.layout.group_contacts);
             long groupId = intent.getLongExtra("group_id", -1);
-            try{
+            try {
                 mGroup = mHelper.groupForGroupId(groupId);
                 groupName = mGroup.get().name;
                 long gid = mGroup.get().id;
@@ -102,14 +115,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     null,
                     null, null, Contact.NAME + " ASC");
                 mContacts = new ContactListCursorAdapter(this, c);
-            }
-            catch(Maybe.NoValError e){
+            } catch(Maybe.NoValError e) {
                 Log.i(TAG, "group not found!");
                 mContacts = new ContactListCursorAdapter(this, new MatrixCursor(new String[]{}));
             }
-        }
-        else{
-        		setContentView(R.layout.contacts);
+        } else {
+        	setContentView(R.layout.contacts);
             setTitleFromActivityLabel (R.id.title_text);
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
@@ -125,7 +136,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         //registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
-		
 	}
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -178,7 +188,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     private class ContactListCursorAdapter extends CursorAdapter {
-
         public ContactListCursorAdapter (Context context, Cursor c) {
             super(context, c);
         }
@@ -190,7 +199,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             bindView(v, context, c);
             return v;
         }
-
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
@@ -275,9 +283,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                     }
                 });
         }
-
     }
-
 
     public boolean onCreateOptionsMenu(Menu menu){
         return true;

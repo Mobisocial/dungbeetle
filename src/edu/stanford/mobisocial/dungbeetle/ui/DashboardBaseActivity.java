@@ -25,7 +25,6 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
-import edu.stanford.mobisocial.dungbeetle.ContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.Helpers;

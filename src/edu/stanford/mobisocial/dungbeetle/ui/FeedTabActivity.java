@@ -35,7 +35,6 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
-import edu.stanford.mobisocial.dungbeetle.ContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.R.id;
@@ -60,7 +59,7 @@ public class FeedTabActivity extends TabActivity
 
     public final String TAG = "GroupsTabActivity";
 
-    /*** Dashbaord stuff ***/
+    /*** Dashboard stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
@@ -450,7 +449,6 @@ public class FeedTabActivity extends TabActivity
             "Members",
             null).setContent(intent);
         tabHost.addTab(spec);
-
         tabHost.setCurrentTab(0);
     }
 
