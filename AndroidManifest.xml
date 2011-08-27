@@ -5,7 +5,7 @@
 	  android:versionName="0.2"
 	  android:installLocation="auto"
 	  >
-    <uses-sdk android:minSdkVersion="6" />
+    <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="10" />
 
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -226,6 +226,21 @@
       </intent-filter>
 
     </activity>
+    <activity android:name="org.mobisocial.appmanifest.AppManifestHandler"
+          android:label="Junction">
+	    <intent-filter>
+	    	<action android:name="android.intent.action.VIEW"></action>
+			<category android:name="android.intent.category.DEFAULT"></category>
+			<category android:name="android.intent.category.BROWSABLE"></category>
+	        <data android:mimeType="application/vnd.mobisocial-appmanifest" />
+	    </intent-filter>
+	    <intent-filter>
+	    	<action android:name="android.nfc.action.NDEF_DISCOVERED"></action>
+			<category android:name="android.intent.category.DEFAULT"></category>
+	        <data android:mimeType="application/vnd.mobisocial-appmanifest" />
+	    </intent-filter>
+    </activity>
+     
 
 <!-- Insecure.
    <receiver android:name="edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj">
