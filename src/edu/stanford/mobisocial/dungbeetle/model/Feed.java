@@ -9,6 +9,8 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 
 public class Feed extends DbObject {
     public static final int BACKGROUND_ALPHA = 150;
+    public static final String MIME_TYPE = "vnd.mobisocial.db/feed";
+
     public static Uri uriForName(String name) {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + name);
     }

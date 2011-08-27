@@ -37,8 +37,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.R.id;
-import edu.stanford.mobisocial.dungbeetle.R.layout;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
@@ -54,6 +52,7 @@ public class FeedTabActivity extends TabActivity
     private Nfc mNfc;
     private Uri mExternalFeedUri;
     private Uri mInternalFeedUri;
+    private String mGroupName;
     private static final int REQUEST_BT_BROADCAST = 2;
     private static final int REQUEST_BT_ENABLE = 3;
 
@@ -242,51 +241,8 @@ public class FeedTabActivity extends TabActivity
                                         HttpPost httpPost = new HttpPost(uri.toString());
 
                                         List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-
-                                        Intent intent = getIntent();
-                                        Long group_id = null;
-                                        String group_name = null;
-                                        String feed_name = null;
-                                        String feed_uri = null;
-                                        // TODO: Depracate extras-based access in favor of Data field.
-                                        if (intent.hasExtra("group_id")) {
-                                            group_id = intent.getLongExtra("group_id", -1);
-                                            group_name = intent.getStringExtra("group_name");
-                                            feed_name = group_name;
-                                            Maybe<Group> maybeG = Group.forId(FeedTabActivity.this, group_id);
-                                            try {
-                                                Group g = maybeG.get();
-                                                feed_name = g.feedName;
-                                            } catch (Exception e) {}
-                                            feed_uri = intent.getStringExtra("group_uri");
-                                        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
-                                            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-                                            Maybe<Group> maybeG = Group.forId(FeedTabActivity.this, group_id);
-                                            try {
-                                                Group g = maybeG.get();
-                                                group_name = g.name;
-                                                feed_name = g.feedName;
-                                                feed_uri = g.dynUpdateUri;
-                                            } catch (Exception e) {}
-                                        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
-                                            String feedName = getIntent().getData().getLastPathSegment();
-                                            Maybe<Group>maybeG = Group.forFeed(FeedTabActivity.this, feedName);
-                                            Group g = null;
-                                            try {
-                                               g = maybeG.get();
-                                                
-                                            } catch (Exception e) {
-                                                g = Group.createForFeed(FeedTabActivity.this, feedName);
-                                            }
-                                            group_name = g.name;
-                                            feed_name = g.feedName;
-                                            feed_uri = g.dynUpdateUri;
-                                            group_id = g.id;
-                                        }
-
-                                    
-                                        nameValuePairs.add(new BasicNameValuePair("group_name", group_name));
-                                        nameValuePairs.add(new BasicNameValuePair("feed_uri", feed_uri));
+                                        nameValuePairs.add(new BasicNameValuePair("group_name", mGroupName));
+                                        nameValuePairs.add(new BasicNameValuePair("feed_uri", mExternalFeedUri.toString()));
                                         nameValuePairs.add(new BasicNameValuePair("length", Integer.toString(minutes)));
                                         nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
                                         nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
@@ -323,9 +279,7 @@ public class FeedTabActivity extends TabActivity
                                     dialog.dismiss();
                                 }
                             };
-
                             locationClick();
-                            
                         }
                     });
                 alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -371,14 +325,13 @@ public class FeedTabActivity extends TabActivity
 
         Intent intent = getIntent();
         Long group_id = null;
-        String group_name = null;
         String feed_name = null;
         String dyn_feed_uri = null;
         // TODO: Depracate extras-based access in favor of Data field.
         if (intent.hasExtra("group_id")) {
             group_id = intent.getLongExtra("group_id", -1);
-            group_name = intent.getStringExtra("group_name");
-            feed_name = group_name;
+            mGroupName = intent.getStringExtra("group_name");
+            feed_name = mGroupName;
             Maybe<Group> maybeG = Group.forId(this, group_id);
             try {
                 Group g = maybeG.get();
@@ -390,9 +343,20 @@ public class FeedTabActivity extends TabActivity
             Maybe<Group> maybeG = Group.forId(this, group_id);
             try {
                 Group g = maybeG.get();
-                group_name = g.name;
+                mGroupName = g.name;
                 feed_name = g.feedName;
                 dyn_feed_uri = g.dynUpdateUri;
+                group_id = g.id;
+            } catch (Exception e) {}
+        } else if (getIntent().getType() != null && getIntent().getType().equals(Feed.MIME_TYPE)) {
+            Uri feedUri = getIntent().getData();
+            Maybe<Group> maybeG = Group.forFeed(FeedTabActivity.this, feedUri.getLastPathSegment());
+            try {
+                Group g = maybeG.get();
+                mGroupName = g.name;
+                feed_name = g.feedName;
+                dyn_feed_uri = g.dynUpdateUri;
+                group_id = g.id;
             } catch (Exception e) {}
         } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
             String feedName = getIntent().getData().getLastPathSegment();
@@ -400,11 +364,10 @@ public class FeedTabActivity extends TabActivity
             Group g = null;
             try {
                g = maybeG.get();
-                
             } catch (Exception e) {
                 g = Group.createForFeed(this, feedName);
             }
-            group_name = g.name;
+            mGroupName = g.name;
             feed_name = g.feedName;
             dyn_feed_uri = g.dynUpdateUri;
             group_id = g.id;
@@ -420,7 +383,7 @@ public class FeedTabActivity extends TabActivity
 
         int color = Feed.colorFor(feed_name);
         
-        setTitleFromActivityLabel (R.id.title_text, group_name);
+        setTitleFromActivityLabel (R.id.title_text, mGroupName);
         View titleView = getWindow().findViewById(android.R.id.title);
         if (titleView != null) {
             ViewParent parent = titleView.getParent();
@@ -437,17 +400,13 @@ public class FeedTabActivity extends TabActivity
             
         intent = new Intent().setClass(this, FeedViewActivity.class);
         intent.putExtra("group_id", group_id);
-        spec = tabHost.newTabSpec("objects").setIndicator(
-            "Feed",
-            null).setContent(intent);
+        spec = tabHost.newTabSpec("objects").setIndicator("Feed", null).setContent(intent);
         tabHost.addTab(spec);
 
         intent = new Intent().setClass(this, ContactsActivity.class);
         intent.putExtra("group_id", group_id);
-        intent.putExtra("group_name", group_name);
-        spec = tabHost.newTabSpec("contacts").setIndicator(
-            "Members",
-            null).setContent(intent);
+        intent.putExtra("group_name", mGroupName);
+        spec = tabHost.newTabSpec("contacts").setIndicator("Members", null).setContent(intent);
         tabHost.addTab(spec);
         tabHost.setCurrentTab(0);
     }

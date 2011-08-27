@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
@@ -10,12 +11,14 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
  */
-public class FeedListActivity extends FragmentActivity {
+public class FeedListActivity extends FragmentActivity
+        implements FeedListFragment.OnFeedSelectedListener {
     private static final String TAG = "DungBeetle";
 
     public void goHome(Context context) {
@@ -50,5 +53,12 @@ public class FeedListActivity extends FragmentActivity {
         setTitleFromActivityLabel(R.id.title_text);
         getSupportFragmentManager().beginTransaction()
             .add(R.id.frame, new FeedListFragment()).commit();
+    }
+
+    @Override
+    public void onFeedSelected(Uri feedUri) {
+        Intent launch = new Intent(Intent.ACTION_VIEW);
+        launch.setDataAndType(feedUri, Feed.MIME_TYPE);
+        startActivity(launch);
     }
 }

@@ -125,6 +125,11 @@
 		      <category android:name="android.intent.category.DEFAULT" />
 		      <data android:mimeType="vnd.mobisocial.db/group" />
 	      </intent-filter>
+   	      <intent-filter>
+		      <action android:name="android.intent.action.VIEW"/>
+		      <category android:name="android.intent.category.DEFAULT" />
+		      <data android:mimeType="vnd.mobisocial.db/feed" />
+	      </intent-filter>
 	      </activity> 
     <activity android:name="ViewContactActivity"  android:label="@string/title_friend" ></activity>
     <activity android:name="ViewContactTabActivity"  android:label="@string/title_friend" >
