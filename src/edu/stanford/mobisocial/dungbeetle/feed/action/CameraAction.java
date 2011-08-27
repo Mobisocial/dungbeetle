@@ -2,16 +2,11 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
-import android.view.View;
-import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 

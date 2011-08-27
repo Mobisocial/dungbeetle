@@ -4,7 +4,7 @@ import android.app.ListActivity;
 import android.content.Intent;
 
 
-public class RichListActivity extends ListActivity{
+public class RichListActivity extends ListActivity {
 
     private static int ACTIVITY_CALLOUT = 39472874;
     private static ActivityCallout mCurrentCallout;
