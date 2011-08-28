@@ -10,8 +10,10 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FeedHeadFragment extends Fragment {
 
@@ -24,8 +26,9 @@ public class FeedHeadFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		View view = new FrameLayout(getActivity());
+		View view = inflater.inflate(R.layout.objects_item, container, false);
 		view.setLayoutParams(LAYOUT_FULL_WIDTH);
+		view.setId(R.id.feed_view);
 		return view;
     }
 
@@ -37,8 +40,10 @@ public class FeedHeadFragment extends Fragment {
         Cursor c = getActivity().getContentResolver().query(feedUri, null, getFeedObjectClause(),
                 null, DbObject._ID + " DESC");
         if (c.moveToFirst()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-            Toast.makeText(getActivity(), jsonSrc, 500).show();   
+            View v = getActivity().findViewById(R.id.feed_view);
+            // TODO: move to activity, pulled via interface
+            ContactCache cache = new ContactCache(getActivity());
+            DbObject.bindView(v, getActivity(), c, cache);
         }
     }
 
