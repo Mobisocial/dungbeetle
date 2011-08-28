@@ -18,6 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 import edu.stanford.mobisocial.dungbeetle.util.RichListActivity;
 
@@ -30,7 +31,7 @@ public class GalleryAction implements FeedAction {
 
     @Override
     public void onClick(final Context context, final Uri feedUri) {
-        RichListActivity.doActivityForResult((Activity)context, new GalleryCallout(context, feedUri));
+        ((InstrumentedActivity)context).doActivityForResult(new GalleryCallout(context, feedUri));
     }
 
     @Override

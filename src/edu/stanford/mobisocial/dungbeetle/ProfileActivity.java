@@ -211,10 +211,7 @@ public class ProfileActivity extends RichActivity{
                     Toast.makeText(ProfileActivity.this,
                                    "Loading camera...", 
                                    Toast.LENGTH_SHORT).show();
-                    doActivityForResult(
-                        ProfileActivity.this, 
-                        new PhotoTaker(
-                            ProfileActivity.this, 
+                    doActivityForResult(new PhotoTaker(ProfileActivity.this, 
                             new PhotoTaker.ResultHandler() {
                                 @Override
                                 public void onResult(byte[] data) {

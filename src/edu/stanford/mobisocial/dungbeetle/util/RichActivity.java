@@ -4,14 +4,14 @@ import android.app.Activity;
 import android.content.Intent;
 
 
-public class RichActivity extends Activity{
+public class RichActivity extends Activity implements InstrumentedActivity {
 
     private static int ACTIVITY_CALLOUT = 39472874;
     private static ActivityCallout mCurrentCallout;
-    public static void doActivityForResult(Activity me, ActivityCallout callout) {
+    public void doActivityForResult(ActivityCallout callout) {
     	mCurrentCallout = callout;
     	Intent launch = callout.getStartIntent();
-    	me.startActivityForResult(launch, ACTIVITY_CALLOUT);
+    	startActivityForResult(launch, ACTIVITY_CALLOUT);
     }
 
     @Override

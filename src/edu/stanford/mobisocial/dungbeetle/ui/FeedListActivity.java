@@ -14,12 +14,14 @@ import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
  */
 public class FeedListActivity extends FragmentActivity
-        implements FeedListFragment.OnFeedSelectedListener {
+        implements FeedListFragment.OnFeedSelectedListener, InstrumentedActivity {
 
     private boolean mDualPane;
 
@@ -71,6 +73,21 @@ public class FeedListActivity extends FragmentActivity
             Intent launch = new Intent(Intent.ACTION_VIEW);
             launch.setDataAndType(feedUri, Feed.MIME_TYPE);
             startActivity(launch);
+        }
+    }
+
+    private static int ACTIVITY_CALLOUT = 39;
+    private static ActivityCallout mCurrentCallout;
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        startActivityForResult(launch, ACTIVITY_CALLOUT);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
         }
     }
 }

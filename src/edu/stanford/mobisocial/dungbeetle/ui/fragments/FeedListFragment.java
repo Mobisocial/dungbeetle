@@ -125,8 +125,10 @@ public class FeedListFragment extends ListFragment {
             }
             int color = Feed.colorFor(feedName);
             labelView.setBackgroundColor(color);
+
             //v.setBackgroundColor(color);
             //v.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
+            
         }
     }
 
