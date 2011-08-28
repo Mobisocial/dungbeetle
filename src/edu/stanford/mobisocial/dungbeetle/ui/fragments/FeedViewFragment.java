@@ -82,26 +82,8 @@ public class FeedViewFragment extends ListFragment
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Intent intent = getActivity().getIntent();
         mContactCache = new ContactCache(getActivity());
-        if (getArguments() != null && getArguments().containsKey(ARG_FEED_URI)) {
-            mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-        } else if (intent.hasExtra("group_id")) {
-            try {
-                Long groupId = intent.getLongExtra("group_id", -1);
-                DBHelper dbHelper = new DBHelper(getActivity());
-                String feedName = dbHelper.groupForGroupId(groupId).get().feedName;
-                dbHelper.close();
-                mFeedUri = Feed.uriForName(feedName);
-            } catch (Maybe.NoValError e) {
-                Log.w(TAG, "Tried to view a group with bad group id");
-            }
-        } else if (intent.hasExtra("feed_id")) {
-            mFeedUri = Feed.uriForName(intent.getStringExtra("feed_id"));
-        }
-        if (mFeedUri == null) {
-            mFeedUri = Feed.uriForName("friend");
-        }
+        mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
 
         //int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
 
