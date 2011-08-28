@@ -91,6 +91,7 @@ public class FeedViewFragment extends ListFragment
                 Long groupId = intent.getLongExtra("group_id", -1);
                 DBHelper dbHelper = new DBHelper(getActivity());
                 String feedName = dbHelper.groupForGroupId(groupId).get().feedName;
+                dbHelper.close();
                 mFeedUri = Feed.uriForName(feedName);
             } catch (Maybe.NoValError e) {
                 Log.w(TAG, "Tried to view a group with bad group id");

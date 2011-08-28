@@ -1,19 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
 
-public class FeedView {
-    final String mName;
-    final Class<?> mClassName;
+import android.support.v4.app.Fragment;
 
-    public String getName() {
-        return mName;
-    }
-
-	public Class<?> getClassName() {
-	    return mClassName;
-	}
-
-	public FeedView(String name, Class<?> className) {
-	    mName = name;
-	    mClassName = className;
-	}
+public interface FeedView {
+    public String getName();
+	public Fragment getFragment();
 }

@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedMapActivity;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedStatsActivity;
+import edu.stanford.mobisocial.dungbeetle.feed.view.HeadView;
 
 public class DbViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
     static {
-        sFeedViews.add(new FeedView("Stats", FeedStatsActivity.class));
-        sFeedViews.add(new FeedView("Map", FeedMapActivity.class));
+        sFeedViews.add(new HeadView());
+        //sFeedViews.add(new MapView());
+        //sFeedViews.add(new StatsView());
     }
 
     public static List<FeedView> getFeedViews() {

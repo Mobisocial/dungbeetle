@@ -287,13 +287,5 @@
       </intent-filter>
     
     </activity>
-
-    <!--  TODO: external apps. -->
-    <activity android:name=".ui.FeedStatsActivity"
-	      android:label="Stat View">
-    </activity>
-    <activity android:name=".ui.FeedMapActivity" 
-          android:label="Map View">
-    </activity>
   </application>
 </manifest> 

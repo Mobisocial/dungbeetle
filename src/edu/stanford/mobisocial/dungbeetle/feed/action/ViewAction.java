@@ -5,9 +5,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbViews;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
 public class ViewAction implements FeedAction {
 
@@ -32,9 +38,12 @@ public class ViewAction implements FeedAction {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     FeedView v = DbViews.getFeedViews().get(which);
-                    Intent intent = new Intent(context, v.getClassName());
-                    intent.setData(feedUri);
-                    context.startActivity(intent);
+                    Fragment f = v.getFragment();
+                    Bundle args = new Bundle();
+                    args.putParcelable("feed_uri", feedUri);
+                    f.setArguments(args);
+                    ((FragmentActivity)context).getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.frame, f).commit();
                 }
             })
             .setTitle("View...")
@@ -43,6 +52,6 @@ public class ViewAction implements FeedAction {
 
     @Override
     public boolean isActive() {
-        return false;
+        return true;
     }
 }
