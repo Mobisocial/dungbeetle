@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -35,8 +36,8 @@ public class FeedMapFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
         mFeedObserver = new ContentObserver(new Handler(getActivity().getMainLooper())) {
             @Override
             public void onChange(boolean selfChange) {
@@ -46,7 +47,18 @@ public class FeedMapFragment extends Fragment {
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
         ContentResolver resolver = getActivity().getContentResolver();
         resolver.registerContentObserver(mFeedUri, true, mFeedObserver);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
         onFeedUpdated();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        getActivity().getContentResolver().unregisterContentObserver(mFeedObserver);
     }
 
     private void onFeedUpdated() {
