@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
+import android.view.MenuItem;
 import android.view.View;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -15,7 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewSelectorFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -62,7 +63,7 @@ public class FeedListActivity extends FragmentActivity
             Bundle args = new Bundle();
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             Fragment feedView = new FeedViewFragment();
-            Fragment feedViewSelector = new FeedViewSelectorFragment();
+            Fragment feedViewSelector = new FeedViewActionsFragment();
             feedView.setArguments(args);
             feedViewSelector.setArguments(args);
             Fragment oldSelector =
@@ -93,6 +94,20 @@ public class FeedListActivity extends FragmentActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == ACTIVITY_CALLOUT) {
             mCurrentCallout.handleResult(resultCode, data);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                // app icon in Action Bar clicked; go home
+                Intent intent = new Intent(this, HomeActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

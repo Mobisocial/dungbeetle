@@ -10,7 +10,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewSelectorFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -22,13 +22,13 @@ public class FeedViewActivity extends FragmentActivity implements InstrumentedAc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_view);
         Fragment feedView = new FeedViewFragment();
-        Fragment feedViewSelector = new FeedViewSelectorFragment();
+        Fragment feedActions = new FeedViewActionsFragment();
         Bundle args = new Bundle();
         args.putParcelable("feed_uri", getFeedUri());
         feedView.setArguments(args);
-        feedViewSelector.setArguments(args);
+        feedActions.setArguments(args);
         getSupportFragmentManager().beginTransaction()
-            .add(feedViewSelector, "viewSelector")
+            .add(feedActions, "viewSelector")
             .add(R.id.feed_view, feedView).commit();
     }
 
@@ -66,5 +66,3 @@ public class FeedViewActivity extends FragmentActivity implements InstrumentedAc
         return Feed.uriForName("friend");
     }
 }
-
-
