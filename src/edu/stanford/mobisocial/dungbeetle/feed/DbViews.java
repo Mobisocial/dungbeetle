@@ -16,6 +16,9 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.DefaultView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.HeadView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.MapView;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
 public class DbViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
@@ -66,5 +69,13 @@ public class DbViews {
                 return name;
             }
         };
+    }
+
+    public static List<FeedView> getDefaultFeedViews() {
+        List<FeedView> feedViews = new ArrayList<FeedView>();
+        feedViews.add(DbViews.feedViewFrom("Feed", new FeedViewFragment()));
+        feedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
+        feedViews.add(DbViews.feedViewFrom("Map", new FeedMapFragment()));
+        return feedViews;
     }
 }

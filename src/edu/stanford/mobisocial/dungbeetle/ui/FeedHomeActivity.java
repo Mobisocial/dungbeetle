@@ -25,9 +25,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -42,7 +39,7 @@ public class FeedHomeActivity extends FragmentActivity
     private FeedActionsFragment mActionsFragment;
     private Uri mFeedUri;
 
-    private final List<FeedView> mFeedViews = new ArrayList<FeedView>();
+    private List<FeedView> mFeedViews = new ArrayList<FeedView>();
     
 
     public final String TAG = "GroupsTabActivity";
@@ -88,9 +85,7 @@ public class FeedHomeActivity extends FragmentActivity
         setContentView(R.layout.feed_home);
         mNfc = new Nfc(this);
 
-        mFeedViews.add(DbViews.feedViewFrom("Feed", new FeedViewFragment()));
-        mFeedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
-        mFeedViews.add(DbViews.feedViewFrom("Map", new FeedMapFragment()));
+        mFeedViews = DbViews.getDefaultFeedViews();
 
         // Create top-level tabs
         //Resources res = getResources();
