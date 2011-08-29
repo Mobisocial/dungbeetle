@@ -328,7 +328,10 @@ public void trace (String msg)
  */
 public static void doTitleBar(Activity activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-        activity.findViewById(R.id.dashboardTitleBar).setVisibility(View.GONE);
+        View titleBar = activity.findViewById(R.id.dashboardTitleBar);
+        if (titleBar != null) {
+            titleBar.setVisibility(View.GONE);
+        }
     } else {
         // Dashboard title bar
         setTitleFromActivityLabel(activity);   

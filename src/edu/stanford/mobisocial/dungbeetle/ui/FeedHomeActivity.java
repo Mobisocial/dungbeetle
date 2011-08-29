@@ -157,9 +157,13 @@ public class FeedHomeActivity extends FragmentActivity
         for (FeedView f : mFeedViews) {
             f.getFragment().setArguments(args);
         }
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction()
-                .add(mActionsFragment, "feedActions");
-        ft.replace(R.id.content_frame, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
+
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (getSupportFragmentManager().findFragmentByTag("feedActions") == null) {
+            ft.add(mActionsFragment, "feedActions");
+        }
+        ft.replace(R.id.feed_view, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
+        ft.addToBackStack(null);
         ft.commit();
 
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
@@ -226,7 +230,7 @@ public class FeedHomeActivity extends FragmentActivity
             }
             FeedView f = mFeedViews.get(i);
             getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, f.getFragment(), f.getName()).commit();
+                .replace(R.id.feed_view, f.getFragment(), f.getName()).commit();
         }
     };
 }

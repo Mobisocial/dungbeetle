@@ -50,7 +50,8 @@ public class DbViews {
                     args.putParcelable("feed_uri", feedUri);
                     f.setArguments(args);
                     ((FragmentActivity)context).getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.feed_view, f).commit();
+                            .replace(R.id.feed_view, f)
+                            .addToBackStack(null).commit();
                 }
             })
             .setTitle("View...")

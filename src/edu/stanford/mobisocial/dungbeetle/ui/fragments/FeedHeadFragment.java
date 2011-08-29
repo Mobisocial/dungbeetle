@@ -28,6 +28,10 @@ public class FeedHeadFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		View tabs = getActivity().findViewById(R.id.tab_frame);
+		if (tabs != null) {
+		    tabs.setVisibility(View.GONE);
+		}
 		View view = inflater.inflate(R.layout.objects_item, container, false);
 		view.setLayoutParams(CommonLayouts.FULL_WIDTH);
 		view.setId(R.id.feed_view);
