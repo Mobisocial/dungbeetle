@@ -82,7 +82,7 @@ public class FeedHomeActivity extends FragmentActivity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.feed_home);
+        setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
 
         mFeedViews = DbViews.getDefaultFeedViews();
@@ -178,15 +178,7 @@ public class FeedHomeActivity extends FragmentActivity
             group.addView(button);
         }
 
-        setTitleFromActivityLabel (R.id.title_text, mGroupName);
-        View titleView = getWindow().findViewById(android.R.id.title);
-        if (titleView != null) {
-            ViewParent parent = titleView.getParent();
-            if (parent != null && parent instanceof View) {
-                View parentView = (View) parent;
-                parentView.setBackgroundColor(color);
-            }
-        }
+        DashboardBaseActivity.doTitleBar(this);
     }
 
     @Override

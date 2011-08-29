@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,7 +102,7 @@ public class FeedActionsFragment extends Fragment {
     public void promptForSharing() {
         new AlertDialog.Builder(getActivity())
             .setTitle("Share thread...")
-            .setItems(new String[] {"Send to friend", "Broadcast nearby"}, new DialogInterface.OnClickListener() {
+            .setItems(new String[] {"Send to friend", "Broadcast nearby", "QR code"}, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     switch (which) {
@@ -110,6 +111,9 @@ public class FeedActionsFragment extends Fragment {
                             break;
                         case 1:
                             broadcastNearby();
+                            break;
+                        case 2:
+                            showQR();
                             break;
                     }
                 }
@@ -150,7 +154,7 @@ public class FeedActionsFragment extends Fragment {
         startActivity(share);
     }
 
-    public void broadcastNearby() {
+    private void broadcastNearby() {
         new AlertDialog.Builder(getActivity())
             .setTitle("Share thread...")
             .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
@@ -166,6 +170,14 @@ public class FeedActionsFragment extends Fragment {
                     }
                 }
             }).show();
+    }
+
+    private void showQR() {
+        String qrl = "http://chart.apis.google.com/chart?cht=qr&chs=300x300&chl=";
+        qrl += URLEncoder.encode(ThreadRequest.getInvitationUri(
+                getActivity(), mExternalFeedUri).toString());
+        Intent qri = new Intent(Intent.ACTION_VIEW, Uri.parse(qrl));
+        startActivity(qri);
     }
 
     @Override

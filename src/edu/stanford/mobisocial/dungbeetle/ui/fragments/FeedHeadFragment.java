@@ -54,6 +54,11 @@ public class FeedHeadFragment extends Fragment {
         bindCurrentView();
     }
 
+    @Override
+    public void onDestroyView() {
+        getActivity().getContentResolver().unregisterContentObserver(mFeedObserver);
+    }
+
     public static String getFeedObjectClause() {
         String[] types = DbObjects.getRenderableTypes();
         StringBuffer allowed = new StringBuffer();

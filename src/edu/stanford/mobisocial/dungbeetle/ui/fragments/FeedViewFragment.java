@@ -123,7 +123,8 @@ public class FeedViewFragment extends ListFragment
 
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        if (actionId == EditorInfo.IME_ACTION_SEND) {
+        if (actionId == EditorInfo.IME_ACTION_SEND ||
+                actionId == EditorInfo.IME_ACTION_DONE) {
             mSendStatus.onClick(v);
         }
         return true;
