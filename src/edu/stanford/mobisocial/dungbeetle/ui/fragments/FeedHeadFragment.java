@@ -56,6 +56,7 @@ public class FeedHeadFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        super.onDestroyView();
         getActivity().getContentResolver().unregisterContentObserver(mFeedObserver);
     }
 
