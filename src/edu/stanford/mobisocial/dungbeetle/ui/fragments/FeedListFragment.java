@@ -60,7 +60,6 @@ public class FeedListFragment extends ListFragment {
                 feedlist, null, getFeedObjectClause(), null, null);
         mFeeds = new FeedListCursorAdapter(getActivity(), c);
         mHelper = new DBHelper(getActivity());
-
         setListAdapter(mFeeds);
     }
 

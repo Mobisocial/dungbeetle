@@ -19,7 +19,7 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     >
-    <LinearLayout style="@style/TitleBar">
+    <LinearLayout style="@style/TitleBar" android:id="@+id/dashboardTitleBar">
         <ImageButton style="@style/TitleBarAction"
             android:contentDescription="@string/description_home"
             android:src="@drawable/title_home"

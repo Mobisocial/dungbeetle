@@ -1,15 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import android.content.ContentResolver;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
-import android.widget.FrameLayout;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -22,6 +23,9 @@ public class FeedHeadFragment extends Fragment {
             LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
 
 	public static final String TAG = "ObjectsActivity";
+	private ContentObserver mFeedObserver;
+	private ContactCache mContactCache;
+	private Uri mFeedUri;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -35,16 +39,17 @@ public class FeedHeadFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        Uri feedUri = getArguments().getParcelable(ARG_FEED_URI);
-        Cursor c = getActivity().getContentResolver().query(feedUri, null, getFeedObjectClause(),
-                null, DbObject._ID + " DESC");
-        if (c.moveToFirst()) {
-            View v = getActivity().findViewById(R.id.feed_view);
-            // TODO: move to activity, pulled via interface
-            ContactCache cache = new ContactCache(getActivity());
-            DbObject.bindView(v, getActivity(), c, cache);
-        }
+        mContactCache = new ContactCache(getActivity());
+        mFeedObserver = new ContentObserver(new Handler(getActivity().getMainLooper())) {
+            @Override
+            public void onChange(boolean selfChange) {
+                bindCurrentView();
+            }
+        };
+        mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
+        ContentResolver resolver = getActivity().getContentResolver();
+        resolver.registerContentObserver(mFeedUri, true, mFeedObserver);
+        bindCurrentView();
     }
 
     public static String getFeedObjectClause() {
@@ -54,5 +59,14 @@ public class FeedHeadFragment extends Fragment {
             allowed.append(",'").append(type).append("'");
         }
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
+
+    private void bindCurrentView() {
+        Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getFeedObjectClause(),
+                null, DbObject._ID + " DESC");
+        if (c.moveToFirst()) {
+            View v = getActivity().findViewById(R.id.feed_view);
+            DbObject.bindView(v, getActivity(), c, mContactCache);
+        }
     }
 }

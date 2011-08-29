@@ -5,15 +5,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.view.View;
-import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewSelectorFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -23,19 +25,13 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 public class FeedListActivity extends FragmentActivity
         implements FeedListFragment.OnFeedSelectedListener, InstrumentedActivity {
 
+    private String FRAGMENT_VIEW_SELECTOR = "viewSelector";
     private boolean mDualPane;
 
     public void goHome(Context context) {
         final Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
-    }
-
-    public void setTitleFromActivityLabel(int textViewId) {
-        TextView tv = (TextView)findViewById(textViewId);
-        if (tv != null) {
-            tv.setText(getTitle());
-        }
     }
 
     public void onClickHome(View v) {
@@ -54,7 +50,7 @@ public class FeedListActivity extends FragmentActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_list);
-        setTitleFromActivityLabel(R.id.title_text);
+        DashboardBaseActivity.doTitleBar(this);
         getSupportFragmentManager().beginTransaction()
             .replace(R.id.feed_list, new FeedListFragment()).commit();
         mDualPane = (null != findViewById(R.id.feed_view));
@@ -65,10 +61,19 @@ public class FeedListActivity extends FragmentActivity
         if (mDualPane) {
             Bundle args = new Bundle();
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
-            FeedViewFragment feedView = new FeedViewFragment();
+            Fragment feedView = new FeedViewFragment();
+            Fragment feedViewSelector = new FeedViewSelectorFragment();
             feedView.setArguments(args);
-            getSupportFragmentManager().beginTransaction()
-                .replace(R.id.feed_view, feedView).commit();  
+            feedViewSelector.setArguments(args);
+            Fragment oldSelector =
+                    getSupportFragmentManager().findFragmentByTag(FRAGMENT_VIEW_SELECTOR);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            if (oldSelector != null) {
+                ft.remove(oldSelector);
+            }
+            ft.add(feedViewSelector, "viewSelector");
+            ft.replace(R.id.feed_view, feedView);
+            ft.commit();
         } else {
             Intent launch = new Intent(Intent.ACTION_VIEW);
             launch.setDataAndType(feedUri, Feed.MIME_TYPE);

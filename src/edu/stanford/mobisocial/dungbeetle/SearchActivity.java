@@ -44,7 +44,7 @@ protected void onCreate(Bundle savedInstanceState)
 {
     super.onCreate(savedInstanceState);
     setContentView (R.layout.activity_search);
-    setTitleFromActivityLabel (R.id.title_text);
+    DashboardBaseActivity.doTitleBar(this);
 }
     
 } // end class

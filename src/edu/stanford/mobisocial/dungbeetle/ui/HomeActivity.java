@@ -64,6 +64,7 @@ public class HomeActivity extends DashboardBaseActivity {
         } catch (ClassCastException e) {}
 
         setContentView(R.layout.activity_home);
+        DashboardBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
 

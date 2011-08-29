@@ -20,7 +20,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
-    <LinearLayout style="@style/TitleBar">
+    <LinearLayout style="@style/TitleBar" android:id="@+id/dashboardTitleBar">
         <ImageView style="@style/TitleBarLogo"
             android:contentDescription="@string/description_logo"
             android:src="@drawable/title_logo" />

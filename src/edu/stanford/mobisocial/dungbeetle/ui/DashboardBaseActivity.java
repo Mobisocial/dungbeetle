@@ -21,6 +21,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -295,23 +296,6 @@ public void goHome(Context context)
 }
 
 /**
- * Use the activity label to set the text in the activity's title text view.
- * The argument gives the name of the view.
- *
- * <p> This method is needed because we have a custom title bar rather than the default Android title bar.
- * See the theme definitons in styles.xml.
- * 
- * @param textViewId int
- * @return void
- */
-
-public void setTitleFromActivityLabel (int textViewId)
-{
-    TextView tv = (TextView) findViewById (textViewId);
-    if (tv != null) tv.setText (getTitle ());
-} // end setTitleText
-
-/**
  * Show a string on the screen via Toast.
  * 
  * @param msg String
@@ -330,6 +314,32 @@ public void trace (String msg)
 {
     Log.d("Demo", msg);
     toast (msg);
+}
+
+/**
+ * Use the activity label to set the text in the activity's title text view.
+ * The argument gives the name of the view.
+ *
+ * <p> This method is needed because we have a custom title bar rather than the default Android title bar.
+ * See the theme definitons in styles.xml.
+ * 
+ * @param textViewId int
+ * @return void
+ */
+public static void doTitleBar(Activity activity) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+        activity.findViewById(R.id.dashboardTitleBar).setVisibility(View.GONE);
+    } else {
+        // Dashboard title bar
+        setTitleFromActivityLabel(activity);   
+    }
+}
+
+private static void setTitleFromActivityLabel(Activity activity) {
+    TextView tv = (TextView)activity.findViewById(R.id.title_text);
+    if (tv != null) {
+        tv.setText(activity.getTitle());
+    }
 }
 
 } // end class
