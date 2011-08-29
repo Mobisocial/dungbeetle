@@ -160,11 +160,12 @@ public class FeedHomeActivity extends FragmentActivity
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         if (getSupportFragmentManager().findFragmentByTag("feedActions") == null) {
+            // first run.
             ft.add(mActionsFragment, "feedActions");
+            ft.replace(R.id.feed_view, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
+            ft.addToBackStack(null);
+            ft.commit();
         }
-        ft.replace(R.id.feed_view, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
-        ft.addToBackStack(null);
-        ft.commit();
 
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
         int i = 0;

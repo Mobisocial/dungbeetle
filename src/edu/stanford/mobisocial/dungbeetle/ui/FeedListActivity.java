@@ -26,7 +26,7 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 public class FeedListActivity extends FragmentActivity
         implements FeedListFragment.OnFeedSelectedListener, InstrumentedActivity {
 
-    private String FRAGMENT_VIEW_SELECTOR = "viewSelector";
+    private static final String FRAGMENT_FEED_ACTIONS = "feedActions";
     private boolean mDualPane;
 
     public void goHome(Context context) {
@@ -63,16 +63,16 @@ public class FeedListActivity extends FragmentActivity
             Bundle args = new Bundle();
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             Fragment feedView = new FeedViewFragment();
-            Fragment feedViewSelector = new FeedActionsFragment();
+            Fragment feedActions = new FeedActionsFragment();
             feedView.setArguments(args);
-            feedViewSelector.setArguments(args);
+            feedActions.setArguments(args);
             Fragment oldSelector =
-                    getSupportFragmentManager().findFragmentByTag(FRAGMENT_VIEW_SELECTOR);
+                    getSupportFragmentManager().findFragmentByTag(FRAGMENT_FEED_ACTIONS);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             if (oldSelector != null) {
                 ft.remove(oldSelector);
             }
-            ft.add(feedViewSelector, "viewSelector");
+            ft.add(feedActions, FRAGMENT_FEED_ACTIONS);
             ft.replace(R.id.feed_view, feedView);
             ft.commit();
         } else {
