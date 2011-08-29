@@ -16,7 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewActionsFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -63,7 +63,7 @@ public class FeedListActivity extends FragmentActivity
             Bundle args = new Bundle();
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             Fragment feedView = new FeedViewFragment();
-            Fragment feedViewSelector = new FeedViewActionsFragment();
+            Fragment feedViewSelector = new FeedActionsFragment();
             feedView.setArguments(args);
             feedViewSelector.setArguments(args);
             Fragment oldSelector =

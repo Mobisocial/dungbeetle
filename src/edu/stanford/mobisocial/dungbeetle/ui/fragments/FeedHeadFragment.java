@@ -10,17 +10,15 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FeedHeadFragment extends Fragment {
 
     public static final String ARG_FEED_URI = "feed_uri";
-    LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
-            LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
 
 	public static final String TAG = "ObjectsActivity";
 	private ContentObserver mFeedObserver;
@@ -31,7 +29,7 @@ public class FeedHeadFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		View view = inflater.inflate(R.layout.objects_item, container, false);
-		view.setLayoutParams(LAYOUT_FULL_WIDTH);
+		view.setLayoutParams(CommonLayouts.FULL_WIDTH);
 		view.setId(R.id.feed_view);
 		return view;
     }

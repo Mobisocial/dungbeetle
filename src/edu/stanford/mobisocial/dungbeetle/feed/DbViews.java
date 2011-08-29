@@ -53,4 +53,18 @@ public class DbViews {
             .setTitle("View...")
             .create().show();
     }
+
+    public static FeedView feedViewFrom(final String name, final Fragment fragment) {
+        return new FeedView() {
+            @Override
+            public Fragment getFragment() {
+                return fragment;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        };
+    }
 }

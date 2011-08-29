@@ -198,7 +198,7 @@ public class HomeActivity extends DashboardBaseActivity {
                     view.setData(uri);
                     // TODO: fix in AndroidManifest.
                     //view.setClass(this, FeedActivity.class);
-                    view.setClass(this, FeedTabActivity.class);
+                    view.setClass(this, FeedHomeActivity.class);
                     startActivity(view);
                     finish();
                     return;

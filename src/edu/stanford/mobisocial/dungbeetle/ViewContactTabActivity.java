@@ -49,9 +49,8 @@ public class ViewContactTabActivity extends TabActivity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.activity_contact);
         findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
-        Log.d("DBCONTACT", "VIEWING " + getIntent().getData());
         // Create top-level tabs
         //Resources res = getResources();
         // res.getDrawable(R.drawable.icon)

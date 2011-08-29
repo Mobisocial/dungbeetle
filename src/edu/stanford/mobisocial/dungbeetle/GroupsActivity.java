@@ -44,7 +44,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedTabActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
@@ -146,7 +146,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id){
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
-        Intent viewGroupIntent = new Intent(GroupsActivity.this, FeedTabActivity.class);
+        Intent viewGroupIntent = new Intent(GroupsActivity.this, FeedHomeActivity.class);
         viewGroupIntent.putExtra("group_id", g.id);
         viewGroupIntent.putExtra("group_name", g.name);
         viewGroupIntent.putExtra("group_uri", g.dynUpdateUri);

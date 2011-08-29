@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	      android:orientation="vertical"
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent">
+    
+    <LinearLayout style="@style/TitleBar">
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_home"
+            android:src="@drawable/title_home"
+            android:onClick="onClickHome" />
+
+        <ImageView style="@style/TitleBarSeparator" />
+        <TextView style="@style/TitleBarText" />
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_about"
+            android:src="@drawable/title_about"
+            android:onClick="onClickAbout" />
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_broadcast"
+            android:src="@drawable/title_broadcast"
+            android:layout_height="fill_parent"
+            android:onClick="onClickBroadcast"
+            android:id="@+id/btn_broadcast"/>
+        <!--<ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_search"
+            android:src="@drawable/title_search"
+            android:onClick="onClickSearch" />-->
+    </LinearLayout>
+
+  <LinearLayout android:id="@+id/tab_frame"
+  	android:orientation="horizontal"
+  	android:layout_width="match_parent"
+  	android:layout_height="wrap_content"
+  	android:layout_marginTop="3dp">
+  </LinearLayout>
+  <FrameLayout android:id="@+id/content_frame" android:layout_width="fill_parent" android:layout_height="fill_parent"></FrameLayout></LinearLayout>
+

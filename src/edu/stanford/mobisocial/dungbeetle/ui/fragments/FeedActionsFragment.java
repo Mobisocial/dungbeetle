@@ -1,12 +1,10 @@
-package edu.stanford.mobisocial.dungbeetle.ui;
+package edu.stanford.mobisocial.dungbeetle.ui.fragments;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import mobisocial.nfc.NdefFactory;
-import mobisocial.nfc.Nfc;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -19,66 +17,89 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.app.TabActivity;
 import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewParent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.TabHost;
-import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
-import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.feed.DbViews;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+
 /**
- * Represents a group by showing its feed and members.
- * TODO: Accept only a group_id extra and query for other parameters.
+ * A UI-less fragment that adds feed actions to the menu and action bar.
  */
-public class FeedTabActivity extends TabActivity
-{
-    private Nfc mNfc;
+public class FeedActionsFragment extends Fragment {
+    private static final String TAG = "feedAction";
+    private static final int MENU_VIEW = 1041;
+    private static final int MENU_SHARE = 1042;
+
+    private Uri mFeedUri;
     private Uri mExternalFeedUri;
-    private Uri mInternalFeedUri;
     private String mGroupName;
+
     private static final int REQUEST_BT_BROADCAST = 2;
     private static final int REQUEST_BT_ENABLE = 3;
 
-    public final String TAG = "GroupsTabActivity";
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+        if (!getArguments().containsKey("feed_uri")) {
+            throw new IllegalArgumentException("FeedActionFragment created with no feed_uri argument.");
+        }
+        mFeedUri = getArguments().getParcelable("feed_uri");
 
-    /*** Dashboard stuff ***/
-    public void goHome(Context context) 
-    {
-        final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity (intent);
+        Maybe<Group> maybeG = Group.forFeed(getActivity(), mFeedUri.getLastPathSegment());
+        try {
+            Group g = maybeG.get();
+            mGroupName = g.name;
+            mExternalFeedUri = Uri.parse(g.dynUpdateUri);
+        } catch (Exception e) {}
     }
 
-    public void setTitleFromActivityLabel (int textViewId, String title)
-    {
-        TextView tv = (TextView) findViewById (textViewId);
-        if (tv != null) tv.setText (title);
-    } 
-    public void onClickHome (View v)
-    {
-        goHome (this);
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        MenuItem item;
+        item = menu.add(0, MENU_VIEW, 0, "View");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        }
+        item = menu.add(0, MENU_SHARE, 0, "Share");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        }
     }
 
+    public boolean onOptionsItemSelected (MenuItem item){
+        switch (item.getItemId()) {
+            case MENU_VIEW: {
+                DbViews.promptForView(getActivity(), mFeedUri);
+                return true;
+            }
+            case MENU_SHARE: {
+                promptForSharing();
+                return true;
+            }
+        }
+        return false;
+    }
 
-    public void onClickBroadcast(View v) {
-        new AlertDialog.Builder(FeedTabActivity.this)
+    public void promptForSharing() {
+        new AlertDialog.Builder(getActivity())
             .setTitle("Share thread...")
             .setItems(new String[] {"Send to friend", "Broadcast nearby"}, new DialogInterface.OnClickListener() {
                 @Override
@@ -96,7 +117,7 @@ public class FeedTabActivity extends TabActivity
     }
 
     public void sendToFriend() {
-        new AlertDialog.Builder(FeedTabActivity.this)
+        new AlertDialog.Builder(getActivity())
         .setTitle("Share thread...")
         .setItems(new String[] {"From Musubi", "Other..."}, new DialogInterface.OnClickListener() {
             @Override
@@ -114,23 +135,23 @@ public class FeedTabActivity extends TabActivity
     }
 
     private void sendToDbFriend() {
-        Intent send = new Intent(this, PickContactsActivity.class);
+        Intent send = new Intent(getActivity(), PickContactsActivity.class);
         send.setAction(PickContactsActivity.INTENT_ACTION_INVITE_TO_THREAD);
-        send.putExtra("uri", mInternalFeedUri);
+        send.putExtra("uri", mFeedUri);
         startActivity(send);
     }
 
     private void sendToExternalFriend() {
         Intent share = new Intent(Intent.ACTION_SEND);
         share.putExtra(Intent.EXTRA_TEXT, "Join me in a Musubi thread: " +
-                ThreadRequest.getInvitationUri(this, mExternalFeedUri));
+                ThreadRequest.getInvitationUri(getActivity(), mExternalFeedUri));
         share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
         share.setType("text/plain");
         startActivity(share);
     }
 
     public void broadcastNearby() {
-        new AlertDialog.Builder(FeedTabActivity.this)
+        new AlertDialog.Builder(getActivity())
             .setTitle("Share thread...")
             .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
                 @Override
@@ -148,10 +169,10 @@ public class FeedTabActivity extends TabActivity
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_BT_BROADCAST) {
             if (resultCode > 0) {
-                Toast.makeText(this, "Bluetooth sharing enabled.", 500).show();
+                Toast.makeText(getActivity(), "Bluetooth sharing enabled.", 500).show();
                 broadcastBluetooth();
             } else {
                 return;
@@ -182,15 +203,15 @@ public class FeedTabActivity extends TabActivity
 
     public void broadcastBluetooth() {
         // BluetoothNdef.share
-        Maybe<Group> group = Group.forFeed(this, mInternalFeedUri.toString());
+        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri.toString());
         try {
             Group g = group.get();
             JSONObject json = new JSONObject();
             json.put("name", g.name);
             json.put("dynuri", g.dynUpdateUri);
-            BluetoothBeacon.share(this, json.toString().getBytes(), 300);
+            BluetoothBeacon.share(getActivity(), json.toString().getBytes(), 300);
         } catch (Exception e) {
-            Log.e(TAG, "Could not send group invite; no group for " + mInternalFeedUri);
+            Log.e(TAG, "Could not send group invite; no group for " + mFeedUri);
         }
     }
 
@@ -198,20 +219,20 @@ public class FeedTabActivity extends TabActivity
     {
         final CharSequence[] items = {"5 minutes", "15 minutes", "1 hour", " 24 hours"};
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(FeedTabActivity.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Choose duration of broadcast");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, final int item) {
-                AlertDialog.Builder alert = new AlertDialog.Builder(FeedTabActivity.this);
+                AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                 alert.setMessage("Enter a secret key if you want to:");
-                final EditText input = new EditText(FeedTabActivity.this);
+                final EditText input = new EditText(getActivity());
                 alert.setView(input);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             final String password = input.getText().toString();
                             myLocation = new MyLocation();
                             locationResult = new MyLocation.LocationResult() {
-                                final ProgressDialog dialog = ProgressDialog.show(FeedTabActivity.this, "", 
+                                final ProgressDialog dialog = ProgressDialog.show(getActivity(), "", 
                                             "Preparing broadcast...", true);
 
                                 @Override
@@ -264,7 +285,7 @@ public class FeedTabActivity extends TabActivity
                                         String response = sb.toString();
                                         if(response.equals("1"))
                                         {
-                                            Toast.makeText(getApplicationContext(), 
+                                            Toast.makeText(getActivity(), 
                                                 "Now broadcasting for " + items[item], 
                                                 Toast.LENGTH_SHORT).show();
                                         }  
@@ -293,152 +314,10 @@ public class FeedTabActivity extends TabActivity
         alert.show();
     }
 
-    public void onClickAbout (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
-    }
-
-/*** End Dashboard Stuff ***/
-
-    
     public MyLocation myLocation;
     public MyLocation.LocationResult locationResult;
 
     private void locationClick() {
-        myLocation.getLocation(FeedTabActivity.this, locationResult);
-    }
-
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        mNfc = new Nfc(this);
-
-        // Create top-level tabs
-        //Resources res = getResources();
-        // res.getDrawable(R.drawable.icon)
-
-        TabHost tabHost = getTabHost();
-        TabHost.TabSpec spec;  
-
-        Intent intent = getIntent();
-        Long group_id = null;
-        String feed_name = null;
-        String dyn_feed_uri = null;
-        // TODO: Depracate extras-based access in favor of Data field.
-        if (intent.hasExtra("group_id")) {
-            group_id = intent.getLongExtra("group_id", -1);
-            mGroupName = intent.getStringExtra("group_name");
-            feed_name = mGroupName;
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                feed_name = g.feedName;
-            } catch (Exception e) {}
-            dyn_feed_uri = intent.getStringExtra("group_uri");
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
-            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                feed_name = g.feedName;
-                dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
-            } catch (Exception e) {}
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Feed.MIME_TYPE)) {
-            Uri feedUri = getIntent().getData();
-            Maybe<Group> maybeG = Group.forFeed(FeedTabActivity.this, feedUri.getLastPathSegment());
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                feed_name = g.feedName;
-                dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
-            } catch (Exception e) {}
-        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
-            String feedName = getIntent().getData().getLastPathSegment();
-            Maybe<Group>maybeG = Group.forFeed(this, feedName);
-            Group g = null;
-            try {
-               g = maybeG.get();
-            } catch (Exception e) {
-                g = Group.createForFeed(this, feedName);
-            }
-            mGroupName = g.name;
-            feed_name = g.feedName;
-            dyn_feed_uri = g.dynUpdateUri;
-            group_id = g.id;
-        }
-
-        if (dyn_feed_uri != null) {
-            mNfc.share(NdefFactory.fromUri(dyn_feed_uri));
-            Log.w(TAG, dyn_feed_uri);
-        }
-
-        mExternalFeedUri = Uri.parse(dyn_feed_uri);
-        mInternalFeedUri = Uri.parse(feed_name);
-
-        int color = Feed.colorFor(feed_name);
-        
-        setTitleFromActivityLabel (R.id.title_text, mGroupName);
-        View titleView = getWindow().findViewById(android.R.id.title);
-        if (titleView != null) {
-            ViewParent parent = titleView.getParent();
-            if (parent != null && parent instanceof View) {
-                View parentView = (View) parent;
-                parentView.setBackgroundColor(color);
-            }
-        }
-
-        // Note: If you change this color, also update the cacheColorHint
-        // in FeedActivity and ContactsActivity.
-        //tabHost.setBackgroundColor(color);
-        //tabHost.getBackground().setAlpha(Feed.BACKGROUND_ALPHA);
-            
-        intent = new Intent().setClass(this, FeedViewActivity.class);
-        intent.putExtra("group_id", group_id);
-        spec = tabHost.newTabSpec("objects").setIndicator("Feed", null).setContent(intent);
-        tabHost.addTab(spec);
-
-        intent = new Intent().setClass(this, ContactsActivity.class);
-        intent.putExtra("group_id", group_id);
-        intent.putExtra("group_name", mGroupName);
-        spec = tabHost.newTabSpec("contacts").setIndicator("Members", null).setContent(intent);
-        tabHost.addTab(spec);
-        tabHost.setCurrentTab(0);
-    }
-
-    @Override
-    public void onDestroy(){
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mNfc.onResume(this);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mNfc.onPause(this);
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        if (mNfc.onNewIntent(this, intent)) return;
-    }
-
-    public void toast(final String text) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(FeedTabActivity.this, text, Toast.LENGTH_SHORT).show();
-            }
-        });
+        myLocation.getLocation(getActivity(), locationResult);
     }
 }

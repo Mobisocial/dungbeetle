@@ -247,7 +247,7 @@ public void onClickFeature (View v)
                         StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
 
                         Intent launch = new Intent();
-                        launch.setClass(DashboardBaseActivity.this, FeedTabActivity.class);
+                        launch.setClass(DashboardBaseActivity.this, FeedHomeActivity.class);
                         launch.putExtra("group_name", g.name);
                         launch.putExtra("group_id", g.id);
                         launch.putExtra("group_uri", g.dynUpdateUri);

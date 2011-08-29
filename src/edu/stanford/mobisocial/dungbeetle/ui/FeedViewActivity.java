@@ -10,7 +10,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewActionsFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -22,7 +22,7 @@ public class FeedViewActivity extends FragmentActivity implements InstrumentedAc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_view);
         Fragment feedView = new FeedViewFragment();
-        Fragment feedActions = new FeedViewActionsFragment();
+        Fragment feedActions = new FeedActionsFragment();
         Bundle args = new Bundle();
         args.putParcelable("feed_uri", getFeedUri());
         feedView.setArguments(args);
