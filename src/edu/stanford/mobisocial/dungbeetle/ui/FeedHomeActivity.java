@@ -163,7 +163,6 @@ public class FeedHomeActivity extends FragmentActivity
             // first run.
             ft.add(mActionsFragment, "feedActions");
             ft.replace(R.id.feed_view, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
-            ft.addToBackStack(null);
             ft.commit();
         }
 
