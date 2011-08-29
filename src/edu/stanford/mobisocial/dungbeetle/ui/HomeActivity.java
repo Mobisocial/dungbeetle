@@ -156,7 +156,7 @@ public class HomeActivity extends DashboardBaseActivity {
          */
         DBHelper helper = new DBHelper(HomeActivity.this);
         Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
-        
+
         Set<byte[]> ks = pkss.keySet();
     	Iterator<byte[]> j = ks.iterator();
         HashSet<byte[]> hks = new HashSet<byte[]>();
@@ -164,6 +164,7 @@ public class HomeActivity extends DashboardBaseActivity {
         	hks.add(j.next());
         }
 		helper.updateNearby(hks);
+		helper.close();
     }
 
 	
