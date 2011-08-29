@@ -25,12 +25,14 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.action.ClipboardAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
@@ -39,6 +41,10 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
+/**
+ * Shows a series of posts from a feed.
+ *
+ */
 public class FeedViewFragment extends ListFragment
         implements OnItemClickListener, OnEditorActionListener, TextWatcher {
 
@@ -87,9 +93,11 @@ public class FeedViewFragment extends ListFragment
         setListAdapter(mObjects);
         getListView().setOnItemClickListener(this);
         getListView().setFastScrollEnabled(true);
+        getListView().setOnItemLongClickListener(mLongClickListener);
         //getListView().setCacheColorHint(color);
     }
 
+    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
@@ -105,6 +113,7 @@ public class FeedViewFragment extends ListFragment
             Log.e(TAG, "Couldn't parse obj.", e);
         }
     }
+
 
     @Override
     public void onDetach() {
@@ -161,6 +170,22 @@ public class FeedViewFragment extends ListFragment
         public void onClick(View v) {
             QuickAction qa = DbActions.getActions(getActivity(), mFeedUri, v);
             qa.show();
+        }
+    };
+
+    private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
+        @Override
+        public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+            Cursor c = (Cursor)mObjects.getItem(position);
+            String type = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
+            String json = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+            try {
+                ClipboardAction.copyToClipboard(type, new JSONObject(json));
+                Toast.makeText(getActivity(), "Copied object to clipboard.", Toast.LENGTH_SHORT).show();
+            } catch (JSONException e) {
+                Toast.makeText(getActivity(), "Failed to copy object.", Toast.LENGTH_SHORT).show();
+            }
+            return false;
         }
     };
 }
