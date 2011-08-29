@@ -185,7 +185,7 @@ public class FeedViewFragment extends ListFragment
             } catch (JSONException e) {
                 Toast.makeText(getActivity(), "Failed to copy object.", Toast.LENGTH_SHORT).show();
             }
-            return false;
+            return true;
         }
     };
 }
