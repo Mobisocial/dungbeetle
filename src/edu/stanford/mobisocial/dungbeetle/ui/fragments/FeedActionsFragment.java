@@ -75,10 +75,10 @@ public class FeedActionsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem item;
-        item = menu.add(0, MENU_VIEW, 0, "View");
+        /*item = menu.add(0, MENU_VIEW, 0, "View");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-        }
+        }*/
         item = menu.add(0, MENU_SHARE, 0, "Share");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);

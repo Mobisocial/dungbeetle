@@ -6,7 +6,7 @@ import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedHeadFragment;
 
 // this is what I want the code to look like.
 // Views the head of a feed.
-public class HeadView implements FeedView {
+public class PartyView implements FeedView {
 /*    public View getHeadView(Feed feed) {
         return feed.query().head().view();
         // or feed.query("type=appstate").head().view();
@@ -20,7 +20,7 @@ public class HeadView implements FeedView {
 
     @Override
     public String getName() {
-        return "Live View";
+        return "Party View";
     }
 
     @Override

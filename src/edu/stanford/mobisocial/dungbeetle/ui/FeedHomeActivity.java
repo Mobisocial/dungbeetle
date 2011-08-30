@@ -155,7 +155,7 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
         }
 
         mFeedUri = Feed.uriForName(feed_name);
-        int color = Feed.colorFor(feed_name);
+        //int color = Feed.colorFor(feed_name);
         
         Bundle args = new Bundle();
         args.putParcelable("feed_uri", mFeedUri);

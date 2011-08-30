@@ -14,7 +14,7 @@ import android.support.v4.app.FragmentActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.DefaultView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.HeadView;
+import edu.stanford.mobisocial.dungbeetle.feed.view.PartyView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.MapView;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
@@ -24,7 +24,7 @@ public class DbViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
     static {
         sFeedViews.add(new DefaultView());
-        sFeedViews.add(new HeadView());
+        sFeedViews.add(new PartyView());
         sFeedViews.add(new MapView());
         //sFeedViews.add(new StatsView());
     }
