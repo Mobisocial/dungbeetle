@@ -16,7 +16,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedViewActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FilteredFeedProcessor extends FeedProcessor {

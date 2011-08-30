@@ -7,14 +7,19 @@ import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +30,9 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -32,15 +40,15 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * Represents a group by showing its feed and members.
  * TODO: Accept only a group_id extra and query for other parameters.
  */
-public class FeedHomeActivity extends FragmentActivity
-{
+public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPageChangeListener {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
     private Uri mFeedUri;
+    private ViewPager mFeedViewPager;
+    private final List<Button> mButtons = new ArrayList<Button>();
 
     private List<FeedView> mFeedViews = new ArrayList<FeedView>();
-    
 
     public final String TAG = "GroupsTabActivity";
 
@@ -162,23 +170,34 @@ public class FeedHomeActivity extends FragmentActivity
         if (getSupportFragmentManager().findFragmentByTag("feedActions") == null) {
             // first run.
             ft.add(mActionsFragment, "feedActions");
-            ft.replace(R.id.feed_view, mFeedViews.get(0).getFragment(), mFeedViews.get(0).getName());
             ft.commit();
         }
+
+        PagerAdapter adapter = new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
+        mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
+        mFeedViewPager.setAdapter(adapter);
+        mFeedViewPager.setOnPageChangeListener(this);
+
+        new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
+        mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
 
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
         int i = 0;
         for (FeedView f : mFeedViews) {
             Button button = new Button(this);
             button.setText(f.getName());
+            button.setTextSize(18f);
+            
             button.setLayoutParams(CommonLayouts.FULL_HEIGHT);
             button.setTag(i++);
             button.setOnClickListener(mViewSelected);
 
             group.addView(button);
+            mButtons.add(button);
         }
 
         DashboardBaseActivity.doTitleBar(this);
+        onPageSelected(0);
     }
 
     @Override
@@ -216,13 +235,59 @@ public class FeedHomeActivity extends FragmentActivity
         @Override
         public void onClick(View v) {
             Integer i = (Integer)v.getTag();
-            String name = mFeedViews.get(i).getName();
-            if (getSupportFragmentManager().findFragmentByTag(name) != null) {
-                return;
-            }
-            FeedView f = mFeedViews.get(i);
-            getSupportFragmentManager().beginTransaction()
-                .replace(R.id.feed_view, f.getFragment(), f.getName()).commit();
+            mFeedViewPager.setCurrentItem(i);
         }
     };
+
+    public class FeedFragmentAdapter extends FragmentPagerAdapter {
+        static final int NUM_ITEMS = 3;
+        final List<Fragment> mFragments = new ArrayList<Fragment>();
+        final Uri mFeedUri;
+
+        public FeedFragmentAdapter(FragmentManager fm, Uri feedUri) {
+            super(fm);
+
+            mFragments.add(new FeedViewFragment());
+            mFragments.add(new FeedMembersFragment());
+            mFragments.add(new FeedMapFragment());
+
+            mFeedUri = feedUri;
+            Bundle args = new Bundle();
+            args.putParcelable("feed_uri", mFeedUri);
+            for (Fragment f : mFragments) {
+                f.setArguments(args);    
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return NUM_ITEMS;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            return mFragments.get(position);
+        }
+
+        
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int arg0) {
+        
+    }
+
+    @Override
+    public void onPageScrolled(int arg0, float arg1, int arg2) {
+        
+    }
+
+    @Override
+    public void onPageSelected(int selected) {
+        int c = mButtons.size();
+        for (int i = 0; i < c; i++) {
+            mButtons.get(i).setBackgroundColor(R.color.background1);
+        }
+        mButtons.get(selected).setBackgroundColor(Color.YELLOW);
+    }
 }

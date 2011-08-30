@@ -71,10 +71,6 @@
 	      android:label="@string/title_friends">
     </activity>
 
-    <activity android:name=".ui.FeedViewActivity"
-	      android:label="@string/title_group">
-    </activity>
-
     <provider android:name=".DungBeetleContentProvider"
 	      android:authorities="edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider" />
 
