@@ -8,6 +8,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,13 +35,13 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
  * Displays a list of all user-accessible threads (feeds).
  *
  */
-public class FeedListFragment extends ListFragment {
+public class FeedListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "DungBeetle";
     private FeedListCursorAdapter mFeeds;
     private ContactCache mContactCache;
     private DBHelper mHelper;
     private OnFeedSelectedListener mFeedSelectedListener;
-
+    
     public interface OnFeedSelectedListener {
         public void onFeedSelected(Uri feedUri);
     }
@@ -53,14 +56,6 @@ public class FeedListFragment extends ListFragment {
             throw new ClassCastException(activity.toString() +
                     " must implement OnFeedSelectedListener");
         }
-
-        mContactCache = new ContactCache(getActivity());
-        Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
-        Cursor c = getActivity().getContentResolver().query(
-                feedlist, null, getFeedObjectClause(), null, null);
-        mFeeds = new FeedListCursorAdapter(getActivity(), c);
-        mHelper = new DBHelper(getActivity());
-        setListAdapter(mFeeds);
     }
 
     @Override
@@ -74,6 +69,10 @@ public class FeedListFragment extends ListFragment {
         if (null != getActivity().findViewById(R.id.feed_view)) {
             getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         }
+
+        mHelper = new DBHelper(getActivity());
+        mContactCache = new ContactCache(getActivity());
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -191,5 +190,22 @@ public class FeedListFragment extends ListFragment {
                 alert.show();
             }
         };
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+        return new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mFeeds = new FeedListCursorAdapter(getActivity(), cursor);
+        setListAdapter(mFeeds);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> arg0) {
+
     }
 }
