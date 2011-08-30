@@ -45,6 +45,7 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
     private Uri mFeedUri;
+    private int mColor;
     private ViewPager mFeedViewPager;
     private final List<Button> mButtons = new ArrayList<Button>();
 
@@ -155,7 +156,7 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
         }
 
         mFeedUri = Feed.uriForName(feed_name);
-        //int color = Feed.colorFor(feed_name);
+        mColor= Feed.colorFor(feed_name);
         
         Bundle args = new Bundle();
         args.putParcelable("feed_uri", mFeedUri);
@@ -288,6 +289,6 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
         for (int i = 0; i < c; i++) {
             mButtons.get(i).setBackgroundColor(R.color.background1);
         }
-        mButtons.get(selected).setBackgroundColor(Color.YELLOW);
+        mButtons.get(selected).setBackgroundColor(mColor);
     }
 }
