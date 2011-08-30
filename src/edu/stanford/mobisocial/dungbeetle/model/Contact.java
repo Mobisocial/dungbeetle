@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import java.io.Serializable;
 import java.util.Date;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -108,21 +109,21 @@ public class Contact implements Serializable{
         else return R.drawable.status_yellow;
     }
 
-    public static void view(Context context, Long contactId) {
+    public static void view(Activity foreground, Long contactId) {
         Intent launch = null;
         
             
         if (contactId == MY_ID) {
-            launch = new Intent().setClass(context, ProfileActivity.class);
+            launch = new Intent().setClass(foreground, ProfileActivity.class);
             launch.putExtra("contact_id", Contact.MY_ID);
         }
         else {
-            launch = new Intent(context, ViewContactTabActivity.class);
+            launch = new Intent(foreground, ViewContactTabActivity.class);
             launch.putExtra("contact_id", contactId);
 
             
             try {
-                Maybe<Contact> maybeContact = forId(context, contactId);
+                Maybe<Contact> maybeContact = forId(foreground, contactId);
                 launch.putExtra("contact_name", maybeContact.get().name);
             }
             catch (Exception e) {
@@ -132,6 +133,7 @@ public class Contact implements Serializable{
             Uri ref = Uri.parse("content://mobisocial.db/contact").buildUpon().appendPath(""+contactId).build();
             launch.setDataAndType(ref, Contact.MIME_TYPE);*/
         }
-        context.startActivity(launch);
+
+        foreground.startActivity(launch);
     }
 }

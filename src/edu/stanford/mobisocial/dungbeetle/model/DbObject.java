@@ -101,7 +101,7 @@ public class DbObject {
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             if (sViewProfileAction == null) {
-                sViewProfileAction = new OnClickViewProfile(context);
+                sViewProfileAction = new OnClickViewProfile((Activity)context);
             }
             icon.setTag(contactId);
             icon.setOnClickListener(sViewProfileAction);
@@ -129,7 +129,7 @@ public class DbObject {
     }
 
     public static class OnClickViewProfile implements View.OnClickListener {
-        private final Context mmContext;
+        private final Activity mmContext;
 
         @Override
         public void onClick(View v) {
@@ -137,7 +137,7 @@ public class DbObject {
             Contact.view(mmContext, contactId);
         }
 
-        public OnClickViewProfile(Context c) {
+        public OnClickViewProfile(Activity c) {
             mmContext = c;
         }
     };

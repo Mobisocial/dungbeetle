@@ -29,6 +29,10 @@ public class FeedMapFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		ContentResolver resolver = getActivity().getContentResolver();
+        resolver.registerContentObserver(mFeedUri, true, mFeedObserver);
+
 		View view = new WebView(getActivity());
 		view.setLayoutParams(LAYOUT_FULL_WIDTH);
 		view.setId(android.R.id.custom);
@@ -38,15 +42,13 @@ public class FeedMapFragment extends Fragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        mFeedObserver = new ContentObserver(new Handler(getActivity().getMainLooper())) {
+        mFeedObserver = new ContentObserver(new Handler(activity.getMainLooper())) {
             @Override
             public void onChange(boolean selfChange) {
                 onFeedUpdated();
             }
         };
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-        ContentResolver resolver = getActivity().getContentResolver();
-        resolver.registerContentObserver(mFeedUri, true, mFeedObserver);
     }
 
     @Override
@@ -56,8 +58,8 @@ public class FeedMapFragment extends Fragment {
     }
 
     @Override
-    public void onDetach() {
-        super.onDetach();
+    public void onDestroyView() {
+        super.onDestroyView();
         getActivity().getContentResolver().unregisterContentObserver(mFeedObserver);
     }
 
