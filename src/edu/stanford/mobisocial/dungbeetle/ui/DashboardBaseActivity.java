@@ -323,10 +323,10 @@ public void trace (String msg)
  * <p> This method is needed because we have a custom title bar rather than the default Android title bar.
  * See the theme definitons in styles.xml.
  * 
- * @param textViewId int
+ * @param title The text to display, or null to use the activity's label.
  * @return void
  */
-public static void doTitleBar(Activity activity) {
+public static void doTitleBar(Activity activity, String title) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
         View titleBar = activity.findViewById(R.id.dashboardTitleBar);
         if (titleBar != null) {
@@ -334,15 +334,20 @@ public static void doTitleBar(Activity activity) {
         }
     } else {
         // Dashboard title bar
-        setTitleFromActivityLabel(activity);   
+        TextView tv = (TextView)activity.findViewById(R.id.title_text);
+        if (tv == null) {
+            return;
+        }
+        if (title == null) {
+            tv.setText(activity.getTitle());
+        } else {
+            tv.setText(title);
+        }
     }
 }
 
-private static void setTitleFromActivityLabel(Activity activity) {
-    TextView tv = (TextView)activity.findViewById(R.id.title_text);
-    if (tv != null) {
-        tv.setText(activity.getTitle());
-    }
+public static void doTitleBar(Activity activity) {
+    doTitleBar(activity, null);
 }
 
 } // end class

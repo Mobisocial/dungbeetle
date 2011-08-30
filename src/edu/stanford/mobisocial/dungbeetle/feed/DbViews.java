@@ -75,8 +75,8 @@ public class DbViews {
     public static List<FeedView> getDefaultFeedViews() {
         List<FeedView> feedViews = new ArrayList<FeedView>();
         feedViews.add(DbViews.feedViewFrom("Feed", new FeedViewFragment()));
-        feedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
         feedViews.add(DbViews.feedViewFrom("Map", new FeedMapFragment()));
+        feedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
         return feedViews;
     }
 }

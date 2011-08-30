@@ -245,8 +245,8 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     }
 
     @Override
-    public void onDetach() {
-        super.onDetach();
+    public void onDestroyView() {
+        super.onDestroyView();
         mHelper.close();
     }
 

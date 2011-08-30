@@ -7,7 +7,6 @@ import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -30,9 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -40,7 +37,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * Represents a group by showing its feed and members.
  * TODO: Accept only a group_id extra and query for other parameters.
  */
-public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPageChangeListener {
+public class FeedHomeActivity extends FragmentActivity
+        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
@@ -197,7 +195,7 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
             mButtons.add(button);
         }
 
-        DashboardBaseActivity.doTitleBar(this);
+        DashboardBaseActivity.doTitleBar(this, mGroupName);
         onPageSelected(0);
     }
 
@@ -223,6 +221,13 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
         if (mNfc.onNewIntent(this, intent)) return;
     }
 
+    @Override
+    public void onFeedSelected(Uri feedUri) {
+        Intent launch = new Intent(Intent.ACTION_VIEW);
+        launch.setDataAndType(feedUri, Feed.MIME_TYPE);
+        startActivity(launch);
+    }
+
     public void toast(final String text) {
         runOnUiThread(new Runnable() {
             @Override
@@ -241,22 +246,15 @@ public class FeedHomeActivity extends FragmentActivity implements ViewPager.OnPa
     };
 
     public class FeedFragmentAdapter extends FragmentPagerAdapter {
-        static final int NUM_ITEMS = 3;
+        final int NUM_ITEMS;
         final List<Fragment> mFragments = new ArrayList<Fragment>();
-        final Uri mFeedUri;
 
         public FeedFragmentAdapter(FragmentManager fm, Uri feedUri) {
             super(fm);
 
-            mFragments.add(new FeedViewFragment());
-            mFragments.add(new FeedMembersFragment());
-            mFragments.add(new FeedMapFragment());
-
-            mFeedUri = feedUri;
-            Bundle args = new Bundle();
-            args.putParcelable("feed_uri", mFeedUri);
-            for (Fragment f : mFragments) {
-                f.setArguments(args);    
+            NUM_ITEMS = mFeedViews.size();
+            for (FeedView f : mFeedViews) {
+                mFragments.add(f.getFragment());
             }
         }
 
