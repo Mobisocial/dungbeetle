@@ -163,7 +163,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator, Fee
     }
 
 	@Override
-	public void activate(Uri feed, Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    String arg = content.optString(ARG);

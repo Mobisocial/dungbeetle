@@ -78,7 +78,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void activate(Uri feed, Context context, JSONObject content){
+    public void activate(Context context, JSONObject content){
         Intent intent = new Intent(Intent.ACTION_VIEW);
         String text = content.optString(URI);
         Uri uri = Uri.parse(text);

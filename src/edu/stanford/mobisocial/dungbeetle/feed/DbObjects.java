@@ -24,6 +24,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,4 +109,13 @@ public final class DbObjects {
 	    }
 	    return renderables.toArray(new String[renderables.size()]);
 	}
+
+	public static DbEntryHandler forType(String requestedType) {
+        for (DbEntryHandler type : objs) {
+            if (type.getType().equals(requestedType)) {
+                return type;
+            }
+        }
+        return null;
+    };
 }

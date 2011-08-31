@@ -140,5 +140,5 @@ public class DbObject {
         public OnClickViewProfile(Activity c) {
             mmContext = c;
         }
-    };
+    }
 }

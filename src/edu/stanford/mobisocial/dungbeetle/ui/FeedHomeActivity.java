@@ -30,7 +30,9 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
@@ -38,7 +40,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * TODO: Accept only a group_id extra and query for other parameters.
  */
 public class FeedHomeActivity extends FragmentActivity
-        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
+        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener,
+        InstrumentedActivity {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
@@ -46,6 +49,9 @@ public class FeedHomeActivity extends FragmentActivity
     private int mColor;
     private ViewPager mFeedViewPager;
     private final List<Button> mButtons = new ArrayList<Button>();
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    private static ActivityCallout mCurrentCallout;
 
     private List<FeedView> mFeedViews = new ArrayList<FeedView>();
 
@@ -74,8 +80,17 @@ public class FeedHomeActivity extends FragmentActivity
         mActionsFragment.promptForSharing();
     }
 
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+    }
+
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+        }
         mActionsFragment.onActivityResult(requestCode, resultCode, data);
     }
 

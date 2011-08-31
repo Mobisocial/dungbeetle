@@ -9,5 +9,5 @@ import org.json.JSONObject;
  * on in a feed for deeper interaction.
  */
 public interface Activator {
-	public void activate(Uri feed, Context context, JSONObject content);
+	public void activate(Context context, JSONObject content);
 }

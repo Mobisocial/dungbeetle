@@ -3,7 +3,9 @@ package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -34,10 +36,14 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.action.ClipboardAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ClipboardObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ViewFeedObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
@@ -106,7 +112,7 @@ public class FeedViewFragment extends ListFragment
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(mFeedUri, getActivity(), obj);
+                activator.activate(getActivity(), obj);
             }
         }
         catch(JSONException e){
@@ -178,14 +184,36 @@ public class FeedViewFragment extends ListFragment
         @Override
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
             Cursor c = (Cursor)mObjects.getItem(position);
-            String type = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
-            String json = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+            final String typeSrc = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
+            final DbEntryHandler type = DbObjects.forType(typeSrc);
+            final String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+            final JSONObject json;
             try {
-                ClipboardAction.copyToClipboard(type, new JSONObject(json));
-                Toast.makeText(getActivity(), "Copied object to clipboard.", Toast.LENGTH_SHORT).show();
+                json = new JSONObject(jsonSrc);
             } catch (JSONException e) {
-                Toast.makeText(getActivity(), "Failed to copy object.", Toast.LENGTH_SHORT).show();
+                return false;
             }
+            
+            new AlertDialog.Builder(getActivity()).setTitle("Handle...")
+                    .setItems(new String[] {
+                            "Open", "Copy to Clipboard", "Show History"
+                    }, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                                case 0:
+                                    new OpenObjAction().actOn(getActivity(), type, json);
+                                    break;
+                                case 1:
+                                    new ClipboardObjAction().actOn(getActivity(), type, json);
+                                    break;
+                                case 2:
+                                    new ViewFeedObjAction().actOn(getActivity(), type, json);
+                                    break;
+                            }
+                        }
+                    }).show();
+
             return true;
         }
     };

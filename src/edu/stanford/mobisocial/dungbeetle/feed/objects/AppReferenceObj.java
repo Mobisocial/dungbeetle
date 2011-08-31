@@ -123,7 +123,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
 	@Override
-	public void activate(Uri feed, Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
@@ -142,7 +142,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
-            mAppStateObj.activate(feed, context, appContent);
+            mAppStateObj.activate(context, appContent);
 	    }
 	}
 
