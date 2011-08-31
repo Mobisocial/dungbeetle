@@ -17,4 +17,13 @@ public class OpenObjAction extends ObjAction {
         }
     }
 
+    @Override
+    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+        return (objType instanceof Activator);
+    }
+
+    @Override
+    public String getLabel() {
+        return "Open";
+    }
 }

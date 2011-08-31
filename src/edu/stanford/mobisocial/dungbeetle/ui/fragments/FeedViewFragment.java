@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,27 +26,23 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.action.ClipboardAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.obj.action.ClipboardObjAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.ViewFeedObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
+import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
@@ -51,8 +50,8 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
  * Shows a series of posts from a feed.
  *
  */
-public class FeedViewFragment extends ListFragment
-        implements OnItemClickListener, OnEditorActionListener, TextWatcher {
+public class FeedViewFragment extends ListFragment implements OnItemClickListener,
+        OnEditorActionListener, TextWatcher {
 
     public static final String ARG_FEED_URI = "feed_uri";
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
@@ -94,8 +93,7 @@ public class FeedViewFragment extends ListFragment
 
         //int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
 
-        FeedProcessor processor = new DefaultFeedProcessor(mContactCache);
-        mObjects = processor.getListAdapter(getActivity(), mFeedUri);
+        mObjects = getListAdapter(getActivity(), mFeedUri);
         setListAdapter(mObjects);
         getListView().setOnItemClickListener(this);
         getListView().setFastScrollEnabled(true);
@@ -193,28 +191,61 @@ public class FeedViewFragment extends ListFragment
             } catch (JSONException e) {
                 return false;
             }
-            
+
+            final List<ObjAction> actions = new ArrayList<ObjAction>();
+            for (ObjAction action : ObjActions.getObjActions()) {
+                if (action.isActive(type, json)) {
+                    actions.add(action);
+                }
+            }
+            final String[] actionLabels = new String[actions.size()];
+            int i = 0;
+            for (ObjAction action : actions) {
+                actionLabels[i++] = action.getLabel();
+            }
             new AlertDialog.Builder(getActivity()).setTitle("Handle...")
-                    .setItems(new String[] {
-                            "Open", "Copy to Clipboard", "Show History"
-                    }, new DialogInterface.OnClickListener() {
+                    .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            switch (which) {
-                                case 0:
-                                    new OpenObjAction().actOn(getActivity(), type, json);
-                                    break;
-                                case 1:
-                                    new ClipboardObjAction().actOn(getActivity(), type, json);
-                                    break;
-                                case 2:
-                                    new ViewFeedObjAction().actOn(getActivity(), type, json);
-                                    break;
-                            }
+                            actions.get(which).actOn(getActivity(), type, json);
                         }
                     }).show();
 
             return true;
         }
     };
+
+    private class ObjectListCursorAdapter extends CursorAdapter {
+        public ObjectListCursorAdapter (Context context, Cursor c) {
+            super(context, c);
+        }
+
+        @Override
+        public View newView(Context context, Cursor c, ViewGroup parent) {
+            final LayoutInflater inflater = LayoutInflater.from(context);
+            View v = inflater.inflate(R.layout.objects_item, parent, false);
+            bindView(v, context, c);
+            return v;
+        }
+
+        @Override
+        public void bindView(View v, Context context, Cursor c) {
+            DbObject.bindView(v, context, c, mContactCache);
+        }
+    }
+
+    public static String getFeedObjectClause() {
+        String[] types = DbObjects.getRenderableTypes();
+        StringBuffer allowed = new StringBuffer();
+        for (String type : types) {
+            allowed.append(",'").append(type).append("'");
+        }
+        return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
+
+    public ListAdapter getListAdapter(Context context, Uri feedUri) {
+        Cursor c = context.getContentResolver().query(feedUri, null, getFeedObjectClause(),
+                null, DbObject._ID + " DESC");
+        return new ObjectListCursorAdapter(context, c);
+    }
 }

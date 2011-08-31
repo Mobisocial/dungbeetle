@@ -93,6 +93,7 @@ public class DbObject {
         Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
         Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
         Date date = new Date(timestamp);
+
         try{
             Contact contact = contactCache.getContact(contactId).get();
 

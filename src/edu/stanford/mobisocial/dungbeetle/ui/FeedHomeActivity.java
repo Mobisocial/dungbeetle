@@ -191,10 +191,9 @@ public class FeedHomeActivity extends FragmentActivity
         mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
         mFeedViewPager.setAdapter(adapter);
         mFeedViewPager.setOnPageChangeListener(this);
+        mFeedViewPager.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
 
         new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
-        mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
-
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
         int i = 0;
         for (FeedView f : mFeedViews) {

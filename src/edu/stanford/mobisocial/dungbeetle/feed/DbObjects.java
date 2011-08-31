@@ -118,4 +118,13 @@ public final class DbObjects {
         }
         return null;
     };
+
+    public static String getFeedObjectClause() {
+        String[] types = DbObjects.getRenderableTypes();
+        StringBuffer allowed = new StringBuffer();
+        for (String type : types) {
+            allowed.append(",'").append(type).append("'");
+        }
+        return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
 }

@@ -14,4 +14,9 @@ public class ClipboardObjAction extends ObjAction {
         ClipboardAction.copyToClipboard(objType.getType(), objData);
         Toast.makeText(context, "Copied object to clipboard.", Toast.LENGTH_SHORT).show();
     }
+
+    @Override
+    public String getLabel() {
+        return "Copy to Clipboard";
+    }
 }

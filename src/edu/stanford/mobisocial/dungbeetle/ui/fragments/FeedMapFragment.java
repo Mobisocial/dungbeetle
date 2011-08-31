@@ -81,6 +81,7 @@ public class FeedMapFragment extends Fragment {
             String lon = obj.getJson().optString(LocationObj.COORD_LONG);
             pathBuilder.append("|").append(lat).append(",").append(lon);
         }
+        c.close();
         Uri data = Uri.parse(pathBuilder.toString());
         ((WebView)getActivity().findViewById(android.R.id.custom)).loadUrl(data.toString());
     }

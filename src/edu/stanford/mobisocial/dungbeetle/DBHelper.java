@@ -857,8 +857,14 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{String.valueOf(groupId)},
             null,null,null);
         c.moveToFirst();
-        if(c.isAfterLast()) return Maybe.unknown();
-        else return Maybe.definitely(new Group(c));
+        Maybe<Group> mg;
+        if (c.isAfterLast()) {
+            mg = Maybe.unknown();
+        } else { 
+            mg = Maybe.definitely(new Group(c));
+        }
+        c.close();
+        return mg;
     }
 
 	public Maybe<Group> groupForFeedName(String feed){
@@ -869,8 +875,14 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{String.valueOf(feed)},
             null,null,null);
         c.moveToFirst();
-        if(c.isAfterLast()) return Maybe.unknown();
-        else return Maybe.definitely(new Group(c));
+        Maybe<Group> mg;
+        if (c.isAfterLast()) {
+            mg = Maybe.unknown();
+        } else { 
+            mg = Maybe.definitely(new Group(c));
+        }
+        c.close();
+        return mg;
     }
 
 

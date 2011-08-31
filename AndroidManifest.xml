@@ -57,6 +57,8 @@
 	      android:label="@string/title_latest">
     </activity>
 
+    <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
+    
 	<receiver android:name="Publisher">
 		<intent-filter>
 			<action android:name="mobisocial.db.action.PUBLISH" />

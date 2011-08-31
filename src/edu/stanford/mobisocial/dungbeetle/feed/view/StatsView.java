@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.processor.DefaultFeedProcessor;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import android.app.Activity;
 import android.database.Cursor;
@@ -21,7 +21,7 @@ public class StatsView extends Activity {
         mTextView = ((TextView)findViewById(R.id.stats_text));
 
         Uri feedUri = getIntent().getData();
-        Cursor c = getContentResolver().query(feedUri, null, DefaultFeedProcessor.getFeedObjectClause(),
+        Cursor c = getContentResolver().query(feedUri, null, DbObjects.getFeedObjectClause(),
                 null, DbObject._ID + " DESC");
 
         Map<String, Integer> counts = new HashMap<String, Integer>();
