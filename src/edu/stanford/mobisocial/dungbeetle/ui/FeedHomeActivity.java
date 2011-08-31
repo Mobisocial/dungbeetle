@@ -272,21 +272,21 @@ public class FeedHomeActivity extends FragmentActivity
     }
 
     @Override
-    public void onPageScrollStateChanged(int arg0) {
+    public void onPageScrollStateChanged(int state) {
         
     }
 
     @Override
-    public void onPageScrolled(int arg0, float arg1, int arg2) {
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
         
     }
 
     @Override
-    public void onPageSelected(int selected) {
+    public void onPageSelected(int position) {
         int c = mButtons.size();
         for (int i = 0; i < c; i++) {
             mButtons.get(i).setBackgroundColor(R.color.background1);
         }
-        mButtons.get(selected).setBackgroundColor(mColor);
+        mButtons.get(position).setBackgroundColor(mColor);
     }
 }
