@@ -198,7 +198,6 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         if (mLoader == null) {
-            Log.d(TAG, "THE CURSOR LOADER IS NULL SO IMA GET IT");
             mLoader = new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
         }
         return mLoader;
