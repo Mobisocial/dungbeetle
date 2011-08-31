@@ -18,7 +18,7 @@ public class ClipboardAction implements FeedAction {
 
     @Override
     public String getName() {
-        return "Clipboard";
+        return "Paste";
     }
 
     public void onClick(Context context, Uri feedUri) {

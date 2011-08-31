@@ -8,6 +8,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -47,7 +50,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
  * from this group. Otherwise, lists all known contacts.
  *
  */
-public class FeedMembersFragment extends ListFragment implements OnItemClickListener {
+public class FeedMembersFragment extends ListFragment implements OnItemClickListener,
+        LoaderManager.LoaderCallbacks<Cursor> {
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
@@ -71,27 +75,8 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        mHelper = new DBHelper(getActivity());
-
-        try {
-            mFeedUri = getArguments().getParcelable("feed_uri");
-            mGroup = mHelper.groupForFeedName(mFeedUri.getLastPathSegment());
-            long gid = mGroup.get().id;
-            Cursor c = getActivity().getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
-                null, null, null, Contact.NAME + " ASC");
-            mContacts = new ContactListCursorAdapter(getActivity(), c);
-        } catch (NoValError e) {
-            Log.wtf(TAG, "bad feed contacts");
-        }
-
-		setListAdapter(mContacts);
-        ListView lv = getListView();
-        lv.setTextFilterEnabled(true);
-        lv.setFastScrollEnabled(true);
-        //registerForContextMenu(lv);
-		lv.setOnItemClickListener(this);
-		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
+		mHelper = new DBHelper(getActivity());
+		getLoaderManager().initLoader(0, null, this);
 	}
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -128,19 +113,28 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         Cursor cursor = (Cursor)mContacts.getItem(position);
         final Contact c = new Contact(cursor);
 
-
         Intent viewContactIntent = new Intent(getActivity(), ViewContactTabActivity.class);
         viewContactIntent.putExtra("contact_id", c.id);
         viewContactIntent.putExtra("contact_name", c.name);
 
-        
         Intent intent = getActivity().getIntent();
         if(intent.hasExtra("group_name")) {
             viewContactIntent.putExtra("group_name", intent.getStringExtra("group_name"));
         }
         
         startActivity(viewContactIntent);
+    }
 
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        ListView lv = getListView();
+        lv.setTextFilterEnabled(true);
+        lv.setFastScrollEnabled(true);
+        //registerForContextMenu(lv);
+        lv.setOnItemClickListener(this);
+        //lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
     }
 
     private class ContactListCursorAdapter extends CursorAdapter {
@@ -274,5 +268,32 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
     private View findViewById(int id) {
         return getActivity().findViewById(id);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        mFeedUri = getArguments().getParcelable("feed_uri");
+        mGroup = mHelper.groupForFeedName(mFeedUri.getLastPathSegment());
+        long gid;
+        try {
+            gid = mGroup.get().id;
+        } catch (NoValError e) {
+            Log.e(TAG, "No group for feed.");
+            return null;
+        }
+        Uri memberlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI +
+                "/group_contacts/" + gid);
+        return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " ASC");
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mContacts = new ContactListCursorAdapter(getActivity(), cursor);
+        setListAdapter(mContacts);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> arg0) {
+
     }
 }

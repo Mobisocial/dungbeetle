@@ -6,6 +6,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -13,6 +14,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -48,16 +52,15 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Shows a series of posts from a feed.
- *
  */
 public class FeedViewFragment extends ListFragment implements OnItemClickListener,
-        OnEditorActionListener, TextWatcher {
+        OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String ARG_FEED_URI = "feed_uri";
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
             LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
 
-	private ListAdapter mObjects;
+    private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
     private ContactCache mContactCache;
@@ -66,22 +69,36 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private ImageView mSendObjectButton;
 
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		View view = inflater.inflate(R.layout.fragment_feed_view, container, false);
+		return inflater.inflate(R.layout.fragment_feed_view, container, false);
+    }
 
-		mStatusText = (EditText)view.findViewById(R.id.status_text);
-		mStatusText.setOnEditorActionListener(FeedViewFragment.this);
-		mStatusText.addTextChangedListener(FeedViewFragment.this);
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-		mSendTextButton = (ImageView)view.findViewById(R.id.send_text);
+        mStatusText = (EditText)view.findViewById(R.id.status_text);
+        mStatusText.setOnEditorActionListener(FeedViewFragment.this);
+        mStatusText.addTextChangedListener(FeedViewFragment.this);
+
+        mSendTextButton = (ImageView)view.findViewById(R.id.send_text);
         mSendTextButton.setVisibility(View.GONE);
         mSendTextButton.setOnClickListener(mSendStatus);
 
         mSendObjectButton = (ImageView)view.findViewById(R.id.more);
         mSendObjectButton.setOnClickListener(mSendObject);
 
-		return view;
+        getListView().setOnItemClickListener(this);
+        getListView().setFastScrollEnabled(true);
+        getListView().setOnItemLongClickListener(mLongClickListener);
+        // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
+        // getListView().setCacheColorHint(color);
     }
 
     @Override
@@ -89,16 +106,8 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         super.onActivityCreated(savedInstanceState);
 
         mContactCache = new ContactCache(getActivity());
-        mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-
-        //int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
-
-        mObjects = getListAdapter(getActivity(), mFeedUri);
+        getLoaderManager().initLoader(0, null, this);
         setListAdapter(mObjects);
-        getListView().setOnItemClickListener(this);
-        getListView().setFastScrollEnabled(true);
-        getListView().setOnItemLongClickListener(mLongClickListener);
-        //getListView().setCacheColorHint(color);
     }
 
     @Override
@@ -234,9 +243,20 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         }
     }
 
-    private ListAdapter getListAdapter(Context context, Uri feedUri) {
-        Cursor c = context.getContentResolver().query(feedUri, null,
+    @Override
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        return new CursorLoader(getActivity(), mFeedUri, null,
                 DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
-        return new ObjectListCursorAdapter(context, c);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+        setListAdapter(mObjects);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> arg0) {
+
     }
 }

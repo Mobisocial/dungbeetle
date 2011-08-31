@@ -192,10 +192,16 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
         };
     }
 
+    private Loader<Cursor> mLoader;
+
     @Override
-    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
-        return new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
+        if (mLoader == null) {
+            Log.d(TAG, "THE CURSOR LOADER IS NULL SO IMA GET IT");
+            mLoader = new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
+        }
+        return mLoader;
     }
 
     @Override

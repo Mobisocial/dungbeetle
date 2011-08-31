@@ -17,7 +17,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.ObjHistoryFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedHistoryFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -53,7 +53,7 @@ public class FeedHistoryActivity extends FragmentActivity implements Instrumente
         setContentView(R.layout.activity_feed_list);
         DashboardBaseActivity.doTitleBar(this);
         getSupportFragmentManager().beginTransaction()
-            .replace(R.id.feed_list, new ObjHistoryFragment()).commit();
+            .replace(R.id.feed_list, new FeedHistoryFragment()).commit();
     }
 
     private static int ACTIVITY_CALLOUT = 39;

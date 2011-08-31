@@ -193,9 +193,8 @@ public class HomeActivity extends DashboardBaseActivity {
         } else if (uri.getScheme().equals("content")) {
             if (uri.getAuthority().equals("vnd.mobisocial.db")) {
                 if (uri.getPath().startsWith("/feed")) {
-                    Intent view = new Intent(Intent.ACTION_VIEW);
+                    Intent view = new Intent(Intent.ACTION_VIEW, uri);
                     view.addCategory(Intent.CATEGORY_DEFAULT);
-                    view.setData(uri);
                     // TODO: fix in AndroidManifest.
                     //view.setClass(this, FeedActivity.class);
                     view.setClass(this, FeedHomeActivity.class);

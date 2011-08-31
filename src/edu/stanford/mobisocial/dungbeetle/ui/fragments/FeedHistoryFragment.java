@@ -26,7 +26,10 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
-public class ObjHistoryFragment extends Fragment implements OnItemClickListener {
+/**
+ * A side-scrolling view of a feed's objects.
+ */
+public class FeedHistoryFragment extends Fragment implements OnItemClickListener {
     private static final String TAG = "dbobjPager";
 
     private Uri mFeedUri;
