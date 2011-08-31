@@ -234,18 +234,9 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         }
     }
 
-    public static String getFeedObjectClause() {
-        String[] types = DbObjects.getRenderableTypes();
-        StringBuffer allowed = new StringBuffer();
-        for (String type : types) {
-            allowed.append(",'").append(type).append("'");
-        }
-        return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
-    }
-
-    public ListAdapter getListAdapter(Context context, Uri feedUri) {
-        Cursor c = context.getContentResolver().query(feedUri, null, getFeedObjectClause(),
-                null, DbObject._ID + " DESC");
+    private ListAdapter getListAdapter(Context context, Uri feedUri) {
+        Cursor c = context.getContentResolver().query(feedUri, null,
+                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
         return new ObjectListCursorAdapter(context, c);
     }
 }
