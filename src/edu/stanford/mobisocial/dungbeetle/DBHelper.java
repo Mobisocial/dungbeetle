@@ -621,7 +621,7 @@ public class DBHelper extends SQLiteOpenHelper {
         selection = andClauses(selection, selection2);
         selectionArgs = null;
         if (sortOrder == null) {
-            sortOrder = Group.LAST_UPDATED + " DESC";
+            sortOrder = Group.LAST_UPDATED + " ASC";
         }
 
         Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,

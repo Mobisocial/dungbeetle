@@ -47,6 +47,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.UpdateFeedModifiedHandler;
 
 import android.app.PendingIntent;
 
@@ -176,30 +177,8 @@ public class MessagingManagerThread extends Thread {
                             "In " + ((Group) group.get()).name, 
                             contentIntent);
 
-                        long objId = -1;
-                        String table = DbObject.TABLE;
-                        String[] projection = new String[] { DbObject._ID };
-                        String selection = DbObject.FEED_NAME + "=? AND "  + DbObject.CONTACT_ID + "=? AND " + DbObject.SEQUENCE_ID + "=?";
-                        String[] selectionArgs = new String[] {feedName, String.valueOf(contactID), String.valueOf(sequenceID)};
-                        
-                        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, null, null);
-                        
-                        
-                        if (objC.moveToFirst()) {
-                            objId = objC.getLong(0);
-                            Log.i(TAG, "objectID=" + objId + " feedName=" + feedName);
-                            long timestamp = new Date().getTime();
-                            
-                            ContentValues cv = new ContentValues();
-                            cv.put(Group.LAST_UPDATED, String.valueOf(timestamp));
-                            cv.put(Group.LAST_OBJECT_ID, objId);
-                            mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?", new String[]{feedName});
-                            
-                        }
-                        else {
-                            Log.wtf(TAG, "no id found for object");
-                            Log.wtf(TAG, "contactID: " + contactID + " sequenceID: " + sequenceID + " feedName: " + feedName);
-                        }
+                        new UpdateFeedModifiedHandler(mHelper).handleObj(
+                                Feed.uriForName(feedName), contactID, sequenceID, obj.optString(DbObjects.TYPE), obj);
                     }
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler)h).handleFeedMessage(mContext, feedUri, obj);
@@ -213,7 +192,6 @@ public class MessagingManagerThread extends Thread {
             Log.e(TAG, "Error handling incoming message: " + e.toString());
         }
     }
-
 
     /**
      * Replace global contact and object references 
@@ -279,6 +257,9 @@ public class MessagingManagerThread extends Thread {
                 objs.moveToFirst();
                 while (!objs.isAfterLast()) {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
+                    String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
+                    new UpdateFeedModifiedHandler(mHelper).handleObj(Feed.uriForName(feedName), objId);
+
                     if (mSentObjects.contains(objId)) {
                         if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
                         objs.moveToNext();
