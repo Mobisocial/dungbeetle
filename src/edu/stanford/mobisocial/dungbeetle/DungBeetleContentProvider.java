@@ -359,6 +359,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         }
+        else if(match(uri, "local_user", ".+")) {
+            // currently available to any local app with a feed id.
+            String feed_name = uri.getLastPathSegment();
+            Cursor c = mHelper.queryLocalUser(feed_name);
+            c.setNotificationUri(resolver, uri);
+            return c;
+        }
         else if(match(uri, "feed_members", ".+")) {
             String feedName = segs.get(1);
             Cursor c = mHelper.queryFeedMembers(feedName, realAppId);

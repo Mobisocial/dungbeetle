@@ -28,10 +28,7 @@ public class PresenceAwareNotify {
         Notification notification = new Notification(
             R.drawable.icon, notificationTitle, System.currentTimeMillis());
 
-
         notification.vibrate = VIBRATE;
-
-
         // Disable vibrate if busy
         Cursor c = mContext.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),

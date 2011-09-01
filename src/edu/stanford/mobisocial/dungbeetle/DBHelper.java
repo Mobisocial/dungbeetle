@@ -886,6 +886,17 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
+	public Cursor queryLocalUser(String feed_name) {
+	    String table = MyInfo.TABLE;
+	    String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE };
+        String selection = null;
+        String selectionArgs[] = null;
+        String groupBy = null;
+        String having = null;
+        String orderBy = null;
+        return getReadableDatabase().query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
+    }
+
 	public Maybe<Group> groupByFeedName(String feedName){
         Cursor c = getReadableDatabase().query(
             Group.TABLE,
