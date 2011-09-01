@@ -9,5 +9,6 @@ import android.net.Uri;
  */
 public interface FeedMessageHandler {
     String getType();
-    void handleFeedMessage(Context context, Uri feedUri, JSONObject msg);
+    void handleFeedMessage(Context context, Uri feedUri,
+            long contactId, long sequenceId, String type, JSONObject msg);
 }

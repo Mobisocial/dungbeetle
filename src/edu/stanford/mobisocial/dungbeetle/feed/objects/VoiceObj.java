@@ -72,7 +72,7 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject msg) {
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
         // TODO Auto-generated method stub
         
     }

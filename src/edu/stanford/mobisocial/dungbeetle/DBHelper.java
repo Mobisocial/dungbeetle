@@ -57,7 +57,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 36;
+	public static final int VERSION = 37;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -215,13 +215,15 @@ public class DBHelper extends SQLiteOpenHelper {
         if(oldVersion <= 35) {
             Log.w(TAG, "Adding column 'last_updated' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_UPDATED + " INTEGER");
-            
+        }
+        if (oldVersion <= 36) {
+            // Can't easily drop columns, but 'update_id' and 'is_child_feed' are dead columns.
+
+            Log.w(TAG, "Adding column 'parent_feed_id' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.PARENT_FEED_ID + " INTEGER DEFAULT -1");
+
             Log.w(TAG, "Adding column 'last_object_id' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
-            
-            Log.w(TAG, "Adding column 'is_child_feed' to group table.");
-            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.IS_CHILD_FEED + " INTEGER DEFAULT 0");
-            
         }
         db.setVersion(VERSION);
     }
@@ -325,7 +327,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.VERSION, "INTEGER DEFAULT -1",
                     Group.LAST_UPDATED, "INTEGER",
                     Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
-                    Group.IS_CHILD_FEED, "INTEGER DEFAULT 0"
+                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1"
                         );
             
             createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
@@ -616,12 +618,12 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentResolver resolver = mContext.getContentResolver();
 
         String tables = Group.TABLE + ", " + DbObject.TABLE;
-        String selection2 = Group.TABLE + "." + Group.IS_CHILD_FEED + " != 1 " +
+        String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
                     " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
         selection = andClauses(selection, selection2);
         selectionArgs = null;
         if (sortOrder == null) {
-            sortOrder = Group.LAST_UPDATED + " ASC";
+            sortOrder = Group.LAST_UPDATED + " DESC";
         }
 
         Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,

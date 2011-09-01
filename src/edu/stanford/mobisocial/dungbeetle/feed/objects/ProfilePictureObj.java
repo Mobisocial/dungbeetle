@@ -38,7 +38,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		byte[] data = Base64.decode(obj.optString(DATA), Base64.DEFAULT);
 		String id = Long.toString(from.id);
 		ContentValues values = new ContentValues();

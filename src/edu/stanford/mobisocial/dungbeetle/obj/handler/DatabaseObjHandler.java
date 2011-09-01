@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
@@ -36,10 +37,10 @@ public abstract class DatabaseObjHandler extends ObjHandler {
     }
 
     @Override
-    public final void handleObj(Uri feedUri, long contactId, long sequenceId, String type, JSONObject json) {
+    public final void handleObj(Context context, Uri feedUri, long contactId, long sequenceId, String type, JSONObject json) {
         long objId = getObjectId(feedUri, contactId, sequenceId);
-        handleObj(feedUri, objId);
+        handleObj(context, feedUri, objId);
     }
 
-    public abstract void handleObj(Uri feedUri, long objId);
+    public abstract void handleObj(Context context, Uri feedUri, long objId);
 }

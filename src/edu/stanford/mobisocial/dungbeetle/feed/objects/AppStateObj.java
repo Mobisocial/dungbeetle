@@ -26,7 +26,6 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -36,7 +35,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
-public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
+public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "DBAppState";
 	private static final boolean DBG = true;
 
@@ -95,7 +94,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator, Fee
     }
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject obj) {
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 
     }
 
@@ -233,15 +232,6 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator, Fee
 	public interface Callback {
 	    public void onAppSelected(String pkg, String arg, Intent localLaunch);
 	}
-
-    /**
-     * Subscribe to the application feed automatically.
-     * TODO, work out observers vs. players.
-     */
-    @Override
-    public void handleFeedMessage(Context context, Uri feedUri, JSONObject obj) {
-
-    }
 
     private class WebViewClickListener implements View.OnTouchListener {
         private int position;

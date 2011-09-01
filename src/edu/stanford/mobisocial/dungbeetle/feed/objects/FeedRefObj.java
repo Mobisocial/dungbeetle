@@ -75,7 +75,7 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject msg) {
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
         Toast.makeText(context, "received", 400).show();
     }
 
