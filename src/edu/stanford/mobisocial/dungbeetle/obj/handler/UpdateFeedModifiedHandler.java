@@ -2,8 +2,6 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import java.util.Date;
 
-import org.json.JSONObject;
-
 import android.content.ContentValues;
 import android.net.Uri;
 import android.util.Log;
