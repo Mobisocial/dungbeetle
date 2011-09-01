@@ -12,6 +12,8 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.content.ContentValues;
+
 
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 
