@@ -45,6 +45,7 @@ import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedListActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
@@ -192,8 +193,7 @@ public class MessagingManagerThread extends Thread {
             Maybe<Group> group = mHelper.groupForFeedName(feedUri.getLastPathSegment());
             if (group.isKnown()) {
                 Intent launch = new Intent(Intent.ACTION_VIEW);
-                launch.setDataAndType(feedUri, Feed.MIME_TYPE);
-                launch.addCategory(Intent.CATEGORY_DEFAULT);
+                launch.setClass(mContext, FeedListActivity.class);
                 PendingIntent contentIntent = PendingIntent.getActivity(mContext, 0,
                         launch, PendingIntent.FLAG_CANCEL_CURRENT);
 
