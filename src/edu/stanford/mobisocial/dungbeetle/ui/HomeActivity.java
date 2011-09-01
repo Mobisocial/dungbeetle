@@ -32,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
@@ -281,6 +282,7 @@ public class HomeActivity extends DashboardBaseActivity {
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
+        new PresenceAwareNotify(this).cancelAll();
         pushContactInfoViaNfc();
     }
 

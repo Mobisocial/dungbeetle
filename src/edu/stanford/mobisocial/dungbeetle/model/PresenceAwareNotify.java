@@ -13,7 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 
 public class PresenceAwareNotify {
-	private int notifyCounter = 0;
+	public static final int NOTIFY_ID = 9847184;
 	private NotificationManager mNotificationManager;
 	private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
 	Context mContext;
@@ -55,11 +55,10 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.notify(nextNotifyId(), notification);
+        mNotificationManager.notify(NOTIFY_ID, notification);
     }
-        
-    private int nextNotifyId(){
-        notifyCounter += 1;
-        return notifyCounter;
+
+    public void cancelAll() {
+        mNotificationManager.cancel(NOTIFY_ID);
     }
 }
