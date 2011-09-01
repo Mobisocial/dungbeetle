@@ -49,6 +49,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
+import android.net.Uri;
+
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	public static final String DB_NAME = "MUSUBI.db";
@@ -611,6 +613,8 @@ public class DBHelper extends SQLiteOpenHelper {
             WHERE Group.IS_CHILD_FEED != 1 AND Group.TABLE + "." + Group.LAST_OBJECT_ID = DBObject.TABLE + "." DBObject._ID
             ORDER BY Group.LAST_UPDATED DESC");*/
 
+        ContentResolver resolver = mContext.getContentResolver();
+
         String tables = Group.TABLE + ", " + DbObject.TABLE;
         String selection2 = Group.TABLE + "." + Group.IS_CHILD_FEED + " != 1 " +
                     " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
@@ -620,8 +624,10 @@ public class DBHelper extends SQLiteOpenHelper {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
 
-        return getReadableDatabase().query(tables, projection, selection, selectionArgs,
+        Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,
                 null, null, sortOrder, null);
+        c.setNotificationUri(resolver, Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"));
+        return c;
     }
 
     public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,
