@@ -781,7 +781,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryFeedMembers(String feedName, String appId) {
         // TODO: Check appId against database.
         String query = new StringBuilder()
-            .append("SELECT C.*")
+            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME)
+            .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
             .append(" FROM " + Contact.TABLE + " C, ")
             .append(GroupMember.TABLE + " M, ")
             .append(Group.TABLE + " G")
@@ -793,6 +794,17 @@ public class DBHelper extends SQLiteOpenHelper {
             .toString();
         return getReadableDatabase().rawQuery(query,
                 new String[] { feedName });
+    }
+
+    public Cursor queryLocalUser(String feed_name) {
+        String table = MyInfo.TABLE;
+        String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        String selection = null;
+        String selectionArgs[] = null;
+        String groupBy = null;
+        String having = null;
+        String orderBy = null;
+        return getReadableDatabase().query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
     }
 
 	public Maybe<Contact> contactForPersonId(String personId){
@@ -883,18 +895,6 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         c.close();
         return mg;
-    }
-
-
-	public Cursor queryLocalUser(String feed_name) {
-	    String table = MyInfo.TABLE;
-	    String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE };
-        String selection = null;
-        String selectionArgs[] = null;
-        String groupBy = null;
-        String having = null;
-        String orderBy = null;
-        return getReadableDatabase().query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
     }
 
 	public Maybe<Group> groupByFeedName(String feedName){

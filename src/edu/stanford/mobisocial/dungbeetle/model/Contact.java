@@ -111,13 +111,11 @@ public class Contact implements Serializable{
 
     public static void view(Activity foreground, Long contactId) {
         Intent launch = null;
-        
-            
+
         if (contactId == MY_ID) {
             launch = new Intent().setClass(foreground, ProfileActivity.class);
             launch.putExtra("contact_id", Contact.MY_ID);
-        }
-        else {
+        } else {
             launch = new Intent(foreground, ViewContactTabActivity.class);
             launch.putExtra("contact_id", contactId);
 
