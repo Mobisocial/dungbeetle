@@ -55,7 +55,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 35;
+	public static final int VERSION = 36;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -210,6 +210,17 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.SHARED_SECRET + " BLOB");
             
         }
+        if(oldVersion <= 35) {
+            Log.w(TAG, "Adding column 'last_updated' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_UPDATED + " INTEGER");
+            
+            Log.w(TAG, "Adding column 'last_object_id' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
+            
+            Log.w(TAG, "Adding column 'is_child_feed' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.IS_CHILD_FEED + " INTEGER DEFAULT 0");
+            
+        }
         db.setVersion(VERSION);
     }
 
@@ -309,8 +320,13 @@ public class DBHelper extends SQLiteOpenHelper {
             			Group.NAME, "TEXT",
                     Group.FEED_NAME, "TEXT",
                     Group.DYN_UPDATE_URI, "TEXT",
-                    Group.VERSION, "INTEGER DEFAULT -1"
+                    Group.VERSION, "INTEGER DEFAULT -1",
+                    Group.LAST_UPDATED, "INTEGER",
+                    Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
+                    Group.IS_CHILD_FEED, "INTEGER DEFAULT 0"
                         );
+            
+            createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
             
             createTable(db, GroupMember.TABLE, null,
             			GroupMember._ID, "INTEGER PRIMARY KEY",
@@ -590,35 +606,22 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
             String sortOrder){
 
-        String tables = new StringBuilder(DbObject.TABLE)
-            .append(" LEFT JOIN ")
-            .append(Group.TABLE)
-            .append(" ON ")
-            .append(DbObject.TABLE)
-            .append(".")
-            .append(DbObject.FEED_NAME)
-            .append(" = ")
-            .append(Group.TABLE)
-            .append(".")
-            .append(Group.FEED_NAME)
-            .toString();
+        /*return getReadableDatabase().rawQuery("SELECT * 
+            FROM Group.TABLE, DBObject.TABLE
+            WHERE Group.IS_CHILD_FEED != 1 AND Group.TABLE + "." + Group.LAST_OBJECT_ID = DBObject.TABLE + "." DBObject._ID
+            ORDER BY Group.LAST_UPDATED DESC");*/
 
-        // Ignore "secondary feeds" such as application-specific feeds.
-        StringBuilder removeChildren = new StringBuilder();
-        removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
-            .append(" NOT IN ('direct','friend') AND ");
-        removeChildren.append(DbObject.TABLE).append(".").append(DbObject.FEED_NAME)
-            .append(" NOT IN (SELECT ").append(DbObject.CHILD_FEED_NAME)
-            .append(" FROM ").append(DbObject.TABLE)
-            .append(" WHERE ").append(DbObject.CHILD_FEED_NAME).append(" IS NOT NULL)");
-        selection = andClauses(selection, removeChildren.toString());
-
-        String groupBy = DbObject.TABLE + "." + DbObject.FEED_NAME;
+        String tables = Group.TABLE + ", " + DbObject.TABLE;
+        String selection2 = Group.TABLE + "." + Group.IS_CHILD_FEED + " != 1 " +
+                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
+        selection = andClauses(selection, selection2);
+        selectionArgs = null;
         if (sortOrder == null) {
-            sortOrder = DbObject.TIMESTAMP + " desc";
+            sortOrder = Group.LAST_UPDATED + " DESC";
         }
+
         return getReadableDatabase().query(tables, projection, selection, selectionArgs,
-                groupBy, null, sortOrder, null);
+                null, null, sortOrder, null);
     }
 
     public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,

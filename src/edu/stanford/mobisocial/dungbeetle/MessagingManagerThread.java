@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.Date;
 
 import android.content.Context;
 import android.database.ContentObserver;
@@ -49,6 +50,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 import android.app.PendingIntent;
 
+import android.content.ContentValues;
 import android.content.ComponentName;
 import android.content.Intent;
 
@@ -143,7 +145,9 @@ public class MessagingManagerThread extends Thread {
             }
 
             if (contact.isKnown()) {
-				mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
+                long sequenceID;
+                long contactID = contact.get().id;
+				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
 				Uri feedUri = Feed.uriForName(feedName);
                 mContext.getContentResolver().notifyChange(feedUri, null);
                 if (feedName.equals("direct") || feedName.equals("friend")) {
@@ -171,6 +175,31 @@ public class MessagingManagerThread extends Thread {
                             "New Musubi message", 
                             "In " + ((Group) group.get()).name, 
                             contentIntent);
+
+                        long objId = -1;
+                        String table = DbObject.TABLE;
+                        String[] projection = new String[] { DbObject._ID };
+                        String selection = DbObject.FEED_NAME + "=? AND "  + DbObject.CONTACT_ID + "=? AND " + DbObject.SEQUENCE_ID + "=?";
+                        String[] selectionArgs = new String[] {feedName, String.valueOf(contactID), String.valueOf(sequenceID)};
+                        
+                        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, null, null);
+                        
+                        
+                        if (objC.moveToFirst()) {
+                            objId = objC.getLong(0);
+                            Log.i(TAG, "objectID=" + objId + " feedName=" + feedName);
+                            long timestamp = new Date().getTime();
+                            
+                            ContentValues cv = new ContentValues();
+                            cv.put(Group.LAST_UPDATED, String.valueOf(timestamp));
+                            cv.put(Group.LAST_OBJECT_ID, objId);
+                            mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?", new String[]{feedName});
+                            
+                        }
+                        else {
+                            Log.wtf(TAG, "no id found for object");
+                            Log.wtf(TAG, "contactID: " + contactID + " sequenceID: " + sequenceID + " feedName: " + feedName);
+                        }
                     }
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler)h).handleFeedMessage(mContext, feedUri, obj);
