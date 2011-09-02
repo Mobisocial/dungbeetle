@@ -10,14 +10,13 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedHistoryActivity;
 
 public class ViewFeedObjAction extends ObjAction {
     @Override
     public void onAct(Context context, DbEntryHandler objType, JSONObject objData) {
         if (objData.has(DbObject.CHILD_FEED_NAME)) {
             Uri appFeed = Feed.uriForName(objData.optString(DbObject.CHILD_FEED_NAME));
-            Intent viewFeed = new Intent(context, FeedHistoryActivity.class);
+            Intent viewFeed = new Intent(Intent.ACTION_VIEW);
             viewFeed.setDataAndType(appFeed, Feed.MIME_TYPE);
             context.startActivity(viewFeed);
         }

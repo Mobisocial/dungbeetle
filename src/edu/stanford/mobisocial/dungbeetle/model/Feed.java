@@ -65,4 +65,8 @@ public class Feed extends DbObject {
     public Feed(JSONObject json) {
         super(FeedRefObj.TYPE, json);
     }
+
+    public static Uri uriForList() {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+    }
 }
