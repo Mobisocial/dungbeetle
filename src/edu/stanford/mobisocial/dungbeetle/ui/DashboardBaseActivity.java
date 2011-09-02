@@ -17,31 +17,22 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
-import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 /**
  * This is the base class for activities in the dashboard application. It
@@ -51,7 +42,11 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
  * method for displaying a message to the screen via the Toast class.
  */
 
-public abstract class DashboardBaseActivity extends FragmentActivity {
+public abstract class DashboardBaseActivity extends FragmentActivity implements InstrumentedActivity {
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    private static ActivityCallout mCurrentCallout;
+
 
     /**
      * onCreate - called when the activity is first created. Called when the
@@ -191,16 +186,6 @@ public abstract class DashboardBaseActivity extends FragmentActivity {
         context.startActivity(intent);
     }
 
-    /**
-     * Show a string on the screen via Toast.
-     * 
-     * @param msg String
-     * @return void
-     */
-
-    public void toast(String msg) {
-        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
-    } // end toast
 
     /**
      * Send a message to the debug log and display it using Toast.
@@ -242,6 +227,33 @@ public abstract class DashboardBaseActivity extends FragmentActivity {
 
     public static void doTitleBar(Activity activity) {
         doTitleBar(activity, null);
+    }
+
+    public void toast(final String text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(DashboardBaseActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+        }
     }
 
 } // end class
