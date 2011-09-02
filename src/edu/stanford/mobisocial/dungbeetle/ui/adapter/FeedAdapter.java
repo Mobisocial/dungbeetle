@@ -1,10 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.ui.adapter;
 
-import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
@@ -14,11 +9,21 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
-public class FeedListCursorAdapter extends CursorAdapter {
+public class FeedAdapter extends CursorAdapter {
     private ContactCache mContactCache;
 
-    public FeedListCursorAdapter (Fragment fragment, Cursor cursor) {
+    public FeedAdapter (Context context, Cursor cursor) {
+        super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
+        mContactCache = new ContactCache(context); // TODO: Global contact cache
+        // TODO: does contact cache handle images and attributes?
+    }
+
+    public FeedAdapter (Fragment fragment, Cursor cursor) {
         super(fragment.getActivity(), cursor, FLAG_REGISTER_CONTENT_OBSERVER);
         mContactCache = new ContactCache(fragment.getActivity()); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
@@ -27,7 +32,7 @@ public class FeedListCursorAdapter extends CursorAdapter {
     @Override
     public View newView(Context context, Cursor c, ViewGroup parent) {
         final LayoutInflater inflater = LayoutInflater.from(context);
-        View v = inflater.inflate(R.layout.objects_item, parent, false);
+        View v = inflater.inflate(R.layout.feed, parent, false);
         bindView(v, context, c);
         return v;
     }
@@ -39,7 +44,12 @@ public class FeedListCursorAdapter extends CursorAdapter {
 
     public static CursorLoader queryObjects(Context context) {
         Uri feedList = Feed.uriForList();
-        return new CursorLoader(context, feedList, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+        return new CursorLoader(context, feedList, null, null, null, null);
+    }
+
+    public Uri getFeedUri(int position) {
+        mCursor.moveToPosition(position);
+        String feedName = mCursor.getString(mCursor.getColumnIndexOrThrow(Feed.FEED_NAME));
+        return Feed.uriForName(feedName);
     }
 }
