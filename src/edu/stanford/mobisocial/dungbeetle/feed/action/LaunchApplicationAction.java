@@ -24,6 +24,9 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+
 public class LaunchApplicationAction implements FeedAction {
 
     @Override
@@ -43,9 +46,18 @@ public class LaunchApplicationAction implements FeedAction {
                 Helpers.sendToFeed(context, anchor, appFeedUri);
 
                 // App reference in parent feed:
-                DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri);
+
+                DBHelper mHelper = new DBHelper(context);
+                DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+
+                long creatorId = mIdent.userPublicKeyString().hashCode();
+                
+                DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
                 Helpers.sendToFeed(context, obj, feedUri);
 
+                mHelper.close();
+
+                
                 localLaunch.putExtra(AppState.EXTRA_FEED_URI, appFeedUri);
                 if (arg != null) {
                     localLaunch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);

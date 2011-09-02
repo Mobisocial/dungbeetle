@@ -33,6 +33,8 @@ public class DBIdentityProvider implements IdentityProvider {
     private final String mEmail;
     private final String mName;
 
+    private final String mPubKeyString;
+
 	public DBIdentityProvider(SQLiteOpenHelper db) {
         mDb = db;
 		Cursor c = db.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
@@ -42,7 +44,8 @@ public class DBIdentityProvider implements IdentityProvider {
             throw new IllegalStateException("Missing my_info entry!");
         }
 
-        mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY)));
+        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
+        mPubKey = publicKeyFromString(mPubKeyString);
         mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
         mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
         mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
@@ -72,6 +75,10 @@ public class DBIdentityProvider implements IdentityProvider {
         } catch(JSONException e) { }
         c.close();
         return obj.toString(); 
+    }
+
+    public String userPublicKeyString() {
+        return mPubKeyString;
     }
 
 	public RSAPublicKey userPublicKey(){
