@@ -5,10 +5,12 @@ import java.util.List;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -214,11 +216,6 @@ public class FeedHomeActivity extends FragmentActivity
     }
 
     @Override
-    public void onDestroy(){
-        super.onDestroy();
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
@@ -302,5 +299,10 @@ public class FeedHomeActivity extends FragmentActivity
             mButtons.get(i).setBackgroundColor(R.color.background1);
         }
         mButtons.get(position).setBackgroundColor(mColor);
+    }
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
     }
 }

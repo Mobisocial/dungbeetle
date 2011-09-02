@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.util;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 
 
@@ -21,4 +22,8 @@ public class RichActivity extends Activity implements InstrumentedActivity {
     	}
     }
 
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show();
+    }
 }

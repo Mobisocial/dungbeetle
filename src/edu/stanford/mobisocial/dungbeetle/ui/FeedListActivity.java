@@ -1,6 +1,7 @@
 
 package edu.stanford.mobisocial.dungbeetle.ui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,9 +15,9 @@ import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -109,5 +110,10 @@ public class FeedListActivity extends FragmentActivity
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show();
     }
 }

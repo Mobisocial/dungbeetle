@@ -1,6 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.util;
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Intent;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 
 
 public class RichListActivity extends ListActivity implements InstrumentedActivity {
@@ -18,5 +23,10 @@ public class RichListActivity extends ListActivity implements InstrumentedActivi
     	if (requestCode == ACTIVITY_CALLOUT) {
     		mCurrentCallout.handleResult(resultCode, data);
     	}
+    }
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show();
     }
 }

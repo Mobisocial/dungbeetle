@@ -23,6 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 public class LaunchApplicationAction implements FeedAction {
 
@@ -129,7 +130,11 @@ public class LaunchApplicationAction implements FeedAction {
             }
         });
         AlertDialog alert = builder.create();
-        alert.show();
+        if (context instanceof InstrumentedActivity) {
+            ((InstrumentedActivity)context).showDialog(alert);
+        } else {
+            alert.show();
+        }
     }
 
     public interface OnAppSelected {

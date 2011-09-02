@@ -1,22 +1,16 @@
 
 package edu.stanford.mobisocial.dungbeetle.ui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTransaction;
 import android.view.MenuItem;
 import android.view.View;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedHistoryFragment;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -83,5 +77,10 @@ public class FeedHistoryActivity extends FragmentActivity implements Instrumente
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show();
     }
 }
