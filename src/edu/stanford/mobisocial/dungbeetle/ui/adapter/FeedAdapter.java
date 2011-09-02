@@ -3,7 +3,6 @@ package edu.stanford.mobisocial.dungbeetle.ui.adapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
@@ -20,12 +19,6 @@ public class FeedAdapter extends CursorAdapter {
     public FeedAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
         mContactCache = new ContactCache(context); // TODO: Global contact cache
-        // TODO: does contact cache handle images and attributes?
-    }
-
-    public FeedAdapter (Fragment fragment, Cursor cursor) {
-        super(fragment.getActivity(), cursor, FLAG_REGISTER_CONTENT_OBSERVER);
-        mContactCache = new ContactCache(fragment.getActivity()); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
     }
 

@@ -55,6 +55,10 @@ public class FeedHomeActivity extends DashboardBaseActivity
 
     public final String TAG = "GroupsTabActivity";
 
+    public void onClickBroadcast(View v) {
+        mActionsFragment.promptForSharing();
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
