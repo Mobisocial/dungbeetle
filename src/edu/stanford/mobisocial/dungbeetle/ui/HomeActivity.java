@@ -33,6 +33,7 @@ import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
@@ -155,17 +156,21 @@ public class HomeActivity extends DashboardBaseActivity {
         /* sample code for demonstration of the nearby functionality without
          * a real hookup to the service.
          */
-        DBHelper helper = new DBHelper(HomeActivity.this);
-        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
-
-        Set<byte[]> ks = pkss.keySet();
-    	Iterator<byte[]> j = ks.iterator();
-        HashSet<byte[]> hks = new HashSet<byte[]>();
-        for(int i = 0; i < ks.size() / 2; ++i) {
-        	hks.add(j.next());
-        }
-		helper.updateNearby(hks);
-		helper.close();
+//        DBHelper helper = new DBHelper(HomeActivity.this);
+//        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
+//
+//        Set<byte[]> ks = pkss.keySet();
+//    	Iterator<byte[]> j = ks.iterator();
+//        HashSet<byte[]> hks = new HashSet<byte[]>();
+//        for(int i = 0; i < ks.size() / 2; ++i) {
+//        	hks.add(j.next());
+//        }
+//		helper.updateNearby(hks);
+//		for(byte[] k : ks) {
+//			Contact c = helper.getContactForPublicKey(k);
+//			helper.setNearby(k, !c.nearby);
+//		}
+//		helper.close();
     }
 
 	
