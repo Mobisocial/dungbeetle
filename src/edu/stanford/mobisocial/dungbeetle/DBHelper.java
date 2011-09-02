@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 36;
+	public static final int VERSION = 37;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -215,13 +216,15 @@ public class DBHelper extends SQLiteOpenHelper {
         if(oldVersion <= 35) {
             Log.w(TAG, "Adding column 'last_updated' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_UPDATED + " INTEGER");
-            
+        }
+        if (oldVersion <= 36) {
+            // Can't easily drop columns, but 'update_id' and 'is_child_feed' are dead columns.
+
+            Log.w(TAG, "Adding column 'parent_feed_id' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.PARENT_FEED_ID + " INTEGER DEFAULT -1");
+
             Log.w(TAG, "Adding column 'last_object_id' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
-            
-            Log.w(TAG, "Adding column 'is_child_feed' to group table.");
-            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.IS_CHILD_FEED + " INTEGER DEFAULT 0");
-            
         }
         db.setVersion(VERSION);
     }
@@ -325,7 +328,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.VERSION, "INTEGER DEFAULT -1",
                     Group.LAST_UPDATED, "INTEGER",
                     Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
-                    Group.IS_CHILD_FEED, "INTEGER DEFAULT 0"
+                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1"
                         );
             
             createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
@@ -616,12 +619,12 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentResolver resolver = mContext.getContentResolver();
 
         String tables = Group.TABLE + ", " + DbObject.TABLE;
-        String selection2 = Group.TABLE + "." + Group.IS_CHILD_FEED + " != 1 " +
+        String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
                     " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
         selection = andClauses(selection, selection2);
         selectionArgs = null;
         if (sortOrder == null) {
-            sortOrder = Group.LAST_UPDATED + " ASC";
+            sortOrder = Group.LAST_UPDATED + " DESC";
         }
 
         Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,
@@ -950,6 +953,23 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject._ID + " = " + id,
             null);
 	}
+	//gets all known people's id's, in other words, their public keys.
+    public Set<byte[]> getPublicKeys() {
+    	HashSet<byte[]> key_ss = new HashSet<byte[]>();
+        Cursor c = getReadableDatabase().query(
+                Contact.TABLE, 
+                new String[] {Contact._ID, Contact.PUBLIC_KEY},
+                null, null,null,null,null);
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+        	byte[] pk = c.getBlob(1);
+        	key_ss.add(pk);
+            c.moveToNext();
+        }
+        c.close();
+        return key_ss;	
+    }
+    //gets the shared secret for all contacts.
     public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
     	HashMap<byte[], byte[]> key_ss = new HashMap<byte[], byte[]>();
         Cursor c = getReadableDatabase().query(
@@ -975,6 +995,55 @@ public class DBHelper extends SQLiteOpenHelper {
         c.close();
         return key_ss;	
     }
+	//gets the shared secret with one specific contact or create a shared secret if there is none... null if the public key is unknown
+    public byte[] getSharedSecret(byte[] public_key) {
+    	String hex = new String(Hex.encodeHex(public_key));
+    	hex = hex.substring(0, hex.length() - 2);
+    	hex = hex.toUpperCase();
+        Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + "," + Contact.SHARED_SECRET + " FROM " +
+        		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return null;
+        }
+        byte[] ss = c.getBlob(1);
+    	long id = c.getLong(0);
+        c.close();
+        if(ss != null) {
+        	return ss;	
+        }
+		Contact contact;
+		try {
+			contact = contactForContactId(id).get();
+    		return SharedSecretObj.getOrPushSecret(mContext, contact);
+		} catch (NoValError e) {
+			return null;
+		}
+    }
+	//gets the contact for a public key
+    public Contact getContactForPublicKey(byte[] public_key) {
+    	String hex = new String(Hex.encodeHex(public_key));
+    	hex = hex.substring(0, hex.length() - 2);
+    	hex = hex.toUpperCase();
+        Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + " FROM " +
+        		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return null;
+        }
+    	long id = c.getLong(0);
+        c.close();
+		try {
+			return contactForContactId(id).get();
+		} catch (NoValError e) {
+			return null;
+		}
+    }    
+    //marks all friends as nearby whose keys are in the specified set.  everyone outside the set is marked not nearby
     public void updateNearby(Set<byte[]> nearby) {
     	StringBuilder kl = new StringBuilder(" ");
     	for (byte[] bs : nearby) {
@@ -986,5 +1055,12 @@ public class DBHelper extends SQLiteOpenHelper {
 			kl.append(",");
 		}
     	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = HEX(" + Contact.PUBLIC_KEY + ") in (" + kl.substring(0, kl.length() - 1).toUpperCase() +  ")");
+    }
+    //control whether one person is nearby or not
+    public void setNearby(byte[] public_key, boolean nearby) {
+    	String hex = new String(Hex.encodeHex(public_key));
+    	hex = hex.substring(0, hex.length() - 2);
+    	hex = hex.toUpperCase();
+    	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = " + (nearby ? "1" : "0") + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'");
     }
  }

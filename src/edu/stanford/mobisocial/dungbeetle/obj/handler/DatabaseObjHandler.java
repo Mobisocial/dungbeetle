@@ -2,11 +2,20 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
+/**
+ * TODO: The goal is for DatabaseObjHandler to accept objects from
+ * a source (network or local user) and insert them in the database.
+ * 
+ * Once inserted, any interested object can act on the data via DbInsertionHandler
+ *
+ */
 public abstract class DatabaseObjHandler extends ObjHandler {
     private final DBHelper mHelper;
     
@@ -36,10 +45,10 @@ public abstract class DatabaseObjHandler extends ObjHandler {
     }
 
     @Override
-    public final void handleObj(Uri feedUri, long contactId, long sequenceId, String type, JSONObject json) {
+    public final void handleObj(Context context, Uri feedUri, long contactId, long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
         long objId = getObjectId(feedUri, contactId, sequenceId);
-        handleObj(feedUri, objId);
+        handleObj(context, feedUri, objId);
     }
 
-    public abstract void handleObj(Uri feedUri, long objId);
+    public abstract void handleObj(Context context, Uri feedUri, long objId);
 }

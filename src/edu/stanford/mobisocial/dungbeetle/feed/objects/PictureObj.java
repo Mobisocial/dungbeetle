@@ -110,7 +110,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject msg) {   
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {   
     }
 
     private static byte[] getBytesFromFile(InputStream is) {

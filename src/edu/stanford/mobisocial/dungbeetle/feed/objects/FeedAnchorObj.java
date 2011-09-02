@@ -1,27 +1,25 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.ContentValues;
-
-
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 /**
  * Metadata marking the beginning of a feed.
  */
-public class FeedAnchorObj implements DbEntryHandler {
-
+public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
+    private static final String TAG = "musubi";
     public static final String TYPE = "feed-anchor";
     public static final String PARENT_FEED_NAME = "parent";
 
@@ -42,14 +40,37 @@ public class FeedAnchorObj implements DbEntryHandler {
         return obj;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
-        String feedName = obj.optString(DbObject.FEED_NAME);
-        DBHelper mHelper = new DBHelper(context);
+    public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
+            String type, JSONObject obj) {
+        String parentFeedName = obj.optString(PARENT_FEED_NAME);
+        if (parentFeedName == null) {
+            Log.e(TAG, "anchor for feed, but no parent given");
+            return;
+        }
 
+        Maybe<Group> parentGroup = Group.forFeed(context, parentFeedName);
+        if (!parentGroup.isKnown()) {
+            Log.e(TAG, "No parent entry found for " + parentFeedName);
+            return;
+        }
+        Long parentId = -1l;
+        try {
+            parentId = parentGroup.get().id;
+        } catch (NoValError e) {
+        }
+
+        String feedName = feedUri.getLastPathSegment();
+        Log.d(TAG, "Updating parent_feed_id for " + feedName);
+        DBHelper mHelper = new DBHelper(context);
         ContentValues cv = new ContentValues();
-        cv.put(Group.IS_CHILD_FEED, "1");
-        mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?", new String[]{feedName});
-                            
+        cv.put(Group.PARENT_FEED_ID, parentId);
+        mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?",
+                new String[]{feedName});
         mHelper.close();
+    }
+
+    @Override
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
+
     }
 }

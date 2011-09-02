@@ -8,11 +8,15 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -48,6 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
@@ -107,7 +112,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
         mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
-        setListAdapter(mObjects);
     }
 
     @Override
@@ -190,63 +194,14 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
         @Override
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            Cursor c = (Cursor)mObjects.getItem(position);
-            final String typeSrc = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
-            final DbEntryHandler type = DbObjects.forType(typeSrc);
-            final String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-            final JSONObject json;
-            try {
-                json = new JSONObject(jsonSrc);
-            } catch (JSONException e) {
-                return false;
-            }
-
-            final List<ObjAction> actions = new ArrayList<ObjAction>();
-            for (ObjAction action : ObjActions.getObjActions()) {
-                if (action.isActive(type, json)) {
-                    actions.add(action);
-                }
-            }
-            final String[] actionLabels = new String[actions.size()];
-            int i = 0;
-            for (ObjAction action : actions) {
-                actionLabels[i++] = action.getLabel();
-            }
-            new AlertDialog.Builder(getActivity()).setTitle("Handle...")
-                    .setItems(actionLabels, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            actions.get(which).actOn(getActivity(), type, json);
-                        }
-                    }).show();
-
+            showMenuForObj(position);
             return true;
         }
     };
 
-    private class ObjectListCursorAdapter extends CursorAdapter {
-        public ObjectListCursorAdapter (Context context, Cursor c) {
-            super(context, c);
-        }
-
-        @Override
-        public View newView(Context context, Cursor c, ViewGroup parent) {
-            final LayoutInflater inflater = LayoutInflater.from(context);
-            View v = inflater.inflate(R.layout.objects_item, parent, false);
-            bindView(v, context, c);
-            return v;
-        }
-
-        @Override
-        public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, context, c, mContactCache);
-        }
-    }
-
     @Override
-    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-        return new CursorLoader(getActivity(), mFeedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
     }
 
     @Override
@@ -258,5 +213,85 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onLoaderReset(Loader<Cursor> arg0) {
 
+    }
+
+    void showMenuForObj(int position) {
+        Cursor c = (Cursor)mObjects.getItem(position);
+        final String type = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
+        final String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        final JSONObject json;
+        try {
+            json = new JSONObject(jsonSrc);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error building dialog", e);
+            return;
+        }
+
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+
+        // Create and show the dialog.
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(type, json);
+        newFragment.show(ft, "dialog");
+    }
+
+    public static class ObjMenuDialogFragment extends DialogFragment {
+        String mType;
+        JSONObject mObj;
+
+        public static ObjMenuDialogFragment newInstance(String type, JSONObject obj) {
+            return new ObjMenuDialogFragment(type, obj);
+        }
+
+        // Required by framework; fields populated from savedInstanceState.
+        public ObjMenuDialogFragment() {
+            
+        }
+
+        private ObjMenuDialogFragment(String type, JSONObject obj) {
+            mType = type;
+            mObj = obj;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            if (savedInstanceState != null) {
+                mType = savedInstanceState.getString("type");
+                try {
+                    mObj = new JSONObject(savedInstanceState.getString("obj"));
+                } catch (JSONException e) {}
+            }
+
+            final DbEntryHandler dbType = DbObjects.forType(mType);
+            final List<ObjAction> actions = new ArrayList<ObjAction>();
+            for (ObjAction action : ObjActions.getObjActions()) {
+                if (action.isActive(dbType, mObj)) {
+                    actions.add(action);
+                }
+            }
+            final String[] actionLabels = new String[actions.size()];
+            int i = 0;
+            for (ObjAction action : actions) {
+                actionLabels[i++] = action.getLabel();
+            }
+            return new AlertDialog.Builder(getActivity()).setTitle("Handle...")
+                    .setItems(actionLabels, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            actions.get(which).actOn(getActivity(), dbType, mObj);
+                        }
+                    }).create();
+        }
+
+        @Override
+        public void onSaveInstanceState(Bundle bundle) {
+            super.onSaveInstanceState(bundle);
+            bundle.putString("type", mType);
+            bundle.putString("obj", mObj.toString());
+        }
     }
 }

@@ -23,11 +23,17 @@ import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import android.util.Log;
 
 public class LaunchApplicationAction implements FeedAction {
+
+    public static final String TAG = "LaunchApplicationAction";
 
     @Override
     public String getName() {
@@ -58,12 +64,8 @@ public class LaunchApplicationAction implements FeedAction {
                 mHelper.close();
 
                 
-                localLaunch.putExtra(AppState.EXTRA_FEED_URI, appFeedUri);
-                if (arg != null) {
-                    localLaunch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
-                }
-                localLaunch.putExtra(AppState.EXTRA_APPLICATION_PACKAGE, pkg);
-                context.startActivity(localLaunch);
+                AppReferenceObj appRefObj = new AppReferenceObj();
+                appRefObj.activate(context, obj.getJson());
             }
         });
     }
@@ -141,7 +143,11 @@ public class LaunchApplicationAction implements FeedAction {
             }
         });
         AlertDialog alert = builder.create();
-        alert.show();
+        if (context instanceof InstrumentedActivity) {
+            ((InstrumentedActivity)context).showDialog(alert);
+        } else {
+            alert.show();
+        }
     }
 
     public interface OnAppSelected {

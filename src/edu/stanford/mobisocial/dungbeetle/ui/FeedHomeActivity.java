@@ -5,10 +5,12 @@ import java.util.List;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -39,9 +41,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * Represents a group by showing its feed and members.
  * TODO: Accept only a group_id extra and query for other parameters.
  */
-public class FeedHomeActivity extends FragmentActivity
-        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener,
-        InstrumentedActivity {
+public class FeedHomeActivity extends DashboardBaseActivity
+        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
@@ -50,54 +51,9 @@ public class FeedHomeActivity extends FragmentActivity
     private ViewPager mFeedViewPager;
     private final List<Button> mButtons = new ArrayList<Button>();
 
-    private static int REQUEST_ACTIVITY_CALLOUT = 39;
-    private static ActivityCallout mCurrentCallout;
-
     private List<FeedView> mFeedViews = new ArrayList<FeedView>();
 
     public final String TAG = "GroupsTabActivity";
-
-    /*** Dashboard stuff ***/
-    public void goHome(Context context) 
-    {
-        final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity (intent);
-    }
-
-    public void setTitleFromActivityLabel (int textViewId, String title)
-    {
-        TextView tv = (TextView) findViewById (textViewId);
-        if (tv != null) tv.setText (title);
-    } 
-    public void onClickHome (View v)
-    {
-        goHome (this);
-    }
-
-
-    public void onClickBroadcast(View v) {
-        mActionsFragment.promptForSharing();
-    }
-
-    public void doActivityForResult(ActivityCallout callout) {
-        mCurrentCallout = callout;
-        Intent launch = callout.getStartIntent();
-        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
-            mCurrentCallout.handleResult(resultCode, data);
-        }
-        mActionsFragment.onActivityResult(requestCode, resultCode, data);
-    }
-
-    public void onClickAbout (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
-    }
 
     /** Called when the activity is first created. */
     @Override
@@ -209,15 +165,11 @@ public class FeedHomeActivity extends FragmentActivity
             mButtons.add(button);
         }
 
-        DashboardBaseActivity.doTitleBar(this, mGroupName);
+        doTitleBar(this, mGroupName);
         onPageSelected(0);
     }
 
-    @Override
-    public void onDestroy(){
-        super.onDestroy();
-    }
-
+    // TODO: Move to DashboardActivity, but add a FLAG_CLEAR_ON_PAUSE to EasyNfc.
     @Override
     protected void onResume() {
         super.onResume();
@@ -242,14 +194,6 @@ public class FeedHomeActivity extends FragmentActivity
         startActivity(launch);
     }
 
-    public void toast(final String text) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(FeedHomeActivity.this, text, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
     private View.OnClickListener mViewSelected = new View.OnClickListener() {
         @Override

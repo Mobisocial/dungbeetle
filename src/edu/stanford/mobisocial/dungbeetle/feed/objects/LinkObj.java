@@ -43,7 +43,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String mimeType = obj.optString(MIME_TYPE);
 		Uri uri = Uri.parse(obj.optString(URI));
 		if (fileAvailable(mimeType, uri)) {

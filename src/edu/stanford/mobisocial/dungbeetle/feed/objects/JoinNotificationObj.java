@@ -41,7 +41,7 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
     }
 
     @Override
-    public void handleReceived(final Context context, Contact from, JSONObject obj) {
+    public void handleDirectMessage(final Context context, Contact from, JSONObject obj) {
     }
 
     @Override

@@ -188,6 +188,32 @@ public class DungBeetleContentProvider extends ContentProvider {
                 cv.put(Group.NAME, gp.groupName(gUri));
                 cv.put(Group.FEED_NAME, feedName);
                 cv.put(Group.DYN_UPDATE_URI, gUri.toString());
+
+                String table = DbObject.TABLE;
+                String[] columns = new String[] { DbObject.FEED_NAME };
+                String selection = DbObject.CHILD_FEED_NAME + " = ?";
+                String[] selectionArgs = new String[] { feedName };
+                Cursor parent = mHelper.getReadableDatabase().query(
+                        table, columns, selection, selectionArgs, null, null, null);
+                if (parent.moveToFirst()) {
+                    String parentName = parent.getString(0);
+                    table = Group.TABLE;
+                    columns = new String[] { Group._ID };
+                    selection = Group.FEED_NAME + " = ?";
+                    selectionArgs = new String[] { parentName };
+
+                    Cursor parent2 = mHelper.getReadableDatabase().query(
+                            table, columns, selection, selectionArgs, null, null, null);
+                    if (parent2.moveToFirst()) {
+                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
+                    } else {
+                        Log.e(TAG, "Parent feed found but no id for " + parentName);
+                    }
+                    parent2.close();
+                } else {
+                    Log.w(TAG, "No parent feed for " + feedName);
+                }
+                parent.close();
                 id = mHelper.insertGroup(cv);
                 getContext().getContentResolver().notifyChange(
                         Uri.parse(CONTENT_URI + "/dynamic_groups"), null);

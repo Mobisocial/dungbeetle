@@ -50,7 +50,7 @@ public class ImageViewerActivity extends Activity{
             bitmap = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
         }
 
-        extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/DungBeetlePictures/";
+        extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
 
 
 	}

@@ -33,7 +33,7 @@ public class ProfileObj implements DbEntryHandler {
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String name = obj.optString(NAME);
 		String id = Long.toString(from.id);
 		ContentValues values = new ContentValues();

@@ -39,7 +39,7 @@ public class PhoneStateObj implements DbEntryHandler, FeedRenderer {
         return obj;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
 

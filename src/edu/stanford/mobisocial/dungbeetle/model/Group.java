@@ -23,8 +23,8 @@ public class Group{
     public static final String DYN_UPDATE_URI = "dyn_update_uri";
     public static final String VERSION = "version";
     public static final String LAST_UPDATED = "last_updated";
-    public static final String LAST_OBJECT_ID = "update_id";
-    public static final String IS_CHILD_FEED = "is_child_feed";
+    public static final String LAST_OBJECT_ID = "last_object_id";
+    public static final String PARENT_FEED_ID = "parent_feed_id";
 
     public final String feedName;
     public final String name;

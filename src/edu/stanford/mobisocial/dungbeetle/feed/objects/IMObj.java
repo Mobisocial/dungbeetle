@@ -34,7 +34,7 @@ public class IMObj implements DbEntryHandler, FeedRenderer {
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		Intent launch = new Intent();
 		launch.setAction(Intent.ACTION_MAIN);
 		launch.addCategory(Intent.CATEGORY_LAUNCHER);

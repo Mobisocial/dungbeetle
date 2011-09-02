@@ -13,6 +13,7 @@ import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
@@ -74,8 +75,8 @@ public class GroupProviders{
                         try{
                             // group exists already, load view
                             Group g = mg.get();
-                            Uri mFeedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + g.feedName);
-                            Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), mFeedUri);
+                            Uri feedUri = Feed.uriForName(g.feedName);
+                            Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), feedUri);
                         }
                         catch(Maybe.NoValError e){
                             // group does not exist yet, time to prompt for join

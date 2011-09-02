@@ -21,7 +21,7 @@ public class InviteToWebSessionObj implements DbEntryHandler {
         return TYPE;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String arg = obj.optString(ARG);
 		Intent launch = new Intent();
 		launch.setAction(Intent.ACTION_MAIN);

@@ -25,7 +25,7 @@ public class SubscribeReqObj implements DbEntryHandler {
         return obj;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj){
         Helpers.insertSubscriber(
             context, 
             from.id,

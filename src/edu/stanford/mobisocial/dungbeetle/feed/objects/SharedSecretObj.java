@@ -50,7 +50,7 @@ public class SharedSecretObj implements DbEntryHandler {
         return TYPE;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj){
         String raw_b64;
 		try {
 			raw_b64 = obj.getString(RAW);

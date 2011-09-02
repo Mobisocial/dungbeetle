@@ -3,31 +3,32 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 import java.util.Date;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 /**
  * Updates the database's "last modified" fields.
  *
  */
-public class UpdateFeedModifiedHandler extends DatabaseObjHandler {
-    private final String TAG = "feedmod";
+public class FeedModifiedObjHandler extends DatabaseObjHandler {
 
-    public UpdateFeedModifiedHandler(DBHelper helper) {
+    public FeedModifiedObjHandler(DBHelper helper) {
         super(helper);
     }
 
     @Override
-    public void handleObj(Uri feedUri, long objId) {
+    public void handleObj(Context context, Uri feedUri, long objId) {
         String feedName = feedUri.getLastPathSegment();
-        Log.i(TAG, "objectID=" + objId + " feedName=" + feedName);
         long timestamp = new Date().getTime();
-        
+
         ContentValues cv = new ContentValues();
         cv.put(Group.LAST_UPDATED, String.valueOf(timestamp));
         cv.put(Group.LAST_OBJECT_ID, objId);
         getDBHelper().getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?", new String[]{feedName});
+        Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+        context.getContentResolver().notifyChange(feedlistUri, null);
     }
 }

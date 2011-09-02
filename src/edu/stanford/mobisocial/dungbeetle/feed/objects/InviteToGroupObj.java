@@ -34,7 +34,7 @@ public class InviteToGroupObj implements DbEntryHandler {
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {
 			String groupName = obj.getString(GROUP_NAME);
 			Uri dynUpdateUri = Uri.parse(obj.getString(DYN_UPDATE_URI));

@@ -45,7 +45,7 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
         return TYPE;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		if (obj.has("request")) {
 		    JSONObject response = new JSONObject();
 		    try {

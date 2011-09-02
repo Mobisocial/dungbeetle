@@ -56,7 +56,7 @@ public class InviteToSharedAppFeedObj implements DbEntryHandler {
         return obj;
     }
 
-	public void handleReceived(Context context, Contact from, JSONObject obj) {
+	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {
 			String packageName = obj.getString(PACKAGE_NAME);
 			String feedName = obj.getString("sharedFeedName");

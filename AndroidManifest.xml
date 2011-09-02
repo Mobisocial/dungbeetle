@@ -57,6 +57,7 @@
 	      android:label="@string/title_latest">
     </activity>
 
+    <activity android:name=".ui.FeedThumberActivity" android:label="@string/title_latest" />
     <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
     
 	<receiver android:name="Publisher">

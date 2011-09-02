@@ -29,7 +29,7 @@ public class PresenceObj implements DbEntryHandler {
         return TYPE;
     }
 
-    public void handleReceived(Context context, Contact from, JSONObject obj){
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj){
         int presence = obj.optInt(PRESENCE);
         String id = Long.toString(from.id);
         long time = obj.optLong(DbObject.TIMESTAMP);

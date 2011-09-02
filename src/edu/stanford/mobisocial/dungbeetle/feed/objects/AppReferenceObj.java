@@ -69,7 +69,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
     @Override
-    public void handleReceived(Context context, Contact from, JSONObject obj) {
+    public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
         String packageName = obj.optString(PACKAGE_NAME);
         String arg = obj.optString(ARG);
         Intent launch = new Intent();
@@ -178,7 +178,8 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
      * TODO, work out observers vs. players.
      */
     @Override
-    public void handleFeedMessage(Context context, Uri feedUri, JSONObject obj) {
+    public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
+            String type, JSONObject obj) {
         if (obj.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = obj.optString(DbObject.CHILD_FEED_NAME);
             DBHelper helper = new DBHelper(context);
