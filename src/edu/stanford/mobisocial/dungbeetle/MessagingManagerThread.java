@@ -13,9 +13,7 @@ import java.util.regex.Matcher;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -35,19 +33,15 @@ import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
-import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedListActivity;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
@@ -61,12 +55,16 @@ public class MessagingManagerThread extends Thread {
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
     private final Set<Long>mSentObjects = new HashSet<Long>();
+    private final FeedModifiedObjHandler mFeedModifiedObjHandler;
+    private NotificationObjHandler mNotificationObjHandler;
+    private AutoActivateObjHandler mAutoActivateObjHandler = new AutoActivateObjHandler();
 
     public MessagingManagerThread(final Context context){
         mContext = context;
         mMainThreadHandler = new Handler(context.getMainLooper());
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
+        mNotificationObjHandler = new NotificationObjHandler(mHelper);
         mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
         ConnectionStatus status = new ConnectionStatus(){
                 public boolean isConnected(){
@@ -162,6 +160,10 @@ public class MessagingManagerThread extends Thread {
                     mFeedModifiedObjHandler.handleObj(mContext, feedUri, contactID, sequenceID,
                             DbObjects.forType(type), obj);
 
+                    if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
+                        mAutoActivateObjHandler.handleObj(mContext, feedUri, contactID, sequenceID,
+                                DbObjects.forType(type), obj);
+                    }
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler) h).handleFeedMessage(
                                 mContext, feedUri, contactID, sequenceID, type, obj);
@@ -175,38 +177,6 @@ public class MessagingManagerThread extends Thread {
             Log.e(TAG, "Error handling incoming message: " + e.toString());
         }
     }
-
-    private final FeedModifiedObjHandler mFeedModifiedObjHandler;
-    private ObjHandler mNotificationObjHandler = new ObjHandler() {
-        @Override
-        public void handleObj(Context context, Uri feedUri, long contactId,
-                long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
-            if (contactId == Contact.MY_ID) {
-                return;
-            }
-
-            if (typeInfo == null || !(typeInfo instanceof FeedRenderer)) {
-                return;
-            }
-
-            Maybe<Group> group = mHelper.groupForFeedName(feedUri.getLastPathSegment());
-            if (group.isKnown()) {
-                Intent launch = new Intent(Intent.ACTION_VIEW);
-                launch.setClass(mContext, FeedListActivity.class);
-                PendingIntent contentIntent = PendingIntent.getActivity(mContext, 0,
-                        launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
-                try {
-                    (new PresenceAwareNotify(mContext)).notify("New Musubi message",
-                            "New Musubi message", "In " + ((Group) group.get()).name,
-                            contentIntent);
-                } catch (NoValError e) {
-                    Log.e(TAG, "No group while notifying for " + feedUri.getLastPathSegment());
-                }
-            }
-        }
-        
-    };
 
     /**
      * Replace global contact and object references 
@@ -260,15 +230,15 @@ public class MessagingManagerThread extends Thread {
     @Override
     public void run() {
         Set<Long> notSendingObjects = new HashSet<Long>();
-        Log.i(TAG, "Running...");
+        if (DBG) Log.i(TAG, "Running...");
         mMessenger.init();
         while (!interrupted()) {
             mOco.waitForChange();
-            Log.i(TAG, "Noticed change...");
+            if (DBG) Log.i(TAG, "Noticed change...");
             mOco.clearChanged();
             Cursor objs = mHelper.queryUnsentObjects();
             try {
-                Log.i(TAG, objs.getCount() + " objects...");
+                if (DBG) Log.i(TAG, objs.getCount() + " objects...");
                 objs.moveToFirst();
                 while (!objs.isAfterLast()) {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
@@ -329,7 +299,7 @@ public class MessagingManagerThread extends Thread {
                     notSendingObjects.clear();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "wtf", e);
+                Log.wtf(TAG, "error running notify loop", e);
             } finally {
                 objs.close();
             }

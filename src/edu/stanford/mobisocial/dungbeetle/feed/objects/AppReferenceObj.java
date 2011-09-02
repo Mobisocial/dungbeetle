@@ -4,6 +4,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
@@ -139,6 +140,9 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        String arg = content.optString(ARG);
 	        String state = null;
 	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
+	        if (!(context instanceof Activity)) {
+	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	        }
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);

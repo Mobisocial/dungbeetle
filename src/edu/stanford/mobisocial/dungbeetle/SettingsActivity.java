@@ -1,34 +1,36 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import android.app.ListActivity;
-import android.os.Bundle;
-import android.widget.ArrayAdapter;
-import android.view.View;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.widget.TextView;
-import android.widget.ListView;
-import android.widget.AdapterView;
-import android.content.Context;
-import android.util.Log;
-import android.content.Intent;
-import android.graphics.Color;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 
+import android.app.ListActivity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.google.*;
+import edu.stanford.mobisocial.dungbeetle.google.OAuthFlowApp;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.ColorPickerDialog;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import android.os.Environment;
 
 
 
 public class SettingsActivity extends ListActivity {
     String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Backup to SD card", "Restore from SD card", "Primary Color", "Secondary Color"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
+
     String TAG = "Settings";
 
 
@@ -70,7 +72,7 @@ public class SettingsActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings);
         setTitleFromActivityLabel (R.id.title_text);
-        setListAdapter(new ArrayAdapter(this, 
+        setListAdapter(new ArrayAdapter<String>(this, 
         android.R.layout.simple_list_item_1, listItems));
 
         ListView list = getListView();
@@ -121,10 +123,10 @@ public class SettingsActivity extends ListActivity {
                             if(legacyDB.exists()) {
                                 legacyDB.delete();
                             }
-                            showToast("backed up");
+                            toast("backed up");
                         }
                         catch(Exception e){
-                            showToast("failed to back up");
+                            toast("failed to back up");
                         }
                         
                         break;
@@ -164,10 +166,10 @@ public class SettingsActivity extends ListActivity {
                             else {
                                 mHelper.importDatabaseFromSD(extStorageDirectory+DBHelper.DB_NAME);
                             }
-                            showToast("restored");
+                            toast("restored");
                         }
                         catch(Exception e){
-                            showToast("failed to restore");
+                            toast("failed to restore");
                         }
                         break;
                     case 4: {
@@ -207,6 +209,18 @@ public class SettingsActivity extends ListActivity {
                     	break;
                     }
                     case 6:
+                        break;
+                    case 7:
+                        SharedPreferences p = getSharedPreferences("main", 0);
+                        boolean old = p.getBoolean("autoplay", false);
+                        if (old) {
+                            toast("Exiting Party Mode");
+                        } else {
+                            toast("Party Mode enabled");
+                        }
+                        p.edit().putBoolean("autoplay", !old).commit();
+                        break;
+                    case 8:
                         intent = new Intent(SettingsActivity.this, OAuthFlowApp.class);
                         startActivity(intent);
                         break;
@@ -218,7 +232,7 @@ public class SettingsActivity extends ListActivity {
 
 
 
-    public void showToast(String msg) {
+    public void toast(String msg) {
         Toast error = Toast.makeText(this, msg, Toast.LENGTH_LONG);
         error.show();
     }
