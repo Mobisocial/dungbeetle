@@ -5,15 +5,22 @@ import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.view.View;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.widget.TextView;
 import android.widget.ListView;
 import android.widget.AdapterView;
 import android.content.Context;
 import android.util.Log;
 import android.content.Intent;
+import android.graphics.Color;
+
 import java.io.*;
+import java.util.Arrays;
+
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.google.*;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.ui.ColorPickerDialog;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import android.os.Environment;
@@ -21,7 +28,7 @@ import android.os.Environment;
 
 
 public class SettingsActivity extends ListActivity {
-    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Backup to SD card", "Restore from SD card"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
+    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Backup to SD card", "Restore from SD card", "Primary Color", "Secondary Color"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
     String TAG = "Settings";
 
 
@@ -163,7 +170,43 @@ public class SettingsActivity extends ListActivity {
                             showToast("failed to restore");
                         }
                         break;
-                    case 4:
+                    case 4: {
+                    	final float[] baseHues = Feed.getBaseHues();
+                    	int c = Color.HSVToColor(new float[] { baseHues[0], 1f, 1f });
+                    	ColorPickerDialog cpd = new ColorPickerDialog(SettingsActivity.this, 
+                    		new ColorPickerDialog.OnColorChangedListener() {
+								@Override
+								public void colorChanged(int color) {
+			                    	float[] hsv = new float[3];
+			                    	Color.colorToHSV(color, hsv);
+			                    	baseHues[0] = hsv[0];
+			                    	Feed.setBaseHues(baseHues);
+			                        SharedPreferences settings = getSharedPreferences(HomeActivity.PREFS_NAME, 0);
+			                        settings.edit().putString("baseHues", Arrays.toString(baseHues).replaceAll("\\[|\\]", "")).commit();
+								}
+	                    	}, c);
+                    	cpd.show();
+                    	break;
+                    }
+                    case 5: {
+                    	final float[] baseHues = Feed.getBaseHues();
+                    	int c = Color.HSVToColor(new float[] { baseHues[1], 1f, 1f });
+                    	ColorPickerDialog cpd = new ColorPickerDialog(SettingsActivity.this, 
+                    		new ColorPickerDialog.OnColorChangedListener() {
+								@Override
+								public void colorChanged(int color) {
+			                    	float[] hsv = new float[3];
+			                    	Color.colorToHSV(color, hsv);
+			                    	baseHues[1] = hsv[0];
+			                    	Feed.setBaseHues(baseHues);
+			                        SharedPreferences settings = getSharedPreferences(HomeActivity.PREFS_NAME, 0);
+			                        settings.edit().putString("baseHues", Arrays.toString(baseHues).replaceAll("\\[|\\]", "")).commit();
+								}
+	                    	}, c);
+                    	cpd.show();
+                    	break;
+                    }
+                    case 6:
                         intent = new Intent(SettingsActivity.this, OAuthFlowApp.class);
                         startActivity(intent);
                         break;

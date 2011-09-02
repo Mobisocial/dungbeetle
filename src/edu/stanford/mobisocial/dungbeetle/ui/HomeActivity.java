@@ -1,7 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
@@ -77,7 +81,20 @@ public class HomeActivity extends DashboardBaseActivity {
         startService(DBServiceIntent);
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        boolean firstLoad = settings.getBoolean("firstLoad", true);
+        String sBaseHues = settings.getString("baseHues", null);
+    	String[] aBaseHues;
+        if(sBaseHues != null) {
+        	aBaseHues = sBaseHues.split(",");
+        } else {
+        	aBaseHues = new String[] { "70", "200" };
+        }
+        float[] baseHues = new float[aBaseHues.length];
+        for(int i = 0; i < baseHues.length; ++i) {
+        	baseHues[i] = Float.valueOf(aBaseHues[i]);
+        }
+    	Feed.setBaseHues(baseHues);
+
+    	boolean firstLoad = settings.getBoolean("firstLoad", true);
         if (firstLoad) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Thank you for trying out Stanford Mobisocial's new software Musubi! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
