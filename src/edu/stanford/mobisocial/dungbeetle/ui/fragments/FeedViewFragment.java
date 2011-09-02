@@ -52,6 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
@@ -111,7 +112,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
         mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
-        setListAdapter(mObjects);
     }
 
     @Override
@@ -199,29 +199,9 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         }
     };
 
-    private class ObjectListCursorAdapter extends CursorAdapter {
-        public ObjectListCursorAdapter (Context context, Cursor c) {
-            super(context, c);
-        }
-
-        @Override
-        public View newView(Context context, Cursor c, ViewGroup parent) {
-            final LayoutInflater inflater = LayoutInflater.from(context);
-            View v = inflater.inflate(R.layout.objects_item, parent, false);
-            bindView(v, context, c);
-            return v;
-        }
-
-        @Override
-        public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, context, c, mContactCache);
-        }
-    }
-
     @Override
-    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-        return new CursorLoader(getActivity(), mFeedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
     }
 
     @Override

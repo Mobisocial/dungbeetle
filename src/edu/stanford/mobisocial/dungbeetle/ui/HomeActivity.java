@@ -24,14 +24,24 @@ import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
+import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
+import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
@@ -302,5 +312,85 @@ public class HomeActivity extends DashboardBaseActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+
+    /**
+     * Handle the click of a Feature button.
+     * 
+     * @param v View
+     * @return void
+     */
+
+    public void onClickFeature(View v) {
+        int id = v.getId();
+
+        Intent intent;
+        switch (id) {
+            case R.id.home_btn_latest:
+                intent = new Intent().setClass(getApplicationContext(), FeedListActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.home_btn_friends:
+                intent = new Intent().setClass(getApplicationContext(), ContactsActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.home_btn_profile:
+                intent = new Intent().setClass(getApplicationContext(), ProfileActivity.class);
+                intent.putExtra("contact_id", Contact.MY_ID);
+                startActivity(intent);
+                break;
+            case R.id.home_btn_groups:
+                intent = new Intent().setClass(getApplicationContext(), GroupsActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.home_btn_new_group:
+                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                alert.setMessage("Enter group name:");
+                final EditText input = new EditText(this);
+                alert.setView(input);
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        String groupName = input.getText().toString();
+                        Group g;
+                        if (groupName.length() > 0) {
+                            g = Group.create(HomeActivity.this, groupName, mHelper);
+                        } else {
+                            g = Group.create(HomeActivity.this);
+                        }
+
+                        Helpers.sendToFeed(HomeActivity.this,
+                                StatusObj.from("Welcome to " + g.name + "!"),
+                                Feed.uriForName(g.feedName));
+
+                        Intent launch = new Intent();
+                        launch.setClass(HomeActivity.this, FeedHomeActivity.class);
+                        launch.putExtra("group_name", g.name);
+                        launch.putExtra("group_id", g.id);
+                        launch.putExtra("group_uri", g.dynUpdateUri);
+                        startActivity(launch);
+                    }
+                });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+                alert.show();
+                // intent = new Intent().setClass(getApplicationContext(),
+                // NewGroupActivity.class);
+                // startActivity (intent);
+                break;
+            case R.id.home_btn_settings:
+                intent = new Intent().setClass(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.home_btn_nearby:
+                Intent launch = new Intent();
+                launch.setClass(this, NearbyGroupsActivity.class);
+                startActivity(launch);
+                break;
+            default:
+                break;
+        }
     }
 }
