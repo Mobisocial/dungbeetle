@@ -33,6 +33,7 @@ import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
@@ -165,6 +166,10 @@ public class HomeActivity extends DashboardBaseActivity {
         	hks.add(j.next());
         }
 		helper.updateNearby(hks);
+		for(byte[] k : ks) {
+			Contact c = helper.getContactForPublicKey(k);
+			helper.setNearby(k, !c.nearby);
+		}
 		helper.close();
     }
 
