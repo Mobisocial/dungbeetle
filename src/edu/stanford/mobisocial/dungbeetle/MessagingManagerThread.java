@@ -157,10 +157,10 @@ public class MessagingManagerThread extends Thread {
                 } else {
                     String type = obj.optString(DbObjects.TYPE);
                     mNotificationObjHandler.handleObj(mContext, feedUri, contactID, sequenceID,
-                            type, obj);
+                            DbObjects.forType(type), obj);
 
                     mFeedModifiedObjHandler.handleObj(mContext, feedUri, contactID, sequenceID,
-                            type, obj);
+                            DbObjects.forType(type), obj);
 
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler) h).handleFeedMessage(
@@ -180,13 +180,12 @@ public class MessagingManagerThread extends Thread {
     private ObjHandler mNotificationObjHandler = new ObjHandler() {
         @Override
         public void handleObj(Context context, Uri feedUri, long contactId,
-                long sequenceId, String type, JSONObject json) {
+                long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
             if (contactId == Contact.MY_ID) {
                 return;
             }
 
-            DbEntryHandler dbeh = DbObjects.forType(type);
-            if (dbeh == null || !(dbeh instanceof FeedRenderer)) {
+            if (typeInfo == null || !(typeInfo instanceof FeedRenderer)) {
                 return;
             }
 
