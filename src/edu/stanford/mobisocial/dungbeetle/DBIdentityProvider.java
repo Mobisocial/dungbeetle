@@ -138,20 +138,8 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
     public String personIdForPublicKey(RSAPublicKey key){
-        return makePersonIdForPublicKey(key);
+        return edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
     }
-
-    public static String makePersonIdForPublicKey(PublicKey key) {
-		String me = null;
-		try {
-			me = Util.SHA1(key.getEncoded());
-		} catch (Exception e) {
-			throw new IllegalArgumentException(
-                "Could not compute SHA1 of public key.");
-		}
-		return me.substring(0, 10);
-    }
-
 
     public static KeyPair generateKeyPair(){
         try {
