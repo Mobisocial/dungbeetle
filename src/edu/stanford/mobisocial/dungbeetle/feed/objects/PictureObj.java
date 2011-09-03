@@ -3,6 +3,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.view.ViewGroup;
@@ -106,6 +107,9 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         Intent intent = new Intent(context, ImageViewerActivity.class);
         String bytes = content.optString(DATA);
         intent.putExtra("b64Bytes", bytes);
+        if (!(context instanceof Activity)) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
         context.startActivity(intent); 
     }
 

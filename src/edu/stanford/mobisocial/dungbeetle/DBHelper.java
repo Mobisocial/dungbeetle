@@ -793,7 +793,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryFeedMembers(String feedName, String appId) {
         // TODO: Check appId against database.
         String query = new StringBuilder()
-            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME)
+            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
             .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
             .append(" FROM " + Contact.TABLE + " C, ")
             .append(GroupMember.TABLE + " M, ")
@@ -806,6 +806,12 @@ public class DBHelper extends SQLiteOpenHelper {
             .toString();
         return getReadableDatabase().rawQuery(query,
                 new String[] { feedName });
+    }
+
+    public Cursor queryGroups() {
+        String selection = Group.PARENT_FEED_ID + " = -1 ";
+        Cursor c = getReadableDatabase().query("groups", null, selection, null, null, null, null);
+        return c;
     }
 
     public Cursor queryLocalUser(String feed_name) {

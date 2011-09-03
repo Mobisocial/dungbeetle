@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
@@ -62,6 +63,9 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
 
         if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
             intent.setData(Uri.parse(content.optString(TEXT)));
+            if (!(context instanceof Activity)) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
             context.startActivity(intent);
         }
     }

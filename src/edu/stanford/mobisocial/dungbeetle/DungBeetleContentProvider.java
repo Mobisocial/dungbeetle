@@ -396,9 +396,14 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         }
+        else if(match(uri, "groups")) {
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
+            Cursor c = mHelper.queryGroups();
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/groups"));
+            return c;
+        }
         else if(match(uri, "contacts") || 
-                match(uri, "subscribers") || 
-                match(uri, "groups") ||
+                match(uri, "subscribers") ||
                 match(uri, "group_members")){
 
             if(!realAppId.equals(SUPER_APP_ID)) return null;
