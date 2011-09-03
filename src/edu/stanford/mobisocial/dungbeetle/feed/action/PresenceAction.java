@@ -14,7 +14,7 @@ public class PresenceAction implements FeedAction {
 
     @Override
     public String getName() {
-        return "Presence";
+        return "Engage";
     }
 
     @Override
@@ -60,6 +60,6 @@ public class PresenceAction implements FeedAction {
 
     @Override
     public boolean isActive() {
-        return true;
+        return false;
     }
 }

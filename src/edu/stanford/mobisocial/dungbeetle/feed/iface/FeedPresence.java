@@ -28,4 +28,9 @@ public abstract class FeedPresence {
     public boolean isPresent(Uri feedUri) {
         return mActiveFeeds.contains(feedUri);
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }
