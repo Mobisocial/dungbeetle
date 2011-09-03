@@ -75,7 +75,7 @@
     </activity>
 
     <provider android:name=".DungBeetleContentProvider"
-	      android:authorities="edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider" />
+	      android:authorities="org.mobisocial.db" />
 
     <service android:name=".DungBeetleService"/>
 
