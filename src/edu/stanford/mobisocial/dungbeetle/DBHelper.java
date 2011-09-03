@@ -793,7 +793,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryFeedMembers(String feedName, String appId) {
         // TODO: Check appId against database.
         String query = new StringBuilder()
-            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME)
+            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
             .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
             .append(" FROM " + Contact.TABLE + " C, ")
             .append(GroupMember.TABLE + " M, ")
