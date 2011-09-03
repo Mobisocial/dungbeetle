@@ -808,6 +808,12 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] { feedName });
     }
 
+    public Cursor queryGroups() {
+        String selection = Group.PARENT_FEED_ID + " = -1 ";
+        Cursor c = getReadableDatabase().query("groups", null, selection, null, null, null, null);
+        return c;
+    }
+
     public Cursor queryLocalUser(String feed_name) {
         String table = MyInfo.TABLE;
         String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
