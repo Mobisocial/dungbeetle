@@ -15,7 +15,7 @@ public class DbPresence {
         sFeedPresence.add(new MusicPresence());
         sFeedPresence.add(new PhotosPresence());
         sFeedPresence.add(new LocationPresence());
-        sFeedPresence.add(InterruptMePresence.getInstance());
+        //sFeedPresence.add(InterruptMePresence.getInstance());
         //sFeedPresence.add(new PhonePresence());
     }
 
