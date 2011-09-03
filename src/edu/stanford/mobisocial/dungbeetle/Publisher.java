@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 
+@Deprecated
 public class Publisher extends BroadcastReceiver {
 
     @Override
