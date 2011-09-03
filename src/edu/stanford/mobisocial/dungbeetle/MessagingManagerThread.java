@@ -34,13 +34,17 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.InterruptMePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -168,6 +172,10 @@ public class MessagingManagerThread extends Thread {
                         ((FeedMessageHandler) h).handleFeedMessage(
                                 mContext, feedUri, contactID, sequenceID, type, obj);
                     }
+
+                    // TODO: framework code.
+                    mOnReceivedFromNetwork.handleObj(mContext, feedUri, contactID, sequenceID,
+                            DbObjects.forType(type), obj);
                 }
             } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
@@ -177,6 +185,8 @@ public class MessagingManagerThread extends Thread {
             Log.e(TAG, "Error handling incoming message: " + e.toString());
         }
     }
+
+    private IObjHandler mOnReceivedFromNetwork = InterruptMePresence.getInstance();
 
     /**
      * Replace global contact and object references 

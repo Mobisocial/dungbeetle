@@ -169,6 +169,8 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             } else {
                 c.close();
             }
+        } else if (appReference.has("state")) {
+            return appReference;
         }
         return null;
     }
