@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -97,6 +99,8 @@ public class SettingsActivity extends ListActivity {
                         break;
                     case 2:
                         try{
+                            // TODO: asynchronous writing. Or, at least, off the ui thread.
+                            // TODO: really, we'd like continous backups : )
                             DBHelper mHelper = new DBHelper(SettingsActivity.this);
                             mHelper.getReadableDatabase().close();
                             File data = Environment.getDataDirectory();
@@ -131,46 +135,21 @@ public class SettingsActivity extends ListActivity {
                         
                         break;
                     case 3:
-                        try{
-                            DBHelper mHelper = new DBHelper(SettingsActivity.this);
-                            mHelper.getReadableDatabase().close();
-                            File data = Environment.getDataDirectory();
-                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
-                            
-                            File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
-                            if(legacyDB.exists()) {
-                                Log.w(TAG, "legacy db exists, backup from here then delete");
-                                mHelper.importDatabaseFromSD(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
-                                legacyDB.delete();
-
-                                
-                                
-                                String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
-                                
-                                File backupDB = new File(extStorageDirectory, DBHelper.DB_NAME);
-                                File fileDirectory = new File(extStorageDirectory);
-                                fileDirectory.mkdirs();
-                                
-                                File currentDB = new File(data, currentDBPath);
-                                InputStream in = new FileInputStream(currentDB);
-                                OutputStream out = new FileOutputStream(backupDB);
-                                byte[] buf = new byte[1024];
-                                int len;
-                                while ((len = in.read(buf)) > 0){
-                                    out.write(buf, 0, len);
+                        new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Restore from SD card?")
+                            .setMessage("You will lose any unsaved data.")
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    restoreFromSd();
                                 }
-                                in.close();
-                                out.close();
-                                
-                            }
-                            else {
-                                mHelper.importDatabaseFromSD(extStorageDirectory+DBHelper.DB_NAME);
-                            }
-                            toast("restored");
-                        }
-                        catch(Exception e){
-                            toast("failed to restore");
-                        }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            }).show();
                         break;
                     case 4: {
                     	final float[] baseHues = Feed.getBaseHues();
@@ -230,7 +209,46 @@ public class SettingsActivity extends ListActivity {
         });
     }
 
+    private void restoreFromSd() {
+        try{
+            DBHelper mHelper = new DBHelper(SettingsActivity.this);
+            mHelper.getReadableDatabase().close();
+            File data = Environment.getDataDirectory();
+            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
+            
+            File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
+            if(legacyDB.exists()) {
+                Log.w(TAG, "legacy db exists, backup from here then delete");
+                mHelper.importDatabaseFromSD(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
+                legacyDB.delete();
 
+                String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+                
+                File backupDB = new File(extStorageDirectory, DBHelper.DB_NAME);
+                File fileDirectory = new File(extStorageDirectory);
+                fileDirectory.mkdirs();
+                
+                File currentDB = new File(data, currentDBPath);
+                InputStream in = new FileInputStream(currentDB);
+                OutputStream out = new FileOutputStream(backupDB);
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0){
+                    out.write(buf, 0, len);
+                }
+                in.close();
+                out.close();
+                
+            }
+            else {
+                mHelper.importDatabaseFromSD(extStorageDirectory+DBHelper.DB_NAME);
+            }
+            toast("restored");
+        }
+        catch(Exception e){
+            toast("failed to restore");
+        }
+    }
 
     public void toast(String msg) {
         Toast error = Toast.makeText(this, msg, Toast.LENGTH_LONG);
