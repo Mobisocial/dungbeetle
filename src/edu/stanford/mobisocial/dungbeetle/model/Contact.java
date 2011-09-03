@@ -30,6 +30,7 @@ public class Contact implements Serializable{
     public static final String MIME_TYPE = "vnd.mobisocial.db/contact";
 	public static final String NEARBY = "nearby";
 	public static final String SHARED_SECRET = "secret";
+	public static final String PUBLIC_KEY_HASH_64 = "public_key_print";
 
     public final String name;
     public final String email;

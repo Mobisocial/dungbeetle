@@ -1,9 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -58,7 +62,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 37;
+	public static final int VERSION = 38;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -226,6 +230,19 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'last_object_id' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
         }
+        if(oldVersion <= 37) {
+            Log.w(TAG, "Adding column 'nearby' to contact table.");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PUBLIC_KEY_HASH_64 + " INTEGER DEFAULT 0");
+            createIndex(db, "INDEX", "contacts_by_pkp", Contact.TABLE, Contact.PUBLIC_KEY_HASH_64);
+            Cursor peeps = db.rawQuery("SELECT " + Contact._ID + "," + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE, null);
+            peeps.moveToFirst();
+            while(!peeps.isAfterLast()) {
+            	db.execSQL("UPDATE " + Contact.TABLE + " SET " + Contact.PUBLIC_KEY_HASH_64 + " = " + 
+            			hashPublicKey(peeps.getBlob(1)) + " WHERE " + Contact._ID + " = " + peeps.getLong(0));
+            	peeps.moveToNext();
+            }
+            peeps.close();
+        }
         db.setVersion(VERSION);
     }
 
@@ -303,6 +320,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact._ID, "INTEGER PRIMARY KEY",
                         Contact.NAME, "TEXT",
                         Contact.PUBLIC_KEY, "TEXT",
+                        Contact.PUBLIC_KEY_HASH_64, "INTEGER",
                         Contact.SHARED_SECRET, "BLOB",
                         Contact.PERSON_ID, "TEXT",
                         Contact.EMAIL, "TEXT",
@@ -312,6 +330,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact.STATUS, "TEXT",
                         Contact.PICTURE, "BLOB");
             createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
+            createIndex(db, "INDEX", "contacts_by_pkp", Contact.TABLE, Contact.PUBLIC_KEY_HASH_64);
 
 
 		    createTable(db, Subscriber.TABLE, new String[]{Subscriber.CONTACT_ID, Subscriber.FEED_NAME},
@@ -526,6 +545,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
             PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            cv.put(Contact.PUBLIC_KEY_HASH_64, hashPublicKey(key.getEncoded()));
             String tag = DBIdentityProvider.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
             String name = cv.getAsString(Contact.NAME);
@@ -969,6 +989,40 @@ public class DBHelper extends SQLiteOpenHelper {
         c.close();
         return key_ss;	
     }
+    public static long hashPublicKey(byte[] data) {
+    	try {
+	    	MessageDigest m = MessageDigest.getInstance("MD5");
+	    	ByteArrayInputStream bais = new ByteArrayInputStream(m.digest(data));
+	    	DataInputStream dis = new DataInputStream(bais);
+	    	return dis.readLong();
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    		throw new RuntimeException(e);
+    	}
+    }
+    public byte[] getPublicKey() {
+    	DBIdentityProvider dbip = new DBIdentityProvider(this);
+    	//don't close because someone else owns this
+    	//dbip.close();
+    	return dbip.userPublicKey().getEncoded();
+    }
+    public long getPublicKeyPrint() {
+    	return hashPublicKey(getPublicKey());
+    }
+    public Set<Long> getPublicKeyPrints() {
+    	HashSet<Long> key_ss = new HashSet<Long>();
+        Cursor c = getReadableDatabase().query(
+                Contact.TABLE, 
+                new String[] {Contact.PUBLIC_KEY_HASH_64},
+                null, null,null,null,null);
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+        	key_ss.add(c.getLong(0));
+            c.moveToNext();
+        }
+        c.close();
+        return key_ss;	
+    }
     //gets the shared secret for all contacts.
     public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
     	HashMap<byte[], byte[]> key_ss = new HashMap<byte[], byte[]>();
@@ -979,6 +1033,32 @@ public class DBHelper extends SQLiteOpenHelper {
         c.moveToFirst();
         while(!c.isAfterLast()){
         	byte[] pk = c.getBlob(1);
+        	byte[] ss = c.getBlob(2);
+        	if(ss == null) {
+        		Contact contact;
+				try {
+					contact = contactForContactId(c.getLong(0)).get();
+	        		ss = SharedSecretObj.getOrPushSecret(mContext, contact);
+				} catch (NoValError e) {
+					e.printStackTrace();
+				}
+        	}
+        	key_ss.put(pk, ss);
+            c.moveToNext();
+        }
+        c.close();
+        return key_ss;	
+    }
+    //gets the shared secret for all contacts.
+    public Map<Long, byte[]> getPublicKeyPrintSharedSecretMap() {
+    	HashMap<Long, byte[]> key_ss = new HashMap<Long, byte[]>();
+        Cursor c = getReadableDatabase().query(
+                Contact.TABLE, 
+                new String[] {Contact._ID, Contact.PUBLIC_KEY_HASH_64, Contact.SHARED_SECRET},
+                null, null,null,null,null);
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+        	long pk = c.getLong(1);
         	byte[] ss = c.getBlob(2);
         	if(ss == null) {
         		Contact contact;
@@ -1022,6 +1102,30 @@ public class DBHelper extends SQLiteOpenHelper {
 			return null;
 		}
     }
+	//gets the shared secret with one specific contact or create a shared secret if there is none... null if the public key is unknown
+    public byte[] getSharedSecret(long public_key) {
+        Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + "," + Contact.SHARED_SECRET + " FROM " +
+        		Contact.TABLE + " WHERE " + Contact.PUBLIC_KEY_HASH_64 + " = " + public_key, 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return null;
+        }
+        byte[] ss = c.getBlob(1);
+    	long id = c.getLong(0);
+        c.close();
+        if(ss != null) {
+        	return ss;	
+        }
+		Contact contact;
+		try {
+			contact = contactForContactId(id).get();
+    		return SharedSecretObj.getOrPushSecret(mContext, contact);
+		} catch (NoValError e) {
+			return null;
+		}
+    }    
 	//gets the contact for a public key
     public Contact getContactForPublicKey(byte[] public_key) {
     	String hex = new String(Hex.encodeHex(public_key));
@@ -1042,7 +1146,25 @@ public class DBHelper extends SQLiteOpenHelper {
 		} catch (NoValError e) {
 			return null;
 		}
-    }    
+    }
+	//gets the contact for a public key
+    public Contact getContactForPublicKey(long public_key) {
+        Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + " FROM " +
+        		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY_HASH_64 + " = " + public_key, 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return null;
+        }
+    	long id = c.getLong(0);
+        c.close();
+		try {
+			return contactForContactId(id).get();
+		} catch (NoValError e) {
+			return null;
+		}
+    }
     //marks all friends as nearby whose keys are in the specified set.  everyone outside the set is marked not nearby
     public void updateNearby(Set<byte[]> nearby) {
     	StringBuilder kl = new StringBuilder(" ");
@@ -1056,11 +1178,24 @@ public class DBHelper extends SQLiteOpenHelper {
 		}
     	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = HEX(" + Contact.PUBLIC_KEY + ") in (" + kl.substring(0, kl.length() - 1).toUpperCase() +  ")");
     }
+    //marks all friends as nearby whose keys are in the specified set.  everyone outside the set is marked not nearby
+    public void updateNearbyByPrint(Set<Long> nearby) {
+    	StringBuilder kl = new StringBuilder(" ");
+    	for (Long bs : nearby) {
+			kl.append(bs);
+			kl.append(",");
+		}
+    	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = HEX(" + Contact.PUBLIC_KEY_HASH_64 + ") in (" + kl.substring(0, kl.length() - 1) +  ")");
+    }
     //control whether one person is nearby or not
     public void setNearby(byte[] public_key, boolean nearby) {
     	String hex = new String(Hex.encodeHex(public_key));
     	hex = hex.substring(0, hex.length() - 2);
     	hex = hex.toUpperCase();
     	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = " + (nearby ? "1" : "0") + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'");
+    }
+    //control whether one person is nearby or not
+    public void setNearby(long public_key, boolean nearby) {
+    	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = " + (nearby ? "1" : "0") + " WHERE " + Contact.PUBLIC_KEY_HASH_64 + " = " + public_key);
     }
  }

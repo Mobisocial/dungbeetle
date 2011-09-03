@@ -39,6 +39,8 @@ import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.location.RequestLocation;
+import edu.stanford.mobisocial.dungbeetle.location.UpdateLocation;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -79,6 +81,9 @@ public class HomeActivity extends DashboardBaseActivity {
         DashboardBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
+        
+        startService(new Intent(this, RequestLocation.class));
+        startService(new Intent(this, UpdateLocation.class));
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         String sBaseHues = settings.getString("baseHues", null);

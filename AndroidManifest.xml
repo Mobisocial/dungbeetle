@@ -78,6 +78,8 @@
 	      android:authorities="edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider" />
 
     <service android:name=".DungBeetleService"/>
+    <service android:name="edu.stanford.mobisocial.dungbeetle.location.UpdateLocation"/>
+    <service android:name="edu.stanford.mobisocial.dungbeetle.location.RequestLocation"/>
 
     <receiver android:name=".StartupIntentReceiver">
       <intent-filter>
