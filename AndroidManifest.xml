@@ -286,5 +286,11 @@
       </intent-filter>
     
     </activity>
+    
+    <receiver android:name="edu.stanford.mobisocial.dungbeetle.util.RemoteControlReceiver">
+    <intent-filter>
+        <action android:name="android.intent.action.MEDIA_BUTTON" />
+    </intent-filter>
+</receiver>
   </application>
 </manifest> 

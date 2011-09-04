@@ -6,7 +6,7 @@ import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 
-public class VoiceAction implements FeedAction {
+public class VoiceAction implements FeedAction { // TODO: Move to VoiceObj implements FeedAction
 
     @Override
     public String getName() {

@@ -9,27 +9,20 @@
 	<TextView  
     	android:layout_width="fill_parent" 
     	android:layout_height="wrap_content" 
-    	android:text="Record a message"
+    	android:text="Recording..."
     	android:layout_weight="1.0"
-    	android:textSize="20dip"/>
+    	android:textSize="32dip"/>
     	
     <LinearLayout
     	android:orientation="horizontal"
     	android:layout_width="fill_parent"
     	android:layout_height="wrap_content">
-    	
-    	<Button
-    		android:layout_width="wrap_content"
-    		android:layout_height="wrap_content"
-    		android:id="@+id/startRecord"
-    		android:text="Record"
-    		android:layout_weight="1.0"/>
     		
 		<Button
     		android:layout_width="wrap_content"
     		android:layout_height="wrap_content"
-    		android:id="@+id/stopRecord"
-    		android:text="Stop"
+    		android:id="@+id/cancelRecord"
+    		android:text="Cancel"
     		android:layout_weight="1.0"/>
     		
 		<Button

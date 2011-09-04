@@ -16,10 +16,15 @@
 
 package edu.stanford.mobisocial.dungbeetle.ui;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -33,6 +38,7 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteControlReceiver;
 
 /**
  * This is the base class for activities in the dashboard application. It
@@ -43,7 +49,7 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  */
 
 public abstract class DashboardBaseActivity extends FragmentActivity implements InstrumentedActivity {
-
+    private static final String TAG = "msb-dashbaord";
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
 
@@ -57,11 +63,24 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
      */
 
     protected DBHelper mHelper;
+    private AudioManager mAudioManager;
+    private ComponentName mRemoteControlResponder;
+
+    private static Method mRegisterMediaButtonEventReceiver;
+    private static Method mUnregisterMediaButtonEventReceiver;
+
+    static {
+        initializeRemoteControlRegistrationMethods();
+    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // setContentView(R.layout.activity_default);
         mHelper = new DBHelper(this);
+
+        mAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        mRemoteControlResponder = new ComponentName(getPackageName(),
+                RemoteControlReceiver.class.getName());
     }
 
     /**
@@ -74,6 +93,8 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onDestroy() {
         super.onDestroy();
+        mAudioManager.unregisterMediaButtonEventReceiver(
+                mRemoteControlResponder);
     }
 
     /**
@@ -107,6 +128,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onResume() {
         super.onResume();
+        registerRemoteControl();
     }
 
     /**
@@ -256,5 +278,70 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         }
     }
 
+    private static void initializeRemoteControlRegistrationMethods() {
+        try {
+           if (mRegisterMediaButtonEventReceiver == null) {
+              mRegisterMediaButtonEventReceiver = AudioManager.class.getMethod(
+                    "registerMediaButtonEventReceiver",
+                    new Class[] { ComponentName.class } );
+           }
+           if (mUnregisterMediaButtonEventReceiver == null) {
+              mUnregisterMediaButtonEventReceiver = AudioManager.class.getMethod(
+                    "unregisterMediaButtonEventReceiver",
+                    new Class[] { ComponentName.class } );
+           }
+           /* success, this device will take advantage of better remote */
+           /* control event handling                                    */
+        } catch (NoSuchMethodException nsme) {
+           /* failure, still using the legacy behavior, but this app    */
+           /* is future-proof!                                          */
+        }
+     }
+
+    private void registerRemoteControl() {
+        try {
+            if (mRegisterMediaButtonEventReceiver == null) {
+                return;
+            }
+            mRegisterMediaButtonEventReceiver.invoke(mAudioManager,
+                    mRemoteControlResponder);
+        } catch (InvocationTargetException ite) {
+            /* unpack original exception when possible */
+            Throwable cause = ite.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            } else if (cause instanceof Error) {
+                throw (Error) cause;
+            } else {
+                /* unexpected checked exception; wrap and re-throw */
+                throw new RuntimeException(ite);
+            }
+        } catch (IllegalAccessException ie) {
+            Log.e(TAG, "unexpected " + ie);
+        }
+    }
+
+    private void unregisterRemoteControl() {
+        try {
+            if (mUnregisterMediaButtonEventReceiver == null) {
+                return;
+            }
+            mUnregisterMediaButtonEventReceiver.invoke(mAudioManager,
+                    mRemoteControlResponder);
+        } catch (InvocationTargetException ite) {
+            /* unpack original exception when possible */
+            Throwable cause = ite.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            } else if (cause instanceof Error) {
+                throw (Error) cause;
+            } else {
+                /* unexpected checked exception; wrap and re-throw */
+                throw new RuntimeException(ite);
+            }
+        } catch (IllegalAccessException ie) {
+            System.err.println("unexpected " + ie);  
+        }
+    }
 } // end class
 

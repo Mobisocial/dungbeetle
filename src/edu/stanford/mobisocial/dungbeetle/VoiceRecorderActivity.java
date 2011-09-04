@@ -41,30 +41,16 @@ public class VoiceRecorderActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.voice_recorder);
-        
-        setButtonHandlers();
-        enableButtons(false);
 
         Intent intent = getIntent();
         feedUri = Uri.parse(intent.getStringExtra("feedUri"));
-        
-        bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
-    }
 
-	private void setButtonHandlers() {
-		((Button)findViewById(R.id.startRecord)).setOnClickListener(btnClick);
-        ((Button)findViewById(R.id.stopRecord)).setOnClickListener(btnClick);
+        ((Button)findViewById(R.id.cancelRecord)).setOnClickListener(btnClick);
         ((Button)findViewById(R.id.sendRecord)).setOnClickListener(btnClick);
-	}
-	
-	private void enableButton(int id,boolean isEnable){
-		((Button)findViewById(id)).setEnabled(isEnable);
-	}
-	
-	private void enableButtons(boolean isRecording) {
-		enableButton(R.id.startRecord,!isRecording);
-		enableButton(R.id.stopRecord,isRecording);
-	}
+
+        bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
+        startRecording();
+    }
 	
 	private String getTempFilename(){
 		String filepath = Environment.getExternalStorageDirectory().getPath();
@@ -87,20 +73,16 @@ public class VoiceRecorderActivity extends Activity {
 						RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
 
 		recorder.startRecording();
-		
 		isRecording = true;
-		
 		recordingThread = new Thread(new Runnable() {
-			
 			@Override
 			public void run() {
 				writeAudioDataToFile();
 			}
 		},"AudioRecorder Thread");
-		
 		recordingThread.start();
 	}
-	
+
 	private void writeAudioDataToFile(){
 		byte data[] = new byte[bufferSize];
 		String filename = getTempFilename();
@@ -118,8 +100,6 @@ public class VoiceRecorderActivity extends Activity {
 		if(null != os){
 			while(isRecording){
 				read = recorder.read(data, 0, bufferSize);
-				
-				
 				if(AudioRecord.ERROR_INVALID_OPERATION != read){
 					try {
 						os.write(data);
@@ -154,7 +134,6 @@ public class VoiceRecorderActivity extends Activity {
 
 	private void deleteTempFile() {
 		File file = new File(getTempFilename());
-		
 		file.delete();
 	}
 	
@@ -178,8 +157,8 @@ public class VoiceRecorderActivity extends Activity {
 			        offset += numRead;
 			    }
 			track.write(rawBytes, 0, (int)totalAudioLen);
-
-			track.play();
+			// TODO: Full resolution to Content Corral (if in some mode)
+			//track.play();
 			in.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -192,37 +171,23 @@ public class VoiceRecorderActivity extends Activity {
 	private View.OnClickListener btnClick = new View.OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			switch(v.getId()){
-				case R.id.startRecord:
-					
-					enableButtons(true);
-					startRecording();
-							
-					break;
-					
-				case R.id.stopRecord:
-					
-					enableButtons(false);
-					stopRecording();
-					
-					break;
-					
-				case R.id.sendRecord:
-				    if(rawBytes == null)
-				    {
-				        Toast toast = Toast.makeText(getApplicationContext(), "Please record a message first", Toast.LENGTH_SHORT);
-				        toast.show();
-				    }
-				    else
-				    {
-                        Helpers.sendToFeed(
-                            getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
+		    stopRecording();
+		    if (v.getId() == R.id.cancelRecord) {
+		        stopRecording();
+		        finish();
+		        return;
+		    }
 
-                        Log.i("voice recorder",feedUri.toString());
-                        finish();
-                    }
-				    break;
-			}
+            if (rawBytes == null) {
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        "Please record a message first", Toast.LENGTH_SHORT);
+                toast.show();
+            } else {
+                Helpers.sendToFeed(getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
+
+                Log.i("voice recorder", feedUri.toString());
+                finish();
+            }
 		}
 	}; 
 }

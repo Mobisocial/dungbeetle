@@ -39,11 +39,14 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     @Override
     public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
             DbEntryHandler typeInfo, JSONObject json) {
-        Log.d(TAG, "HANDLING OBJOOO");
         if (mInterrupt) {
             if (typeInfo instanceof VoiceObj) {
                 ((VoiceObj) typeInfo).activate(context, json);
             }
         }
+    }
+
+    public boolean isOnCall() {
+        return mInterrupt;
     }
 }
