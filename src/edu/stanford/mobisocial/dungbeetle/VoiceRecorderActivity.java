@@ -25,8 +25,10 @@ import android.widget.Button;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
 
-public class VoiceRecorderActivity extends Activity {
+public class VoiceRecorderActivity extends Activity
+        implements RemoteControlReceiver.SpecialKeyEventHandler {
     private static final String TAG = "msb-voicerecording";
 	private static final String AUDIO_RECORDER_FOLDER = "DungBeetleTemp";
 	private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
@@ -34,6 +36,7 @@ public class VoiceRecorderActivity extends Activity {
 	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_CONFIGURATION_MONO;
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
+	private RemoteControlRegistrar remoteControlRegistrar;
 	private Uri feedUri;
 	private Set<Uri> presenceUris;
 	private AudioRecord recorder = null;
@@ -67,8 +70,15 @@ public class VoiceRecorderActivity extends Activity {
         ((Button)findViewById(R.id.cancelRecord)).setOnClickListener(btnClick);
         ((Button)findViewById(R.id.sendRecord)).setOnClickListener(btnClick);
 
+        RemoteControlReceiver.setSpecialKeyEventHandler(this);
         bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
         notifyStartRecording();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        RemoteControlReceiver.clearSpecialKeyEventHandler();
     }
 	
 	private String getTempFilename(){
@@ -89,12 +99,6 @@ public class VoiceRecorderActivity extends Activity {
 
 	private void notifyStartRecording() {
 	    MediaPlayer player = MediaPlayer.create(this, R.raw.videorecord);
-        try {
-            player.prepare();
-        } catch (Exception e) {
-            Log.e(TAG, "Error prepping media player", e);
-        }
-        
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -107,12 +111,6 @@ public class VoiceRecorderActivity extends Activity {
 
 	private void notifySendRecording() {
         MediaPlayer player = MediaPlayer.create(this, R.raw.dontpanic);
-        try {
-            player.prepare();
-        } catch (Exception e) {
-            Log.e(TAG, "Error prepping media player", e);
-        }
-        
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -268,6 +266,19 @@ public class VoiceRecorderActivity extends Activity {
         if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
             return true;
         }
+        return false;
+    }
+
+    @Override
+    public boolean onSpecialKeyEvent(KeyEvent event) {
+        Log.d(TAG, "Checking event");
+        int action = event.getAction();
+        if (action == KeyEvent.ACTION_DOWN) {
+            return onKeyDown(event.getKeyCode(), event);
+        } else if (action == KeyEvent.ACTION_UP) {
+            return onKeyUp(event.getKeyCode(), event);
+        }
+        Log.d(TAG, "Not interested, thanks");
         return false;
     };
 }
