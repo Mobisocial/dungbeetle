@@ -15,9 +15,9 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Presence;
 
 public class PresenceView implements FeedView {
     private final Fragment mFragment;
@@ -59,7 +59,7 @@ public class PresenceView implements FeedView {
             super(context, R.layout.widget_selectable_row, R.id.name_text);
             mFeedUri = feedUri;
             mContext = context;
-            for (FeedPresence p : DbPresence.getPresenceTypes()) {
+            for (FeedPresence p : Presence.getActivePresenceTypes()) {
                 add(p);
             }
         }

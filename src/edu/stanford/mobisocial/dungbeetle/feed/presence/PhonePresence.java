@@ -69,4 +69,8 @@ public class PhonePresence extends FeedPresence {
             }
         }
     };
+
+    public boolean isActive() {
+        return false;
+    }
 }

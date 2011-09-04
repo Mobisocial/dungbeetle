@@ -33,4 +33,8 @@ public abstract class FeedPresence {
     public String toString() {
         return getName();
     }
+
+    public boolean isActive() {
+        return true;
+    }
 }

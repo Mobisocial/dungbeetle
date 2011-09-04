@@ -4,23 +4,24 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
-public class InterruptMePresence extends FeedPresence implements IObjHandler {
+public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "interrupt";
     private boolean mInterrupt = false;
-    private static InterruptMePresence sInstance;
+    private static Push2TalkPresence sInstance;
 
-    private InterruptMePresence() {
+    private Push2TalkPresence() {
 
     }
 
     @Override
     public String getName() {
-        return "Interrupt Me";
+        return "Push2Talk";
     }
 
     @Override
@@ -28,9 +29,9 @@ public class InterruptMePresence extends FeedPresence implements IObjHandler {
         mInterrupt = present;
     }
 
-    public static InterruptMePresence getInstance() {
+    public static Push2TalkPresence getInstance() {
         if (sInstance == null) {
-            sInstance = new InterruptMePresence();
+            sInstance = new Push2TalkPresence();
         }
         return sInstance;
     }
@@ -38,14 +39,11 @@ public class InterruptMePresence extends FeedPresence implements IObjHandler {
     @Override
     public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
             DbEntryHandler typeInfo, JSONObject json) {
+        Log.d(TAG, "HANDLING OBJOOO");
         if (mInterrupt) {
-            if (typeInfo instanceof Activator) {
-                ((Activator) typeInfo).activate(context, json);
+            if (typeInfo instanceof VoiceObj) {
+                ((VoiceObj) typeInfo).activate(context, json);
             }
         }
-    }
-
-    public boolean isActive() {
-        return false;
     }
 }

@@ -186,7 +186,7 @@ public class MessagingManagerThread extends Thread {
         }
     }
 
-    private IObjHandler mOnReceivedFromNetwork = InterruptMePresence.getInstance();
+    private IObjHandler mOnReceivedFromNetwork = IteratorObjHandler.getFromNetworkHandlers();
 
     /**
      * Replace global contact and object references 

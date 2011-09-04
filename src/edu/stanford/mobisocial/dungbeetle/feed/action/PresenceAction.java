@@ -6,9 +6,9 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
-import edu.stanford.mobisocial.dungbeetle.feed.DbPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Presence;
 
 public class PresenceAction implements FeedAction {
 
@@ -19,7 +19,7 @@ public class PresenceAction implements FeedAction {
 
     @Override
     public void onClick(final Context context, final Uri feedUri) {
-        List<FeedPresence> presenceTypes = DbPresence.getPresenceTypes();
+        List<FeedPresence> presenceTypes = Presence.getActivePresenceTypes();
         final String[] presence = new String[presenceTypes.size()];
         final boolean[] oldPresence = new boolean[presence.length];
         final boolean[] newPresence = new boolean[presence.length];
@@ -43,7 +43,7 @@ public class PresenceAction implements FeedAction {
                 public void onClick(DialogInterface dialog, int which) {
                     for (int i = 0; i < presence.length; i++) {
                         if (oldPresence[i] != newPresence[i]) {
-                            DbPresence.getPresenceTypes().get(i).setFeedPresence(
+                            Presence.getActivePresenceTypes().get(i).setFeedPresence(
                                     context, feedUri, newPresence[i]);
                         }
                     }
