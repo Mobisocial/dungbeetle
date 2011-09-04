@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -14,9 +17,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
-import static edu.stanford.mobisocial.dungbeetle.util.AndroidActivityHelpers.*;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     private static final String TAG = "dungbeetle";
@@ -24,21 +24,23 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     public static final String TYPE = "send_file";
     public static final String URI = "uri";
     public static final String MIME_TYPE = "mimeType";
+    public static final String TITLE = "title";
 
     @Override
     public String getType() {
         return TYPE;
     }
 
-    public static DbObject from(String uri, String mimeType) {
-        return new DbObject(TYPE, json(uri, mimeType));
+    public static DbObject from(String uri, String mimeType, String title) {
+        return new DbObject(TYPE, json(uri, mimeType, title));
     }
 
-    public static JSONObject json(String uri, String mimeType){
+    public static JSONObject json(String uri, String mimeType, String title) {
         JSONObject obj = new JSONObject();
         try{
-            obj.put("mimeType", mimeType);
-            obj.put("uri", uri);
+            obj.put(MIME_TYPE, mimeType);
+            obj.put(URI, uri);
+            obj.put(TITLE, title);
         }catch(JSONException e){}
         return obj;
     }
@@ -69,7 +71,13 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 
 	public void render(Context context, ViewGroup frame, JSONObject content) {
         TextView valueTV = new TextView(context);
-        valueTV.setText(content.optString(URI));
+        String title;
+        if (content.has(TITLE)) {
+            title = "Link: " + content.optString(TITLE);
+        } else {
+            title = content.optString(URI);
+        }
+        valueTV.setText(title);
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -85,7 +93,12 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
         String scheme = uri.getScheme();
 
         if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
-            intent.setData(Uri.parse(content.optString(URI)));
+            String type = content.optString(MIME_TYPE);
+            if (type != null && !type.isEmpty()) {
+                intent.setDataAndType(uri, type);
+            } else {
+                intent.setData(uri);
+            }
             context.startActivity(intent);
         }
     }

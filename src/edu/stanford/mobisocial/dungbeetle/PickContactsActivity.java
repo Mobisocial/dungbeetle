@@ -167,7 +167,11 @@ public class PickContactsActivity extends TabActivity {
                 } else if (txt != null) {
                     url = txt;
                 }
-                outboundObj = LinkObj.from(url, mIntent.getType());
+                String title = url;
+                if (mIntent.hasExtra(Intent.EXTRA_TITLE)) {
+                    title = mIntent.getStringExtra(Intent.EXTRA_TITLE);
+                }
+                outboundObj = LinkObj.from(url, mIntent.getType(), title);
             }
 
             if (outboundObj == null) {
