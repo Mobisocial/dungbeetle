@@ -5,24 +5,29 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Set;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.net.Uri;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
-import android.content.Intent;
-import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 
 public class VoiceRecorderActivity extends Activity {
+    private static final String TAG = "msb-voicerecording";
 	private static final String AUDIO_RECORDER_FOLDER = "DungBeetleTemp";
 	private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
 	private static final int RECORDER_SAMPLERATE = 8000;
@@ -30,6 +35,7 @@ public class VoiceRecorderActivity extends Activity {
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
 	private Uri feedUri;
+	private Set<Uri> presenceUris;
 	private AudioRecord recorder = null;
 	private AudioTrack track = null;
 	private int bufferSize = 0;
@@ -43,13 +49,26 @@ public class VoiceRecorderActivity extends Activity {
         setContentView(R.layout.voice_recorder);
 
         Intent intent = getIntent();
-        feedUri = Uri.parse(intent.getStringExtra("feedUri"));
+        if (intent.hasExtra("feed_uri")) {
+            feedUri = Uri.parse(intent.getStringExtra("feed_uri"));   
+        } else if (intent.hasExtra("presence")) {
+            presenceUris = Push2TalkPresence.getInstance().getFeedsWithPresence();
+            if (presenceUris.size() == 0) {
+                presenceUris = null;
+            }
+        }
+
+        if (presenceUris == null && feedUri == null) {
+            Toast.makeText(this, "No recipients for voice recording.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         ((Button)findViewById(R.id.cancelRecord)).setOnClickListener(btnClick);
         ((Button)findViewById(R.id.sendRecord)).setOnClickListener(btnClick);
 
         bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
-        startRecording();
+        notifyStartRecording();
     }
 	
 	private String getTempFilename(){
@@ -67,7 +86,42 @@ public class VoiceRecorderActivity extends Activity {
 		
 		return (file.getAbsolutePath() + "/" + AUDIO_RECORDER_TEMP_FILE);
 	}
-	
+
+	private void notifyStartRecording() {
+	    MediaPlayer player = MediaPlayer.create(this, R.raw.videorecord);
+        try {
+            player.prepare();
+        } catch (Exception e) {
+            Log.e(TAG, "Error prepping media player", e);
+        }
+        
+        player.start();
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                startRecording();
+                mp.release();
+            }
+        });
+	}
+
+	private void notifySendRecording() {
+        MediaPlayer player = MediaPlayer.create(this, R.raw.dontpanic);
+        try {
+            player.prepare();
+        } catch (Exception e) {
+            Log.e(TAG, "Error prepping media player", e);
+        }
+        
+        player.start();
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();
+            }
+        });
+    }
+
 	private void startRecording(){
 		recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
 						RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
@@ -132,6 +186,17 @@ public class VoiceRecorderActivity extends Activity {
 		deleteTempFile();
 	}
 
+	private void sendRecording() {
+	    notifySendRecording();
+	    if (feedUri != null) {
+            Helpers.sendToFeed(getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
+        } else {
+            Helpers.sendToFeeds(getApplicationContext(), VoiceObj.from(rawBytes), presenceUris);
+        }
+
+        finish();
+	}
+
 	private void deleteTempFile() {
 		File file = new File(getTempFilename());
 		file.delete();
@@ -183,11 +248,26 @@ public class VoiceRecorderActivity extends Activity {
                         "Please record a message first", Toast.LENGTH_SHORT);
                 toast.show();
             } else {
-                Helpers.sendToFeed(getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
-
-                Log.i("voice recorder", feedUri.toString());
-                finish();
+                sendRecording();
             }
 		}
-	}; 
+	};
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+	    if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+	        if (isRecording) {
+	            stopRecording();
+	            sendRecording();
+	            return true;
+	        }
+	    }
+	    return false;
+	};
+
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+            return true;
+        }
+        return false;
+    };
 }

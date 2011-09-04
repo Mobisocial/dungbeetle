@@ -16,7 +16,7 @@ public class VoiceAction implements FeedAction { // TODO: Move to VoiceObj imple
     @Override
     public void onClick(Context context, Uri feedUri) {
         Intent voiceintent = new Intent(context, VoiceRecorderActivity.class);
-        voiceintent.putExtra("feedUri", feedUri.toString());
+        voiceintent.putExtra("feed_uri", feedUri.toString());
         context.startActivity(voiceintent);
     }
 

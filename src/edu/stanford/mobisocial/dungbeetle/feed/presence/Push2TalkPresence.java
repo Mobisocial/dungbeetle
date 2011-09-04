@@ -4,15 +4,14 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
-    private static final String TAG = "interrupt";
-    private boolean mInterrupt = false;
+    private static final String TAG = "push2talk";
+    private boolean mEnabled = false;
     private static Push2TalkPresence sInstance;
 
     private Push2TalkPresence() {
@@ -26,7 +25,7 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
 
     @Override
     public void onPresenceUpdated(final Context context, final Uri feedUri, boolean present) {
-        mInterrupt = present;
+        mEnabled = present;
     }
 
     public static Push2TalkPresence getInstance() {
@@ -39,7 +38,7 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     @Override
     public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
             DbEntryHandler typeInfo, JSONObject json) {
-        if (mInterrupt) {
+        if (mEnabled) {
             if (typeInfo instanceof VoiceObj) {
                 ((VoiceObj) typeInfo).activate(context, json);
             }
@@ -47,6 +46,6 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     }
 
     public boolean isOnCall() {
-        return mInterrupt;
+        return mEnabled;
     }
 }

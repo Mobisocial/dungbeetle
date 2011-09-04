@@ -9,6 +9,9 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
+/**
+ * Automatically launches all openable content.
+ */
 public class InterruptMePresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "interrupt";
     private boolean mInterrupt = false;

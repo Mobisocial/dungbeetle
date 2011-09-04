@@ -35,10 +35,10 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
-import edu.stanford.mobisocial.dungbeetle.util.RemoteControlReceiver;
 
 /**
  * This is the base class for activities in the dashboard application. It

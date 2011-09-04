@@ -1,6 +1,5 @@
-package edu.stanford.mobisocial.dungbeetle.util;
+package edu.stanford.mobisocial.dungbeetle;
 
-import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -27,13 +26,15 @@ public class RemoteControlReceiver extends BroadcastReceiver {
     }
 
     public void handleSpecialButton(Context context, KeyEvent event) {
-        if (event.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK) {
-            Intent record = new Intent();
-            record.setClass(context, VoiceRecorderActivity.class);
-            record.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            //context.startActivity(record);
-            // TODO: Start activity to record, and have it intercept key up/down event.
-            // Make sure its restored after hangup.
+        if (event.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK &&
+                event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (Push2TalkPresence.getInstance().isOnCall()) {
+                Intent record = new Intent();
+                record.setClass(context, VoiceRecorderActivity.class);
+                record.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                record.putExtra("presence", true);
+                context.startActivity(record);
+            }
         }
     }
 }
