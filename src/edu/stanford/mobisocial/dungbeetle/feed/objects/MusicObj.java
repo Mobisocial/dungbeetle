@@ -1,11 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -15,9 +16,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
 
@@ -87,8 +85,9 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     @Override
     public void activate(Context context, JSONObject content) {
         if (content.has(URL)) {
+            Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));
-            Intent view = new Intent(Intent.ACTION_VIEW, uri);
+            view.setDataAndType(uri, "audio/x-mpegurl");
             if (!(context instanceof Activity)) {
                 view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }
