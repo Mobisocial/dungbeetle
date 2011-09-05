@@ -4,8 +4,6 @@ package edu.stanford.mobisocial.dungbeetle.util;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.media.AudioManager;
@@ -22,10 +20,10 @@ public class RemoteControlRegistrar {
         initializeRemoteControlRegistrationMethods();
     }
 
-    public RemoteControlRegistrar(Context context) {
+    public RemoteControlRegistrar(Context context, Class<?> receiverClass) {
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mRemoteControlResponder = new ComponentName(context.getPackageName(),
-                RemoteControlReceiver.class.getName());
+                receiverClass.getName());
     }
 
     public void registerRemoteControl() {

@@ -11,9 +11,9 @@ public class Presence {
         sFeedPresence.add(new MusicPresence());
         sFeedPresence.add(new PhotosPresence());
         sFeedPresence.add(new LocationPresence());
+        sFeedPresence.add(new PhonePresence());
         sFeedPresence.add(Push2TalkPresence.getInstance());
         sFeedPresence.add(InterruptMePresence.getInstance());
-        sFeedPresence.add(new PhonePresence());
     }
 
     public static List<FeedPresence> getActivePresenceTypes() {

@@ -8,6 +8,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "push2talk";
@@ -47,5 +48,10 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
 
     public boolean isOnCall() {
         return mEnabled;
+    }
+
+    @Override
+    public boolean isActive() {
+        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }

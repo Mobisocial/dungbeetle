@@ -8,6 +8,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 
 /**
  * Automatically launches all openable content.
@@ -48,7 +49,8 @@ public class InterruptMePresence extends FeedPresence implements IObjHandler {
         }
     }
 
+    @Override
     public boolean isActive() {
-        return false;
+        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }

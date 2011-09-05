@@ -11,6 +11,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 
 /**
  * Sends the phone's state to any allowable silkworm thread.
@@ -70,7 +71,8 @@ public class PhonePresence extends FeedPresence {
         }
     };
 
+    @Override
     public boolean isActive() {
-        return false;
+        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }
