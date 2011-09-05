@@ -26,6 +26,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -124,7 +125,7 @@ public class FeedHomeActivity extends DashboardBaseActivity
         mColor= Feed.colorFor(feed_name);
         
         Bundle args = new Bundle();
-        args.putParcelable("feed_uri", mFeedUri);
+        args.putParcelable(FeedViewFragment.ARG_FEED_URI, mFeedUri);
         mActionsFragment = new FeedActionsFragment();
         mActionsFragment.setArguments(args);
 

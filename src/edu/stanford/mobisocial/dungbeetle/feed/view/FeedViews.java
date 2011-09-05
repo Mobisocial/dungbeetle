@@ -21,8 +21,10 @@ public class FeedViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
     static {
         sFeedViews.add(new DefaultView());
-        sFeedViews.add(new PartyView());
+        sFeedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         sFeedViews.add(new MapView());
+        sFeedViews.add(new PartyView());
+        sFeedViews.add(new PresenceView());
         //sFeedViews.add(new StatsView());
     }
 
@@ -30,10 +32,20 @@ public class FeedViews {
         return sFeedViews;
     }
 
+    public static List<FeedView> getDefaultFeedViews() {
+        List<FeedView> feedViews = new ArrayList<FeedView>();
+        feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
+        feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        feedViews.add(new PresenceView());
+        return feedViews;
+    }
+
     public static void promptForView(final Context context, final Uri feedUri) {
-        String[] items = new String[FeedViews.getFeedViews().size()];
+        String[] items = new String[getFeedViews().size()];
         int i = 0;
-        for (FeedView v : FeedViews.getFeedViews()) {
+        for (FeedView v : getFeedViews()) {
             items[i++] = v.getName();
         }
 
@@ -67,15 +79,5 @@ public class FeedViews {
                 return name;
             }
         };
-    }
-
-    public static List<FeedView> getDefaultFeedViews() {
-        List<FeedView> feedViews = new ArrayList<FeedView>();
-        feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
-        feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
-        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        feedViews.add(new PresenceView());
-        return feedViews;
     }
 }
