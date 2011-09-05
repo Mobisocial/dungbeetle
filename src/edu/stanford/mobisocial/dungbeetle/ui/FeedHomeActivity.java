@@ -170,12 +170,14 @@ public class FeedHomeActivity extends DashboardBaseActivity
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
+        setFeedUri(mFeedUri);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
+        clearFeedUri();
     }
 
     @Override

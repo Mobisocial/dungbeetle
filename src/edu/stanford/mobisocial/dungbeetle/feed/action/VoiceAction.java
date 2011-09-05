@@ -20,7 +20,7 @@ public class VoiceAction implements FeedAction { // TODO: Move to VoiceObj imple
         Intent record = new Intent();
         if (DashboardBaseActivity.getInstance().isDeveloperModeEnabled()) {
             record = new Intent(context, VoiceQuickRecordActivity.class);
-            record .putExtra("feed_uri", feedUri.toString());
+            record .putExtra("feed_uri", feedUri);
         } else {
             record.setClass(context, VoiceRecorderActivity.class);
             record.putExtra("feedUri", feedUri.toString());

@@ -11,6 +11,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -41,14 +42,18 @@ import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity.OnKeyListener;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
@@ -57,7 +62,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
  * Shows a series of posts from a feed.
  */
 public class FeedViewFragment extends ListFragment implements OnItemClickListener,
-        OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor> {
+        OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, OnKeyListener {
 
     public static final String ARG_FEED_URI = "feed_uri";
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
@@ -100,6 +105,8 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         getListView().setOnItemClickListener(this);
         getListView().setFastScrollEnabled(true);
         getListView().setOnItemLongClickListener(mLongClickListener);
+
+        DashboardBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         // getListView().setCacheColorHint(color);
     }
@@ -291,5 +298,22 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             bundle.putString("type", mType);
             bundle.putString("obj", mObj.toString());
         }
+    }
+
+    @Override
+    public boolean onKey(KeyEvent event) {
+        if (!DashboardBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            return false;
+        }
+
+        if (event.isLongPress()) {
+            if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
+                Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
+                record .putExtra("feed_uri", mFeedUri); // TODO: take a uri damn you!
+                startActivity(record);
+                return true;
+            }
+        }
+        return false;
     }
 }

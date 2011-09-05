@@ -53,7 +53,7 @@ public class VoiceQuickRecordActivity extends Activity
 
         Intent intent = getIntent();
         if (intent.hasExtra("feed_uri")) {
-            feedUri = Uri.parse(intent.getStringExtra("feed_uri"));   
+            feedUri = intent.getParcelableExtra("feed_uri");   
         } else if (intent.hasExtra("presence")) {
             presenceUris = Push2TalkPresence.getInstance().getFeedsWithPresence();
             if (presenceUris.size() == 0) {

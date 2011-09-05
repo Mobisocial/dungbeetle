@@ -18,6 +18,10 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
+/**
+ * A short audio clip. "Version 0" uses a sample rate of 8000, mono channel, and
+ * 16bit pcm recording.
+ */
 public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 	public static final String TAG = "VoiceObj";
 
@@ -57,11 +61,21 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content){
-        byte bytes[] = Base64.decode(content.optString(DATA), Base64.DEFAULT);
-        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);
-        track.write(bytes, 0, bytes.length);
-        track.play();
+    public void activate(final Context context, final JSONObject content) {
+	    new Thread() { // TODO: use handler to put on arbitrary thread
+	        @Override
+	        public void run() {
+	            byte bytes[] = Base64.decode(content.optString(DATA), Base64.DEFAULT);
+	            AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);
+	            track.write(bytes, 0, bytes.length);
+	            try { // TODO: hack.
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
+	            track.play();
+	        }
+	    }.start();
+        
     }
 
 

@@ -20,11 +20,14 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.View.OnKeyListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
@@ -96,6 +99,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onPause() {
         super.onPause();
+        mResumed = false;
     }
 
     /**
@@ -118,6 +122,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         sInstance = this;
         remoteControlRegistrar.registerRemoteControl();
         new PresenceAwareNotify(this).cancelAll();
+        mResumed = true;
     }
 
     /**
@@ -277,6 +282,62 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     public static DashboardBaseActivity getInstance() {
         return sInstance;
+    }
+
+    public RemoteControlRegistrar getRemoteControlRegistrar() {
+        return remoteControlRegistrar;
+    }
+
+    private boolean mResumed;
+    public boolean amResumed() {
+        return mResumed;
+    }
+
+    private Uri mFeedUri;
+    public void setFeedUri(Uri feedUri) {
+        mFeedUri = feedUri;
+    }
+
+    public void clearFeedUri() {
+        mFeedUri = null;
+    }
+
+    public Uri getFeedUri() {
+        return mFeedUri;
+    }
+
+    private OnKeyListener mOnKeyListener;
+    public void setOnKeyListener(OnKeyListener listener) {
+        mOnKeyListener = listener;
+    }
+
+    public interface OnKeyListener {
+        public boolean onKey(KeyEvent event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+    }
+
+    @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+    }
+
+    @Override
+    public boolean onKeyShortcut(int keyCode, KeyEvent event) {
+        return mOnKeyListener != null && mOnKeyListener.onKey(event);
     }
 }
 

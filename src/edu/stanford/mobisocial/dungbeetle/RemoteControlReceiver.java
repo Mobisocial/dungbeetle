@@ -34,7 +34,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
                 event.getAction() == KeyEvent.ACTION_DOWN) {
             if (Push2TalkPresence.getInstance().isOnCall()) {
                 Intent record = new Intent();
-                record.setClass(context, VoiceRecorderActivity.class);
+                record.setClass(context, VoiceQuickRecordActivity.class);
                 record.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 record.putExtra("presence", true);
                 context.startActivity(record);
