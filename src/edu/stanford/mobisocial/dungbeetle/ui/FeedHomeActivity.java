@@ -6,6 +6,7 @@ import java.util.List;
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -238,7 +239,7 @@ public class FeedHomeActivity extends DashboardBaseActivity
     public void onPageSelected(int position) {
         int c = mButtons.size();
         for (int i = 0; i < c; i++) {
-            mButtons.get(i).setBackgroundColor(R.color.background1);
+            mButtons.get(i).setBackgroundColor(Color.TRANSPARENT);
         }
         mButtons.get(position).setBackgroundColor(mColor);
     }
