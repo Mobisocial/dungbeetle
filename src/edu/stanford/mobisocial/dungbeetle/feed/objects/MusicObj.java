@@ -24,6 +24,7 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     public static final String ALBUM = "l";
     public static final String TRACK = "t";
     public static final String URL = "url";
+    public static final String MIME_TYPE = "mimeType";
 
     @Override
     public String getType() {
@@ -87,7 +88,11 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
         if (content.has(URL)) {
             Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));
-            view.setDataAndType(uri, "audio/x-mpegurl");
+            String type = "audio/x-mpegurl";
+            if (content.has(MIME_TYPE)) {
+                type = content.optString(MIME_TYPE);
+            }
+            view.setDataAndType(uri, type);
             if (!(context instanceof Activity)) {
                 view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }

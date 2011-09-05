@@ -20,10 +20,12 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
@@ -95,6 +98,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onPause() {
         super.onPause();
+        mResumed = false;
     }
 
     /**
@@ -116,6 +120,8 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         super.onResume();
         sInstance = this;
         remoteControlRegistrar.registerRemoteControl();
+        new PresenceAwareNotify(this).cancelAll();
+        mResumed = true;
     }
 
     /**
@@ -275,6 +281,73 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     public static DashboardBaseActivity getInstance() {
         return sInstance;
+    }
+
+    public RemoteControlRegistrar getRemoteControlRegistrar() {
+        return remoteControlRegistrar;
+    }
+
+    private boolean mResumed;
+    public boolean amResumed() {
+        return mResumed;
+    }
+
+    private Uri mFeedUri;
+    public void setFeedUri(Uri feedUri) {
+        mFeedUri = feedUri;
+    }
+
+    public void clearFeedUri() {
+        mFeedUri = null;
+    }
+
+    public Uri getFeedUri() {
+        return mFeedUri;
+    }
+
+    private KeyEvent.Callback mOnKeyListener;
+    public void setOnKeyListener(KeyEvent.Callback listener) {
+        mOnKeyListener = listener;
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyUp(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyLongPress(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyDown(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if  (mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event)) {
+                return true;
+            }
+        }
+        return super.onKeyMultiple(keyCode, repeatCount, event);
     }
 }
 

@@ -107,9 +107,12 @@
 	      ></activity>
 
     <activity android:name="NewGroupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
-    <activity android:name="VoiceRecorderActivity" 
+    <activity android:name="VoiceQuickRecordActivity" 
               android:theme="@android:style/Theme.Dialog"
               android:taskAffinity=""></activity> 
+     <activity android:name="VoiceRecorderActivity" 
+              android:theme="@android:style/Theme.Dialog"
+              android:taskAffinity=""></activity>         
     <activity android:name="DropboxBackupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
     <activity android:name="FeedActivity"  android:label="@string/title_group" ></activity> 
     <activity android:name="ProfileActivity"  android:label="@string/title_profile" ></activity> 

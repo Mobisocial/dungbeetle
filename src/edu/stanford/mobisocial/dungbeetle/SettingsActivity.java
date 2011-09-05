@@ -264,9 +264,9 @@ public class SettingsActivity extends ListActivity {
         public boolean onLongClick(View v) {
             boolean wasEnabled = DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
             if (wasEnabled) {
-                toast("Disabling developer mode...");
+                toast("Disabling developer mode.");
             } else {
-                toast("Enabling developer mode...");
+                toast("Enabling developer mode.");
             }
             DashboardBaseActivity.getInstance().setDeveloperMode(!wasEnabled);
             return true;

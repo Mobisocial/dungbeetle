@@ -49,13 +49,16 @@ public class MusicPresence extends FeedPresence {
                 String artist = intent.getStringExtra("artist");
                 String album = intent.getStringExtra("album");
                 String track = intent.getStringExtra("track");
-                String url = intent.getStringExtra("url");
                 DbObject obj = MusicObj.from(artist, album, track);
-                if (url != null) {
-                    try {
-                        obj.getJson().put(MusicObj.URL, url);
-                    } catch (JSONException e) {}
-                }
+                try {
+                    if (intent.hasExtra("url")) {
+                        obj.getJson().put(MusicObj.URL, intent.getStringExtra("url"));
+                        if (intent.hasExtra("mimeType")) {
+                            obj.getJson().put(MusicObj.MIME_TYPE,
+                                    intent.getStringExtra("mimeType"));
+                        }
+                    }
+                } catch (JSONException e) {}
                 for (Uri feedUri : getFeedsWithPresence()) {
                     Helpers.sendToFeed(context.getApplicationContext(), obj, feedUri);
                 }

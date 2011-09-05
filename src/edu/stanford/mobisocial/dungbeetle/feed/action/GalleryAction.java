@@ -49,6 +49,7 @@ public class GalleryAction implements FeedAction {
                     @Override
                     public void run() {
                         try {
+                            // TODO: mimeType; local_uri = data.toString();
                             DbObject outboundObj = PictureObj.from(mmContext, data.getData());
                             Helpers.sendToFeed(mmContext, outboundObj, mmFeedUri);
                         } catch (IOException e) {

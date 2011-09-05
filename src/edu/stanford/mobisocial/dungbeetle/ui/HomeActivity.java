@@ -310,7 +310,6 @@ public class HomeActivity extends DashboardBaseActivity {
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
-        new PresenceAwareNotify(this).cancelAll();
         pushContactInfoViaNfc();
     }
 

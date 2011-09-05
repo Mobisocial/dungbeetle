@@ -1,18 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle.ui.adapter;
 
-import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class ObjectListCursorAdapter extends CursorAdapter {
     private ContactCache mContactCache;

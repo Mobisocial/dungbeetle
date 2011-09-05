@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -26,6 +27,16 @@ public class PresenceAwareNotify {
     }
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
+
+        if (Push2TalkPresence.getInstance().isOnCall()) {
+            return;
+        }
+
+        if (DashboardBaseActivity.getInstance().amResumed()) {
+            // TODO: Filter per getInstance().getFeedUri(), but how do we get info here?
+            return;
+        }
+
         Notification notification = new Notification(
             R.drawable.icon, notificationTitle, System.currentTimeMillis());
 
@@ -56,10 +67,7 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
-
-        if (!Push2TalkPresence.getInstance().isOnCall()) {
-            mNotificationManager.notify(NOTIFY_ID, notification);
-        }
+        mNotificationManager.notify(NOTIFY_ID, notification);
     }
 
     public void cancelAll() {
