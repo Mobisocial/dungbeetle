@@ -1,28 +1,22 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
+import android.util.Base64;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.Context;
-
-
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-
-import android.util.Base64;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.net.Uri;
-
-
-
-import edu.stanford.mobisocial.dungbeetle.R;
 
 public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 	public static final String TAG = "VoiceObj";

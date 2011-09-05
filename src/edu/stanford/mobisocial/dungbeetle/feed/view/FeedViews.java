@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed;
+package edu.stanford.mobisocial.dungbeetle.feed.view;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,14 +13,11 @@ import android.support.v4.app.FragmentActivity;
 
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.DefaultView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.PartyView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.MapView;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
-public class DbViews {
+public class FeedViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
     static {
         sFeedViews.add(new DefaultView());
@@ -34,9 +31,9 @@ public class DbViews {
     }
 
     public static void promptForView(final Context context, final Uri feedUri) {
-        String[] items = new String[DbViews.getFeedViews().size()];
+        String[] items = new String[FeedViews.getFeedViews().size()];
         int i = 0;
-        for (FeedView v : DbViews.getFeedViews()) {
+        for (FeedView v : FeedViews.getFeedViews()) {
             items[i++] = v.getName();
         }
 
@@ -44,7 +41,7 @@ public class DbViews {
             .setItems(items, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    FeedView v = DbViews.getFeedViews().get(which);
+                    FeedView v = FeedViews.getFeedViews().get(which);
                     Fragment f = v.getFragment();
                     Bundle args = new Bundle();
                     args.putParcelable("feed_uri", feedUri);
@@ -74,9 +71,11 @@ public class DbViews {
 
     public static List<FeedView> getDefaultFeedViews() {
         List<FeedView> feedViews = new ArrayList<FeedView>();
-        feedViews.add(DbViews.feedViewFrom("Feed", new FeedViewFragment()));
-        //feedViews.add(DbViews.feedViewFrom("Map", new FeedMapFragment()));
-        feedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
+        feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
+        feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        feedViews.add(new PresenceView());
         return feedViews;
     }
 }

@@ -33,7 +33,7 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.DbViews;
+import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
@@ -88,7 +88,7 @@ public class FeedActionsFragment extends Fragment {
     public boolean onOptionsItemSelected (MenuItem item){
         switch (item.getItemId()) {
             case MENU_VIEW: {
-                DbViews.promptForView(getActivity(), mFeedUri);
+                FeedViews.promptForView(getActivity(), mFeedUri);
                 return true;
             }
             case MENU_SHARE: {

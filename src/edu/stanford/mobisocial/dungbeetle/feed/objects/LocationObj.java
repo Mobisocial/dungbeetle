@@ -10,13 +10,14 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
+public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoNotify {
     public static final String TYPE = "loc";
     public static final String COORD_LAT = "lat";
     public static final String COORD_LONG = "lon";

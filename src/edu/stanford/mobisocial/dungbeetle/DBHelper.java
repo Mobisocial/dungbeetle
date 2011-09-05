@@ -526,7 +526,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
             PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
-            String tag = DBIdentityProvider.makePersonIdForPublicKey(key);
+            String tag = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
             String name = cv.getAsString(Contact.NAME);
             assert (name != null) && name.length() > 0;

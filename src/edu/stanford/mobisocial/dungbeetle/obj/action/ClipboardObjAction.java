@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 public class ClipboardObjAction extends ObjAction {
     public void onAct(Context context, DbEntryHandler objType, JSONObject objData) {
-        ClipboardAction.copyToClipboard(objType.getType(), objData);
+        ClipboardAction.copyToClipboard(context, objType.getType(), objData);
         Toast.makeText(context, "Copied object to clipboard.", Toast.LENGTH_SHORT).show();
     }
 

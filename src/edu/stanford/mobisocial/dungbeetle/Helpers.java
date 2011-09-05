@@ -202,6 +202,16 @@ public class Helpers {
         c.getContentResolver().insert(feed, values); 
     }
 
+    /**
+     * A convenience method for sending an object to multiple feeds.
+     * TODO: This should be made much more efficient if it proves useful.
+     */
+    public static void sendToFeeds(Context c, DbObject obj, Collection<Uri> feeds) {
+        for (Uri feed : feeds) {
+            sendToFeed(c, obj, feed);
+        }
+    }
+
     public static void updatePresence(final Context c, final int presence){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();

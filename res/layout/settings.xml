@@ -16,7 +16,8 @@
         <ImageButton style="@style/TitleBarAction"
             android:contentDescription="@string/description_about"
             android:src="@drawable/title_about"
-            android:onClick="onClickAbout" />
+            android:onClick="onClickAbout"
+            android:id="@+id/btn_info" />
         <!--<ImageButton style="@style/TitleBarAction"
             android:contentDescription="@string/description_search"
             android:src="@drawable/title_search"

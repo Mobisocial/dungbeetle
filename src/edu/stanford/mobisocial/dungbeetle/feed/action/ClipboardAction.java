@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 
 import org.json.JSONObject;
 
+import android.text.ClipboardManager;
 import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -33,8 +34,14 @@ public class ClipboardAction implements FeedAction {
         return mJson != null;
     }
 
-    public static void copyToClipboard(String type, JSONObject json) {
+    public static void copyToClipboard(Context context, String type, JSONObject json) {
         mType = type;
         mJson = json;
+
+        if (json.has(StatusObj.TEXT)) {
+            ClipboardManager m = (ClipboardManager)context.getSystemService(
+                    Context.CLIPBOARD_SERVICE);
+            m.setText(json.optString(StatusObj.TEXT));
+        }
     }
 }

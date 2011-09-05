@@ -26,8 +26,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 public class DungBeetleContentProvider extends ContentProvider {
-	public static final String AUTHORITY = 
-        "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
+	public static final String AUTHORITY = "org.mobisocial.db";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	static final boolean DBG = false;

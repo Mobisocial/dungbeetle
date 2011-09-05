@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
+import org.json.JSONException;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.MusicObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 public class MusicPresence extends FeedPresence {
     private boolean mShareMusic = false;
@@ -44,10 +47,17 @@ public class MusicPresence extends FeedPresence {
         {
             if (mShareMusic) {
                 String artist = intent.getStringExtra("artist");
-                // String album = intent.getStringExtra("album");
+                String album = intent.getStringExtra("album");
                 String track = intent.getStringExtra("track");
+                String url = intent.getStringExtra("url");
+                DbObject obj = MusicObj.from(artist, album, track);
+                if (url != null) {
+                    try {
+                        obj.getJson().put(MusicObj.URL, url);
+                    } catch (JSONException e) {}
+                }
                 for (Uri feedUri : getFeedsWithPresence()) {
-                    Helpers.sendToFeed(context.getApplicationContext(), MusicObj.from(artist, track), feedUri);
+                    Helpers.sendToFeed(context.getApplicationContext(), obj, feedUri);
                 }
             }
         }

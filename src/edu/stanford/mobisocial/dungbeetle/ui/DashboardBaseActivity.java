@@ -30,9 +30,11 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
 
 /**
  * This is the base class for activities in the dashboard application. It
@@ -43,9 +45,11 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  */
 
 public abstract class DashboardBaseActivity extends FragmentActivity implements InstrumentedActivity {
-
+    @SuppressWarnings("unused")
+    private static final String TAG = "msb-dashbaord";
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
+    private static DashboardBaseActivity sInstance;
 
 
     /**
@@ -57,11 +61,13 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
      */
 
     protected DBHelper mHelper;
+    private RemoteControlRegistrar remoteControlRegistrar;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // setContentView(R.layout.activity_default);
+        sInstance = this;
         mHelper = new DBHelper(this);
+        remoteControlRegistrar = new RemoteControlRegistrar(this, RemoteControlReceiver.class);
     }
 
     /**
@@ -74,6 +80,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onDestroy() {
         super.onDestroy();
+        remoteControlRegistrar.unregisterRemoteControl();
     }
 
     /**
@@ -107,6 +114,8 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onResume() {
         super.onResume();
+        sInstance = this;
+        remoteControlRegistrar.registerRemoteControl();
     }
 
     /**
@@ -256,5 +265,16 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         }
     }
 
-} // end class
+    public boolean isDeveloperModeEnabled() {
+        return getSharedPreferences("main", 0).getBoolean("dev_mode", false);
+    }
+
+    public void setDeveloperMode(boolean enabled) {
+        getSharedPreferences("main", 0).edit().putBoolean("dev_mode", enabled).commit();
+    }
+
+    public static DashboardBaseActivity getInstance() {
+        return sInstance;
+    }
+}
 

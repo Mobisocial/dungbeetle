@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -55,7 +56,10 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.notify(NOTIFY_ID, notification);
+
+        if (!Push2TalkPresence.getInstance().isOnCall()) {
+            mNotificationManager.notify(NOTIFY_ID, notification);
+        }
     }
 
     public void cancelAll() {
