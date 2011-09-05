@@ -32,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
@@ -116,6 +117,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         super.onResume();
         sInstance = this;
         remoteControlRegistrar.registerRemoteControl();
+        new PresenceAwareNotify(this).cancelAll();
     }
 
     /**
