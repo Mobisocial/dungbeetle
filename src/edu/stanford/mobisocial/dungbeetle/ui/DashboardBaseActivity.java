@@ -312,22 +312,34 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKeyUp(keyCode, event);
+        if (mOnKeyListener != null) {
+            return mOnKeyListener.onKeyUp(keyCode, event);
+        }
+        return super.onKeyUp(keyCode, event);
     }
 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKeyLongPress(keyCode, event);
+        if (mOnKeyListener != null) {
+            return mOnKeyListener.onKeyLongPress(keyCode, event);
+        }
+        return super.onKeyLongPress(keyCode, event);
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKeyDown(keyCode, event);
+        if (mOnKeyListener != null) {
+            return mOnKeyListener.onKeyDown(keyCode, event);
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event);
+        if (mOnKeyListener != null) {
+            return mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event);
+        }
+        return super.onKeyMultiple(keyCode, repeatCount, event);
     }
 }
 
