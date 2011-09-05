@@ -25,7 +25,6 @@ import android.widget.Button;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
-import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
 
 public class VoiceQuickRecordActivity extends Activity
         implements RemoteControlReceiver.SpecialKeyEventHandler {
@@ -36,7 +35,6 @@ public class VoiceQuickRecordActivity extends Activity
 	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_CONFIGURATION_MONO;
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-	private RemoteControlRegistrar remoteControlRegistrar;
 	private Uri feedUri;
 	private Set<Uri> presenceUris;
 	private AudioRecord recorder = null;
@@ -59,6 +57,10 @@ public class VoiceQuickRecordActivity extends Activity
             if (presenceUris.size() == 0) {
                 presenceUris = null;
             }
+        }
+
+        if (intent.hasExtra("keydown")) {
+            findViewById(R.id.sendRecord).setVisibility(View.GONE);
         }
 
         if (presenceUris == null && feedUri == null) {
@@ -251,6 +253,7 @@ public class VoiceQuickRecordActivity extends Activity
 		}
 	};
 
+	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
 	    if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
 	        if (isRecording) {
@@ -259,11 +262,20 @@ public class VoiceQuickRecordActivity extends Activity
 	            return true;
 	        }
 	    }
-	    return false;
+	    event.startTracking();
+	    return true;
 	};
 
+	@Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            if (!event.isCanceled()) {
+                stopRecording();
+                sendRecording();
+            }
             return true;
         }
         return false;

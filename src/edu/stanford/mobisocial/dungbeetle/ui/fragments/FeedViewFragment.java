@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -27,6 +28,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.KeyEvent.DispatcherState;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -48,12 +50,10 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity.OnKeyListener;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
@@ -62,7 +62,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
  * Shows a series of posts from a feed.
  */
 public class FeedViewFragment extends ListFragment implements OnItemClickListener,
-        OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, OnKeyListener {
+        OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
     LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
@@ -301,16 +301,45 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     }
 
     @Override
-    public boolean onKey(KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            event.startTracking();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
         if (!DashboardBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
         }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
+            record.putExtra("feed_uri", mFeedUri);
+            record.putExtra("keydown", true);
+            startActivity(record);
+            return true;
+        }
+        return false;
+    }
 
-        if (event.isLongPress()) {
-            if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
-                Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
-                record .putExtra("feed_uri", mFeedUri); // TODO: take a uri damn you!
-                startActivity(record);
+    @Override
+    public boolean onKeyMultiple(int keyCode, int count, KeyEvent event) {
+        return false;
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) {
+            if (!event.isTracking()) {
+                return true;
+            }
+            if (!event.isLongPress()) {
+                AudioManager audio = (AudioManager)getActivity().getSystemService(
+                        Context.AUDIO_SERVICE);
+                audio.adjustVolume(AudioManager.ADJUST_RAISE,
+                        AudioManager.FLAG_PLAY_SOUND|AudioManager.FLAG_SHOW_UI);
                 return true;
             }
         }

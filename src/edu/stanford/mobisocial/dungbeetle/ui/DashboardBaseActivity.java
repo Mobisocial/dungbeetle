@@ -27,7 +27,6 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnKeyListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
@@ -306,38 +305,29 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         return mFeedUri;
     }
 
-    private OnKeyListener mOnKeyListener;
-    public void setOnKeyListener(OnKeyListener listener) {
+    private KeyEvent.Callback mOnKeyListener;
+    public void setOnKeyListener(KeyEvent.Callback listener) {
         mOnKeyListener = listener;
-    }
-
-    public interface OnKeyListener {
-        public boolean onKey(KeyEvent event);
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+        return mOnKeyListener != null && mOnKeyListener.onKeyUp(keyCode, event);
     }
 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+        return mOnKeyListener != null && mOnKeyListener.onKeyLongPress(keyCode, event);
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+        return mOnKeyListener != null && mOnKeyListener.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKey(event);
-    }
-
-    @Override
-    public boolean onKeyShortcut(int keyCode, KeyEvent event) {
-        return mOnKeyListener != null && mOnKeyListener.onKey(event);
+        return mOnKeyListener != null && mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event);
     }
 }
 
