@@ -3,11 +3,13 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Base64;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -62,7 +64,7 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
 
 	@Override
     public void activate(final Context context, final JSONObject content) {
-	    new Thread() { // TODO: use handler to put on arbitrary thread
+	    Runnable r = new Runnable() {
 	        @Override
 	        public void run() {
 	            byte bytes[] = Base64.decode(content.optString(DATA), Base64.DEFAULT);
@@ -74,8 +76,12 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
                 }
 	            track.play();
 	        }
-	    }.start();
-        
+	    };
+        if (context instanceof Activity) {
+            ((Activity)context).runOnUiThread(r);
+        } else {
+            r.run();
+        }
     }
 
 
