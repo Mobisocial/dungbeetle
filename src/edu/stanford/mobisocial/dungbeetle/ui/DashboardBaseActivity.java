@@ -313,7 +313,9 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (mOnKeyListener != null) {
-            return mOnKeyListener.onKeyUp(keyCode, event);
+            if (mOnKeyListener.onKeyUp(keyCode, event)) {
+                return true;
+            }
         }
         return super.onKeyUp(keyCode, event);
     }
@@ -321,7 +323,9 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
         if (mOnKeyListener != null) {
-            return mOnKeyListener.onKeyLongPress(keyCode, event);
+            if (mOnKeyListener.onKeyLongPress(keyCode, event)) {
+                return true;
+            }
         }
         return super.onKeyLongPress(keyCode, event);
     }
@@ -329,7 +333,9 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (mOnKeyListener != null) {
-            return mOnKeyListener.onKeyDown(keyCode, event);
+            if (mOnKeyListener.onKeyDown(keyCode, event)) {
+                return true;
+            }
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -337,7 +343,9 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
     @Override
     public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
         if (mOnKeyListener != null) {
-            return mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event);
+            if  (mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event)) {
+                return true;
+            }
         }
         return super.onKeyMultiple(keyCode, repeatCount, event);
     }
