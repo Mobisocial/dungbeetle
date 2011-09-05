@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.feed.action.ClipboardAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 import android.content.Context;
 import android.widget.Toast;
 
@@ -18,5 +19,10 @@ public class ClipboardObjAction extends ObjAction {
     @Override
     public String getLabel() {
         return "Copy to Clipboard";
+    }
+
+    @Override
+    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }
