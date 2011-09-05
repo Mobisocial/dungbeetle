@@ -142,13 +142,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        String arg = content.optString(ARG);
 	        String state = null;
 	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
-<<<<<<< HEAD
+	        
 	        launch.putExtra("creator_id", content.optLong("creator_id"));
-=======
 	        if (!(context instanceof Activity)) {
 	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	        }
->>>>>>> de2261116e83b3d02c02e73037f46749dd64b6e7
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
