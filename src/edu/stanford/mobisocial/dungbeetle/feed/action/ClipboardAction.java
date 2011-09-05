@@ -12,6 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 
 public class ClipboardAction implements FeedAction {
     private static JSONObject mJson;
@@ -31,7 +32,7 @@ public class ClipboardAction implements FeedAction {
 
     @Override
     public boolean isActive() {
-        return mJson != null;
+        return mJson != null && DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 
     public static void copyToClipboard(Context context, String type, JSONObject json) {
