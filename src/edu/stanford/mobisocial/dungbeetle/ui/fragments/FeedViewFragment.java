@@ -306,6 +306,12 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             event.startTracking();
             return true;
         }
+        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+            Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
+            record.putExtra("feed_uri", mFeedUri);
+            startActivity(record);
+            return true;
+        }
         return false;
     }
 

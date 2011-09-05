@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.util.Set;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -52,7 +54,7 @@ public class VoiceQuickRecordActivity extends Activity
         Intent intent = getIntent();
         if (intent.hasExtra("feed_uri")) {
             feedUri = intent.getParcelableExtra("feed_uri");   
-        } else if (intent.hasExtra("presence")) {
+        } else if (intent.hasExtra("presence_mode")) {
             presenceUris = Push2TalkPresence.getInstance().getFeedsWithPresence();
             if (presenceUris.size() == 0) {
                 presenceUris = null;
@@ -100,7 +102,7 @@ public class VoiceQuickRecordActivity extends Activity
 	}
 
 	private void notifyStartRecording() {
-	    MediaPlayer player = MediaPlayer.create(this, R.raw.videorecord);
+	    MediaPlayer player = getMediaPlayer(this, R.raw.videorecord);
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -112,7 +114,7 @@ public class VoiceQuickRecordActivity extends Activity
 	}
 
 	private void notifySendRecording() {
-        MediaPlayer player = MediaPlayer.create(this, R.raw.dontpanic);
+        MediaPlayer player = getMediaPlayer(this, R.raw.dontpanic);
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -171,7 +173,7 @@ public class VoiceQuickRecordActivity extends Activity
 		}
 	}
 	
-	private void stopRecording(){
+	private void stopRecording() {
 		if(null != recorder){
 			isRecording = false;
 			
@@ -187,6 +189,11 @@ public class VoiceQuickRecordActivity extends Activity
 	}
 
 	private void sendRecording() {
+	    if (rawBytes == null) {
+	        Log.e(TAG, "No audio bytes to send");
+	        finish();
+	        return;
+	    }
 	    notifySendRecording();
 	    if (feedUri != null) {
             Helpers.sendToFeed(getApplicationContext(), VoiceObj.from(rawBytes), feedUri);
@@ -202,7 +209,7 @@ public class VoiceQuickRecordActivity extends Activity
 		file.delete();
 	}
 	
-	private void loadIntoBytes(String inFilename){
+	private void loadIntoBytes(String inFilename) {
 		FileInputStream in = null;
 		long totalAudioLen = 0;
 		
@@ -211,8 +218,6 @@ public class VoiceQuickRecordActivity extends Activity
 			totalAudioLen = in.getChannel().size();
 
 			rawBytes = new byte[(int)totalAudioLen];
-			
-
 			track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, (int)totalAudioLen, AudioTrack.MODE_STATIC);
 	              
 			int offset = 0;
@@ -220,18 +225,46 @@ public class VoiceQuickRecordActivity extends Activity
 			while (offset < rawBytes.length
 			           && (numRead=in.read(rawBytes, offset, rawBytes.length-offset)) >= 0) {
 			        offset += numRead;
-			    }
+		    }
 			track.write(rawBytes, 0, (int)totalAudioLen);
 			// TODO: Full resolution to Content Corral (if in some mode)
 			//track.play();
 			in.close();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+		    rawBytes = null;
+		    Log.e(TAG, "Error loading audio to bytes", e);
 		} catch (IOException e) {
-			e.printStackTrace();
+		    rawBytes = null;
+		    Log.e(TAG, "Error loading audio to bytes", e);
+		} catch (IllegalArgumentException e) {
+		    rawBytes = null;
+		    Log.e(TAG, "Error loading audio to bytes", e);
 		}
 	}
 
+	private static MediaPlayer getMediaPlayer(Context context, int resid) {
+        try {
+            AssetFileDescriptor afd = context.getResources().openRawResourceFd(resid);
+            if (afd == null) return null;
+
+            MediaPlayer mp = new MediaPlayer();
+            //mp.setAudioStreamType(AudioManager.STREAM_RING);
+            mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            afd.close();
+            mp.prepare();
+            return mp;
+        } catch (IOException ex) {
+            Log.d(TAG, "create failed:", ex);
+            // fall through
+        } catch (IllegalArgumentException ex) {
+            Log.d(TAG, "create failed:", ex);
+           // fall through
+        } catch (SecurityException ex) {
+            Log.d(TAG, "create failed:", ex);
+            // fall through
+        }
+        return null;
+    }
 	
 	private View.OnClickListener btnClick = new View.OnClickListener() {
 		@Override
@@ -255,13 +288,7 @@ public class VoiceQuickRecordActivity extends Activity
 
 	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-	    if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
-	        if (isRecording) {
-	            stopRecording();
-	            sendRecording();
-	            return true;
-	        }
-	    }
+	    mSpecialEvent = false;
 	    event.startTracking();
 	    return true;
 	};
@@ -269,6 +296,10 @@ public class VoiceQuickRecordActivity extends Activity
 	@Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
+            if ((mSpecialEvent || event.isTracking()) && isRecording) {
+                stopRecording();
+                sendRecording();
+            }
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
@@ -281,16 +312,17 @@ public class VoiceQuickRecordActivity extends Activity
         return false;
     }
 
+	private boolean mSpecialEvent = false;
+
     @Override
     public boolean onSpecialKeyEvent(KeyEvent event) {
-        Log.d(TAG, "Checking event");
         int action = event.getAction();
+        mSpecialEvent = true;
         if (action == KeyEvent.ACTION_DOWN) {
             return onKeyDown(event.getKeyCode(), event);
         } else if (action == KeyEvent.ACTION_UP) {
             return onKeyUp(event.getKeyCode(), event);
         }
-        Log.d(TAG, "Not interested, thanks");
         return false;
     };
 }

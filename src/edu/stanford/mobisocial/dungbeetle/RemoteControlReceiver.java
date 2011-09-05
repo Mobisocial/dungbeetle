@@ -36,7 +36,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
                 Intent record = new Intent();
                 record.setClass(context, VoiceQuickRecordActivity.class);
                 record.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                record.putExtra("presence", true);
+                record.putExtra("presence_mode", true);
                 context.startActivity(record);
             }
         }
