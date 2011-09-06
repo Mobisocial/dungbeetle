@@ -1,28 +1,29 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import edu.stanford.mobisocial.dungbeetle.feed.objects.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import org.json.JSONObject;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.net.Uri;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONObject;
-import android.content.ContentValues;
-import android.net.Uri;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.content.Context;
 
 public class Helpers {
     public static final String TAG = "Helpers";
@@ -165,7 +166,7 @@ public class Helpers {
         try {
             sendGroupInvite(c, ids, group.get());
         } catch (NoValError e) {
-            Log.e(TAG, "Could not send group invite; no group for " + threadUri);
+            Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
         }
     }
 

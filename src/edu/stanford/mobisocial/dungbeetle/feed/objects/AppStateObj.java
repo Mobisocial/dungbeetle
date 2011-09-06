@@ -4,6 +4,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -176,6 +177,9 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 	    }
 	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
 	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+	    if (!(context instanceof Activity)) {
+	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    }
 	    context.startActivity(launch);
 	}
 
