@@ -28,6 +28,10 @@ public class PresenceAwareNotify {
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
 
+        if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
+            return;
+        }
+                
         if (Push2TalkPresence.getInstance().isOnCall()) {
             return;
         }
@@ -59,7 +63,6 @@ public class PresenceAwareNotify {
                 }
             }catch(JSONException e){}
         }
-
 
         notification.setLatestEventInfo(
             mContext, 
