@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
 
@@ -21,9 +22,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -196,20 +199,22 @@ public class HomeActivity extends MusubiBaseActivity {
 //		helper.close();
     }
 
-	
     public Uri uriFromNdef(NdefMessage... messages) {
-        if(messages.length == 0){
+        if (messages.length == 0 ||  messages[0].getRecords().length == 0) {
             return null;
         }
-        
-       return Uri.parse(new String(messages[0].getRecords()[0].getPayload()));
+
+        try {
+            return NdefFactory.parseUri(messages[0].getRecords()[0]);
+        } catch (FormatException e) {
+            return null;
+        }
     }
 
     protected void doHandleInput(Uri uri) {
         if (uri == null) {
             return;
         }
-
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
             Intent intent = new Intent(getIntent());
