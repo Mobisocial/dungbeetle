@@ -34,7 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.presence.InterruptMePresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -169,6 +169,7 @@ public class MessagingManagerThread extends Thread {
                         mAutoActivateObjHandler.handleObj(mContext, feedUri, contactID, sequenceID,
                                 DbObjects.forType(type), obj);
                     }
+
                     if (h != null && h instanceof FeedMessageHandler) {
                         ((FeedMessageHandler) h).handleFeedMessage(
                                 mContext, feedUri, contactID, sequenceID, type, obj);

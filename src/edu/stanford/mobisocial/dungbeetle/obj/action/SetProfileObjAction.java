@@ -9,7 +9,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class SetProfileObjAction extends ObjAction {
@@ -27,7 +27,7 @@ public class SetProfileObjAction extends ObjAction {
 
     @Override
     public boolean isActive(DbEntryHandler objType, JSONObject objData) {
-        if (!DashboardBaseActivity.getInstance().isDeveloperModeEnabled()) {
+        if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
         }
         return (objType instanceof PictureObj);

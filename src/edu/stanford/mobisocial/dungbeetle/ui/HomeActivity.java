@@ -47,7 +47,7 @@ import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
-public class HomeActivity extends DashboardBaseActivity {
+public class HomeActivity extends MusubiBaseActivity {
     public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
@@ -76,7 +76,7 @@ public class HomeActivity extends DashboardBaseActivity {
         } catch (ClassCastException e) {}
 
         setContentView(R.layout.activity_home);
-        DashboardBaseActivity.doTitleBar(this);
+        MusubiBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
 

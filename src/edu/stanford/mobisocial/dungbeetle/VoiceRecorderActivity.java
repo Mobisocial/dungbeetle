@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import android.content.Intent;
 import android.util.Log;
 
@@ -46,7 +47,7 @@ public class VoiceRecorderActivity extends Activity {
         enableButtons(false);
 
         Intent intent = getIntent();
-        feedUri = Uri.parse(intent.getStringExtra("feedUri"));
+        feedUri = Uri.parse(intent.getStringExtra(FeedViewFragment.ARG_FEED_URI));
         
         bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
     }

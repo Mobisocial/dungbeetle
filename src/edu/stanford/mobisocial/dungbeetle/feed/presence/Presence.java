@@ -13,7 +13,7 @@ public class Presence {
         sFeedPresence.add(new LocationPresence());
         sFeedPresence.add(new PhonePresence());
         sFeedPresence.add(Push2TalkPresence.getInstance());
-        sFeedPresence.add(InterruptMePresence.getInstance());
+        sFeedPresence.add(TVModePresence.getInstance());
     }
 
     public static List<FeedPresence> getActivePresenceTypes() {

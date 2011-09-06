@@ -4,11 +4,11 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
 
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "push2talk";
@@ -26,7 +26,7 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
 
     @Override
     public void onPresenceUpdated(final Context context, final Uri feedUri, boolean present) {
-        mEnabled = present;
+        mEnabled = getFeedsWithPresence().size() > 0;
     }
 
     public static Push2TalkPresence getInstance() {
@@ -39,20 +39,17 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     @Override
     public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
             DbEntryHandler typeInfo, JSONObject json) {
-        if (mEnabled || (DashboardBaseActivity.getInstance().isDeveloperModeEnabled() 
-                && feedUri.equals(DashboardBaseActivity.getInstance().getFeedUri()))) {
-            if (typeInfo instanceof VoiceObj) {
-                ((VoiceObj) typeInfo).activate(context, json);
-            }
+
+        if (!mEnabled || ! (typeInfo instanceof VoiceObj)) {
+            return;
+        }
+        if (DBG) Log.d(TAG, "Playing audio via push2talk");
+        if (getFeedsWithPresence().contains(feedUri)) {
+            ((VoiceObj) typeInfo).activate(context, json);
         }
     }
 
     public boolean isOnCall() {
         return mEnabled;
-    }
-
-    @Override
-    public boolean isActive() {
-        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }

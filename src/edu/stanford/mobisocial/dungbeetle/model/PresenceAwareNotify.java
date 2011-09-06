@@ -6,7 +6,7 @@ import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -32,7 +32,7 @@ public class PresenceAwareNotify {
             return;
         }
 
-        if (DashboardBaseActivity.getInstance().amResumed()) {
+        if (MusubiBaseActivity.getInstance().amResumed()) {
             // TODO: Filter per getInstance().getFeedUri(), but how do we get info here?
             return;
         }

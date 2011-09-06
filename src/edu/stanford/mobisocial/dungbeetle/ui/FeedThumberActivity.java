@@ -25,7 +25,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 
-public class FeedThumberActivity extends DashboardBaseActivity
+public class FeedThumberActivity extends MusubiBaseActivity
     implements ViewPager.OnPageChangeListener, LoaderManager.LoaderCallbacks<Cursor> {
 
     private ViewPager mFeedViewPager;

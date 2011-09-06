@@ -16,7 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 /**
  * Displays a list of all user-accessible threads (feeds).
  */
-public class FeedListActivity extends DashboardBaseActivity implements
+public class FeedListActivity extends MusubiBaseActivity implements
         FeedListFragment.OnFeedSelectedListener {
 
     private static final String FRAGMENT_FEED_ACTIONS = "feedActions";
@@ -26,7 +26,7 @@ public class FeedListActivity extends DashboardBaseActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_list);
-        DashboardBaseActivity.doTitleBar(this);
+        MusubiBaseActivity.doTitleBar(this);
         getSupportFragmentManager().beginTransaction()
             .replace(R.id.feed_list, new FeedListFragment()).commit();
         mDualPane = (null != findViewById(R.id.feed_view));

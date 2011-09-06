@@ -5,7 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -28,18 +30,21 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.google.OAuthFlowApp;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.ColorPickerDialog;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 
 
 
 public class SettingsActivity extends ListActivity {
-    String[] listItems = {"Backup to Dropbox", "Restore from Dropbox", "Backup to SD card", "Restore from SD card", "Primary Color", "Secondary Color"};//, "Wipe Data (Keep identity)", "Start from Scratch"};
+    String[] basicItems = {"Backup to Dropbox", "Restore from Dropbox", 
+            "Backup to SD card", "Restore from SD card"}; //, "Wipe Data (Keep identity)", "Start from Scratch"};
 
+    String[] devItems = {"Primary Color", "Secondary Color", "Global TV Mode"};
+    
     String TAG = "Settings";
 
 
-/*** Dashbaord stuff ***/
+    /*** Dashboard stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
@@ -68,7 +73,7 @@ public class SettingsActivity extends ListActivity {
         startActivity (new Intent(getApplicationContext(), AboutActivity.class));
     }
 
-/*** End Dashboard Stuff ***/
+    /*** End Dashboard Stuff ***/
 
 
     /** Called when the activity is first created. */
@@ -77,8 +82,18 @@ public class SettingsActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings);
         setTitleFromActivityLabel (R.id.title_text);
+
+        List<String> entries = new ArrayList<String>();
+        for (String i : basicItems) {
+            entries.add(i);
+        }
+        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            for (String i : devItems) {
+                entries.add(i);
+            }
+        }
         setListAdapter(new ArrayAdapter<String>(this, 
-        android.R.layout.simple_list_item_1, listItems));
+                android.R.layout.simple_list_item_1, entries));
 
         ListView list = getListView();
         list.setOnItemClickListener(mSettingsClicked);
@@ -240,8 +255,6 @@ public class SettingsActivity extends ListActivity {
                     break;
                 }
                 case 6:
-                    break;
-                case 7:
                     SharedPreferences p = getSharedPreferences("main", 0);
                     boolean old = p.getBoolean("autoplay", false);
                     if (old) {
@@ -262,13 +275,13 @@ public class SettingsActivity extends ListActivity {
     private OnLongClickListener mDevModeListener = new OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
-            boolean wasEnabled = DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
+            boolean wasEnabled = MusubiBaseActivity.getInstance().isDeveloperModeEnabled();
             if (wasEnabled) {
                 toast("Disabling developer mode.");
             } else {
                 toast("Enabling developer mode.");
             }
-            DashboardBaseActivity.getInstance().setDeveloperMode(!wasEnabled);
+            MusubiBaseActivity.getInstance().setDeveloperMode(!wasEnabled);
             return true;
         }
     };

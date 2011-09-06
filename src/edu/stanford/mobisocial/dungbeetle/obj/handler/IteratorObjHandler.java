@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.presence.InterruptMePresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 
 public class IteratorObjHandler extends ObjHandler {
@@ -16,7 +16,7 @@ public class IteratorObjHandler extends ObjHandler {
 
     public static IteratorObjHandler getFromNetworkHandlers() {
         IteratorObjHandler h = new IteratorObjHandler();
-        h.addHandler(InterruptMePresence.getInstance());
+        h.addHandler(TVModePresence.getInstance());
         h.addHandler(Push2TalkPresence.getInstance());
         return h;
     }

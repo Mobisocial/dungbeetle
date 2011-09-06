@@ -6,7 +6,8 @@ import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.VoiceRecorderActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
 public class VoiceAction implements FeedAction { // TODO: Move to VoiceObj implements FeedAction
 
@@ -18,13 +19,8 @@ public class VoiceAction implements FeedAction { // TODO: Move to VoiceObj imple
     @Override
     public void onClick(Context context, Uri feedUri) {
         Intent record = new Intent();
-        if (DashboardBaseActivity.getInstance().isDeveloperModeEnabled()) {
-            record = new Intent(context, VoiceQuickRecordActivity.class);
-            record .putExtra("feed_uri", feedUri);
-        } else {
-            record.setClass(context, VoiceRecorderActivity.class);
-            record.putExtra("feedUri", feedUri.toString());
-        }
+        record.setClass(context, VoiceRecorderActivity.class);
+        record.putExtra(FeedViewFragment.ARG_FEED_URI, feedUri.toString());
         context.startActivity(record);
     }
 

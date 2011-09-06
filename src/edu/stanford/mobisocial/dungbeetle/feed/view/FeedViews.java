@@ -10,10 +10,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
@@ -38,7 +37,9 @@ public class FeedViews {
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        feedViews.add(new PresenceView());
+        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            feedViews.add(new PresenceView());
+        }
         return feedViews;
     }
 

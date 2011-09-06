@@ -7,8 +7,9 @@ import android.net.Uri;
 
 public abstract class FeedPresence {
     public final LinkedHashSet<Uri> mActiveFeeds = new LinkedHashSet<Uri>();
-
     public abstract String getName();
+    protected static String TAG = "feedPresence";
+    protected final static boolean DBG = true;
 
     public final void setFeedPresence(Context context, Uri feed, boolean present) {
         if (present) {

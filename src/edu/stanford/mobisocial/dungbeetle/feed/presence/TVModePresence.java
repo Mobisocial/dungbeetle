@@ -4,37 +4,38 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
  * Automatically launches all openable content.
  */
-public class InterruptMePresence extends FeedPresence implements IObjHandler {
+public class TVModePresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "interrupt";
     private boolean mInterrupt = false;
-    private static InterruptMePresence sInstance;
+    private static TVModePresence sInstance;
 
-    private InterruptMePresence() {
+    private TVModePresence() {
 
     }
 
     @Override
     public String getName() {
-        return "Interrupt Me";
+        return "TV Mode";
     }
 
     @Override
     public void onPresenceUpdated(final Context context, final Uri feedUri, boolean present) {
-        mInterrupt = present;
+        mInterrupt = getFeedsWithPresence().size() > 0;
     }
 
-    public static InterruptMePresence getInstance() {
+    public static TVModePresence getInstance() {
         if (sInstance == null) {
-            sInstance = new InterruptMePresence();
+            sInstance = new TVModePresence();
         }
         return sInstance;
     }
@@ -44,13 +45,9 @@ public class InterruptMePresence extends FeedPresence implements IObjHandler {
             DbEntryHandler typeInfo, JSONObject json) {
         if (mInterrupt) {
             if (typeInfo instanceof Activator) {
+                if (DBG) Log.d(TAG, "activatin via tv mode");
                 ((Activator) typeInfo).activate(context, json);
             }
         }
-    }
-
-    @Override
-    public boolean isActive() {
-        return DashboardBaseActivity.getInstance().isDeveloperModeEnabled();
     }
 }

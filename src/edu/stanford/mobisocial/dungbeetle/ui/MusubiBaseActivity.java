@@ -47,12 +47,12 @@ import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
  * method for displaying a message to the screen via the Toast class.
  */
 
-public abstract class DashboardBaseActivity extends FragmentActivity implements InstrumentedActivity {
+public abstract class MusubiBaseActivity extends FragmentActivity implements InstrumentedActivity {
     @SuppressWarnings("unused")
     private static final String TAG = "msb-dashbaord";
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
-    private static DashboardBaseActivity sInstance;
+    private static MusubiBaseActivity sInstance;
 
 
     /**
@@ -248,7 +248,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(DashboardBaseActivity.this, text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MusubiBaseActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -279,7 +279,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         getSharedPreferences("main", 0).edit().putBoolean("dev_mode", enabled).commit();
     }
 
-    public static DashboardBaseActivity getInstance() {
+    public static MusubiBaseActivity getInstance() {
         return sInstance;
     }
 

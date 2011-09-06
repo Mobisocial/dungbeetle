@@ -16,7 +16,7 @@
 
 package edu.stanford.mobisocial.dungbeetle;
 
-import edu.stanford.mobisocial.dungbeetle.ui.DashboardBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import android.os.Bundle;
 
 /**
@@ -25,7 +25,7 @@ import android.os.Bundle;
  *
  */
 
-public class AboutActivity extends DashboardBaseActivity 
+public class AboutActivity extends MusubiBaseActivity 
 {
 
 /**
@@ -45,7 +45,7 @@ protected void onCreate(Bundle savedInstanceState)
     super.onCreate(savedInstanceState);
 
     setContentView (R.layout.activity_about);
-    DashboardBaseActivity.doTitleBar(this);
+    MusubiBaseActivity.doTitleBar(this);
 }
     
 } // end class
