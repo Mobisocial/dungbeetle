@@ -809,8 +809,11 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryGroups() {
-        String selection = Group.PARENT_FEED_ID + " = -1 ";
-        Cursor c = getReadableDatabase().query("groups", null, selection, null, null, null, null);
+        String selection = DbObject.FEED_NAME + " not in " +
+                "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
+                " where " + DbObject.CHILD_FEED_NAME + " is not null)";
+        //Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, null, null, Group.NAME + " ASC", null);
+        Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, null, null, null, Group.NAME + " ASC", null);
         return c;
     }
 
