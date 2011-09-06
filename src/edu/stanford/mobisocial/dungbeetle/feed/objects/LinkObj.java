@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -98,6 +99,9 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
                 intent.setDataAndType(uri, type);
             } else {
                 intent.setData(uri);
+            }
+            if (!(context instanceof Activity)) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }
             context.startActivity(intent);
         }
