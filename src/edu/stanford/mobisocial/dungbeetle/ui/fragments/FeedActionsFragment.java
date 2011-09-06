@@ -51,6 +51,7 @@ public class FeedActionsFragment extends Fragment {
     private Uri mFeedUri;
     private Uri mExternalFeedUri;
     private String mGroupName;
+    private boolean mDualPane;
 
     private static final int REQUEST_BT_BROADCAST = 2;
     private static final int REQUEST_BT_ENABLE = 3;
@@ -59,10 +60,11 @@ public class FeedActionsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        if (!getArguments().containsKey("feed_uri")) {
+        if (!getArguments().containsKey(FeedViewFragment.ARG_FEED_URI)) {
             throw new IllegalArgumentException("FeedActionFragment created with no feed_uri argument.");
         }
-        mFeedUri = getArguments().getParcelable("feed_uri");
+        mFeedUri = getArguments().getParcelable(FeedViewFragment.ARG_FEED_URI);
+        mDualPane = getArguments().getBoolean(FeedViewFragment.ARG_DUAL_PANE, false);
 
         Maybe<Group> maybeG = Group.forFeed(getActivity(), mFeedUri.getLastPathSegment());
         try {
@@ -75,10 +77,13 @@ public class FeedActionsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem item;
-        /*item = menu.add(0, MENU_VIEW, 0, "View");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-        }*/
+        Log.d(TAG, "creating menu " + mDualPane);
+        if (mDualPane) {
+            item = menu.add(0, MENU_VIEW, 0, "View");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            }
+        }
         item = menu.add(0, MENU_SHARE, 0, "Share");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);

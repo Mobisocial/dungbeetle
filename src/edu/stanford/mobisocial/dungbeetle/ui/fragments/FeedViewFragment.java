@@ -65,8 +65,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
-    LayoutParams LAYOUT_FULL_WIDTH = new LayoutParams(
-            LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
+    public static final String ARG_DUAL_PANE = "dual_pane";
 
     private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
