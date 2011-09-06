@@ -133,7 +133,8 @@ public class MessagingManagerThread extends Thread {
         try {
             JSONObject obj = new JSONObject(contents);
             String feedName = obj.getString("feedName");
-            if (mHelper.queryAlreadyReceived(encoded)) {
+            Log.w(TAG, "encoded length: " + encoded.length);
+            if (encoded.length > 200000 || mHelper.queryAlreadyReceived(encoded)) {
                 if (DBG) Log.i(TAG, "Message already received. " + contents);
                 return;
             }
