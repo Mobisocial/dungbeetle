@@ -33,26 +33,26 @@ public class NewGroupActivity extends Activity {
         mHelper = new DBHelper(this);
 
 		((Button)findViewById(R.id.newGroupOk)).setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        String groupName = ((EditText)findViewById(R.id.newGroupName)).getText().toString();
-                        Group g;
-                        if(groupName.length() > 0) {
-                            g = Group.create(NewGroupActivity.this, groupName, mHelper);
-                        } else {
-                            g = Group.create(NewGroupActivity.this);
-                        }
+            public void onClick(View v) {
+                String groupName = ((EditText)findViewById(R.id.newGroupName)).getText().toString();
+                Group g;
+                if(groupName.length() > 0) {
+                    g = Group.create(NewGroupActivity.this, groupName, mHelper);
+                } else {
+                    g = Group.create(NewGroupActivity.this);
+                }
 
-                        Uri feedUri = Feed.uriForName(g.feedName);
-                        Helpers.sendToFeed(NewGroupActivity.this,
-                                StatusObj.from("Welcome to " + g.name + "!"), feedUri);
-                        Feed.view(NewGroupActivity.this, feedUri);
-                        NewGroupActivity.this.finish();
-                    }
-                });
+                Uri feedUri = Feed.uriForName(g.feedName);
+                Helpers.sendToFeed(NewGroupActivity.this,
+                        StatusObj.from("Welcome to " + g.name + "!"), feedUri);
+                Feed.view(NewGroupActivity.this, feedUri);
+                NewGroupActivity.this.finish();
+            }
+        });
         ((Button)findViewById(R.id.newGroupCancel)).setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        NewGroupActivity.this.finish();
-                    }
-                });
+            public void onClick(View v) {
+                NewGroupActivity.this.finish();
+            }
+        });
     }
 }
