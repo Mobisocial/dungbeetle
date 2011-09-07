@@ -809,14 +809,10 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryGroups() {
-        /*String selection = DbObject.FEED_NAME + " not in " +
+        String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
-          String selectionArgs*/
-        String selection = DbObject.FEED_NAME + " not in " +
-                "(select " + DbObject.FEED_NAME + " from " + DbObject.TABLE +
-                " where " + DbObject.APP_ID + " != ?)";
-        String[] selectionArgs = { DungBeetleContentProvider.SUPER_APP_ID };
+        String[] selectionArgs = null;
         //Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, null, null, Group.NAME + " ASC", null);
         Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, selectionArgs, null, null, Group.NAME + " ASC", null);
         return c;
