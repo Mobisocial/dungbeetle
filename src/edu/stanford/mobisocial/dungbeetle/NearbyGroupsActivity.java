@@ -45,6 +45,8 @@ import android.view.ViewGroup;
 import android.view.LayoutInflater;
 import android.view.View.OnClickListener;
 
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+
 public class NearbyGroupsActivity extends ListActivity {
     ArrayList<GroupItem> mGroupList = new ArrayList<GroupItem>();
     
@@ -113,27 +115,32 @@ public class NearbyGroupsActivity extends ListActivity {
         mAdapter = new GroupAdapter(this, R.layout.nearby_groups_item, mGroupList);
         setListAdapter(mAdapter);
 
-        new AlertDialog.Builder(this)
-            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            new AlertDialog.Builder(this)
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            finish();
+                        }
+                    })
+                .setTitle("Choose method...")
+                .setItems(new String[] { "Bluetooth" , "Gps" }, new DialogInterface.OnClickListener() {
                     @Override
-                    public void onCancel(DialogInterface dialog) {
-                        finish();
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                findBluetooth();
+                                break;
+                            case 1:
+                                promptGps();
+                                break;
+                        }
                     }
-                })
-            .setTitle("Choose method...")
-            .setItems(new String[] { "Bluetooth" , "Gps" }, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            findBluetooth();
-                            break;
-                        case 1:
-                            promptGps();
-                            break;
-                    }
-                }
-            }).create().show();
+                }).create().show();
+        }
+        else {
+            promptGps();
+        }
     }
 
     

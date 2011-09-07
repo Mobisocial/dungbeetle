@@ -40,6 +40,8 @@ import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+
 /**
  * A UI-less fragment that adds feed actions to the menu and action bar.
  */
@@ -160,21 +162,26 @@ public class FeedActionsFragment extends Fragment {
     }
 
     private void broadcastNearby() {
-        new AlertDialog.Builder(getActivity())
-            .setTitle("Share thread...")
-            .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            requestBluetooth();
-                            break;
-                        case 1:
-                            broadcastGps();
-                            break;
+        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            new AlertDialog.Builder(getActivity())
+                .setTitle("Share thread...")
+                .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                requestBluetooth();
+                                break;
+                            case 1:
+                                broadcastGps();
+                                break;
+                        }
                     }
-                }
-            }).show();
+                }).show();
+        }
+        else {
+            broadcastGps();
+        }
     }
 
     private void showQR() {
