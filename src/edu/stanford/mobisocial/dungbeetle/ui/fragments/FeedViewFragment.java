@@ -57,6 +57,9 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 /**
  * Shows a series of posts from a feed.
@@ -306,6 +309,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             event.startTracking();
             return true;
         }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            event.startTracking();
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
             Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
             record.putExtra("feed_uri", mFeedUri);
@@ -327,6 +334,20 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             startActivity(record);
             return true;
         }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            final Context context = getActivity();
+            ((InstrumentedActivity)context).doActivityForResult(new PhotoTaker(
+                context, 
+                new PhotoTaker.ResultHandler() {
+                    @Override
+                    public void onResult(byte[] data) {
+                        DbObject obj = PictureObj.from(data);
+                        Helpers.sendToFeed(
+                            context, obj, mFeedUri);
+                    }
+                }, 200, true));
+            return true;
+        }
         return false;
     }
 
@@ -345,6 +366,18 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
                 AudioManager audio = (AudioManager)getActivity().getSystemService(
                         Context.AUDIO_SERVICE);
                 audio.adjustVolume(AudioManager.ADJUST_RAISE,
+                        AudioManager.FLAG_PLAY_SOUND|AudioManager.FLAG_SHOW_UI);
+                return true;
+            }
+        }
+        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (!event.isTracking()) {
+                return true;
+            }
+            if (!event.isLongPress()) {
+                AudioManager audio = (AudioManager)getActivity().getSystemService(
+                        Context.AUDIO_SERVICE);
+                audio.adjustVolume(AudioManager.ADJUST_LOWER,
                         AudioManager.FLAG_PLAY_SOUND|AudioManager.FLAG_SHOW_UI);
                 return true;
             }
