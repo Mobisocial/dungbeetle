@@ -143,11 +143,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            // TODO, this hack relies on the fragments having all
-            // ui-populating code in onActivityCreated().
-            for (Fragment f : mFragments) {
-                f.onActivityCreated(null);
-            }
+            // TODO: Refresh activity, especially 'view profile'.
         }
     }
 

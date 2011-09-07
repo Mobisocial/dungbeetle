@@ -44,6 +44,7 @@
 	  />
 
       <LinearLayout android:id="@+id/object_content"
+            android:orientation="vertical"
 		    android:layout_width="fill_parent"
 		    android:layout_height="wrap_content"
 		    android:layout_marginLeft="8dip"
