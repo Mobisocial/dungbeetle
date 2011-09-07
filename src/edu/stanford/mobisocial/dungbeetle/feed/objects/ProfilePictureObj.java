@@ -7,6 +7,7 @@ import android.util.Base64;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
@@ -15,6 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,12 +53,14 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content) {
+	    TextView textView = new TextView(context);
+	    textView.setText("New profile picture:");
+	    textView.setLayoutParams(CommonLayouts.FULL_WIDTH);
 		ImageView imageView = new ImageView(context);
-        imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        imageView.setLayoutParams(CommonLayouts.WRAPPED);
         String bytes = content.optString(DATA);
         App.instance().objectImages.lazyLoadImage(bytes.hashCode(), bytes, imageView);
+        frame.addView(textView);
         frame.addView(imageView);
 	}
 
