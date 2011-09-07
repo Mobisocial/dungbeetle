@@ -115,7 +115,9 @@
               android:taskAffinity=""></activity>         
     <activity android:name="DropboxBackupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
     <activity android:name="FeedActivity"  android:label="@string/title_group" ></activity> 
-    <activity android:name=".ui.MyProfileActivity"  android:label="@string/title_profile" ></activity> 
+    <activity android:name=".ui.ViewContactActivity"
+    	android:label="@string/title_profile" 
+    	android:windowSoftInputMode="stateHidden" /> 
     <activity android:name="AddGroupActivity"  android:label="@string/app_name" ></activity> 
     <activity android:name="FriendsActivity"  android:label="@string/title_friends" ></activity>
     <activity android:name="GroupsActivity"  android:label="@string/title_groups" ></activity> 
@@ -135,9 +137,8 @@
 		      <data android:mimeType="vnd.mobisocial.db/feed" />
 	      </intent-filter>
 	      </activity> 
-    <activity android:name="ViewContactActivity"  android:label="@string/title_friend" ></activity>
-    <activity android:name="ViewContactTabActivity"  android:label="@string/title_friend" >
-      <intent-filter>
+    <activity android:name="ViewContactActivity"  android:label="@string/title_friend" >
+       <intent-filter>
 	      <action android:name="android.intent.action.VIEW"/>
 	      <category android:name="android.intent.category.DEFAULT" />
 	      <data android:mimeType="vnd.mobisocial.db/contact" />

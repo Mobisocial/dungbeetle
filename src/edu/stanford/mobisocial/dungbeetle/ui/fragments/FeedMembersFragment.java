@@ -35,7 +35,6 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
-import edu.stanford.mobisocial.dungbeetle.ViewContactTabActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -107,22 +106,10 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         return true;
     }
 
-
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-        final Contact c = new Contact(cursor);
-
-        Intent viewContactIntent = new Intent(getActivity(), ViewContactTabActivity.class);
-        viewContactIntent.putExtra("contact_id", c.id);
-        viewContactIntent.putExtra("contact_name", c.name);
-
-        Intent intent = getActivity().getIntent();
-        if(intent.hasExtra("group_name")) {
-            viewContactIntent.putExtra("group_name", intent.getStringExtra("group_name"));
-        }
-        
-        startActivity(viewContactIntent);
+        new Contact(cursor).view(getActivity());
     }
 
     @Override

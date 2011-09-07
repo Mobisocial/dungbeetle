@@ -13,4 +13,5 @@
     <color name="background2">#ffffffff</color>
     <color name="background3">#ffffffff</color>
     <color name="title_separator">#00ffffff</color>
+    <color name="default_tab_selected">#ff6495ed</color>
 </resources>

@@ -32,7 +32,6 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
  * Represents a group by showing its feed and members.
- * TODO: Accept only a group_id extra and query for other parameters.
  */
 public class FeedHomeActivity extends MusubiBaseActivity
         implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {

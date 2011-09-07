@@ -352,7 +352,7 @@ public class HomeActivity extends MusubiBaseActivity {
                 startActivity(intent);
                 break;
             case R.id.home_btn_profile:
-                intent = new Intent().setClass(getApplicationContext(), MyProfileActivity.class);
+                intent = new Intent().setClass(getApplicationContext(), ViewContactActivity.class);
                 intent.putExtra("contact_id", Contact.MY_ID);
                 startActivity(intent);
                 break;
