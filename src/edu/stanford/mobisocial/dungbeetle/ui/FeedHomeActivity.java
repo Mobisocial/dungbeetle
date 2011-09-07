@@ -32,7 +32,6 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
  * Represents a group by showing its feed and members.
- * TODO: Accept only a group_id extra and query for other parameters.
  */
 public class FeedHomeActivity extends MusubiBaseActivity
         implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
@@ -62,36 +61,10 @@ public class FeedHomeActivity extends MusubiBaseActivity
 
         mFeedViews = FeedViews.getDefaultFeedViews();
 
-        // Create top-level tabs
-        //Resources res = getResources();
-        // res.getDrawable(R.drawable.icon)
-
         Intent intent = getIntent();
-        Long group_id = null;
         String feed_name = null;
         String dyn_feed_uri = null;
-        // TODO: Depracate extras-based access in favor of Data field.
-        if (intent.hasExtra("group_id")) {
-            group_id = intent.getLongExtra("group_id", -1);
-            mGroupName = intent.getStringExtra("group_name");
-            feed_name = mGroupName;
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                feed_name = g.feedName;
-            } catch (Exception e) {}
-            dyn_feed_uri = intent.getStringExtra("group_uri");
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
-            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                feed_name = g.feedName;
-                dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
-            } catch (Exception e) {}
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Feed.MIME_TYPE)) {
+        if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
             Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feedUri.getLastPathSegment());
             try {
@@ -99,21 +72,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
                 mGroupName = g.name;
                 feed_name = g.feedName;
                 dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
             } catch (Exception e) {}
-        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
-            String feedName = getIntent().getData().getLastPathSegment();
-            Maybe<Group>maybeG = Group.forFeedName(this, feedName);
-            Group g = null;
-            try {
-               g = maybeG.get();
-            } catch (Exception e) {
-                g = Group.createForFeed(this, feedName);
-            }
-            mGroupName = g.name;
-            feed_name = g.feedName;
-            dyn_feed_uri = g.dynUpdateUri;
-            group_id = g.id;
         }
 
         if (dyn_feed_uri != null) {
@@ -224,8 +183,6 @@ public class FeedHomeActivity extends MusubiBaseActivity
         public Fragment getItem(int position) {
             return mFragments.get(position);
         }
-
-        
     }
 
     @Override

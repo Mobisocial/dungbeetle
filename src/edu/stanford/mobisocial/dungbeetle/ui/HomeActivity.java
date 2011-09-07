@@ -38,7 +38,6 @@ import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
@@ -353,7 +352,7 @@ public class HomeActivity extends MusubiBaseActivity {
                 startActivity(intent);
                 break;
             case R.id.home_btn_profile:
-                intent = new Intent().setClass(getApplicationContext(), ProfileActivity.class);
+                intent = new Intent().setClass(getApplicationContext(), ViewContactActivity.class);
                 intent.putExtra("contact_id", Contact.MY_ID);
                 startActivity(intent);
                 break;

@@ -70,6 +70,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public static final String ARG_FEED_URI = "feed_uri";
     public static final String ARG_DUAL_PANE = "dual_pane";
 
+    private boolean DBG = false;
     private ListAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
@@ -116,7 +117,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
+        if (DBG) Log.d(TAG, "Activity created: " + getActivity());
         mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }

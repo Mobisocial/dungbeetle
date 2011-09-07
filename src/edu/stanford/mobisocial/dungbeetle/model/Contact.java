@@ -7,10 +7,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.ViewContactTabActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.ViewContactActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 
@@ -110,28 +111,22 @@ public class Contact implements Serializable{
     }
 
     public static void view(Activity foreground, Long contactId) {
-        Intent launch = null;
-
-        if (contactId == MY_ID) {
-            launch = new Intent().setClass(foreground, ProfileActivity.class);
-            launch.putExtra("contact_id", Contact.MY_ID);
-        } else {
-            launch = new Intent(foreground, ViewContactTabActivity.class);
-            launch.putExtra("contact_id", contactId);
-
-            
-            try {
-                Maybe<Contact> maybeContact = forId(foreground, contactId);
-                launch.putExtra("contact_name", maybeContact.get().name);
-            }
-            catch (Exception e) {
-            }
-            
-            /*launch = new Intent(Intent.ACTION_VIEW);
-            Uri ref = Uri.parse("content://mobisocial.db/contact").buildUpon().appendPath(""+contactId).build();
-            launch.setDataAndType(ref, Contact.MIME_TYPE);*/
-        }
-
+        Intent launch = new Intent().setClass(foreground, ViewContactActivity.class);
+        launch.putExtra("contact_id", contactId);
         foreground.startActivity(launch);
+    }
+
+    public void view(Activity foreground) {
+        view(foreground, id);
+    }
+
+    public Intent intentForViewing(Context context) {
+        Intent launch = new Intent().setClass(context, ViewContactActivity.class);
+        launch.putExtra("contact_id", id);
+        return launch;
+    }
+
+    public Uri getFeedUri() {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
     }
 }

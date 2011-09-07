@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
@@ -54,6 +55,7 @@ import android.net.Uri;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
+	private static final boolean DBG = true;
 	public static final String DB_NAME = "MUSUBI.db";
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
@@ -370,28 +372,6 @@ public class DBHelper extends SQLiteOpenHelper {
         Log.d(TAG, "Generated priv key: **************");
     }
 
-    public void generateAndStorePersonalInfo(){
-        SQLiteDatabase db = getWritableDatabase();
-
-        String email = getUserEmail();
-        String name = email; // How to get this?
-
-        KeyPair keypair = DBIdentityProvider.generateKeyPair();
-        PrivateKey privateKey = keypair.getPrivate();
-        PublicKey publicKey = keypair.getPublic();
-        String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-        String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.PUBLIC_KEY, pubKeyStr);
-        cv.put(MyInfo.PRIVATE_KEY, privKeyStr);
-        cv.put(MyInfo.NAME, name);
-        cv.put(MyInfo.EMAIL, email);
-        db.insertOrThrow(MyInfo.TABLE, null, cv);
-        Log.d(TAG, "Generated public key: " + pubKeyStr);
-        Log.d(TAG, "Generated priv key: **************");
-    }
-    
-
     private String getUserEmail(){
         Account[] accounts = AccountManager.get(mContext).getAccounts();
         String possibleEmail = "NA";
@@ -403,34 +383,30 @@ public class DBHelper extends SQLiteOpenHelper {
         return possibleEmail;
     }
 
-    void setMyName(String name) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.NAME, name);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
-    void setMyEmail(String email) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.EMAIL, email);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
     long addToOutgoing(String appId, String to, String type, JSONObject json){
         return addToOutgoing(getWritableDatabase(), 
                              appId, to, type, json);
     }
-    
+
+    void prepareForSending(JSONObject json, String type, long timestamp, String appId)
+            throws JSONException {
+        json.put("type", type);
+        json.put("feedName", "friend");
+        json.put("timestamp", timestamp);
+        json.put("appId", appId);
+    }
+
     long addToOutgoing(
         SQLiteDatabase db, String appId, String to, String type, JSONObject json) {
+        if (DBG) {
+            Log.d(TAG, "Adding to outgoing; to: " + to + ", json: " + json);
+        }
         try{
             long timestamp = new Date().getTime();
-            json.put("type", type);
-            json.put("feedName", "direct");
-            json.put("timestamp", timestamp);
-            json.put("appId", appId);
+            prepareForSending(json, type, timestamp, appId);
             ContentValues cv = new ContentValues();
             cv.put(DbObject.APP_ID, appId);
-            cv.put(DbObject.FEED_NAME, "direct");
+            cv.put(DbObject.FEED_NAME, "friend");
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
             cv.put(DbObject.DESTINATION, to);
             cv.put(DbObject.TYPE, type);
@@ -510,7 +486,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return seqId;
         }
         catch(Exception e){
-            Log.e(TAG, e.getMessage());
+            if (DBG) Log.e(TAG, "Error adding object by json.", e);
             return -1;
         }
     }
@@ -637,6 +613,19 @@ public class DBHelper extends SQLiteOpenHelper {
             String[] selectionArgs, String sortOrder) {
 
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
+            select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
+        }
+
+        return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+                null, null, sortOrder, null);
+    }
+
+    public Cursor queryFriend(String realAppId, Long contactId, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder) {
+
+        String select = andClauses(selection, DbObject.CONTACT_ID + " in ("
+                + contactId + "," + Contact.MY_ID + ") AND " + DbObject.FEED_NAME + " = 'friend'");
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }

@@ -8,6 +8,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
@@ -37,7 +38,7 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
+    public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
             DbEntryHandler typeInfo, JSONObject json) {
 
         if (!mEnabled || ! (typeInfo instanceof VoiceObj)) {

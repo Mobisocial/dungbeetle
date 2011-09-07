@@ -3,15 +3,14 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Random;
 
 import org.json.JSONObject;
 
-import android.content.SharedPreferences;
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
-import android.widget.HorizontalScrollView;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 
@@ -68,5 +67,12 @@ public class Feed extends DbObject {
 
     public static Uri uriForList() {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+    }
+
+    public static void view(Activity foreground, Uri feedUri) {
+        Log.d("MMSSBB",  "viewing " + feedUri);
+        Intent launch = new Intent(Intent.ACTION_VIEW);
+        launch.setDataAndType(feedUri, MIME_TYPE);
+        foreground.startActivity(launch);
     }
 }

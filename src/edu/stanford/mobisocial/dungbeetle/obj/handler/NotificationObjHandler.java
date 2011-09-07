@@ -26,9 +26,9 @@ public class NotificationObjHandler extends ObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, long contactId,
+    public void handleObj(Context context, Uri feedUri, Contact contact,
             long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
-        if (contactId == Contact.MY_ID) {
+        if (contact.id == Contact.MY_ID) {
             return;
         }
 
@@ -40,19 +40,27 @@ public class NotificationObjHandler extends ObjHandler {
             return;
         }
 
-        Maybe<Group> group = mHelper.groupForFeedName(feedUri.getLastPathSegment());
-        if (group.isKnown()) {
+        String feedName = feedUri.getLastPathSegment();
+        if ("friend".equals(feedName)) {
+            Intent launch = contact.intentForViewing(context);
+            PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+                    launch, PendingIntent.FLAG_CANCEL_CURRENT);
+            (new PresenceAwareNotify(context)).notify("New Musubi message",
+                    "New Musubi message", "From " + contact.name,
+                    contentIntent);
+        } else {
+            Maybe<Group> group = mHelper.groupForFeedName(feedName);
             Intent launch = new Intent(Intent.ACTION_VIEW);
             launch.setClass(context, FeedListActivity.class);
             PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
                     launch, PendingIntent.FLAG_CANCEL_CURRENT);
-
+    
             try {
                 (new PresenceAwareNotify(context)).notify("New Musubi message",
                         "New Musubi message", "In " + ((Group) group.get()).name,
                         contentIntent);
             } catch (NoValError e) {
-                Log.e(TAG, "No group while notifying for " + feedUri.getLastPathSegment());
+                Log.e(TAG, "No group while notifying for " + feedName);
             }
         }
     }

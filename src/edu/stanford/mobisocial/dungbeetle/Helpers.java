@@ -122,6 +122,16 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void sendMessage(final Context c, long contactId, JSONObject obj, String type) {
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, type);
+        String to = Long.toString(contactId);
+        values.put(DbObject.DESTINATION, to);
+        c.getContentResolver().insert(url, values);
+    }
+
     public static void sendMessage(final Context c,
                                    final Collection<Contact> contacts,
                                    final DbObject obj) {
