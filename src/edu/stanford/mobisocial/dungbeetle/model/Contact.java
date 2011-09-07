@@ -7,7 +7,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.ui.ViewContactActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -116,5 +118,9 @@ public class Contact implements Serializable{
 
     public void view(Activity foreground) {
         view(foreground, id);
+    }
+
+    public Uri getFeedUri() {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
     }
 }

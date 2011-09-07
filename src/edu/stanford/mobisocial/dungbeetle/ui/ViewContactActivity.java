@@ -51,15 +51,16 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener {
-    private Handler handler = new Handler();
     @SuppressWarnings("unused")
     private static final String TAG = "ProfileActivity";
     private long mContactId;
+    private Handler mHandler = new Handler();
 
     private ViewPager mViewPager;
     private final List<Button> mButtons = new ArrayList<Button>();
     private final List<Fragment> mFragments = new ArrayList<Fragment>();
     private final List<String> mLabels = new ArrayList<String>();
+    ProfileContentObserver mProfileContentObserver;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,13 +83,15 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             try {
                 Contact contact = Contact.forId(this, mContactId).get();
                 title = contact.name;
-                feedUri = null; // TODO: contact.getFeedUri();
+                feedUri = contact.getFeedUri();
             } catch (NoValError e) {}
             doTitleBar(this, title);
-            //mLabels.add("Feed");
+            mLabels.add("Feed");
             mLabels.add("Profile");
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
-            //mFragments.add(new FeedViewFragment());
+            Fragment feedView = new FeedViewFragment();
+            feedView.setArguments(args);
+            mFragments.add(feedView);
             mFragments.add(profileFragment);
         }
 
@@ -113,11 +116,18 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         }
 
         // Listen for future changes
-        ProfileContentObserver profileContentObserver = new ProfileContentObserver(handler);
+        mProfileContentObserver = new ProfileContentObserver(mHandler);
         getContentResolver().registerContentObserver(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
-            true, profileContentObserver);
+            true, mProfileContentObserver);
+
         onPageSelected(0);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getContentResolver().unregisterContentObserver(mProfileContentObserver);
     }
 
     private class ProfileContentObserver extends ContentObserver {
@@ -243,7 +253,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
 
+        @Override
+        public void onDestroyView() {
+            super.onDestroyView();
         }
     }
 
@@ -265,7 +279,25 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             mContactId = getArguments().getLong("contact_id");
-            return getProfileView(inflater, container);
+            View v = inflater.inflate(R.layout.view_self_profile, container, false);
+            mIcon = (ImageView) v.findViewById(R.id.icon);
+            if (mContactId == Contact.MY_ID) {
+                mIcon.setOnClickListener(new OnClickListener() {
+                    public void onClick(View v) {
+                        Toast.makeText(getActivity(), "Loading camera...", Toast.LENGTH_SHORT)
+                                .show();
+                        ((InstrumentedActivity) getActivity()).doActivityForResult(new PhotoTaker(
+                                getActivity(), new PhotoTaker.ResultHandler() {
+                                    @Override
+                                    public void onResult(byte[] data) {
+                                        Helpers.updatePicture(getActivity(), data);
+                                        // updateProfileToGroups();
+                                    }
+                                }, 200, false));
+                    }
+                });
+            }
+            return v;
         }
 
         @Override
@@ -320,7 +352,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 }
 
                 Uri profileUri = Uri
-                        .parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head");
+                        .parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head");
                 c = getActivity().getContentResolver().query(profileUri, null, DbObject.TYPE + "=?",
                         new String[] {
                             ProfilePictureObj.TYPE
@@ -348,28 +380,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                             contact, mIcon, 200);
                 } catch (NoValError e) {}
             }
-        }
-
-        private View getProfileView(LayoutInflater inflater, ViewGroup container) {
-            View v = inflater.inflate(R.layout.view_self_profile, container, false);
-            mIcon = (ImageView) v.findViewById(R.id.icon);
-            if (mContactId == Contact.MY_ID) {
-                mIcon.setOnClickListener(new OnClickListener() {
-                    public void onClick(View v) {
-                        Toast.makeText(getActivity(), "Loading camera...", Toast.LENGTH_SHORT)
-                                .show();
-                        ((InstrumentedActivity) getActivity()).doActivityForResult(new PhotoTaker(
-                                getActivity(), new PhotoTaker.ResultHandler() {
-                                    @Override
-                                    public void onResult(byte[] data) {
-                                        Helpers.updatePicture(getActivity(), data);
-                                        // updateProfileToGroups();
-                                    }
-                                }, 200, false));
-                    }
-                });
-            }
-            return v;
         }
 
         private class PresenceOnItemSelectedListener implements OnItemSelectedListener {

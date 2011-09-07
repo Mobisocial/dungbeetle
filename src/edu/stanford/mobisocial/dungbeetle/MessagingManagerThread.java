@@ -51,7 +51,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
-    public static final boolean DBG = false;
+    public static final boolean DBG = true;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
@@ -149,6 +149,7 @@ public class MessagingManagerThread extends Thread {
             if (contact.isKnown()) {
                 long sequenceID;
                 long contactID = contact.get().id;
+                // Insert into the database. (TODO: Handler, both android.os and musubi.core)
 				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
                 Uri feedUri = Feed.uriForName(feedName);
                 mContext.getContentResolver().notifyChange(feedUri, null);
