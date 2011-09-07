@@ -370,28 +370,6 @@ public class DBHelper extends SQLiteOpenHelper {
         Log.d(TAG, "Generated priv key: **************");
     }
 
-    public void generateAndStorePersonalInfo(){
-        SQLiteDatabase db = getWritableDatabase();
-
-        String email = getUserEmail();
-        String name = email; // How to get this?
-
-        KeyPair keypair = DBIdentityProvider.generateKeyPair();
-        PrivateKey privateKey = keypair.getPrivate();
-        PublicKey publicKey = keypair.getPublic();
-        String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-        String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.PUBLIC_KEY, pubKeyStr);
-        cv.put(MyInfo.PRIVATE_KEY, privKeyStr);
-        cv.put(MyInfo.NAME, name);
-        cv.put(MyInfo.EMAIL, email);
-        db.insertOrThrow(MyInfo.TABLE, null, cv);
-        Log.d(TAG, "Generated public key: " + pubKeyStr);
-        Log.d(TAG, "Generated priv key: **************");
-    }
-    
-
     private String getUserEmail(){
         Account[] accounts = AccountManager.get(mContext).getAccounts();
         String possibleEmail = "NA";
@@ -401,18 +379,6 @@ public class DBHelper extends SQLiteOpenHelper {
             }
         }
         return possibleEmail;
-    }
-
-    void setMyName(String name) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.NAME, name);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
-    void setMyEmail(String email) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.EMAIL, email);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
     }
 
     long addToOutgoing(String appId, String to, String type, JSONObject json){

@@ -8,11 +8,11 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MyProfileActivity;
 
 public class ViewContactTabActivity extends TabActivity
 {
 
-/*** Dashbaord stuff ***/
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
@@ -77,14 +77,13 @@ public class ViewContactTabActivity extends TabActivity
 
         setTitleFromActivityLabel (R.id.title_text, contact_name);
 
-        intent = new Intent().setClass(this, ProfileActivity.class);
+        intent = new Intent().setClass(this, MyProfileActivity.class);
         intent.putExtra("contact_id", contact_id);
         spec = tabHost.newTabSpec("contacts").setIndicator(
             "Profile",
             null).setContent(intent);
         tabHost.addTab(spec);
 
-                
         // Create an Intent to launch an Activity for the tab (to be reused)
         intent = new Intent().setClass(this, FeedHomeActivity.class);
         intent.putExtra("contact_id", contact_id);
@@ -93,22 +92,11 @@ public class ViewContactTabActivity extends TabActivity
             null).setContent(intent);
         //tabHost.addTab(spec);
 
-
-		
         tabHost.setCurrentTab(0);
-
-   
     }
-
 
     @Override
     public void onDestroy(){
         super.onDestroy();
     }
-
-
 }
-
-
-
-

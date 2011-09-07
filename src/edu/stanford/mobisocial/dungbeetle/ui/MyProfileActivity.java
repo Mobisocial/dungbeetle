@@ -1,4 +1,9 @@
-package edu.stanford.mobisocial.dungbeetle;
+package edu.stanford.mobisocial.dungbeetle.ui;
+
+import java.io.File;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.Intent;
@@ -8,12 +13,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View.OnClickListener;
 import android.view.View;
-import android.widget.AdapterView.OnItemSelectedListener;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,23 +26,25 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Presence;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
-import edu.stanford.mobisocial.dungbeetle.util.RichActivity;
-import java.io.File;
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class ProfileActivity extends RichActivity{
+public class MyProfileActivity extends MusubiBaseActivity {
 
     private Handler handler = new Handler();
     private boolean mEnablePresenceUpdates = false;
@@ -45,40 +52,9 @@ public class ProfileActivity extends RichActivity{
     private IdentityProvider mIdent;
     private final String TAG = "ProfileActivity";
 
-/*** Dashbaord stuff ***/
-    public void goHome(Context context) 
-    {
-        final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity (intent);
-    }
-
-    public void setTitleFromActivityLabel (int textViewId)
-    {
-        TextView tv = (TextView) findViewById (textViewId);
-        if (tv != null) tv.setText (getTitle ());
-    } 
-    public void onClickHome (View v)
-    {
-        goHome (this);
-    }
-
-
-    public void onClickSearch (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
-    }
-
-    public void onClickAbout (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), AboutActivity.class));
-    }
-
-/*** End Dashboard Stuff ***/
-
     protected void editMyProfile(){
         setContentView(R.layout.edit_profile);
-        setTitleFromActivityLabel (R.id.title_text);
+        setTitle(R.id.title_text);
         final EditText profileName = (EditText) findViewById(R.id.edit_profile_name);
         final EditText profileAbout = (EditText) findViewById(R.id.edit_profile_about);
         profileName.setText(mIdent.userName());
@@ -109,8 +85,8 @@ public class ProfileActivity extends RichActivity{
                 {
                     String name = profileName.getText().toString();
                     String about = profileAbout.getText().toString();
-                    mHelper.setMyName(profileName.getText().toString());
-                    Helpers.updateProfile(ProfileActivity.this, name, about);
+                    MyInfo.setMyName(mHelper, profileName.getText().toString());
+                    Helpers.updateProfile(MyProfileActivity.this, name, about);
                     
                     //updateProfileToGroups();
                     finish();
@@ -119,12 +95,9 @@ public class ProfileActivity extends RichActivity{
 
     }
 
-
-
-
     protected void viewMyProfile(){
         setContentView(R.layout.view_self_profile);
-        setTitleFromActivityLabel (R.id.title_text);
+        setTitle(R.id.title_text);
         final TextView profileName = (TextView) findViewById(R.id.view_profile_name);
         final TextView profileEmail = (TextView) findViewById(R.id.view_profile_email);
         final TextView profileAbout = (TextView) findViewById(R.id.view_profile_about);
@@ -133,7 +106,7 @@ public class ProfileActivity extends RichActivity{
         Button edit_profile_button = (Button)this.findViewById(R.id.edit_profile_button);
         edit_profile_button.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    Intent intent = new Intent(ProfileActivity.this, ProfileActivity.class);
+                    Intent intent = new Intent(MyProfileActivity.this, MyProfileActivity.class);
                     intent.putExtra("edit", 1);
                     startActivity(intent); 
                 }
@@ -208,14 +181,14 @@ public class ProfileActivity extends RichActivity{
 
         icon.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    Toast.makeText(ProfileActivity.this,
+                    Toast.makeText(MyProfileActivity.this,
                                    "Loading camera...", 
                                    Toast.LENGTH_SHORT).show();
-                    doActivityForResult(new PhotoTaker(ProfileActivity.this, 
+                    doActivityForResult(new PhotoTaker(MyProfileActivity.this, 
                             new PhotoTaker.ResultHandler() {
                                 @Override
                                 public void onResult(byte[] data) {
-                                    Helpers.updatePicture(ProfileActivity.this, data);
+                                    Helpers.updatePicture(MyProfileActivity.this, data);
                                     //updateProfileToGroups();
                                 }
                             }, 200, false));
@@ -245,7 +218,7 @@ public class ProfileActivity extends RichActivity{
         final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
         new Thread(){
             public void run(){
-                h.handle(g.id, uri, ProfileActivity.this, mIdent, g.version, updateProfile);
+                h.handle(g.id, uri, MyProfileActivity.this, mIdent, g.version, updateProfile);
             }
         }.start();
     }
@@ -293,7 +266,7 @@ public class ProfileActivity extends RichActivity{
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mHelper = new DBHelper(ProfileActivity.this);
+        mHelper = new DBHelper(MyProfileActivity.this);
         mIdent = new DBIdentityProvider(mHelper);
 
 
@@ -381,7 +354,7 @@ public class ProfileActivity extends RichActivity{
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             // fix bug where initial selection firing event
             if(mEnablePresenceUpdates){ 
-                Helpers.updatePresence(ProfileActivity.this, pos);
+                Helpers.updatePresence(MyProfileActivity.this, pos);
             }
             else{
                 mEnablePresenceUpdates = true;

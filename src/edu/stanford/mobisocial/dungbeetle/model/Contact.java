@@ -8,9 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.ViewContactTabActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MyProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 
@@ -113,13 +113,12 @@ public class Contact implements Serializable{
         Intent launch = null;
 
         if (contactId == MY_ID) {
-            launch = new Intent().setClass(foreground, ProfileActivity.class);
+            launch = new Intent().setClass(foreground, MyProfileActivity.class);
             launch.putExtra("contact_id", Contact.MY_ID);
         } else {
             launch = new Intent(foreground, ViewContactTabActivity.class);
             launch.putExtra("contact_id", contactId);
 
-            
             try {
                 Maybe<Contact> maybeContact = forId(foreground, contactId);
                 launch.putExtra("contact_name", maybeContact.get().name);

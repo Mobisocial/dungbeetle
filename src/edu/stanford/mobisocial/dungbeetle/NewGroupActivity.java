@@ -30,31 +30,22 @@ public class NewGroupActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_group);
-
-        
         mHelper = new DBHelper(this);
-        
-        
+
 		((Button)findViewById(R.id.newGroupOk)).setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         String groupName = ((EditText)findViewById(R.id.newGroupName)).getText().toString();
                         Group g;
                         if(groupName.length() > 0) {
                             g = Group.create(NewGroupActivity.this, groupName, mHelper);
-                        }
-                        else {
+                        } else {
                             g = Group.create(NewGroupActivity.this);
                         }
-                        
-                        Helpers.sendToFeed(NewGroupActivity.this,
-                        StatusObj.from("Welcome to " + g.name + "!"), Feed.uriForName(g.feedName));
 
-                        Intent launch = new Intent();
-                        launch.setClass(NewGroupActivity.this, FeedHomeActivity.class);
-                        launch.putExtra("group_name", g.name);
-                        launch.putExtra("group_id", g.id);
-                        launch.putExtra("group_uri", g.dynUpdateUri);
-                        startActivity(launch);
+                        Uri feedUri = Feed.uriForName(g.feedName);
+                        Helpers.sendToFeed(NewGroupActivity.this,
+                                StatusObj.from("Welcome to " + g.name + "!"), feedUri);
+                        Feed.view(NewGroupActivity.this, feedUri);
                         NewGroupActivity.this.finish();
                     }
                 });
@@ -64,5 +55,4 @@ public class NewGroupActivity extends Activity {
                     }
                 });
     }
-
 }
