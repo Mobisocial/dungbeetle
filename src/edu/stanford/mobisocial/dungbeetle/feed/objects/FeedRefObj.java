@@ -65,7 +65,7 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 	@Override
     public void activate(Context context, JSONObject content){
 	    Feed feedRef = new Feed(content);
-	    Maybe<Group> mg = Group.forFeed(context, feedRef.id());
+	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {
 	        Group g = mg.get();
             Group.view(context, g);

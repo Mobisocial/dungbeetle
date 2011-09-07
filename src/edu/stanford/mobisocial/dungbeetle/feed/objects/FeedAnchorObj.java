@@ -48,7 +48,7 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
             return;
         }
 
-        Maybe<Group> parentGroup = Group.forFeed(context, parentFeedName);
+        Maybe<Group> parentGroup = Group.forFeedName(context, parentFeedName);
         if (!parentGroup.isKnown()) {
             Log.e(TAG, "No parent entry found for " + parentFeedName);
             return;

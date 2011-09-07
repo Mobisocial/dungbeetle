@@ -66,7 +66,7 @@ public class FeedActionsFragment extends Fragment {
         mFeedUri = getArguments().getParcelable(FeedViewFragment.ARG_FEED_URI);
         mDualPane = getArguments().getBoolean(FeedViewFragment.ARG_DUAL_PANE, false);
 
-        Maybe<Group> maybeG = Group.forFeed(getActivity(), mFeedUri.getLastPathSegment());
+        Maybe<Group> maybeG = Group.forFeedName(getActivity(), mFeedUri.getLastPathSegment());
         try {
             Group g = maybeG.get();
             mGroupName = g.name;
@@ -220,7 +220,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void broadcastBluetooth() {
         // BluetoothNdef.share
-        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri.toString());
+        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri);
         try {
             Group g = group.get();
             JSONObject json = new JSONObject();

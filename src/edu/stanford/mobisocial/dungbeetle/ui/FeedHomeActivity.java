@@ -93,7 +93,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
             } catch (Exception e) {}
         } else if (getIntent().getType() != null && getIntent().getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
-            Maybe<Group> maybeG = Group.forFeed(FeedHomeActivity.this, feedUri.getLastPathSegment());
+            Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feedUri.getLastPathSegment());
             try {
                 Group g = maybeG.get();
                 mGroupName = g.name;
@@ -103,7 +103,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
             } catch (Exception e) {}
         } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
             String feedName = getIntent().getData().getLastPathSegment();
-            Maybe<Group>maybeG = Group.forFeed(this, feedName);
+            Maybe<Group>maybeG = Group.forFeedName(this, feedName);
             Group g = null;
             try {
                g = maybeG.get();

@@ -56,9 +56,16 @@ public class Group{
         return g;
     }
 
-    public static Maybe<Group> forFeed(Context context, String feed) {
+    public static Maybe<Group> forFeed(Context context, Uri feed) {
         DBHelper helper = new DBHelper(context);
-        Maybe<Group> g = helper.groupForFeedName(feed);
+        Maybe<Group> g = helper.groupForFeedName(feed.getLastPathSegment());
+        helper.close();
+        return g;
+    }
+
+    public static Maybe<Group> forFeedName(Context context, String feedName) {
+        DBHelper helper = new DBHelper(context);
+        Maybe<Group> g = helper.groupForFeedName(feedName);
         helper.close();
         return g;
     }

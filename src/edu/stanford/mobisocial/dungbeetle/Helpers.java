@@ -162,7 +162,7 @@ public class Helpers {
             ids[i] = me.id;
             i++;
         }
-        Maybe<Group> group = Group.forFeed(c, threadUri.toString());
+        Maybe<Group> group = Group.forFeed(c, threadUri);
         try {
             sendGroupInvite(c, ids, group.get());
         } catch (NoValError e) {

@@ -901,6 +901,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 	public Maybe<Group> groupForFeedName(String feed){
+	    
         Cursor c = getReadableDatabase().query(
             Group.TABLE,
             null,
