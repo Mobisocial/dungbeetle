@@ -30,6 +30,7 @@ public class SetProfileObjAction extends ObjAction {
         if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
         }
-        return (objType instanceof PictureObj);
+        return false;
+        //return (objType instanceof PictureObj);
     }
 }
