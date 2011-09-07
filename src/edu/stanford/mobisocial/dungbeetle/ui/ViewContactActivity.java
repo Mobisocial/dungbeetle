@@ -18,6 +18,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -116,10 +117,14 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         }
 
         // Listen for future changes
+        Uri feedUri;
+        if (mContactId == Contact.MY_ID) {
+            feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        } else {
+            feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend");
+        }
         mProfileContentObserver = new ProfileContentObserver(mHandler);
-        getContentResolver().registerContentObserver(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend"), 
-            true, mProfileContentObserver);
+        getContentResolver().registerContentObserver(feedUri, true, mProfileContentObserver);
 
         onPageSelected(0);
     }
@@ -143,7 +148,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            // TODO: Refresh activity, especially 'view profile'.
         }
     }
 
