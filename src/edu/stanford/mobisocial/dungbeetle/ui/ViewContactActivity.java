@@ -121,7 +121,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         if (mContactId == Contact.MY_ID) {
             feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         } else {
-            feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend");
+            feedUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
         }
         mProfileContentObserver = new ProfileContentObserver(mHandler);
         getContentResolver().registerContentObserver(feedUri, true, mProfileContentObserver);
