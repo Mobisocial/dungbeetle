@@ -1,25 +1,14 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 import android.app.Activity;
-import android.os.Bundle;
-import android.os.Environment;
 import android.net.Uri;
+import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
-import android.content.Intent;
 import android.widget.EditText;
-import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 public class NewGroupActivity extends Activity {
 
