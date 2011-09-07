@@ -15,6 +15,9 @@ public class AutoActivateObjHandler extends ObjHandler {
     @Override
     public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
             DbEntryHandler handler, JSONObject json) {
+        if (!context.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
+            return;
+        }
         if (handler instanceof Activator) {
             ((Activator)handler).activate(context, json);
         }

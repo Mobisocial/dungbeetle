@@ -34,13 +34,14 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
-import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -58,16 +59,14 @@ public class MessagingManagerThread extends Thread {
     private Handler mMainThreadHandler;
     private final Set<Long>mSentObjects = new HashSet<Long>();
     private final FeedModifiedObjHandler mFeedModifiedObjHandler;
-    private NotificationObjHandler mNotificationObjHandler;
-    private AutoActivateObjHandler mAutoActivateObjHandler = new AutoActivateObjHandler();
 
     public MessagingManagerThread(final Context context){
         mContext = context;
         mMainThreadHandler = new Handler(context.getMainLooper());
         mHelper = new DBHelper(context);
         mIdent = new DBIdentityProvider(mHelper);
-        mNotificationObjHandler = new NotificationObjHandler(mHelper);
         mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
+
         ConnectionStatus status = new ConnectionStatus(){
                 public boolean isConnected(){
                     ConnectivityManager cm = 
@@ -147,12 +146,14 @@ public class MessagingManagerThread extends Thread {
                 if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
                 // Insert into the database. (TODO: Handler, both android.os and musubi.core)
 				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
-                Uri feedUri = Feed.uriForName(feedName);
+				Uri feedUri;
+                if (feedName.equals("friend")) {
+                   feedUri = Feed.uriForName("friend/" + contactId);
+                } else {
+                    feedUri = Feed.uriForName(feedName);
+                }
                 mContext.getContentResolver().notifyChange(feedUri, null);
                 if (feedName.equals("direct") || feedName.equals("friend")) {
-                    mNotificationObjHandler.handleObj(mContext, feedUri, realContact, sequenceID,
-                            DbObjects.forType(type), obj);
-
                     // TODO: Is this threading necessary?
                     mMainThreadHandler.post(new Runnable() {
                         public void run() {
@@ -165,37 +166,42 @@ public class MessagingManagerThread extends Thread {
                             }
                         }
                     });
-                } else {
-                    mNotificationObjHandler.handleObj(mContext, feedUri, realContact, sequenceID,
-                            DbObjects.forType(type), obj);
+                }
 
-                    mFeedModifiedObjHandler.handleObj(mContext, feedUri, realContact, sequenceID,
-                            DbObjects.forType(type), obj);
+                /**
+                 * Run handlers over all received objects:
+                 */
 
-                    if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
-                        mAutoActivateObjHandler.handleObj(mContext, feedUri, realContact,
-                                sequenceID, DbObjects.forType(type), obj);
-                    }
+                // TODO: framework code.
+                getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
+                        DbObjects.forType(type), obj);
 
-                    if (h != null && h instanceof FeedMessageHandler) {
-                        ((FeedMessageHandler) h).handleFeedMessage(
-                                mContext, feedUri, contactId, sequenceID, type, obj);
-                    }
-
-                    // TODO: framework code.
-                    mOnReceivedFromNetwork.handleObj(mContext, feedUri, realContact, sequenceID,
-                            DbObjects.forType(type), obj);
+                // Per-object handlers:
+                if (h != null && h instanceof FeedMessageHandler) {
+                    ((FeedMessageHandler) h).handleFeedMessage(
+                            mContext, feedUri, contactId, sequenceID, type, obj);
                 }
             } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
             }
         }
         catch(Exception e){
-            Log.e(TAG, "Error handling incoming message: " + e.toString());
+            Log.e(TAG, "Error handling incoming message.", e);
         }
     }
 
-    private IObjHandler mOnReceivedFromNetwork = IteratorObjHandler.getFromNetworkHandlers();
+    private IteratorObjHandler mFromNetworkHandlers;
+    public IteratorObjHandler getFromNetworkHandlers() {
+        if (mFromNetworkHandlers == null) {
+            mFromNetworkHandlers = new IteratorObjHandler();
+            mFromNetworkHandlers.addHandler(TVModePresence.getInstance());
+            mFromNetworkHandlers.addHandler(Push2TalkPresence.getInstance());
+            mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
+            mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
+            mFromNetworkHandlers.addHandler(mFeedModifiedObjHandler);
+        }
+        return mFromNetworkHandlers;
+    }
 
     /**
      * Replace global contact and object references 

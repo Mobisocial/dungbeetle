@@ -23,7 +23,7 @@ public class PresenceView implements FeedView {
     private final Fragment mFragment;
 
     public PresenceView() {
-        mFragment = new FeedEngagementFragment();
+        mFragment = new FeedPresenceFragment();
     }
     @Override
     public String getName() {
@@ -35,7 +35,7 @@ public class PresenceView implements FeedView {
         return mFragment;
     }
 
-    public static class FeedEngagementFragment extends FeedBaseListFragment {
+    public static class FeedPresenceFragment extends FeedBaseListFragment {
         @Override
         public void onFeedUpdated() {
 

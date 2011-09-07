@@ -626,15 +626,16 @@ public class DBHelper extends SQLiteOpenHelper {
 
         StringBuilder friendFilter = new StringBuilder();
         friendFilter.append(DbObject.FEED_NAME + " = 'friend'");
-        friendFilter.append(" AND (").append(DbObject.DESTINATION)
-            .append(" = " + contactId +" AND ").append(DbObject.CONTACT_ID).append(" = " + Contact.MY_ID + " ) OR (")
+        friendFilter.append(" AND ((").append(DbObject.DESTINATION)
+            .append(" = " + contactId +" AND ").append(DbObject.CONTACT_ID)
+            .append(" = " + Contact.MY_ID + " ) OR (")
             .append(DbObject.DESTINATION).append(" is null AND ")
-            .append(DbObject.CONTACT_ID).append(" = " + contactId + ")"); 
+            .append(DbObject.CONTACT_ID).append(" = " + contactId + "))"); 
         String select = andClauses(selection, friendFilter.toString());
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
-
+        if (DBG) Log.d(TAG, "Friend query selection: " + select);
         return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
     }
