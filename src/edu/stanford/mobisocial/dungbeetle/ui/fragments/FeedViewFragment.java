@@ -45,6 +45,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
+import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -57,9 +58,6 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 /**
  * Shows a series of posts from a feed.
@@ -335,17 +333,9 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            final Context context = getActivity();
-            ((InstrumentedActivity)context).doActivityForResult(new PhotoTaker(
-                context, 
-                new PhotoTaker.ResultHandler() {
-                    @Override
-                    public void onResult(byte[] data) {
-                        DbObject obj = PictureObj.from(data);
-                        Helpers.sendToFeed(
-                            context, obj, mFeedUri);
-                    }
-                }, 200, true));
+            Intent camera = new Intent(getActivity(), PhotoQuickTakeActivity.class);
+            camera.putExtra("feed_uri", mFeedUri);
+            startActivity(camera);
             return true;
         }
         return false;

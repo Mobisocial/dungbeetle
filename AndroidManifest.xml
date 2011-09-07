@@ -107,6 +107,9 @@
 	      ></activity>
 
     <activity android:name="NewGroupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
+    <activity android:name="PhotoQuickTakeActivity" 
+              android:theme="@android:style/Theme.Dialog"
+              android:taskAffinity=""></activity> 
     <activity android:name="VoiceQuickRecordActivity" 
               android:theme="@android:style/Theme.Dialog"
               android:taskAffinity=""></activity> 
