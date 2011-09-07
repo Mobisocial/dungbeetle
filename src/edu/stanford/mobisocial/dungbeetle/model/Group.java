@@ -15,6 +15,8 @@ import java.util.Collection;
 import java.util.UUID;
 
 public class Group{
+    // Prefer Feed.MIME_TYPE.
+    @Deprecated
     public static final String MIME_TYPE = "vnd.mobisocial.db/group";
     public static final String TABLE = "groups";
     public static final String _ID = "_id";
@@ -122,10 +124,14 @@ public class Group{
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
+    /**
+     * Launches an activity to view a group. Deprecated in favor of Feed.view()
+     */
+    @Deprecated
     public static void view(Context context, Group group) {
+        Uri feedUri = Feed.uriForName(group.feedName);
         Intent launch = new Intent(Intent.ACTION_VIEW);
-        Uri ref = Uri.parse("content://mobisocial.db/group").buildUpon().appendPath(""+group.id).build();
-        launch.setDataAndType(ref, Group.MIME_TYPE);
+        launch.setDataAndType(feedUri, Feed.MIME_TYPE);
         context.startActivity(launch);
     }
 

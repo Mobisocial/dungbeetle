@@ -62,26 +62,10 @@ public class FeedHomeActivity extends MusubiBaseActivity
 
         mFeedViews = FeedViews.getDefaultFeedViews();
 
-        // Create top-level tabs
-        //Resources res = getResources();
-        // res.getDrawable(R.drawable.icon)
-
         Intent intent = getIntent();
-        Long group_id = null;
         String feed_name = null;
         String dyn_feed_uri = null;
-        // TODO: Depracate extras-based access in favor of Data field.
-        if (intent.getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
-            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                feed_name = g.feedName;
-                dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
-            } catch (Exception e) {}
-        } else if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
+        if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
             Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feedUri.getLastPathSegment());
             try {
@@ -89,21 +73,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
                 mGroupName = g.name;
                 feed_name = g.feedName;
                 dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
             } catch (Exception e) {}
-        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
-            String feedName = getIntent().getData().getLastPathSegment();
-            Maybe<Group>maybeG = Group.forFeedName(this, feedName);
-            Group g = null;
-            try {
-               g = maybeG.get();
-            } catch (Exception e) {
-                g = Group.createForFeed(this, feedName);
-            }
-            mGroupName = g.name;
-            feed_name = g.feedName;
-            dyn_feed_uri = g.dynUpdateUri;
-            group_id = g.id;
         }
 
         if (dyn_feed_uri != null) {
