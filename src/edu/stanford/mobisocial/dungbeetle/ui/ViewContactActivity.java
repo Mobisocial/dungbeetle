@@ -148,6 +148,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
+            for (Fragment f : mFragments) {
+                if (f instanceof ViewProfileFragment) {
+                    ((ViewProfileFragment)f).refresh();
+                }
+            }
         }
     }
 
@@ -206,6 +211,8 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
     public static class EditProfileFragment extends Fragment {
         private DBHelper mHelper;
         private IdentityProvider mIdent;
+        private EditText mProfileName;
+        private EditText mProfileAbout;
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -220,11 +227,10 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             mHelper = new DBHelper(getActivity());
             mIdent = new DBIdentityProvider(mHelper);
 
-            final EditText profileName = (EditText) getView().findViewById(R.id.edit_profile_name);
-            final EditText profileAbout = (EditText) getView()
-                    .findViewById(R.id.edit_profile_about);
+            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
+            mProfileAbout = (EditText) getView().findViewById(R.id.edit_profile_about);
 
-            profileName.setText(mIdent.userName());
+            mProfileName.setText(mIdent.userName());
             Cursor c = getActivity().getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
                     DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
@@ -237,8 +243,8 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     JSONObject obj = new JSONObject(jsonSrc);
                     String name = obj.optString("name");
                     String about = obj.optString("about");
-                    profileName.setText(name);
-                    profileAbout.setText(about);
+                    mProfileName.setText(name);
+                    mProfileAbout.setText(about);
                 } catch (JSONException e) {
                 }
             }
@@ -246,9 +252,9 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
             saveButton.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                    String name = profileName.getText().toString();
-                    String about = profileAbout.getText().toString();
-                    MyInfo.setMyName(mHelper, profileName.getText().toString());
+                    String name = mProfileName.getText().toString();
+                    String about = mProfileAbout.getText().toString();
+                    MyInfo.setMyName(mHelper, mProfileName.getText().toString());
                     Helpers.updateProfile(getActivity(), name, about);
                     Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
                 }
@@ -266,6 +272,10 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         private DBHelper mHelper;
         private ImageView mIcon;
         private long mContactId;
+
+        private TextView mProfileName;
+        private TextView mProfileEmail;
+        private TextView mProfileAbout;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -297,17 +307,19 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     }
                 });
             }
+            mProfileName = (TextView) v.findViewById(R.id.view_profile_name);
+            mProfileEmail = (TextView) v.findViewById(R.id.view_profile_email);
+            mProfileAbout = (TextView) v.findViewById(R.id.view_profile_about);
             return v;
         }
 
         @Override
-        public void onActivityCreated(Bundle savedInstanceState) {
-            super.onActivityCreated(savedInstanceState);
+        public void onResume() {
+            super.onResume();
+            refresh();
+        }
 
-            TextView profileName = (TextView) getView().findViewById(R.id.view_profile_name);
-            TextView profileEmail = (TextView) getView().findViewById(R.id.view_profile_email);
-            TextView profileAbout = (TextView) getView().findViewById(R.id.view_profile_about);
-
+        public void refresh() {
             Spinner presence = (Spinner) getView().findViewById(R.id.presence);
             if (mContactId == Contact.MY_ID) {
                 Cursor c = getActivity().getContentResolver().query(
@@ -322,9 +334,9 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         JSONObject obj = new JSONObject(jsonSrc);
                         String name = obj.optString("name");
                         String about = obj.optString("about");
-                        profileName.setText(name);
-                        profileEmail.setText(mIdent.userEmail());
-                        profileAbout.setText(about);
+                        mProfileName.setText(name);
+                        mProfileEmail.setText(mIdent.userEmail());
+                        mProfileAbout.setText(about);
                     } catch (JSONException e) {
                     }
                 }
@@ -373,9 +385,9 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 presence.setVisibility(View.GONE);
                 try {
                     Contact contact = Contact.forId(getActivity(), mContactId).get();
-                    profileName.setText(contact.name);
-                    profileEmail.setText(contact.email);
-                    profileAbout.setText(contact.status);
+                    mProfileName.setText(contact.name);
+                    mProfileEmail.setText(contact.email);
+                    mProfileAbout.setText(contact.status);
                     ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(
                             contact, mIcon, 200);
                 } catch (NoValError e) {}
