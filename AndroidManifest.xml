@@ -56,7 +56,11 @@
 	<activity android:name=".ui.FeedListActivity"
 	      android:label="@string/title_latest">
     </activity>
-
+    <activity android:name="com.google.zxing.client.android.encode.EncodeActivity"
+	      android:label="Encode Barcode"
+	      android:theme="@android:style/Theme.Dialog">
+    </activity>
+    
     <activity android:name=".ui.FeedThumberActivity" android:label="@string/title_latest" />
     <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
     
@@ -108,8 +112,7 @@
 
     <activity android:name="NewGroupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
     <activity android:name="PhotoQuickTakeActivity" 
-              android:theme="@android:style/Theme.Dialog"
-              android:taskAffinity=""></activity> 
+              android:theme="@android:style/Theme.Dialog"></activity> 
     <activity android:name="VoiceQuickRecordActivity" 
               android:theme="@android:style/Theme.Dialog"
               android:taskAffinity=""></activity> 
