@@ -120,6 +120,12 @@ public class Contact implements Serializable{
         view(foreground, id);
     }
 
+    public Intent intentForViewing(Context context) {
+        Intent launch = new Intent().setClass(context, ViewContactActivity.class);
+        launch.putExtra("contact_id", id);
+        return launch;
+    }
+
     public Uri getFeedUri() {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
     }

@@ -13,12 +13,13 @@ import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activator {
+public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activator, NoNotify {
 	public static final String TAG = "ProfilePictureObj";
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";

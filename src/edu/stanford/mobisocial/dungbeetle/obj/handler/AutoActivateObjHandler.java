@@ -6,13 +6,14 @@ import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 /**
  * Automatically launches some received objects.
  */
 public class AutoActivateObjHandler extends ObjHandler {
     @Override
-    public void handleObj(Context context, Uri feedUri, long contactId, long sequenceId,
+    public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
             DbEntryHandler handler, JSONObject json) {
         if (handler instanceof Activator) {
             ((Activator)handler).activate(context, json);
