@@ -378,6 +378,16 @@ public class DungBeetleContentProvider extends ContentProvider {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/"));
             return c;
+        } else if(match(uri, "feeds", ".+", "head")){
+            boolean isMe = segs.get(1).equals("me");
+            String feedName = isMe ? "friend" : segs.get(1);
+            String select = isMe ? DBHelper.andClauses(
+                selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
+            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
+                    select, selectionArgs, sortOrder);
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
+            if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
+            return c;
         } else if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
@@ -389,21 +399,11 @@ public class DungBeetleContentProvider extends ContentProvider {
             if (isMe) c.setNotificationUri(resolver, Feed.uriForName("me"));
             return c;
         } else if (match(uri, "feeds", "friend", ".+")) {
-            Long contactId = Long.decode(segs.get(2));
+            Long contactId = Long.parseLong(segs.get(2));
             String select = selection;
             Cursor c = mHelper.queryFriend(realAppId, contactId, projection,
                     select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, uri);
-            return c;
-        } else if(match(uri, "feeds", ".+", "head")){
-            boolean isMe = segs.get(1).equals("me");
-            String feedName = isMe ? "friend" : segs.get(1);
-            String select = isMe ? DBHelper.andClauses(
-                selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
-                    select, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
-            if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         } else if(match(uri, "groups_membership", ".+")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
