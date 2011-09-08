@@ -15,6 +15,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.android.Contents;
+import com.google.zxing.client.android.Intents;
+import com.google.zxing.client.android.encode.EncodeActivity;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -185,11 +190,12 @@ public class FeedActionsFragment extends Fragment {
     }
 
     private void showQR() {
-        String qrl = "http://chart.apis.google.com/chart?cht=qr&chs=300x300&chl=";
-        qrl += URLEncoder.encode(ThreadRequest.getInvitationUri(
+        Intent qrIntent = new Intent(Intents.Encode.ACTION);
+        qrIntent.setClass(getActivity(), EncodeActivity.class);
+        qrIntent.putExtra(Intents.Encode.TYPE, Contents.Type.TEXT);
+        qrIntent.putExtra(Intents.Encode.DATA, ThreadRequest.getInvitationUri(
                 getActivity(), mExternalFeedUri).toString());
-        Intent qri = new Intent(Intent.ACTION_VIEW, Uri.parse(qrl));
-        startActivity(qri);
+        startActivity(qrIntent);
     }
 
     @Override

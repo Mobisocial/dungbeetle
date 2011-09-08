@@ -82,6 +82,7 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
         if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
             mCurrentCallout.handleResult(resultCode, data);
         }
+        finish();
     }
 
 }
