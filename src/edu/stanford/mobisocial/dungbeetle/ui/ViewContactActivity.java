@@ -53,6 +53,9 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
+/**
+ * TODO: This should be split into two classes: ViewProfileActivity and ViewContactActivity.
+ */
 public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener {
     @SuppressWarnings("unused")
     private static final String TAG = "ProfileActivity";
@@ -83,6 +86,17 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             mLabels.add("Edit");
             mFragments.add(profileFragment);
             mFragments.add(new EditProfileFragment());
+
+            // TODO: Legitimize this. Move objects to a randomly generated private feed
+            // Ability to "move" private feeds.
+            // Have a "feedPtrObj" that tracks your current private. Store in-app feed.
+            Uri privateUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/private");
+            mLabels.add("Notes");
+            Fragment feedView = new FeedViewFragment();
+            args = new Bundle(args);
+            args.putParcelable(FeedViewFragment.ARG_FEED_URI, privateUri);
+            feedView.setArguments(args);
+            mFragments.add(feedView);
         } else {
             String title = "Profile";
             Uri feedUri = null;

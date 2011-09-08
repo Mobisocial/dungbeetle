@@ -379,11 +379,8 @@ public class HomeActivity extends MusubiBaseActivity {
                                 StatusObj.from("Welcome to " + g.name + "!"),
                                 Feed.uriForName(g.feedName));
 
-                        Intent launch = new Intent();
-                        launch.setClass(HomeActivity.this, FeedHomeActivity.class);
-                        launch.putExtra("group_name", g.name);
-                        launch.putExtra("group_id", g.id);
-                        launch.putExtra("group_uri", g.dynUpdateUri);
+                        Intent launch = new Intent(Intent.ACTION_VIEW);
+                        launch.setDataAndType(Feed.uriForName(g.feedName), Feed.MIME_TYPE);
                         startActivity(launch);
                     }
                 });
