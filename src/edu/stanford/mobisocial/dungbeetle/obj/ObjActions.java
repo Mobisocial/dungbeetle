@@ -7,6 +7,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.action.ClipboardObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.SetProfileObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.ViewFeedObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.PlayAllAudioAction;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ObjActions {
@@ -16,6 +17,7 @@ public class ObjActions {
         sActions.add(new SetProfileObjAction());
         sActions.add(new OpenObjAction());
         sActions.add(new ViewFeedObjAction());
+        sActions.add(new PlayAllAudioAction());
     }
 
     public static List<ObjAction> getObjActions() {

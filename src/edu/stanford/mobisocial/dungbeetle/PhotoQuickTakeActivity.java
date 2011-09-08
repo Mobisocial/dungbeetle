@@ -37,8 +37,11 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
 
 	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-	    event.startTracking();
-	    return true;
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+	        event.startTracking();
+	        return true;
+        }
+        return false;
 	};
 	
     @Override
