@@ -68,6 +68,9 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
+
+        
+        findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
         mContactId = getIntent().getLongExtra("contact_id", -1);
         
         Bundle args = new Bundle();

@@ -322,9 +322,9 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+        /*if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
-        }
+        }*/
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
             Intent record = new Intent(getActivity(), VoiceQuickRecordActivity.class);
             record.putExtra("feed_uri", mFeedUri);
