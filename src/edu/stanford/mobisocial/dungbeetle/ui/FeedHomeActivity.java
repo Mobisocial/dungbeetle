@@ -29,7 +29,6 @@ import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import android.content.res.Configuration;
 
 /**
  * Represents a group by showing its feed and members.
@@ -48,8 +47,6 @@ public class FeedHomeActivity extends MusubiBaseActivity
 
     public final String TAG = "GroupsTabActivity";
 
-    private boolean noChange;
-
     public void onClickBroadcast(View v) {
         mActionsFragment.promptForSharing();
     }
@@ -62,10 +59,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
         setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
 
-        noChange = false;
-
         mFeedViews = FeedViews.getDefaultFeedViews();
-
         Intent intent = getIntent();
         String feed_name = null;
         String dyn_feed_uri = null;
@@ -97,12 +91,14 @@ public class FeedHomeActivity extends MusubiBaseActivity
             f.getFragment().setArguments(args);
         }
 
+        // TODO: Why is FeedActionsFragment.getActivity() null without this hack?
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (getSupportFragmentManager().findFragmentByTag("feedActions") == null) {
-            // first run.
-            ft.add(mActionsFragment, "feedActions");
-            ft.commit();
+        Fragment actions = getSupportFragmentManager().findFragmentByTag("feedActions");
+        if (actions != null) {
+            ft.remove(actions);
         }
+        ft.add(mActionsFragment, "feedActions");
+        ft.commit();
 
         PagerAdapter adapter = new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
         mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
@@ -130,39 +126,12 @@ public class FeedHomeActivity extends MusubiBaseActivity
         onPageSelected(0);
     }
 
-    
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if(noChange) {
-            return;
-        }
-
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        
-        //remove old bad fragment from manager
-        ft.remove(getSupportFragmentManager().findFragmentByTag("feedActions"));
-
-        //cache proper new fragment
-        Bundle args = new Bundle();
-        args.putParcelable(FeedViewFragment.ARG_FEED_URI, mFeedUri);
-        mActionsFragment = new FeedActionsFragment();
-        mActionsFragment.setArguments(args);
-
-        //add fragment to manager
-        ft.add(mActionsFragment, "feedActions");
-        
-        ft.commit();
-    
-       
-    }
     // TODO: Move to DashboardActivity, but add a FLAG_CLEAR_ON_PAUSE to EasyNfc.
     @Override
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
         setFeedUri(mFeedUri);
-        noChange = false;
     }
 
     @Override
@@ -170,7 +139,6 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onPause();
         mNfc.onPause(this);
         clearFeedUri();
-        noChange = true;
     }
 
     @Override

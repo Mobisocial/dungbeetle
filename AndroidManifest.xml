@@ -130,8 +130,7 @@
     <activity 
         	android:name=".ui.FeedHomeActivity"
         	android:label="@string/title_groups"
-	    android:windowSoftInputMode="stateHidden"
-	    android:configChanges="orientation">
+	    android:windowSoftInputMode="stateHidden">
 	      
 	      <intent-filter>
 		      <action android:name="android.intent.action.VIEW"/>
