@@ -13,8 +13,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 public class PresenceAwareNotify {
+    private static final String TAG = "musubi";
 	public static final int NOTIFY_ID = 9847184;
 	private NotificationManager mNotificationManager;
 	private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
@@ -52,6 +54,10 @@ public class PresenceAwareNotify {
             DbObject.TYPE + "=?", 
             new String[]{ "presence"}, 
             DbObject.TIMESTAMP + " DESC");
+        if (c == null) {
+            Log.e(TAG, "Error querying feeds/me/head");
+            return;
+        }
         c.moveToFirst();
         if(!c.isAfterLast()) {
             String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
