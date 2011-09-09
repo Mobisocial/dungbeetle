@@ -29,6 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import android.content.res.Configuration;
 
 /**
  * Represents a group by showing its feed and members.
@@ -124,7 +125,29 @@ public class FeedHomeActivity extends MusubiBaseActivity
         doTitleBar(this, mGroupName);
         onPageSelected(0);
     }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
 
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        
+        //remove old bad fragment from manager
+        ft.remove(getSupportFragmentManager().findFragmentByTag("feedActions"));
+
+        //cache proper new fragment
+        Bundle args = new Bundle();
+        args.putParcelable(FeedViewFragment.ARG_FEED_URI, mFeedUri);
+        mActionsFragment = new FeedActionsFragment();
+        mActionsFragment.setArguments(args);
+
+        //add fragment to manager
+        ft.add(mActionsFragment, "feedActions");
+        
+        ft.commit();
+    
+       
+    }
     // TODO: Move to DashboardActivity, but add a FLAG_CLEAR_ON_PAUSE to EasyNfc.
     @Override
     protected void onResume() {

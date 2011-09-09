@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="46"
+	  android:versionCode="47"
 	  android:versionName="0.2"
 	  android:installLocation="auto"
 	  >
@@ -128,9 +128,10 @@
     <activity android:name="FriendsActivity"  android:label="@string/title_friends" ></activity>
     <activity android:name="GroupsActivity"  android:label="@string/title_groups" ></activity> 
     <activity 
-    	android:name=".ui.FeedHomeActivity"
-    	android:label="@string/title_groups"
-	    android:windowSoftInputMode="stateHidden">
+        	android:name=".ui.FeedHomeActivity"
+        	android:label="@string/title_groups"
+	    android:windowSoftInputMode="stateHidden"
+	    android:configChanges="orientation">
 	      
 	      <intent-filter>
 		      <action android:name="android.intent.action.VIEW"/>
@@ -142,7 +143,7 @@
 		      <category android:name="android.intent.category.DEFAULT" />
 		      <data android:mimeType="vnd.mobisocial.db/feed" />
 	      </intent-filter>
-	      </activity> 
+      </activity> 
     <activity android:name="ViewContactActivity"  android:label="@string/title_friend" >
        <intent-filter>
 	      <action android:name="android.intent.action.VIEW"/>
