@@ -48,6 +48,8 @@ public class FeedHomeActivity extends MusubiBaseActivity
 
     public final String TAG = "GroupsTabActivity";
 
+    private boolean noChange;
+
     public void onClickBroadcast(View v) {
         mActionsFragment.promptForSharing();
     }
@@ -59,6 +61,8 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
+
+        noChange = false;
 
         mFeedViews = FeedViews.getDefaultFeedViews();
 
@@ -125,10 +129,14 @@ public class FeedHomeActivity extends MusubiBaseActivity
         doTitleBar(this, mGroupName);
         onPageSelected(0);
     }
+
     
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if(noChange) {
+            return;
+        }
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         
@@ -154,6 +162,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onResume();
         mNfc.onResume(this);
         setFeedUri(mFeedUri);
+        noChange = false;
     }
 
     @Override
@@ -161,6 +170,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onPause();
         mNfc.onPause(this);
         clearFeedUri();
+        noChange = true;
     }
 
     @Override
