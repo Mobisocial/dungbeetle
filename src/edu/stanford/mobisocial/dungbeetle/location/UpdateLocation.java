@@ -53,7 +53,7 @@ public class UpdateLocation extends Service {
 	// --- CONSTANTS --- //
 	private static final long INTERVAL = 900000; // Interval in which to send encrypted location to server, in milliseconds (900000 = 15 minutes)
 	private static final BigInteger PRIME = BigInteger.valueOf(28147497699961L);
-	private static final int GRID_SIZE = 300; // 300 feet is default
+	private static final int GRID_SIZE = 1000; // 1000 feet is default
 	private static final String IP_ADDRESS = "184.106.71.177";
 
 	
@@ -222,6 +222,14 @@ public class UpdateLocation extends Service {
 		
 		 mClient = new ClientClass(IP_ADDRESS, 8080);
 		
+		 if (!mClient.connectMe()){
+		   	for (int i = 0; i < numRetries; i++){
+	    		Thread.sleep(5000);
+	    		if (mClient.connectMe())
+	    			break;
+		    }
+		   	stopSelf();
+		 }
 		// Get my id from saved pref
 		SharedPreferences mySavedID = getSharedPreferences("myID", MODE_PRIVATE); 
 	    myID = mySavedID.getLong("myID", 0L);

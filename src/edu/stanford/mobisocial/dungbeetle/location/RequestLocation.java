@@ -39,11 +39,20 @@ public class RequestLocation extends Service {
 	// the client class that will interact with the server (self implemented class)
 	private ClientClass mClient; 
 	
-	
+	@Override
 	public void onCreate() {
 			      
 	    mClient = new ClientClass(IP_ADDRESS, 8080);
-	    
+	    /*Connect and retry every 5 seconds*/
+	    int numRetries = 10;
+	    if (!mClient.connectMe()){
+	    	for (int i = 0; i < numRetries; i++){
+	    		Thread.sleep(5000);
+	    		if (mClient.connectMe())
+	    			break;
+	    	}
+	    	stopSelf();
+	    }
 	    // Generate set of friend ids/public keys (Longs) to send to the server
 	    final DBHelper dbh = new DBHelper(this);
 	    friendsList = dbh.getPublicKeyPrints();

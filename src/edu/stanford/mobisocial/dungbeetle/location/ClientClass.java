@@ -39,18 +39,19 @@ public class ClientClass {
 	public ClientClass(String IP_address, int port)
 	{
 		uri = "http://"+ IP_address +":" + Integer.toString(port) + "/detectionserver/DetectionServer";
-		connectMe();
-		Log.d("ClientClass.java", "Connected to server");
 	}
 	
 	// --- Connect to the server in order to send data --- //
-	private boolean connectMe()
+	public boolean connectMe()
 	{
 		client = new HttpClient();
 		postMethod = new PostMethod(uri);
 		if (client == null)
 			return false;
-		else return true;
+		else{
+			Log.d("ClientClass.java", "Connected to server");
+			return true;
+		}
 	}
 	
 	// --- Disconnect from the server. Useful for quitting the app --- //
