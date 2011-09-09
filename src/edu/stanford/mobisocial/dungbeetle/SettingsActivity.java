@@ -100,6 +100,43 @@ public class SettingsActivity extends ListActivity {
         findViewById(R.id.btn_info).setOnLongClickListener(mDevModeListener);
     }
 
+    private void backupToSd() {
+        try{
+            // TODO: asynchronous writing. Or, at least, off the ui thread.
+            // TODO: really, we'd like continous backups : )
+            DBHelper mHelper = new DBHelper(SettingsActivity.this);
+            mHelper.getReadableDatabase().close();
+            File data = Environment.getDataDirectory();
+            String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
+            String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
+
+            File backupDB = new File(extStorageDirectory, DBHelper.DB_NAME);
+            File fileDirectory = new File(extStorageDirectory);
+            fileDirectory.mkdirs();
+
+            File currentDB = new File(data, currentDBPath);
+            InputStream in = new FileInputStream(currentDB);
+            OutputStream out = new FileOutputStream(backupDB);
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0){
+                out.write(buf, 0, len);
+            }
+            in.close();
+            out.close();
+
+            File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
+            if(legacyDB.exists()) {
+                legacyDB.delete();
+            }
+            toast("Backup complete.");
+        }
+        catch(Exception e){
+            toast("Backup failed.");
+            Log.e(TAG, "Failed to backup to sd card", e);
+        }
+    }
+
     private void restoreFromSd() {
         try{
             DBHelper mHelper = new DBHelper(SettingsActivity.this);
@@ -165,40 +202,22 @@ public class SettingsActivity extends ListActivity {
                     startActivity(intent);
                     break;
                 case 2:
-                    try{
-                        // TODO: asynchronous writing. Or, at least, off the ui thread.
-                        // TODO: really, we'd like continous backups : )
-                        DBHelper mHelper = new DBHelper(SettingsActivity.this);
-                        mHelper.getReadableDatabase().close();
-                        File data = Environment.getDataDirectory();
-                        String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;
-                        String extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiBackup/";
+                    new AlertDialog.Builder(SettingsActivity.this)
+                        .setTitle("Backup to SD card?")
+                        .setMessage("This will overwrite your existing save.")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                backupToSd();
+                            }
+                        })
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
 
-                        File backupDB = new File(extStorageDirectory, DBHelper.DB_NAME);
-                        File fileDirectory = new File(extStorageDirectory);
-                        fileDirectory.mkdirs();
-
-                        File currentDB = new File(data, currentDBPath);
-                        InputStream in = new FileInputStream(currentDB);
-                        OutputStream out = new FileOutputStream(backupDB);
-                        byte[] buf = new byte[1024];
-                        int len;
-                        while ((len = in.read(buf)) > 0){
-                            out.write(buf, 0, len);
-                        }
-                        in.close();
-                        out.close();
-
-                        File legacyDB = new File(Environment.getExternalStorageDirectory().toString() + "/DungBeetleBackup/" + DBHelper.OLD_DB_NAME);
-                        if(legacyDB.exists()) {
-                            legacyDB.delete();
-                        }
-                        toast("Backup complete.");
-                    }
-                    catch(Exception e){
-                        toast("Backup failed.");
-                        Log.e(TAG, "Failed to backup to sd card", e);
-                    }
+                            }
+                        }).show();
+                    
                     
                     break;
                 case 3:

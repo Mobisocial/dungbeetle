@@ -37,6 +37,6 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
         return new CursorLoader(context, feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 50");
     }
 }
