@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.group_providers;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
@@ -35,7 +36,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-public class GroupProviders{
+public class GroupProviders {
 
     public static final String TAG = "GroupProviders";
     static final boolean DBG = false;
@@ -211,7 +212,14 @@ public class GroupProviders{
                                     String profile = "";
                                     if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
                                         //Log.w(TAG, "["+encryptedProfile+"]");
-                                        if(key == null){Log.w(TAG, "WTF key null");}
+                                        if(key == null) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
+                                                Log.wtf(TAG, "Null key while handling group request.", new Throwable());
+                                            } else {
+                                                Log.e(TAG, "Null key while handling group request.", new Throwable());
+                                            }
+                                            return;
+                                        }
                                         profile = Util.decryptAES(encryptedProfile, key);
                                     }
                                     if(!profile.equals("")) {

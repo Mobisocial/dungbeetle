@@ -222,7 +222,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
                 try {
                     return new JSONObject(c.getString(0));
                 } catch (JSONException e) {
-                    Log.wtf(TAG, "not really json", e);
+                    Log.e(TAG, "not really json", e);
                 } finally {
                     c.close();
                 }

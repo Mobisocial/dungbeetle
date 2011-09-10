@@ -19,6 +19,7 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
@@ -324,7 +325,11 @@ public class MessagingManagerThread extends Thread {
                     notSendingObjects.clear();
                 }
             } catch (Exception e) {
-                Log.wtf(TAG, "error running notify loop", e);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
+                    Log.wtf(TAG, "error running notify loop", e);
+                } else {
+                    Log.e(TAG, "error running notify loop", e);
+                }
             } finally {
                 objs.close();
             }
