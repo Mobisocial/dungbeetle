@@ -113,7 +113,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
         menu.setHeaderTitle(g.name);
-        String[] menuItems = new String[]{ "Delete", "Write to Tag" };
+        String[] menuItems = new String[]{ "Delete"};//, "Write to Tag" };
         for (int i = 0; i< menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
