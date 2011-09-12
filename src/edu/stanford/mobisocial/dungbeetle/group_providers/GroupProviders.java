@@ -211,7 +211,7 @@ public class GroupProviders {
 
                                     String profile = "";
                                     if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
-                                        //Log.w(TAG, "["+encryptedProfile+"]");
+                                        Log.w(TAG, "["+encryptedProfile+"]");
                                         if(key == null) {
                                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
                                                 Log.wtf(TAG, "Null key while handling group request.", new Throwable());
@@ -220,7 +220,8 @@ public class GroupProviders {
                                             }
                                             return;
                                         }
-                                        profile = Util.decryptAES(encryptedProfile, key);
+                                        profile = "";
+                                        //profile = Util.decryptAES(encryptedProfile, key);
                                     }
                                     if(!profile.equals("")) {
                                         try{

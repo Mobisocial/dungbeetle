@@ -24,6 +24,11 @@ import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class Helpers {
     public static final String TAG = "Helpers";
@@ -179,23 +184,6 @@ public class Helpers {
             Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
         }
     }
-
-    public static void updatePicture(final Context c, final byte[] data) {
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        ContentValues values = new ContentValues();
-        JSONObject obj = ProfilePictureObj.json(data);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
-        c.getContentResolver().insert(url, values); 
-
-        values = new ContentValues();
-        values.put(MyInfo.PICTURE, data);
-        c.getContentResolver().update(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
-            values, null, null);
-
-        App.instance().contactImages.invalidate(Contact.MY_ID);
-    }
     
     
     /**
@@ -279,6 +267,21 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void resendProfile(final Context c) {
+        DBHelper helper = new DBHelper(c);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        Log.w(TAG, "attempting to resend");
+        try {
+            JSONObject profileJson = new JSONObject(ident.userProfile());
+            updateProfile(c, profileJson.optString("name"), "");
+            updatePicture(c, Base64.decode(profileJson.optString("picture")));
+            Log.w(TAG, "resending profile");
+        }
+        catch (Exception e) {
+        }
+        ident.close();
+    }
+
     public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
@@ -286,6 +289,25 @@ public class Helpers {
         values.put(DbObject.JSON, obj.toString());
         values.put(DbObject.TYPE, ProfileObj.TYPE);
         c.getContentResolver().insert(url, values);
+    }
+
+    
+
+    public static void updatePicture(final Context c, final byte[] data) {
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        ContentValues values = new ContentValues();
+        JSONObject obj = ProfilePictureObj.json(data);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
+        c.getContentResolver().insert(url, values); 
+
+        values = new ContentValues();
+        values.put(MyInfo.PICTURE, data);
+        c.getContentResolver().update(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
+            values, null, null);
+
+        App.instance().contactImages.invalidate(Contact.MY_ID);
     }
 
     public static void updateLastPresence(final Context c, 

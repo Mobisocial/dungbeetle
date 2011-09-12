@@ -21,6 +21,8 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+
 public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHandler, FeedRenderer {
     private static final String TAG = "dbJoin";
     private static boolean DBG = false;
@@ -70,6 +72,7 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
         }
         catch(Maybe.NoValError e) { }
         ident.close();
+        Helpers.resendProfile(context);
     }
 
 
