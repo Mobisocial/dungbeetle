@@ -809,7 +809,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
         String[] selectionArgs = null;
         //Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, null, null, Group.NAME + " ASC", null);
-        Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, selectionArgs, null, null, Group.NAME + " ASC", null);
+        Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, selectionArgs, null, null, Group.NAME + " COLLATE NOCASE ASC", null);
         return c;
     }
 

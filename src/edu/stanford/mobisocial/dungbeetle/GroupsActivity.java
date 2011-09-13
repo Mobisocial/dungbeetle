@@ -100,7 +100,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         //actually what ultimately gets called is DBHelper.queryGroups() so change stuff there
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-            null, selection, null, Group.NAME + " ASC");
+            null, selection, null, null);
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
