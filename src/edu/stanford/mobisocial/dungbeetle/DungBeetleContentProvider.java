@@ -375,7 +375,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         List<String> segs = uri.getPathSegments();
         if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/"));
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feedlist"));
             return c;
         } else if(match(uri, "feeds", ".+", "head")){
             boolean isMe = segs.get(1).equals("me");
