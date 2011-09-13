@@ -54,7 +54,6 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
 
 
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 8;
         Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
                 data, 0, data.length, options);
 
@@ -78,7 +77,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
                 sourceBitmap, 0, 0, width, height, matrix, true);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
         data = baos.toByteArray();
         return from(data);
     }
