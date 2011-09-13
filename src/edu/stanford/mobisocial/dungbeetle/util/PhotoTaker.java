@@ -60,7 +60,6 @@ public class PhotoTaker implements ActivityCallout {
 		file = new File(path, "image.tmp");
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
-			options.inSampleSize = 8;
 			Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(),
                                                            options);
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
@@ -69,6 +68,8 @@ public class PhotoTaker implements ActivityCallout {
 			int height = sourceBitmap.getHeight();
 			int cropSize = Math.min(width, height);
 
+			//TODO: it would be nice to have the PictureObj class handle all of this stuff
+			//   instead of duplicating a bunch of handling code.
 			int targetSize = mSize;
 			float scaleSize = ((float) targetSize) / cropSize;
 
@@ -93,7 +94,7 @@ public class PhotoTaker implements ActivityCallout {
             }
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
 			byte[] data = baos.toByteArray();
 
 			mResultHandler.onResult(data);

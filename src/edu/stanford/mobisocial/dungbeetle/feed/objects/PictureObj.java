@@ -40,6 +40,9 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         return TYPE;
     }
 
+    /** 
+     * This does NOT do any SCALING!
+     */
     public static DbObject from(byte[] data) {
         return new DbObject(TYPE, PictureObj.json(data));
     }
@@ -51,7 +54,6 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         InputStream is = cr.openInputStream(imageUri);
         // Get binary bytes for encode
         byte[] data = getBytesFromFile(is);
-
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
