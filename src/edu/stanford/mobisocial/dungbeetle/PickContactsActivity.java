@@ -108,13 +108,14 @@ public class PickContactsActivity extends TabActivity {
         });
 
         TabHost tabHost = getTabHost();
-        TabHost.TabSpec spec = tabHost.newTabSpec("contacts").setIndicator(
-            "Contacts",null).setContent(R.id.tab1);
-        tabHost.addTab(spec);
-
-        spec = tabHost.newTabSpec("groups").setIndicator(
+        TabHost.TabSpec spec = tabHost.newTabSpec("groups").setIndicator(
             "Groups",null).setContent(R.id.tab2);
         tabHost.addTab(spec);
+
+        spec = tabHost.newTabSpec("contacts").setIndicator(
+            "Contacts",null).setContent(R.id.tab1);
+        tabHost.addTab(spec);
+        
         tabHost.setCurrentTab(0);
 
         Button okButton = (Button)findViewById(R.id.ok_button);

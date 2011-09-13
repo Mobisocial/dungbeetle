@@ -261,7 +261,7 @@ ORDER BY _id ASC
 
     @Override
     public String getLabel() {
-        return "Play conversation from here";
+        return "Replay Conversation";
     }
 
     @Override
