@@ -223,8 +223,14 @@ public class UpdateLocation extends Service {
 		 mClient = new ClientClass(IP_ADDRESS, 8080);
 		
 		 if (!mClient.connectMe()){
-		   	for (int i = 0; i < numRetries; i++){
-	    		Thread.sleep(5000);
+			 //TODO: should back off from a short retry delay to a longer one and 
+			 //just keep doing that over time
+		   	for (int i = 0; i < 10; i++){
+	    		try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 	    		if (mClient.connectMe())
 	    			break;
 		    }

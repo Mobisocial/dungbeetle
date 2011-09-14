@@ -47,7 +47,11 @@ public class RequestLocation extends Service {
 	    int numRetries = 10;
 	    if (!mClient.connectMe()){
 	    	for (int i = 0; i < numRetries; i++){
-	    		Thread.sleep(5000);
+	    		try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 	    		if (mClient.connectMe())
 	    			break;
 	    	}
