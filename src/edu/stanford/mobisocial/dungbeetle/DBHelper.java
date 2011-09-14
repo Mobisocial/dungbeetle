@@ -37,6 +37,8 @@ import android.database.sqlite.SQLiteQuery;
 import android.os.Environment;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -46,6 +48,7 @@ import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -444,7 +447,11 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
-            getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+            Long objId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+
+            FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
+            mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), objId);
+            
             return nextSeqId;
         }
         catch(Exception e) {

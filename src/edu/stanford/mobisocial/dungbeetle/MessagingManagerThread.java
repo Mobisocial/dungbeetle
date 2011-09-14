@@ -279,7 +279,15 @@ public class MessagingManagerThread extends Thread {
                     }
                     if (json != null) {
                         String type = json.optString(DbObjects.TYPE);
-                        mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
+                        /*if you udpate latest feed here then there is a race condition between
+                         * when you put a message into your db,
+                         * when you actually have a connection to send the message (which is here)
+                         * when other people send you messages
+                         * the processing gets all out of order, so instead we update latest
+                         * immediately when you add messages into your db inside
+                         * DBHelper.java addToFeed();
+                         */
+                        //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
                         DbEntryHandler h = DbObjects.getIncomingMessageHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
                             ((FeedMessageHandler) h).handleFeedMessage(
