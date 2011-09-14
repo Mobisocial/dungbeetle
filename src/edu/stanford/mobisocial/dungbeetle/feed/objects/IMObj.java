@@ -49,7 +49,7 @@ public class IMObj implements DbEntryHandler, FeedRenderer {
             "IM from " + from.name, "\"" + msg + "\"", contentIntent);
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content){
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions){
         TextView valueTV = new TextView(context);
         valueTV.setText("IM:" + content.optString(TEXT));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

@@ -51,7 +51,7 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,

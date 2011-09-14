@@ -62,7 +62,7 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content) {
+    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText(asText(content));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

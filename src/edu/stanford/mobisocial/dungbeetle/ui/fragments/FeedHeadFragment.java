@@ -74,7 +74,7 @@ public class FeedHeadFragment extends Fragment {
                 null, DbObject._ID + " DESC");
         if (c.moveToFirst()) {
             View v = getActivity().findViewById(R.id.feed_view);
-            DbObject.bindView(v, getActivity(), c, mContactCache);
+            DbObject.bindView(v, getActivity(), c, mContactCache, false);
         }
     }
 }

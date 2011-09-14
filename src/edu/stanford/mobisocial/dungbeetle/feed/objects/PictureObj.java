@@ -93,7 +93,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,

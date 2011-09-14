@@ -79,7 +79,7 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, context, c, mContactCache);
+            DbObject.bindView(v, context, c, mContactCache, true);
         }
     }
 

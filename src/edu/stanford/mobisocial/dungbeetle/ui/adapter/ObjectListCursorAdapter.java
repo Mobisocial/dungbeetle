@@ -32,7 +32,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache);
+        DbObject.bindView(v, context, c, mContactCache, true);
     }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
