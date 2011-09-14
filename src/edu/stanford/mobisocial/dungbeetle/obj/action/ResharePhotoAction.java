@@ -35,13 +35,13 @@ public class ResharePhotoAction extends ObjAction {
             outStream = new FileOutputStream(file);
             
 	        BitmapManager mgr = new BitmapManager(1);
-	        Bitmap bitmap = bitmap = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
+	        Bitmap bitmap = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
 	        
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
             outStream.flush();
             outStream.close();
 
-            
+            bitmap.recycle();
             Intent intent = new Intent(android.content.Intent.ACTION_SEND);  
             intent.setType("image/png");
             Log.w("ResharePhotoAction", Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");

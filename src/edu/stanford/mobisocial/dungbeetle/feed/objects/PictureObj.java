@@ -81,6 +81,8 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
         data = baos.toByteArray();
+        sourceBitmap.recycle();
+        resizedBitmap.recycle();
         return from(data);
     }
 

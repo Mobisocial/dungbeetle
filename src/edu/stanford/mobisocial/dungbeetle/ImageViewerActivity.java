@@ -121,6 +121,7 @@ public class ImageViewerActivity extends Activity{
 
     public void onDestroy() {
 		super.onDestroy();
+		bitmap.recycle();
 		mgr.recycle();
 	}
 
