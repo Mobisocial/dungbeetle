@@ -120,7 +120,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
                 null, 
-                null, null, Contact.NAME + " ASC");
+                null, null, Contact.NAME + " COLLATE NOCASE ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
 

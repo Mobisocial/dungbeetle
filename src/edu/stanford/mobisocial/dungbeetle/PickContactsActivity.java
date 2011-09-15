@@ -67,7 +67,7 @@ public class PickContactsActivity extends TabActivity {
 
 		/** Contacts **/
         Cursor c = getContentResolver().query(Uri.parse(
-                DungBeetleContentProvider.CONTENT_URI + "/contacts"), null, null, null, null);
+                DungBeetleContentProvider.CONTENT_URI + "/contacts"), null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
 		mContacts = new ContactListCursorAdapter(this, c);
 		ListView contactsV = (ListView) findViewById(R.id.contacts_list);
         contactsV.setAdapter(mContacts);

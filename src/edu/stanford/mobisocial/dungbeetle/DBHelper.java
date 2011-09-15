@@ -795,7 +795,8 @@ public class DBHelper extends SQLiteOpenHelper {
             GroupMember.TABLE + " G WHERE " + 
             "G." + GroupMember.GROUP_ID + "= ? " + 
             "AND " + 
-            "C." + Contact._ID + " = G." + GroupMember.CONTACT_ID,
+            "C." + Contact._ID + " = G." + GroupMember.CONTACT_ID + 
+            " ORDER BY " + Contact.NAME + " COLLATE NOCASE ASC",
             new String[] { String.valueOf(groupId) });
     }
 

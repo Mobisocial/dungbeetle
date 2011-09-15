@@ -123,6 +123,7 @@ public class ImageViewerActivity extends Activity{
 		super.onDestroy();
 		bitmap.recycle();
 		mgr.recycle();
+        System.gc();
 	}
 
 }
