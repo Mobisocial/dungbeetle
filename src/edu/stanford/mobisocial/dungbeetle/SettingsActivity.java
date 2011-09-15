@@ -15,6 +15,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnKeyListener;
+import android.content.pm.ActivityInfo;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -285,6 +286,8 @@ public class SettingsActivity extends Activity {
 			progress_.setMax(100);
 			progress_.setIndeterminate(false);
 			progress_.show();
+			int orientation = getResources().getConfiguration().orientation;
+			SettingsActivity.this.setRequestedOrientation(orientation);
 		}
 		@Override
 		protected void onProgressUpdate(Integer... values) {
@@ -331,6 +334,7 @@ public class SettingsActivity extends Activity {
 
 		@Override
 		protected void onPostExecute(Exception result) {
+			SettingsActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 			progress_.dismiss();
 			if (result == null) {
 				toast("Backup complete!");
@@ -357,6 +361,8 @@ public class SettingsActivity extends Activity {
 			progress_.setMax(100);
 			progress_.setIndeterminate(false);
 			progress_.show();
+			int orientation = getResources().getConfiguration().orientation;
+			SettingsActivity.this.setRequestedOrientation(orientation);
 		}
 		@Override
 		protected void onProgressUpdate(Integer... values) {
@@ -412,6 +418,7 @@ public class SettingsActivity extends Activity {
 
 		@Override
 		protected void onPostExecute(Exception result) {
+			SettingsActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 			progress_.dismiss();
 			if (result == null) {
 				//we'll never get here because it will have restarted
