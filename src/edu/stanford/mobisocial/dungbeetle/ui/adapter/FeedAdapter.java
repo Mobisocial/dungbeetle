@@ -32,7 +32,7 @@ public class FeedAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache);
+        DbObject.bindView(v, context, c, mContactCache, false);
     }
 
     public static CursorLoader queryObjects(Context context) {

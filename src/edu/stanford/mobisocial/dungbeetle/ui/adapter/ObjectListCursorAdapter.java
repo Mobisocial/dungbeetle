@@ -35,7 +35,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache);
+        DbObject.bindView(v, context, c, mContactCache, true);
         DBHelper helper = new DBHelper(context);
         int feedCol = -1;
         String[] cols = c.getColumnNames();
@@ -51,6 +51,8 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         helper.getWritableDatabase().execSQL("UPDATE "+Group.TABLE+" SET "+Group.NUM_UNREAD+" = 0 WHERE "+Group.FEED_NAME+"='"+feedName+"'");
         helper.close();
         context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
+
+
     }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {

@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,6 +10,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.text.method.BaseMovementMethod;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -70,7 +75,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 	    return uri != null && uri.getScheme().startsWith("http");
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         String title;
         if (content.has(TITLE)) {
@@ -83,27 +88,43 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        if(Linkify.addLinks(valueTV, Linkify.ALL)) {
+            if(!allowInteractions)
+            	valueTV.setMovementMethod(null);
+        }
+        	
         frame.addView(valueTV);
     }
-
+	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
     @Override
     public void activate(Context context, JSONObject content){
+    	//linkify should have picked it up already but if we are in TV mode we
+    	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);
         String text = content.optString(URI);
-        Uri uri = Uri.parse(text);
-        String scheme = uri.getScheme();
-
-        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
-            String type = content.optString(MIME_TYPE);
-            if (type != null && !type.isEmpty()) {
-                intent.setDataAndType(uri, type);
-            } else {
-                intent.setData(uri);
-            }
-            if (!(context instanceof Activity)) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            }
-            context.startActivity(intent);
-        }
+        //some shared links come in with two lines of text "title\nuri"
+        //for example google maps does this and passes that same value as both the
+        //uri and title
+        
+        //launch the first thing that looks like a link
+        Matcher m = p.matcher(text);
+        while(m.find()) {
+	        Uri uri = Uri.parse(m.group());
+	        String scheme = uri.getScheme();
+	
+	        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+	            String type = content.optString(MIME_TYPE);
+	            if (type != null && !type.isEmpty()) {
+	                intent.setDataAndType(uri, type);
+	            } else {
+	                intent.setData(uri);
+	            }
+	            if (!(context instanceof Activity)) {
+	                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	            }
+	            context.startActivity(intent);
+	            return;
+	        }
+        }    
     }
 }

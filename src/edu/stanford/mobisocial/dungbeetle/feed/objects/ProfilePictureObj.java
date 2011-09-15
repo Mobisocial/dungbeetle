@@ -52,7 +52,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         App.instance().contactImages.invalidate(from.id);
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
 	    TextView textView = new TextView(context);
 	    textView.setText("New profile picture:");
 	    textView.setLayoutParams(CommonLayouts.FULL_WIDTH);

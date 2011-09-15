@@ -53,7 +53,7 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
 		ImageView imageView = new ImageView(context);
 		imageView.setImageResource(R.drawable.play);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(

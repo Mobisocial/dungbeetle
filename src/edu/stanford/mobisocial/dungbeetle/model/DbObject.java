@@ -85,7 +85,14 @@ public class DbObject {
             return null;
         }
     }
-    public static void bindView(View v, Context context, Cursor c, ContactCache contactCache) {
+    /**
+     * @param v the view to bind
+     * @param context standard activity context
+     * @param c the cursor source for the object in the db object table
+     * @param contactCache prevents copious lookups of contact information from the sqlite database
+     * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
+     */
+    public static void bindView(View v, Context context, Cursor c, ContactCache contactCache, boolean allowInteractions) {
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
         Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
         Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
@@ -117,7 +124,7 @@ public class DbObject {
                 frame.setTag(R.id.object_entry, c.getPosition());
                 FeedRenderer renderer = DbObjects.getFeedRenderer(content);
                 if(renderer != null){
-                    renderer.render(context, frame, content);
+                    renderer.render(context, frame, content, allowInteractions);
                 }
             } catch (JSONException e) {
                 Log.e("db", "error opening json");

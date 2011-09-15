@@ -77,7 +77,7 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
 
 
     @Override
-    public void render(Context context, ViewGroup frame, JSONObject content) {
+    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText("I'm here!");
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

@@ -44,7 +44,7 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoN
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content) {
+    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
 
         String lat = "" + content.optDouble(COORD_LAT);

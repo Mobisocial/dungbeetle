@@ -102,11 +102,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             contentIntent);
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content, boolean allowInteractions) {
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
-            mAppStateObj.render(context, frame, appState);
+            mAppStateObj.render(context, frame, appState, allowInteractions);
             return;
         } else {
 	        String appName = content.optString(PACKAGE_NAME);
