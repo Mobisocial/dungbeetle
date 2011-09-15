@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import android.app.Activity;
@@ -60,8 +61,8 @@ public class PhotoTaker implements ActivityCallout {
 		file = new File(path, "image.tmp");
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
-			Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(),
-                                                           options);
+			//Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(), options);
+			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();
