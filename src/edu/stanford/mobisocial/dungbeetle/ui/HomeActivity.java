@@ -26,6 +26,7 @@ import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -77,7 +78,14 @@ public class HomeActivity extends MusubiBaseActivity {
             }
         } catch (ClassCastException e) {}
 
-        setContentView(R.layout.activity_home);
+        
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        if(metrics.heightPixels > metrics.widthPixels)
+        	setContentView(R.layout.activity_home_portrait);
+        else
+        	setContentView(R.layout.activity_home_landscape);
         MusubiBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
