@@ -108,6 +108,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
             String feedName = c.getString(feedCol);
             String groupName = c.getString(c.getColumnIndexOrThrow(Group.NAME));
+            int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
             DbObject.bindView(v, getActivity(), c, mContactCache);
@@ -117,9 +118,19 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
                 v.setTag(R.id.group_name, g.name);
                 v.setTag(R.id.group_id, g.id);
                 v.setTag(R.id.group_uri, g.dynUpdateUri);
-                labelView.setText(g.name);
+                if (numUnread > 0) {
+                    labelView.setText(g.name + " (" + numUnread + " unread messages)");
+                }
+                else {
+                	labelView.setText(g.name);
+                }
             } else {
-                labelView.setText(feedName);
+            	if (numUnread > 0) {
+            		labelView.setText(feedName + " (" + numUnread + " unread messages)");
+            	}
+            	else {
+            		labelView.setText(feedName);
+            	}
             }
             int color = Feed.colorFor(feedName);
             labelView.setBackgroundColor(color);

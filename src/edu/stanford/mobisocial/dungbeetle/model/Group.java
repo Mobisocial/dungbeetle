@@ -27,6 +27,7 @@ public class Group{
     public static final String LAST_UPDATED = "last_updated";
     public static final String LAST_OBJECT_ID = "last_object_id";
     public static final String PARENT_FEED_ID = "parent_feed_id";
+    public static final String NUM_UNREAD = "num_unread";
 
     public final String feedName;
     public final String name;

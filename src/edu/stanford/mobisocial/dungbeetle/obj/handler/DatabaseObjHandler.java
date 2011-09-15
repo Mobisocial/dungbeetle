@@ -32,7 +32,7 @@ public abstract class DatabaseObjHandler extends ObjHandler {
         String selection = DbObject.FEED_NAME + "=? AND "  + DbObject.CONTACT_ID + "=? AND " + DbObject.SEQUENCE_ID + "=?";
         String[] selectionArgs = new String[] {feedName, String.valueOf(contactID), String.valueOf(sequenceID)};
         
-        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, null, null);
+        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, DbObject.CONTACT_ID + " DESC", "1");
         
         if (objC.moveToFirst()) {
             objId = objC.getLong(0);

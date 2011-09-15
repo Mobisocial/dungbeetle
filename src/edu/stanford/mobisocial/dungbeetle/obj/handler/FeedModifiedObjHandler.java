@@ -28,6 +28,7 @@ public class FeedModifiedObjHandler extends DatabaseObjHandler {
         cv.put(Group.LAST_UPDATED, String.valueOf(timestamp));
         cv.put(Group.LAST_OBJECT_ID, objId);
         getDBHelper().getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?", new String[]{feedName});
+        getDBHelper().getWritableDatabase().execSQL("UPDATE "+Group.TABLE+" SET "+Group.NUM_UNREAD+" = "+Group.NUM_UNREAD+" + 1 WHERE "+Group.FEED_NAME+"='"+feedName+"'");
         Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         context.getContentResolver().notifyChange(feedlistUri, null);
     }

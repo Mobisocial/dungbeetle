@@ -8,9 +8,12 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class ObjectListCursorAdapter extends CursorAdapter {
@@ -33,6 +36,21 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     @Override
     public void bindView(View v, Context context, Cursor c) {
         DbObject.bindView(v, context, c, mContactCache);
+        DBHelper helper = new DBHelper(context);
+        int feedCol = -1;
+        String[] cols = c.getColumnNames();
+        // There are two selected 'feed_name' columns, one can be null.
+        for (int i = 0; i < cols.length; i++) {
+            if (cols[i].equals(DbObject.FEED_NAME)) {
+                feedCol = i;
+                break;
+            }
+        }
+
+        String feedName = c.getString(feedCol);
+        helper.getWritableDatabase().execSQL("UPDATE "+Group.TABLE+" SET "+Group.NUM_UNREAD+" = 0 WHERE "+Group.FEED_NAME+"='"+feedName+"'");
+        helper.close();
+        context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
     }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {

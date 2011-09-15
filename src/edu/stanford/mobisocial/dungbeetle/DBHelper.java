@@ -63,7 +63,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 37;
+	public static final int VERSION = 38;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -231,6 +231,12 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'last_object_id' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
         }
+        if (oldVersion <= 37) {
+            // Can't easily drop columns, but 'update_id' and 'is_child_feed' are dead columns.
+
+            Log.w(TAG, "Adding column 'num_unread' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.NUM_UNREAD + " INTEGER DEFAULT 0");
+        }
         db.setVersion(VERSION);
     }
 
@@ -333,7 +339,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.VERSION, "INTEGER DEFAULT -1",
                     Group.LAST_UPDATED, "INTEGER",
                     Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
-                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1"
+                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
+                    Group.NUM_UNREAD, "INTEGER DEFAULT 0"
                         );
             
             createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
