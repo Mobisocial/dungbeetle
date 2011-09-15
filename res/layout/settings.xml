@@ -24,15 +24,20 @@
             android:onClick="onClickSearch" />-->
     </LinearLayout>
 
-    
-    <ListView  
-        android:id="@android:id/list"
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        />
-    <TextView android:id="@android:id/empty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Empty set"
-        />
+    <LinearLayout android:layout_margin="5px" android:id="@+id/color_section" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:layout_weight="1"  android:textAppearance="?android:attr/textAppearanceLarge" android:text="Colors" android:id="@+id/colors_label" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <Button android:text="" android:id="@+id/primary_color" android:layout_height="wrap_content" android:layout_width="72px"></Button>
+        <Button android:text="" android:id="@+id/secondary_color" android:layout_height="wrap_content" android:layout_width="72px"></Button>
+    </LinearLayout>
+    <LinearLayout android:layout_margin="5px" android:id="@+id/dropbox_section" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView  android:textAppearance="?android:attr/textAppearanceLarge" android:text="DropBox" android:id="@+id/dropbox_label" android:gravity="fill_horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"></TextView>
+        <Button android:text="Backup" android:id="@+id/dropbox_backup" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+        <Button android:text="Restore" android:id="@+id/dropbox_restore" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+    </LinearLayout>
+    <LinearLayout android:layout_margin="5px" android:id="@+id/sdcard_section" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:layout_weight="1"  android:textAppearance="?android:attr/textAppearanceLarge" android:text="SD Card" android:id="@+id/sdcard_label" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <Button android:text="Backup" android:id="@+id/sdcard_backup" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+        <Button android:text="Restore" android:id="@+id/sdcard_restore" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+    </LinearLayout>
+    <CheckedTextView  android:layout_margin="5px" android:checkMark="?android:attr/listChoiceIndicatorMultiple" android:textAppearance="?android:attr/textAppearanceLarge" android:id="@+id/global_tv_mode" android:text="Global TV Mode" android:layout_height="wrap_content" android:clickable="true" android:checked="false" android:focusable="true" android:layout_width="match_parent"></CheckedTextView>
 </LinearLayout>
