@@ -83,6 +83,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         data = baos.toByteArray();
         sourceBitmap.recycle();
         resizedBitmap.recycle();
+        System.gc();
         return from(data);
     }
 

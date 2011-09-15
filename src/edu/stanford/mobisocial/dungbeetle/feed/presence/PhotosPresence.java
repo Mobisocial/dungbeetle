@@ -80,6 +80,7 @@ public class PhotosPresence extends FeedPresence {
         byte[] data = baos.toByteArray();
         sourceBitmap.recycle();
         resizedBitmap.recycle();
+        System.gc();
         return PictureObj.from(data);
     }
 
