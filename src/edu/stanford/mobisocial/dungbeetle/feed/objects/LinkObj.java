@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -122,7 +124,16 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 	            if (!(context instanceof Activity)) {
 	                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	            }
-	            context.startActivity(intent);
+	            try {
+	            	context.startActivity(intent);
+	            } catch (ActivityNotFoundException e) {
+	            	String msg;
+	            	if(type != null)
+	            		msg = "A third party application that supports " + type + " is required.";
+	            	else
+	            		msg = "A third party application that supports " + uri.getScheme() + " is required.";
+	            	Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+	            }
 	            return;
 	        }
         }    
