@@ -5,11 +5,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -24,6 +28,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
@@ -45,6 +51,10 @@ public class VoiceQuickRecordActivity extends Activity
 	private Thread recordingThread = null;
 	private boolean isRecording = false;
 	private byte rawBytes[] = null;
+	private Timer mTimer;
+	private Date mStart;
+	private ProgressBar mTimerRecord;
+	private TextView mStatusLabel;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,7 +80,13 @@ public class VoiceQuickRecordActivity extends Activity
             finish();
             return;
         }
+        //block rotate as it kills the activity
+		int orientation = getResources().getConfiguration().orientation;
+		setRequestedOrientation(orientation);
 
+        mTimerRecord = (ProgressBar)findViewById(R.id.timerRecord);
+        mTimerRecord.setMax(18*2);
+        mStatusLabel = (TextView)findViewById(R.id.statusLabel);
         ((Button)findViewById(R.id.cancelRecord)).setOnClickListener(btnClick);
         ((Button)findViewById(R.id.sendRecord)).setOnClickListener(btnClick);
 
@@ -124,10 +140,29 @@ public class VoiceQuickRecordActivity extends Activity
         });
     }
 
-	private void startRecording(){
+	private synchronized void startRecording(){
+		mStatusLabel.setText("Recording...");
 		recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
 						RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
-
+		mStart = new Date();
+		mTimer = new Timer();
+		mTimer.scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						Date now = new Date();
+						long millis = now.getTime() - mStart.getTime();
+						if(millis > 18000) {
+							millis = 18000;
+							stopRecording();
+						}
+						mTimerRecord.setProgress((int)millis / (1000 / 2));
+					}
+				});
+			}
+		}, 1000, 500);
 		recorder.startRecording();
 		isRecording = true;
 		recordingThread = new Thread(new Runnable() {
@@ -173,8 +208,10 @@ public class VoiceQuickRecordActivity extends Activity
 		}
 	}
 	
-	private void stopRecording() {
+	private synchronized void stopRecording() {
 		if(null != recorder){
+			mStatusLabel.setText("Stopped");
+			mTimer.cancel();
 			isRecording = false;
 			
 			recorder.stop();
@@ -182,10 +219,10 @@ public class VoiceQuickRecordActivity extends Activity
 			
 			recorder = null;
 			recordingThread = null;
+
+			loadIntoBytes(getTempFilename());
+			deleteTempFile();
 		}
-		
-		loadIntoBytes(getTempFilename());
-		deleteTempFile();
 	}
 
 	private void sendRecording() {
@@ -216,7 +253,6 @@ public class VoiceQuickRecordActivity extends Activity
 		try {
 			in = new FileInputStream(inFilename);
 			totalAudioLen = in.getChannel().size();
-
 			rawBytes = new byte[(int)totalAudioLen];
 			track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, (int)totalAudioLen, AudioTrack.MODE_STATIC);
 	              
