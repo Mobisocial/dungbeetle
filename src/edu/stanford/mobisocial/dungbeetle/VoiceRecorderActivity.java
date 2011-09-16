@@ -166,6 +166,10 @@ public class VoiceRecorderActivity extends Activity {
         try {
             in = new FileInputStream(inFilename);
             totalAudioLen = in.getChannel().size();
+			if(totalAudioLen * 4 / 3 > DBHelper.SIZE_LIMIT) {
+				totalAudioLen =  DBHelper.SIZE_LIMIT * 3 / 4 - 32000;
+				Toast.makeText(this, "Recording too long, only first part will be sent", Toast.LENGTH_SHORT).show();
+			}
 
             rawBytes = new byte[(int)totalAudioLen];
             

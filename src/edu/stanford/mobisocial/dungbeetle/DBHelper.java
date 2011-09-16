@@ -64,6 +64,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
 	public static final int VERSION = 38;
+	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -399,6 +400,8 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.SEQUENCE_ID, 0);
             cv.put(DbObject.TIMESTAMP, timestamp);
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
             db.insertOrThrow(DbObject.TABLE, null, cv);
             return 0;
         }
@@ -430,6 +433,8 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
             Long objId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
             FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
@@ -465,6 +470,8 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
             getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
             ContentResolver resolver = mContext.getContentResolver();
@@ -707,6 +714,11 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public boolean queryAlreadyReceived(byte[] encoded) {
+    	//sqlite can barf receiving a large message because this query is
+    	//just too memory consuming.  just skip it for long objects...
+    	//TODO: XXX EVIL!!!
+    	if(encoded.length > SIZE_LIMIT)
+    		return false;
         Cursor c = getReadableDatabase().query(
             DbObject.TABLE,
             new String[]{ DbObject._ID },
