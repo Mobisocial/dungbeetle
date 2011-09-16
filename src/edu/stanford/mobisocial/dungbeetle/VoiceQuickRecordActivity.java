@@ -13,6 +13,7 @@ import java.util.TimerTask;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -79,9 +80,12 @@ public class VoiceQuickRecordActivity extends Activity
             finish();
             return;
         }
+        //block rotate as it kills the activity
+		int orientation = getResources().getConfiguration().orientation;
+		setRequestedOrientation(orientation);
 
         mTimerRecord = (ProgressBar)findViewById(R.id.timerRecord);
-        mTimerRecord.setMax(20*2);
+        mTimerRecord.setMax(18*2);
         mStatusLabel = (TextView)findViewById(R.id.statusLabel);
         ((Button)findViewById(R.id.cancelRecord)).setOnClickListener(btnClick);
         ((Button)findViewById(R.id.sendRecord)).setOnClickListener(btnClick);
@@ -150,8 +154,8 @@ public class VoiceQuickRecordActivity extends Activity
 					public void run() {
 						Date now = new Date();
 						long millis = now.getTime() - mStart.getTime();
-						if(millis > 20000) {
-							millis = 20000;
+						if(millis > 18000) {
+							millis = 18000;
 							stopRecording();
 						}
 						mTimerRecord.setProgress((int)millis / (1000 / 2));
@@ -249,10 +253,6 @@ public class VoiceQuickRecordActivity extends Activity
 		try {
 			in = new FileInputStream(inFilename);
 			totalAudioLen = in.getChannel().size();
-			if(totalAudioLen * 4 / 3 > DBHelper.SIZE_LIMIT) {
-				totalAudioLen =  DBHelper.SIZE_LIMIT * 3 / 4 - 32000;
-				Toast.makeText(this, "Recording too long, only first part will be sent", Toast.LENGTH_SHORT).show();
-			}
 			rawBytes = new byte[(int)totalAudioLen];
 			track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, (int)totalAudioLen, AudioTrack.MODE_STATIC);
 	              
