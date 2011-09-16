@@ -47,7 +47,7 @@ public class ResharePhotoAction extends ObjAction {
             intent.setType("image/png");
             Log.w("ResharePhotoAction", Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");
             intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file)); 
-            context.startActivity(Intent.createChooser(intent, "Share image using"));
+            context.startActivity(Intent.createChooser(intent, "Export image to"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,14 +57,14 @@ public class ResharePhotoAction extends ObjAction {
 
     @Override
     public String getLabel() {
-        return "Share";
+        return "Export";
     }
 
     @Override
     public boolean isActive(DbEntryHandler objType, JSONObject objData) {
-        if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+        /*if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
-        }
+        }*/
         return (objType instanceof PictureObj);
     }
 }

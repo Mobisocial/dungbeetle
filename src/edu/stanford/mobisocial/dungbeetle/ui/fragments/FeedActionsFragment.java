@@ -113,7 +113,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void promptForSharing() {
         new AlertDialog.Builder(getActivity())
-            .setTitle("Share thread...")
+            .setTitle("Share group...")
             .setItems(new String[] {"Send to friend", "Broadcast nearby", "QR code"}, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -134,7 +134,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void sendToFriend() {
         new AlertDialog.Builder(getActivity())
-        .setTitle("Share thread...")
+        .setTitle("Share group...")
         .setItems(new String[] {"From Musubi", "Other..."}, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -169,7 +169,7 @@ public class FeedActionsFragment extends Fragment {
     private void broadcastNearby() {
         if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             new AlertDialog.Builder(getActivity())
-                .setTitle("Share thread...")
+                .setTitle("Share group...")
                 .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

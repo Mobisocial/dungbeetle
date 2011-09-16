@@ -60,9 +60,9 @@ public class PhotoTaker implements ActivityCallout {
 
 		file = new File(path, "image.tmp");
 		try {
-			BitmapFactory.Options options = new BitmapFactory.Options();
+			//BitmapFactory.Options options = new BitmapFactory.Options();
 			//Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(), options);
-			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
+			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file));
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();

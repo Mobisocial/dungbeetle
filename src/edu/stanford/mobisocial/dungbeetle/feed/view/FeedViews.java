@@ -37,9 +37,9 @@ public class FeedViews {
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+        //if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             feedViews.add(new PresenceView());
-        }
+        //}
         return feedViews;
     }
 
