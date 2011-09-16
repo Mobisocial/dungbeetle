@@ -3,15 +3,21 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:padding="20dip">
-    
+    android:padding="20dip">    
     
 	<TextView  
     	android:layout_width="fill_parent" 
     	android:layout_height="wrap_content" 
     	android:text="Recording..."
+        android:id="@+id/statusLabel" 
     	android:layout_weight="1.0"
     	android:textSize="32dip"/>
+	<ProgressBar 
+	   android:layout_weight="0.5" 
+	   android:id="@+id/timerRecord" 
+	   android:layout_width="fill_parent" 
+	   android:layout_height="wrap_content" 
+	   style="?android:attr/progressBarStyleHorizontal" android:padding="5px"/>
     	
     <LinearLayout
     	android:orientation="horizontal"
