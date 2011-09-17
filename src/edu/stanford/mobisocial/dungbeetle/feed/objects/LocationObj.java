@@ -43,8 +43,11 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoN
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
-    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
 
         String lat = "" + content.optDouble(COORD_LAT);
@@ -62,7 +65,7 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoN
     }
 
     @Override
-    public void activate(Context context, JSONObject content) {
+    public void activate(Context context, JSONObject content, byte[] raw) {
         String loc = "geo:" + content.optDouble(COORD_LAT) + "," +
                 content.optDouble(COORD_LONG) + "?z=17";
         Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));

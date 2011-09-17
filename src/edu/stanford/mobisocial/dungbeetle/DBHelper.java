@@ -63,7 +63,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 38;
+	public static final int VERSION = 39;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -214,6 +214,10 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'num_unread' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.NUM_UNREAD + " INTEGER DEFAULT 0");
         }
+        if(oldVersion <= 38) {
+            Log.w(TAG, "Adding column 'raw' to object table.");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
+        }
         db.setVersion(VERSION);
     }
 
@@ -279,7 +283,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
                         DbObject.ENCODED, "BLOB",
-                        DbObject.CHILD_FEED_NAME, "TEXT"
+                        DbObject.CHILD_FEED_NAME, "TEXT",
+                        DbObject.RAW, "BLOB"
                         );
             createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
@@ -411,8 +416,16 @@ public class DBHelper extends SQLiteOpenHelper {
             return -1;
         }
     }
+    void updateJsonAndRaw(SQLiteDatabase db, long id, String json, byte[] raw) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.JSON, json);
+    	cv.put(DbObject.RAW, raw);
+    	db.update(DbObject.TABLE, cv, "WHERE " + DbObject._ID + " = ?" , new String[] { String.valueOf(id)});
+    }
+    
+    
 
-    long addToFeed(String appId, String feedName, String type, JSONObject json) {
+    long addToFeed(String appId, String feedName, String type, JSONObject json, byte[] raw) {
         try{
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
@@ -429,6 +442,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TYPE, type);
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
+            cv.put(DbObject.RAW, raw);
             cv.put(DbObject.TIMESTAMP, timestamp);
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
@@ -450,7 +464,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, byte[] encoded){
+    long addObjectByJson(long contactId, JSONObject json, byte[] encoded, byte[] raw){
         try{
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
             long timestamp = json.getLong(DbObjects.TIMESTAMP);
@@ -467,6 +481,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.ENCODED, encoded);
             cv.put(DbObject.SENT, 1);
+            cv.put(DbObject.RAW, raw);
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }

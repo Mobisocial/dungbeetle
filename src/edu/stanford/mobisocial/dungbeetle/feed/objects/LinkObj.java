@@ -42,6 +42,9 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     public static DbObject from(String uri, String mimeType, String title) {
         return new DbObject(TYPE, json(uri, mimeType, title));
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     public static JSONObject json(String uri, String mimeType, String title) {
         JSONObject obj = new JSONObject();
@@ -77,7 +80,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 	    return uri != null && uri.getScheme().startsWith("http");
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         String title;
         if (content.has(TITLE)) {
@@ -99,7 +102,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
     @Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
     	//linkify should have picked it up already but if we are in TV mode we
     	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);

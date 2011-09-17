@@ -65,7 +65,7 @@ public class LaunchApplicationAction implements FeedAction {
 
                 
                 AppReferenceObj appRefObj = new AppReferenceObj();
-                appRefObj.activate(context, obj.getJson());
+                appRefObj.activate(context, obj.getJson(), null);
             }
         });
     }

@@ -54,6 +54,9 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
         return TYPE;
     }
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static AppState from(String packageName, String arg, String feedName, String groupUri) {
         return new AppState(json(packageName, arg, feedName, groupUri));
     }
@@ -99,7 +102,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
@@ -163,7 +166,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    String arg = content.optString(ARG);

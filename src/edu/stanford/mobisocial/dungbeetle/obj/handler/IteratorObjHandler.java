@@ -19,9 +19,9 @@ public class IteratorObjHandler extends ObjHandler {
 
     @Override
     public synchronized void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-            DbEntryHandler typeInfo, JSONObject json) {
+            DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
         for (IObjHandler h : mHandlers) {
-            h.handleObj(context, feedUri, contact, sequenceId, typeInfo, json);
+            h.handleObj(context, feedUri, contact, sequenceId, typeInfo, json, raw);
         }
     }
 }

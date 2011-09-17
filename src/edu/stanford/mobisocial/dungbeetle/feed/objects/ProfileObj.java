@@ -22,6 +22,9 @@ public class ProfileObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
      
     public static JSONObject json(String name, String about){
         JSONObject obj = new JSONObject();

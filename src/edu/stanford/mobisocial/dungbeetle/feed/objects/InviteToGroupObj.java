@@ -23,6 +23,9 @@ public class InviteToGroupObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     public static JSONObject json(String groupName, Uri dynUpdateUri){
         JSONObject obj = new JSONObject();

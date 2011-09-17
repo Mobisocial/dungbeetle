@@ -47,7 +47,7 @@ public abstract class DatabaseObjHandler extends ObjHandler {
 
     @Override
     public final void handleObj(Context context, Uri feedUri, Contact contact,
-            long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
+            long sequenceId, DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
         long objId = getObjectId(feedUri, contact.id, sequenceId);
         handleObj(context, feedUri, objId);
     }

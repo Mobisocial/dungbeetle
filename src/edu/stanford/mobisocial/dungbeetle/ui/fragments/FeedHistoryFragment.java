@@ -93,12 +93,13 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mAdapter.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
         if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(getActivity(), obj);
+                activator.activate(getActivity(), obj, raw);
             }
         }
         catch(JSONException e){

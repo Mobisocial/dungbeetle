@@ -14,6 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
@@ -26,10 +27,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 
 import android.net.Uri;
-import android.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
+public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
@@ -88,7 +90,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     public static JSONObject json(byte[] data){
-        String encoded = Base64.encodeToString(data, Base64.DEFAULT);
+        String encoded = Base64.encodeToString(data, false);
         JSONObject obj = new JSONObject();
         try{
             obj.put("data", encoded);
@@ -96,26 +98,43 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+		if(raw == null)
+	        raw = Base64.decode(content.optString(DATA));
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
-        String bytes = content.optString(DATA);
-        App.instance().objectImages.lazyLoadImage(bytes.hashCode(), bytes, imageView);
+        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
         frame.addView(imageView);
+	}
+	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
+			JSONObject msg) {
+        byte[] bytes = Base64.decode(msg.optString(DATA));
+        msg.remove(DATA);
+		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
+		if(raw == null)
+	        raw = Base64.decode(content.optString(DATA));
         Intent intent = new Intent(context, ImageViewerActivity.class);
         String bytes = content.optString(DATA);
-        intent.putExtra("b64Bytes", bytes);
+        intent.putExtra("bytes", raw);
         if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(intent); 
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		try {
+			objData = objData.put(DATA, Base64.encodeToString(raw, false));
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return objData;
+	}
 
     @Override
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {   

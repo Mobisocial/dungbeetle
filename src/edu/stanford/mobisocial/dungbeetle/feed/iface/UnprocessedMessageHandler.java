@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
 import android.content.Context;
+import android.util.Pair;
+
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
@@ -8,5 +10,5 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
  */
 public interface UnprocessedMessageHandler {
     String getType();
-    void handleUnprocessed(Context context, JSONObject msg);
+    Pair<JSONObject, byte[]> handleUnprocessed(Context context, JSONObject msg);
 }

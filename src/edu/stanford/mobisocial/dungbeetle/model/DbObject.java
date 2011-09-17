@@ -37,6 +37,7 @@ public class DbObject {
 	public static final String CHILD_FEED_NAME = "child_feed";
 
     public static final String EXTRA_FEED_URI = "feed_uri";
+	public static final String RAW = "raw";
 
     private final Cursor mCursor;
     protected final String mType;
@@ -94,6 +95,7 @@ public class DbObject {
      */
     public static void bindView(View v, Context context, Cursor c, ContactCache contactCache, boolean allowInteractions) {
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
         Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
         Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
         Date date = new Date(timestamp);
@@ -122,10 +124,10 @@ public class DbObject {
                 ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                 frame.removeAllViews();
                 frame.setTag(R.id.object_entry, c.getPosition());
-                FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-                if(renderer != null){
-                    renderer.render(context, frame, content, allowInteractions);
-                }
+                
+        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
+        		if(renderer != null)
+        			renderer.render(context, frame, content, raw, allowInteractions);
             } catch (JSONException e) {
                 Log.e("db", "error opening json");
             }

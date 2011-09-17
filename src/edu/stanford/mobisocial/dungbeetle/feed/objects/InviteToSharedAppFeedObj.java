@@ -35,6 +35,9 @@ public class InviteToSharedAppFeedObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     public static JSONObject json(Collection<Contact> contacts, 
                                   String feedName,

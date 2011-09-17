@@ -11,9 +11,9 @@ import android.content.Context;
 public class OpenObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData) {
+    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         if (objType instanceof Activator) {
-            ((Activator) objType).activate(context, objData);
+            ((Activator) objType).activate(context, objData, raw);
         }
     }
 

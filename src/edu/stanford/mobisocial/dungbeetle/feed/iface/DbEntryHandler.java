@@ -11,4 +11,5 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 public interface DbEntryHandler {
     String getType();
     void handleDirectMessage(Context context, Contact from, JSONObject msg);
+	JSONObject mergeRaw(JSONObject objData, byte[] raw);
 }

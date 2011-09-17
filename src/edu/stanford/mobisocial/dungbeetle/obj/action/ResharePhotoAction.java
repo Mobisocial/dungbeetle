@@ -26,7 +26,7 @@ import android.net.Uri;
 import android.util.Log;
 
 public class ResharePhotoAction extends ObjAction {
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData) {
+    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         String b64Bytes = objData.optString(PictureObj.DATA);
 
         OutputStream outStream = null;
@@ -35,7 +35,7 @@ public class ResharePhotoAction extends ObjAction {
             outStream = new FileOutputStream(file);
             
 	        BitmapManager mgr = new BitmapManager(1);
-	        Bitmap bitmap = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
+	        Bitmap bitmap = mgr.getBitmap(raw.hashCode(), raw);
 	        
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
             outStream.flush();

@@ -50,6 +50,11 @@ public class ImageViewerActivity extends Activity{
             ((App)getApplication()).objectImages.lazyLoadImage(
                 b64Bytes.hashCode(), b64Bytes, im);
             bitmap = mgr.getBitmapB64(b64Bytes.hashCode(), b64Bytes);
+        } else if(mIntent.hasExtra("bytes")){
+            byte[] bytes = mIntent.getByteArrayExtra("bytes");
+            ((App)getApplication()).objectImages.lazyLoadImage(
+            		bytes.hashCode(), bytes, im);
+            bitmap = mgr.getBitmap(bytes.hashCode(), bytes);
         }
 
         extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";

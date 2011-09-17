@@ -52,7 +52,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
         return TYPE;
     }
 
-    public static DbObject from(String packageName, String arg, String feedName, String groupUri, long creatorId) {
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+
+	public static DbObject from(String packageName, String arg, String feedName, String groupUri, long creatorId) {
         return new DbObject(TYPE, json(packageName, arg, feedName, groupUri, creatorId));
     }
 
@@ -102,11 +106,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             contentIntent);
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
-            mAppStateObj.render(context, frame, appState, allowInteractions);
+            mAppStateObj.render(context, frame, appState, raw, allowInteractions);
             return;
         } else {
 	        String appName = content.optString(PACKAGE_NAME);
@@ -126,7 +130,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
@@ -150,7 +154,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
-            mAppStateObj.activate(context, appContent);
+            mAppStateObj.activate(context, appContent, raw);
 	    }
 	}
 

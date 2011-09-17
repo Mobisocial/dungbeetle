@@ -41,6 +41,9 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         return Feed.forGroup(g);
     }
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static JSONObject json(Group g){
         JSONObject obj = new JSONObject();
         try{
@@ -51,7 +54,7 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -63,7 +66,7 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
 	    Feed feedRef = new Feed(content);
 	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {

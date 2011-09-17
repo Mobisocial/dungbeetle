@@ -47,6 +47,9 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     public static JSONObject json(String artist, String album, String track) {
         JSONObject obj = new JSONObject();
@@ -62,7 +65,7 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText(asText(content));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
@@ -84,7 +87,7 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void activate(Context context, JSONObject content) {
+    public void activate(Context context, JSONObject content, byte[] raw) {
         if (content.has(URL)) {
             Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));

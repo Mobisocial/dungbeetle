@@ -124,12 +124,13 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
         String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
         if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
             Activator activator = DbObjects.getActivator(obj);
             if(activator != null){
-                activator.activate(getActivity(), obj);
+                activator.activate(getActivity(), obj, raw);
             }
         }
         catch(JSONException e){
@@ -225,6 +226,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         Cursor c = (Cursor)mObjects.getItem(position);
         final String type = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
         final String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        final byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
         final JSONObject json;
         try {
             json = new JSONObject(jsonSrc);
@@ -241,16 +243,17 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         ft.addToBackStack(null);
 
         // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(type, json);
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(type, json, raw);
         newFragment.show(ft, "dialog");
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {
         String mType;
         JSONObject mObj;
+		byte[] mRaw;
 
-        public static ObjMenuDialogFragment newInstance(String type, JSONObject obj) {
-            return new ObjMenuDialogFragment(type, obj);
+        public static ObjMenuDialogFragment newInstance(String type, JSONObject obj, byte[] raw) {
+            return new ObjMenuDialogFragment(type, obj, raw);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -258,9 +261,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             
         }
 
-        private ObjMenuDialogFragment(String type, JSONObject obj) {
+        private ObjMenuDialogFragment(String type, JSONObject obj, byte[] raw) {
             mType = type;
             mObj = obj;
+            mRaw = raw;
         }
 
         @Override
@@ -288,7 +292,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            actions.get(which).actOn(getActivity(), dbType, mObj);
+                            actions.get(which).actOn(getActivity(), dbType, mObj, mRaw);
                         }
                     }).create();
         }

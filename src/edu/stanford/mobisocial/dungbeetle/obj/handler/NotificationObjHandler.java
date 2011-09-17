@@ -27,7 +27,7 @@ public class NotificationObjHandler extends ObjHandler {
 
     @Override
     public void handleObj(Context context, Uri feedUri, Contact contact,
-            long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
+            long sequenceId, DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
         if (contact.id == Contact.MY_ID) {
             return;
         }

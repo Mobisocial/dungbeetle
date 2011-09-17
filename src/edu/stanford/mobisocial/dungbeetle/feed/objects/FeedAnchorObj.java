@@ -32,6 +32,9 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         return new DbObject(TYPE, json(parentFeedName));
     }
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
         try {

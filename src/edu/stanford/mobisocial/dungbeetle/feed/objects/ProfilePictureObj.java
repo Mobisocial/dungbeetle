@@ -40,6 +40,9 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         }catch(JSONException e){}
         return obj;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		byte[] data = Base64.decode(obj.optString(DATA), Base64.DEFAULT);
@@ -52,7 +55,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         App.instance().contactImages.invalidate(from.id);
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    TextView textView = new TextView(context);
 	    textView.setText("New profile picture:");
 	    textView.setLayoutParams(CommonLayouts.FULL_WIDTH);
@@ -65,7 +68,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
         Intent intent = new Intent(context, ImageViewerActivity.class);
         String bytes = content.optString(DATA);
         intent.putExtra("b64Bytes", bytes);

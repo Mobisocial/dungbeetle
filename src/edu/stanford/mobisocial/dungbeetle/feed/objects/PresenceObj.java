@@ -23,6 +23,9 @@ public class PresenceObj implements DbEntryHandler {
         }catch(JSONException e){}
         return obj;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     @Override
     public String getType() {

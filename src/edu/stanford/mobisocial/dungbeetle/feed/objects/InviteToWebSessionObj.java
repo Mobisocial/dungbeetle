@@ -20,6 +20,9 @@ public class InviteToWebSessionObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String arg = obj.optString(ARG);

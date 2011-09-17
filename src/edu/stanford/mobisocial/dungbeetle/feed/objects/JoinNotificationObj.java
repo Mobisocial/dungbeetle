@@ -16,6 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -46,13 +47,16 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
         }catch(JSONException e){}
         return obj;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     @Override
     public void handleDirectMessage(final Context context, Contact from, JSONObject obj) {
     }
 
     @Override
-    public void handleUnprocessed(final Context context, JSONObject obj) {
+    public Pair<JSONObject, byte[]> handleUnprocessed(final Context context, JSONObject obj) {
         if (DBG) Log.i(TAG, "Message to update group. ");
         String feedName = obj.optString("feedName");
         final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
@@ -73,11 +77,12 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
         catch(Maybe.NoValError e) { }
         ident.close();
         Helpers.resendProfile(context);
+        return null;
     }
 
 
     @Override
-    public void render(Context context, ViewGroup frame, JSONObject content, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText("I'm here!");
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

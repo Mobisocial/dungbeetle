@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
@@ -124,9 +125,9 @@ public class MessagingManagerThread extends Thread {
    
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
         try {
-            final JSONObject obj = new JSONObject(contents);
-            String feedName = obj.getString("feedName");
-            String type = obj.optString(DbObjects.TYPE);
+            JSONObject in_obj = new JSONObject(contents);
+            String feedName = in_obj.getString("feedName");
+            String type = in_obj.optString(DbObjects.TYPE);
             Log.w(TAG, "encoded length: " + encoded.length);
             //if (encoded.length > 200000 || mHelper.queryAlreadyReceived(encoded)) {
             if (mHelper.queryAlreadyReceived(encoded)) {
@@ -135,10 +136,17 @@ public class MessagingManagerThread extends Thread {
             }
 
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
-            DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
+            DbEntryHandler h = DbObjects.getMessageHandler(in_obj);
+            byte[] extracted_data = null;
             if (h != null && h instanceof UnprocessedMessageHandler) {
-                ((UnprocessedMessageHandler)h).handleUnprocessed(mContext, obj);
+            	Pair<JSONObject, byte[]> r =((UnprocessedMessageHandler)h).handleUnprocessed(mContext, in_obj);
+            	if(r != null) {
+            		in_obj = r.first;
+            		extracted_data = r.second;
+            	}
             }
+            final JSONObject obj = in_obj;
+            final byte[] raw = extracted_data;
 
             if (contact.isKnown()) {
                 long sequenceID;
@@ -146,7 +154,7 @@ public class MessagingManagerThread extends Thread {
                 long contactId = realContact.id;
                 if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
                 // Insert into the database. (TODO: Handler, both android.os and musubi.core)
-				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded);
+				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded, raw);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -161,7 +169,7 @@ public class MessagingManagerThread extends Thread {
                             long time = obj.optLong(DbObject.TIMESTAMP);
                             Helpers.updateLastPresence(mContext, realContact, time);
 
-                            final DbEntryHandler h = DbObjects.getIncomingMessageHandler(obj);
+                            final DbEntryHandler h = DbObjects.getMessageHandler(obj);
                             if (h != null) {
                                 h.handleDirectMessage(mContext, realContact, obj);
                             }
@@ -175,7 +183,7 @@ public class MessagingManagerThread extends Thread {
 
                 // TODO: framework code.
                 getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
-                        DbObjects.forType(type), obj);
+                        DbObjects.forType(type), obj, raw);
 
                 // Per-object handlers:
                 if (h != null && h instanceof FeedMessageHandler) {
@@ -288,7 +296,7 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
-                        DbEntryHandler h = DbObjects.getIncomingMessageHandler(json);
+                        DbEntryHandler h = DbObjects.getMessageHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
                             ((FeedMessageHandler) h).handleFeedMessage(
                                     mContext, feedUri, Contact.MY_ID, -1, type, json);

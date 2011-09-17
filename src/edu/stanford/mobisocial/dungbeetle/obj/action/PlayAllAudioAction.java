@@ -127,7 +127,7 @@ ORDER BY _id ASC
             
         }
 	
-    public void onAct(Context context, DbEntryHandler objType, final JSONObject objData) {
+    public void onAct(Context context, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
         DBHelper helper = new DBHelper(context);
         this.context = context;
         

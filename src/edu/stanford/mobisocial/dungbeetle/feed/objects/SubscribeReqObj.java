@@ -16,6 +16,9 @@ public class SubscribeReqObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     public static JSONObject json(String feedName){
         JSONObject obj = new JSONObject();
