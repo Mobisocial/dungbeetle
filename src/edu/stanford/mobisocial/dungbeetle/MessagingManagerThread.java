@@ -453,7 +453,6 @@ public class MessagingManagerThread extends Thread {
 			}
             mBody = globalize(mJson.toString());
             processRawData();
-            processRawData();
         }
     }
 
