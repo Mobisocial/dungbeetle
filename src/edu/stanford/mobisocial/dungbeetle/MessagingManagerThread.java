@@ -393,6 +393,17 @@ public class MessagingManagerThread extends Thread {
 		public byte[] getEncoded() {
 			return mEncoded;
 		}
+		void processRawData() {
+            DbEntryHandler h = DbObjects.getMessageHandler(mJson);
+            byte[] extracted_data = null;
+            if (h != null && h instanceof OutgoingMessageHandler) {
+            	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
+            	if(r != null) {
+            		mJson = r.first;
+            		mRaw = r.second;
+            	}
+            }
+		}
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg {
@@ -413,21 +424,12 @@ public class MessagingManagerThread extends Thread {
 				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
-				throw new RuntimeException(e);
 			} catch (JSONException e) {
 				e.printStackTrace();
-				throw new RuntimeException(e);
 			}
-            DbEntryHandler h = DbObjects.getMessageHandler(mJson);
-            byte[] extracted_data = null;
-            if (h != null && h instanceof OutgoingMessageHandler) {
-            	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
-            	if(r != null) {
-            		mJson = r.first;
-            		mRaw = r.second;
-            	}
-            }
+            // the processing code manipulates the json so this has to come first
             mBody = globalize(mJson.toString());
+            processRawData();
         }
     }
 
@@ -442,7 +444,16 @@ public class MessagingManagerThread extends Thread {
                 Log.w(TAG, "Bad destination found: '" + to + "'");
                 mPubKeys = new ArrayList<RSAPublicKey>();
             }
-            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+            try {
+				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+            mBody = globalize(mJson.toString());
+            processRawData();
+            processRawData();
         }
     }
 
