@@ -39,8 +39,19 @@
         <Button android:text="Backup" android:id="@+id/sdcard_backup" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
         <Button android:text="Restore" android:id="@+id/sdcard_restore" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
     </LinearLayout>
-    <CheckedTextView  android:layout_margin="5px" android:checkMark="?android:attr/listChoiceIndicatorMultiple" android:textAppearance="?android:attr/textAppearanceLarge" android:id="@+id/global_tv_mode" android:text="Global TV Mode" android:layout_height="wrap_content" android:clickable="true" android:checked="false" android:focusable="true" android:layout_width="match_parent"></CheckedTextView>
+    <CheckedTextView  
+        android:layout_margin="5px" 
+        android:checkMark="?android:attr/listChoiceIndicatorMultiple" 
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:id="@+id/global_tv_mode" 
+        android:text="Global TV Mode" 
+        android:layout_height="wrap_content" 
+        android:clickable="true" 
+        android:checked="false" 
+        android:focusable="true" 
+        android:layout_width="match_parent"/>
     <TextView  
+        android:layout_margin="5px"
         android:textAppearance="?android:attr/textAppearanceLarge" 
         android:text="Vacuum Database" 
         android:id="@+id/vacuum_database" 
