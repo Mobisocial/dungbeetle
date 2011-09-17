@@ -83,10 +83,11 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, Outgoi
 	    Runnable r = new Runnable() {
 	        @Override
 	        public void run() {
-	    		byte[] bytes = raw;
+	        	byte[] bytes = raw;
 	    		if(bytes == null) {
 	    			Pair<JSONObject, byte[]> p = splitRaw(content);
-	    			bytes = Base64.decode(content.optString(DATA), Base64.DEFAULT);
+//	    			content = p.first;
+	    			bytes = p.second;
 	    		}
 
 	            AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);

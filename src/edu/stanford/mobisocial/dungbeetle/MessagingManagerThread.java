@@ -35,6 +35,7 @@ import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
@@ -358,6 +359,8 @@ public class MessagingManagerThread extends Thread {
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
         protected byte[] mEncoded;
+        protected JSONObject mJson;
+        protected byte[] mRaw;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
         	//load the iv if it was already picked
@@ -383,7 +386,7 @@ public class MessagingManagerThread extends Thread {
 		@Override
 		public void onEncoded(byte[] encoded) {
 			mEncoded = encoded;
-			mHelper.markEncoded(mObjectId, encoded);
+			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
 		}
 
 		@Override
@@ -406,7 +409,25 @@ public class MessagingManagerThread extends Thread {
                 subs.moveToNext();
             }
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            mBody = globalize(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+            try {
+				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			} catch (JSONException e) {
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			}
+            DbEntryHandler h = DbObjects.getMessageHandler(mJson);
+            byte[] extracted_data = null;
+            if (h != null && h instanceof OutgoingMessageHandler) {
+            	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
+            	if(r != null) {
+            		mJson = r.first;
+            		mRaw = r.second;
+            	}
+            }
+            mBody = globalize(mJson.toString());
         }
     }
 

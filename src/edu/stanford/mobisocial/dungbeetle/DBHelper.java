@@ -485,7 +485,7 @@ public class DBHelper extends SQLiteOpenHelper {
     
     
 
-    long addToFeed(String appId, String feedName, String type, JSONObject json, byte[] raw) {
+    long addToFeed(String appId, String feedName, String type, JSONObject json) {
         try{
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
@@ -502,7 +502,6 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TYPE, type);
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
-            cv.put(DbObject.RAW, raw);
             cv.put(DbObject.TIMESTAMP, timestamp);
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
@@ -1038,9 +1037,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded) {
+	public void markEncoded(long id, byte[] encoded, String json, byte[] raw) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.ENCODED, encoded);
+        cv.put(DbObject.JSON, json);
+        cv.put(DbObject.RAW, raw);
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,

@@ -14,6 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -31,7 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler {
+public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
@@ -107,13 +108,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 		if(raw == null) {
 			Pair<JSONObject, byte[]> p = splitRaw(content);
-	        raw = Base64.decode(content.optString(DATA));
+			content = p.first;
+			raw = p.second;
 		}
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
-        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
+        BitmapFactory bf = new BitmapFactory();
+        imageView.setImageBitmap(bf.decodeByteArray(raw, 0, raw.length));
+//        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
         frame.addView(imageView);
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
@@ -164,4 +168,11 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
             return null;
         }
     }
+
+	@Override
+	public Pair<JSONObject, byte[]> handleOutgoing(JSONObject json) {
+        byte[] bytes = Base64.decode(json.optString(DATA));
+        json.remove(DATA);
+		return new Pair<JSONObject, byte[]>(json, bytes);
+	}
 }

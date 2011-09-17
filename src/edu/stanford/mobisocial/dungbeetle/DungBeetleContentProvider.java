@@ -102,18 +102,9 @@ public class DungBeetleContentProvider extends ContentProvider {
             }
             try {
             	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-                DbEntryHandler h = DbObjects.getMessageHandler(json);
-                byte[] extracted_data = null;
-                if (h != null && h instanceof OutgoingMessageHandler) {
-                	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(json);
-                	if(r != null) {
-                		json = r.first;
-                		extracted_data = r.second;
-                	}
-                }
 
                 mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
-                    json, extracted_data);
+                    json);
 
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
@@ -151,19 +142,10 @@ public class DungBeetleContentProvider extends ContentProvider {
             String feedName = segs.get(1);
             try {
             	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-                DbEntryHandler h = DbObjects.getMessageHandler(json);
-                byte[] extracted_data = null;
-                if (h != null && h instanceof OutgoingMessageHandler) {
-                	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(json);
-                	if(r != null) {
-                		json = r.first;
-                		extracted_data = r.second;
-                	}
-                }
 
 
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
-                        json, extracted_data);
+                        json);
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
                 return Uri.parse(uri.toString()); // TODO: is there a reason for this?
