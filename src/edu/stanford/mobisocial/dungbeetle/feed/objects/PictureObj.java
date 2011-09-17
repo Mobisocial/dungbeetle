@@ -141,7 +141,8 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
-			objData = objData.put(DATA, Base64.encodeToString(raw, false));
+			if(raw != null)
+				objData = objData.put(DATA, Base64.encodeToString(raw, false));
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}

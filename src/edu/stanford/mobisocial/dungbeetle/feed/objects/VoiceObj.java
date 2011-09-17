@@ -44,7 +44,8 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, Outgoi
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
-			objData = objData.put(DATA, Base64.encodeToString(raw, Base64.DEFAULT));
+			if(raw != null)
+				objData = objData.put(DATA, Base64.encodeToString(raw, Base64.DEFAULT));
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
