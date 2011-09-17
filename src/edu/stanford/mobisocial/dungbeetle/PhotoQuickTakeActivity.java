@@ -32,7 +32,8 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
         if (intent.hasExtra("feed_uri")) {
             feedUri = intent.getParcelableExtra("feed_uri");   
         }
-        
+		int orientation = getResources().getConfiguration().orientation;
+		setRequestedOrientation(orientation);
     }
 
 	@Override
@@ -47,7 +48,6 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            
             final Context context = this;
             ((InstrumentedActivity)context).doActivityForResult(new PhotoTaker(
                 context, 
