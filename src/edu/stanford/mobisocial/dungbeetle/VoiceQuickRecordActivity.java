@@ -118,6 +118,8 @@ public class VoiceQuickRecordActivity extends Activity
 	}
 
 	private void notifyStartRecording() {
+		//mark recording immedediately, or a quick quit of the recording process crashes
+		isRecording = true;
 	    MediaPlayer player = getMediaPlayer(this, R.raw.videorecord);
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -164,7 +166,6 @@ public class VoiceQuickRecordActivity extends Activity
 			}
 		}, 1000, 500);
 		recorder.startRecording();
-		isRecording = true;
 		recordingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -216,6 +217,11 @@ public class VoiceQuickRecordActivity extends Activity
 			
 			recorder.stop();
 			recorder.release();
+			try {
+				recordingThread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			
 			recorder = null;
 			recordingThread = null;

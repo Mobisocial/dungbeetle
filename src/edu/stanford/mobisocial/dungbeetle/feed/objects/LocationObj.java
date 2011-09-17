@@ -1,4 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -54,14 +57,17 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoN
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
+        NumberFormat df =  DecimalFormat.getNumberInstance();
+        df.setMaximumFractionDigits(5);
+        df.setMinimumFractionDigits(5);
+        
+        String msg = "I'm at " + 
+        	df.format(content.optDouble(COORD_LAT)) +
+        	", " +
+        	df.format(content.optDouble(COORD_LONG));
 
-        String lat = "" + content.optDouble(COORD_LAT);
-        lat = lat.substring(0, lat.indexOf(".") + 5);
-        String lon = "" + content.optDouble(COORD_LONG);
-        lon = lon.substring(0, lon.indexOf(".") + 5);
-        String loc = "I'm at " + lat + ", " + lon;
 
-        valueTV.setText(loc);
+        valueTV.setText(msg);
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));

@@ -108,6 +108,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         getListView().setOnItemClickListener(this);
         getListView().setFastScrollEnabled(true);
         getListView().setOnItemLongClickListener(mLongClickListener);
+        getListView().setOnScrollListener(this);
 
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
@@ -218,7 +219,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
         setListAdapter(mObjects);
-        getListView().setOnScrollListener(this);
     }
 
     @Override
@@ -386,6 +386,8 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 	@Override
 	public void onScroll(AbsListView view, int firstVisible,
 			int visibleCount, int totalCount) {
+		if(mObjects == null)
+			return;
 		
 		boolean loadMore = /* maybe add a padding */
             firstVisible + visibleCount >= totalCount;
