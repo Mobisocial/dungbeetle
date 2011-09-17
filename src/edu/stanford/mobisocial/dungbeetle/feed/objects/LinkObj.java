@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.text.method.BaseMovementMethod;
 import android.text.util.Linkify;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -55,6 +56,10 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String mimeType = obj.optString(MIME_TYPE);

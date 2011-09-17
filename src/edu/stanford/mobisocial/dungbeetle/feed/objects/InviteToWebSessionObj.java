@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
@@ -22,6 +23,10 @@ public class InviteToWebSessionObj implements DbEntryHandler {
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {

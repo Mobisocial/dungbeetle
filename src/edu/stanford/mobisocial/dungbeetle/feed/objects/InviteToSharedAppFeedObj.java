@@ -17,6 +17,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -58,6 +59,10 @@ public class InviteToSharedAppFeedObj implements DbEntryHandler {
         }catch(JSONException e){}
         return obj;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {

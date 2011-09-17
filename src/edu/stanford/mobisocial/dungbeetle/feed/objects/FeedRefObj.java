@@ -24,6 +24,7 @@ import android.content.Context;
 
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Pair;
 
 public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 
@@ -53,7 +54,11 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         }
         return obj;
     }
-	
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
+
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(

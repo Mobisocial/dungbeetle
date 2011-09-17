@@ -32,7 +32,7 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, Outgoi
     public static final String TYPE = "voice";
     public static final String DATA = "data";
 
-    
+     
 	private static final int RECORDER_SAMPLERATE = 8000;
 	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_CONFIGURATION_MONO;
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
@@ -43,7 +43,18 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, Outgoi
         return TYPE;
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		try {
+			objData = objData.put(DATA, Base64.encodeToString(raw, Base64.DEFAULT));
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		byte[] raw = Base64.decode(json.optString(DATA), Base64.DEFAULT);
+		json.remove(DATA);
+		return new Pair<JSONObject, byte[]>(json, raw);
 	}
 
     public static DbObject from(byte[] data) {
@@ -72,9 +83,12 @@ public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, Outgoi
 	    Runnable r = new Runnable() {
 	        @Override
 	        public void run() {
-	        	byte[] bytes = raw;
-	    		if(bytes == null)
+	    		byte[] bytes = raw;
+	    		if(bytes == null) {
+	    			Pair<JSONObject, byte[]> p = splitRaw(content);
 	    			bytes = Base64.decode(content.optString(DATA), Base64.DEFAULT);
+	    		}
+
 	            AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bytes.length, AudioTrack.MODE_STATIC);
 	            track.write(bytes, 0, bytes.length);
 	            try { // TODO: hack.

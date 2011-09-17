@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -50,6 +51,10 @@ public class IMObj implements DbEntryHandler, FeedRenderer {
 		(new PresenceAwareNotify(context)).notify(
             "IM from " + from.name,
             "IM from " + from.name, "\"" + msg + "\"", contentIntent);
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions){

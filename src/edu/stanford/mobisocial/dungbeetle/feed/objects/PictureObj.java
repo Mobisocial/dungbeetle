@@ -48,6 +48,12 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     public static DbObject from(byte[] data) {
         return new DbObject(TYPE, PictureObj.json(data));
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		byte[] raw = Base64.decode(json.optString(DATA));
+		json.remove(DATA);
+		return new Pair<JSONObject, byte[]>(json, raw);
+	}
 
     public static DbObject from(Context context, Uri imageUri) throws IOException {
         // Query gallery for camera picture via
@@ -99,8 +105,10 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     }
 	
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
-		if(raw == null)
+		if(raw == null) {
+			Pair<JSONObject, byte[]> p = splitRaw(content);
 	        raw = Base64.decode(content.optString(DATA));
+		}
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,

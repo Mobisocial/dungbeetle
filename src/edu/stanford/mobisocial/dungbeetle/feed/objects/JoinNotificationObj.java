@@ -54,6 +54,10 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
     @Override
     public void handleDirectMessage(final Context context, Contact from, JSONObject obj) {
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     @Override
     public Pair<JSONObject, byte[]> handleUnprocessed(final Context context, JSONObject obj) {

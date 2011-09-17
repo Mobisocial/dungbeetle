@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -38,6 +39,10 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     public static DbObject from(String artist, String album, String track) {
         return new DbObject(TYPE, json(artist, album, track));
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     public static JSONObject json(String artist, String number) {
         JSONObject obj = new JSONObject();

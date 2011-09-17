@@ -21,6 +21,7 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
 import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -176,5 +177,9 @@ public class ActivityPullObj extends BroadcastReceiver implements DbEntryHandler
 
 	private static void toast(final Context context, final String text) {
 	    Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 }

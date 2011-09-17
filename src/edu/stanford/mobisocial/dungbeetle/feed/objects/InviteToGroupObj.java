@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
@@ -36,6 +37,10 @@ public class InviteToGroupObj implements DbEntryHandler {
         catch(JSONException e){}
         return obj;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {

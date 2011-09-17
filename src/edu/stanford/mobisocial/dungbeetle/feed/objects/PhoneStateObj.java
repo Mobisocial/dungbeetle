@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -45,6 +46,10 @@ public class PhoneStateObj implements DbEntryHandler, FeedRenderer {
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);

@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -42,6 +43,10 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         } catch (JSONException e) {}
         return obj;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
             String type, JSONObject obj) {

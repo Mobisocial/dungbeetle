@@ -12,6 +12,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -53,6 +54,10 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     public String getType() {
         return TYPE;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;

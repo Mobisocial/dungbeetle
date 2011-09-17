@@ -7,6 +7,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.text.util.Linkify;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -49,6 +50,10 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -40,8 +41,9 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
@@ -74,4 +76,9 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         intent.putExtra("b64Bytes", bytes);
         context.startActivity(intent); 
     }
+
+	@Override
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 }

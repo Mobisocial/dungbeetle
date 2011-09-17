@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
@@ -31,6 +32,10 @@ public class PresenceObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
         int presence = obj.optInt(PRESENCE);

@@ -15,6 +15,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -54,6 +55,10 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
 	public static DbObject from(String packageName, String arg, String feedName, String groupUri, long creatorId) {

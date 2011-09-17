@@ -3,6 +3,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -45,6 +46,10 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoN
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
 	}
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {

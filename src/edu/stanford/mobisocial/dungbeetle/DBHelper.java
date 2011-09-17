@@ -34,12 +34,16 @@ import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
+import android.graphics.Picture;
 import android.os.Environment;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -63,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 39;
+	public static final int VERSION = 40;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -218,6 +222,62 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'raw' to object table.");
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
         }
+        if(oldVersion <= 39) {
+            Log.w(TAG, "Converting voice and picture objs to raw.");
+
+          Log.w(TAG, "Converting objs to raw.");
+          Cursor c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { PictureObj.TYPE }, null, null, null);
+          ArrayList<Long> ids = new ArrayList<Long>();            
+          if(c.moveToFirst()) do {
+      			ids.add(c.getLong(0));
+          } while(c.moveToNext());
+          c.close();
+          DbEntryHandler dbh = DbObjects.forType(PictureObj.TYPE);
+          for(Long id : ids) {
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            if(c.moveToFirst()) try {
+	            	String json = c.getString(0);
+	            	byte[] raw = c.getBlob(1);
+	            	c.close();
+	            	if(raw == null) {
+	            		Pair<JSONObject, byte[]> p = dbh.splitRaw(new JSONObject(json));
+	            		if(p != null) {
+	            			json = p.first.toString();
+	            			raw = p.second;
+	            			updateJsonAndRaw(db, id, json, raw);
+	            		}
+	            	}
+      		} catch(JSONException e) {}
+	            c.close();
+          }
+          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
+          ids = new ArrayList<Long>();            
+          if(c.moveToFirst()) do {
+      			ids.add(c.getLong(0));
+          } while(c.moveToNext());
+          c.close();
+          dbh = DbObjects.forType(VoiceObj.TYPE);
+          for(Long id : ids) {
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            if(c.moveToFirst()) try {
+	            	String json = c.getString(0);
+	            	byte[] raw = c.getBlob(1);
+	            	c.close();
+	            	if(raw == null) {
+	            		Pair<JSONObject, byte[]> p = dbh.splitRaw(new JSONObject(json));
+	            		if(p != null) {
+	            			json = p.first.toString();
+	            			raw = p.second;
+	            			updateJsonAndRaw(db, id, json, raw);
+	            		}
+	            	}
+      		} catch(JSONException e) {}
+	            c.close();
+          	}
+            
+            
+        }
+        
         db.setVersion(VERSION);
     }
 
@@ -420,7 +480,7 @@ public class DBHelper extends SQLiteOpenHelper {
     	ContentValues cv = new ContentValues();
     	cv.put(DbObject.JSON, json);
     	cv.put(DbObject.RAW, raw);
-    	db.update(DbObject.TABLE, cv, "WHERE " + DbObject._ID + " = ?" , new String[] { String.valueOf(id)});
+    	db.update(DbObject.TABLE, cv, DbObject._ID + " = ?" , new String[] { String.valueOf(id)});
     }
     
     
