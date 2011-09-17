@@ -19,10 +19,13 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class ObjectListCursorAdapter extends CursorAdapter {
     private ContactCache mContactCache;
 
+    public Cursor originalCursor;
+
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
         mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
+        originalCursor = null;
     }
 
     @Override
@@ -61,8 +64,21 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     }
     
     public void queryLaterObjects(Context context, Uri feedUri, int total) {
-    	total += 15;
-    	Cursor newCursor = (new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + total)).loadInBackground(); 
-        this.swapCursor(newCursor);
+    	int newTotal = total + 15;
+		Cursor newCursor = (new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal)).loadInBackground(); 
+		
+    	if (originalCursor == null) {
+    		originalCursor = this.swapCursor(newCursor);
+    	}	
+    	else {
+    		this.changeCursor(newCursor);
+    	}
     }
+    
+    public void closeCursor() {
+    	if (originalCursor != null) {
+    		originalCursor.close();
+    	}
+    }
+    
 }
