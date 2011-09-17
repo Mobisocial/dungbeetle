@@ -9,6 +9,7 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
@@ -38,6 +39,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
+        DbObject.bindView(v, context, c, mContactCache, true);
         
         int feedCol = -1;
         String[] cols = c.getColumnNames();
