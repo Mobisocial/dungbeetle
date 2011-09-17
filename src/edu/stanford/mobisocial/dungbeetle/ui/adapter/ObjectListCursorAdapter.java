@@ -62,6 +62,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     
     public void queryLaterObjects(Context context, Uri feedUri, int total) {
     	total += 15;
-        this.changeCursor((new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + total)).loadInBackground());
+    	Cursor newCursor = (new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + total)).loadInBackground(); 
+        this.swapCursor(newCursor);
     }
 }
