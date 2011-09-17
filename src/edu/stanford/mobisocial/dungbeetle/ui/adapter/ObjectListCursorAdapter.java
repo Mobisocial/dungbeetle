@@ -19,10 +19,13 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class ObjectListCursorAdapter extends CursorAdapter {
     private ContactCache mContactCache;
 
+    public Cursor originalCursor;
+
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
         mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
+        originalCursor = null;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         }
 
         String feedName = c.getString(feedCol);
-        helper.getWritableDatabase().execSQL("UPDATE "+Group.TABLE+" SET "+Group.NUM_UNREAD+" = 0 WHERE "+Group.FEED_NAME+"='"+feedName+"'");
+        helper.markFeedAsRead(feedName);
         helper.close();
         context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
 
@@ -57,6 +60,25 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
         return new CursorLoader(context, feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 50");
+                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 0, 15");
     }
+    
+    public void queryLaterObjects(Context context, Uri feedUri, int total) {
+    	int newTotal = total + 15;
+		Cursor newCursor = (new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal)).loadInBackground(); 
+		
+    	if (originalCursor == null) {
+    		originalCursor = this.swapCursor(newCursor);
+    	}	
+    	else {
+    		this.changeCursor(newCursor);
+    	}
+    }
+    
+    public void closeCursor() {
+    	if (originalCursor != null) {
+    		originalCursor.close();
+    	}
+    }
+    
 }

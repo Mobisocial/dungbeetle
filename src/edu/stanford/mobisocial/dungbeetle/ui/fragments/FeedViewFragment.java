@@ -34,6 +34,8 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
@@ -62,7 +64,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 /**
  * Shows a series of posts from a feed.
  */
-public class FeedViewFragment extends ListFragment implements OnItemClickListener,
+public class FeedViewFragment extends ListFragment implements OnItemClickListener, OnScrollListener,
         OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
@@ -142,6 +144,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        ((ObjectListCursorAdapter) mObjects).closeCursor();
         mContactCache.close();
     }
 
@@ -215,6 +218,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
         setListAdapter(mObjects);
+        getListView().setOnScrollListener(this);
     }
 
     @Override
@@ -378,4 +382,24 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         }
         return false;
     }
+
+	@Override
+	public void onScroll(AbsListView view, int firstVisible,
+			int visibleCount, int totalCount) {
+		
+		boolean loadMore = /* maybe add a padding */
+            firstVisible + visibleCount >= totalCount;
+
+    	if (loadMore) {
+    		Log.w(TAG, "load more");
+    		((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
+    	}
+		
+	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		// TODO Auto-generated method stub
+		
+	}
 }
