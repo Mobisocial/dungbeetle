@@ -38,6 +38,13 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class SettingsActivity extends Activity {
+	private final class VacuumDatabaseListener implements OnClickListener {
+		@Override
+		public void onClick(View v) {
+			new VacuumDatabase().execute();
+		}
+	}
+
 	private final class SDCardRestoreListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -193,6 +200,7 @@ public class SettingsActivity extends Activity {
 	Button primaryColor_;
 	Button secondaryColor_;
 	Button info_;
+	TextView vacuumDatabase_;
 	CheckedTextView globalTVMode_;
 
 	/*** Dashboard stuff ***/
@@ -238,10 +246,12 @@ public class SettingsActivity extends Activity {
 		primaryColor_ = (Button) findViewById(R.id.primary_color);
 		secondaryColor_ = (Button) findViewById(R.id.secondary_color);
 		globalTVMode_ = (CheckedTextView) findViewById(R.id.global_tv_mode);
+		vacuumDatabase_ = (TextView) findViewById(R.id.vacuum_database);
 
 		// connect the global tv mode toggle to the shared preferences
 		globalTVMode_.setOnClickListener(new GlobalTVModeListener());
-
+		vacuumDatabase_.setOnClickListener(new VacuumDatabaseListener());
+		
 		// hook up the color picker dialogs to the buttons
 		primaryColor_.setOnClickListener(new PrimaryColorListener());
 		secondaryColor_.setOnClickListener(new SecondaryColorListener());
@@ -273,6 +283,35 @@ public class SettingsActivity extends Activity {
 		}
 	}
 
+	class VacuumDatabase extends AsyncTask<Void, Void, Void> {
+		ProgressDialog progress_;
+
+		@Override
+		protected void onPreExecute() {
+			progress_ = new ProgressDialog(SettingsActivity.this);
+			progress_.setCancelable(false);
+			progress_.setMessage("Vacuuming Database...");
+			progress_.show();
+			int orientation = getResources().getConfiguration().orientation;
+			SettingsActivity.this.setRequestedOrientation(orientation);
+		}
+		@Override
+		protected Void doInBackground(Void... params) {
+			try {
+				DBHelper mHelper = new DBHelper(SettingsActivity.this);
+				mHelper.vacuum();
+			} catch (Exception e) {
+				Log.e(TAG, "Failure doing chores (vacuuming)", e);
+			}
+			return null;
+		}
+		@Override
+		protected void onPostExecute(Void result) {
+			SettingsActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+			progress_.dismiss();
+		}
+	}
+	
 	class SDCardBackup extends AsyncTask<Void, Integer, Exception> {
 		ProgressDialog progress_;
 
@@ -440,6 +479,8 @@ public class SettingsActivity extends Activity {
 		boolean developer_mode = MusubiBaseActivity.getInstance()
 				.isDeveloperModeEnabled();
 		globalTVMode_.setVisibility(developer_mode ? View.VISIBLE
+				: View.INVISIBLE);
+		vacuumDatabase_.setVisibility(developer_mode ? View.VISIBLE
 				: View.INVISIBLE);
 
 		final float[] baseHues = Feed.getBaseHues();

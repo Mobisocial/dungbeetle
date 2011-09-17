@@ -1076,4 +1076,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public String getDatabasePath() {
 		return DB_PATH+DB_NAME;
 	}
+	public void vacuum() {
+		getWritableDatabase().execSQL("VACUUM");
+	}
  }
