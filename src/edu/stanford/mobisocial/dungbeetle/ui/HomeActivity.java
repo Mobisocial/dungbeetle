@@ -222,6 +222,7 @@ public class HomeActivity extends MusubiBaseActivity {
         if (uri == null) {
             return;
         }
+        
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
             Intent intent = new Intent(getIntent());
@@ -285,6 +286,7 @@ public class HomeActivity extends MusubiBaseActivity {
 
     public void pushContactInfoViaNfc() {
     	Uri uri = FriendRequest.getInvitationUri(this);
+    	Log.w(TAG, "pushing " + uri.toString());
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
             NdefRecord.RTD_URI, new byte[] {},
@@ -303,6 +305,7 @@ public class HomeActivity extends MusubiBaseActivity {
             List<String> segments = uri.getPathSegments();
             if (segments.contains("join")) {
                 FriendRequest.acceptFriendRequest(this, getIntent().getData(), false);
+                return true;
             } else if (segments.contains("thread")) {
                 ThreadRequest.acceptThreadRequest(this, getIntent().getData());
                 return true;

@@ -746,6 +746,16 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
+    public void markFeedAsRead(String feedName) {
+        ContentValues cv = new ContentValues();
+        cv.put(Group.NUM_UNREAD, 0);
+        getWritableDatabase().update(
+        		Group.TABLE, 
+            cv,
+            Group.FEED_NAME+"='"+feedName+"'",
+            null);
+    }
+    
     public void markObjectAsSent(long id) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.SENT, 1);

@@ -48,7 +48,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         }
 
         String feedName = c.getString(feedCol);
-        helper.getWritableDatabase().execSQL("UPDATE "+Group.TABLE+" SET "+Group.NUM_UNREAD+" = 0 WHERE "+Group.FEED_NAME+"='"+feedName+"'");
+        helper.markFeedAsRead(feedName);
         helper.close();
         context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
 
@@ -57,6 +57,11 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
         return new CursorLoader(context, feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 50");
+                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 0, 15");
+    }
+    
+    public void queryLaterObjects(Context context, Uri feedUri, int total) {
+    	total += 15;
+        this.changeCursor((new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + total)).loadInBackground());
     }
 }
