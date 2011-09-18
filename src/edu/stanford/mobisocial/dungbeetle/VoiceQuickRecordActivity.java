@@ -44,12 +44,13 @@ public class VoiceQuickRecordActivity extends Activity
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
 	private Uri feedUri;
+    private boolean mSoundFinished = false;
 	private Set<Uri> presenceUris;
 	private AudioRecord recorder = null;
 	private AudioTrack track = null;
 	private int bufferSize = 0;
 	private Thread recordingThread = null;
-	private boolean isRecording = false;
+	private boolean doneRecording = false;
 	private byte rawBytes[] = null;
 	private Timer mTimer;
 	private Date mStart;
@@ -59,7 +60,8 @@ public class VoiceQuickRecordActivity extends Activity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.voice_quick_recorder);
+		
+		setContentView(R.layout.voice_quick_recorder);
 
         Intent intent = getIntent();
         if (intent.hasExtra("feed_uri")) {
@@ -118,13 +120,13 @@ public class VoiceQuickRecordActivity extends Activity
 	}
 
 	private void notifyStartRecording() {
-		//mark recording immedediately, or a quick quit of the recording process crashes
-		isRecording = true;
 	    MediaPlayer player = getMediaPlayer(this, R.raw.videorecord);
         player.start();
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
+
+			@Override
             public void onCompletion(MediaPlayer mp) {
+            	mSoundFinished = true;
                 startRecording();
                 mp.release();
             }
@@ -142,7 +144,7 @@ public class VoiceQuickRecordActivity extends Activity
         });
     }
 
-	private synchronized void startRecording(){
+	private void startRecording(){
 		mStatusLabel.setText("Recording...");
 		recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
 						RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
@@ -169,7 +171,14 @@ public class VoiceQuickRecordActivity extends Activity
 		recordingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				writeAudioDataToFile();
+				try {
+					writeAudioDataToFile();
+				} finally {
+					//for some cases if we stop this before the above loop, then it blocks for ever on write!
+					recorder.stop();
+					recorder.release();
+					mTimer.cancel();
+				}
 			}
 		},"AudioRecorder Thread");
 		recordingThread.start();
@@ -188,19 +197,22 @@ public class VoiceQuickRecordActivity extends Activity
 		}
 		
 		int read = 0;
+		int total = 0;
 		
 		if(null != os){
-			while(isRecording){
+			//TODO:XXX Kill this whole damn class.  Its full of race conditions in the logic
+			while(!doneRecording && total < DBHelper.SIZE_LIMIT * 3 / 4 ){
 				read = recorder.read(data, 0, bufferSize);
-				if(AudioRecord.ERROR_INVALID_OPERATION != read){
-					try {
-						os.write(data);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+				if(AudioRecord.ERROR_INVALID_OPERATION == read)
+					break;
+				try {
+					os.write(data);
+				} catch (IOException e) {
+					e.printStackTrace();
+					break;
 				}
+				total += read;
 			}
-			
 			try {
 				os.close();
 			} catch (IOException e) {
@@ -209,23 +221,29 @@ public class VoiceQuickRecordActivity extends Activity
 		}
 	}
 	
-	private synchronized void stopRecording() {
-		if(null != recorder){
-			mStatusLabel.setText("Stopped");
-			mTimer.cancel();
-			isRecording = false;
+	private void stopRecording() {
+		if(doneRecording)
+			return;
+		doneRecording = true;
+		mStatusLabel.setText("Stopped");
+		while(recordingThread == null) {
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			//must have been abandoned!
+			if(!mSoundFinished)
+				return;
+		}
+		synchronized(this) {
 			
-			recorder.stop();
-			recorder.release();
 			try {
 				recordingThread.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			
-			recorder = null;
-			recordingThread = null;
-
+				
 			loadIntoBytes(getTempFilename());
 			deleteTempFile();
 		}
@@ -338,7 +356,7 @@ public class VoiceQuickRecordActivity extends Activity
 	@Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK) {
-            if ((mSpecialEvent || event.isTracking()) && isRecording) {
+            if ((mSpecialEvent || event.isTracking())) {
                 stopRecording();
                 sendRecording();
             }
