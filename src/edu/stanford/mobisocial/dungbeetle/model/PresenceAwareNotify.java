@@ -29,7 +29,7 @@ public class PresenceAwareNotify {
     }
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
-
+    	Log.w(TAG, "notify me");
     	boolean doVibrate = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
             doVibrate = false;
@@ -46,33 +46,38 @@ public class PresenceAwareNotify {
 
         Notification notification = new Notification(
             R.drawable.icon, notificationTitle, System.currentTimeMillis());
-
-        // Disable vibrate if busy
+        
         if(doVibrate) {
         	notification.vibrate = VIBRATE;
+        	
+        	// Disable vibrate if busy
+            Cursor c = mContext.getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
+                null, 
+                DbObject.TYPE + "=?", 
+                new String[]{ "presence"}, 
+                DbObject.TIMESTAMP + " DESC");
+            if (c == null) {
+                Log.e(TAG, "Error querying feeds/me/head");
+                return;
+            }
+            c.moveToFirst();
+            if(!c.isAfterLast()) {
+                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+                try{
+                    JSONObject obj = new JSONObject(jsonSrc);
+                    int myPresence = Integer.parseInt(obj.optString("presence"));
+                    if(myPresence == Presence.BUSY) {
+                        notification.vibrate = null;
+                    }
+                }catch(JSONException e){}
+            }
     	}
+        else {
+        	notification.vibrate = null;
+        }
+
         
-        Cursor c = mContext.getContentResolver().query(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-            null, 
-            DbObject.TYPE + "=?", 
-            new String[]{ "presence"}, 
-            DbObject.TIMESTAMP + " DESC");
-        if (c == null) {
-            Log.e(TAG, "Error querying feeds/me/head");
-            return;
-        }
-        c.moveToFirst();
-        if(!c.isAfterLast()) {
-            String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-            try{
-                JSONObject obj = new JSONObject(jsonSrc);
-                int myPresence = Integer.parseInt(obj.optString("presence"));
-                if(myPresence == Presence.BUSY) {
-                    notification.vibrate = null;
-                }
-            }catch(JSONException e){}
-        }
 
         notification.setLatestEventInfo(
             mContext, 
@@ -80,6 +85,7 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
+        mNotificationManager.cancel(NOTIFY_ID);
         mNotificationManager.notify(NOTIFY_ID, notification);
     }
 
