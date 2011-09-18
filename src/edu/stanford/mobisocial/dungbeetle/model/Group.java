@@ -1,8 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.model;
+import java.util.Collection;
+import java.util.UUID;
+
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -10,9 +14,6 @@ import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
-
-import java.util.Collection;
-import java.util.UUID;
 
 public class Group{
     // Prefer Feed.MIME_TYPE.
@@ -83,9 +84,19 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, ident, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
+    }
+    
+    public void forceUpdate(Context context) {
+        DBHelper helper = new DBHelper(context);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        GroupProviders.GroupProvider gp = GroupProviders.forUri(Uri.parse(dynUpdateUri));
+        int version = -1;
+        gp.forceUpdate(id, Uri.parse(dynUpdateUri), context, ident, version, false);
+        ident.close();
+
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
@@ -104,7 +115,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, ident, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
@@ -119,7 +130,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, ident, version, true);
         helper.close();
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
@@ -146,7 +157,7 @@ public class Group{
             DBHelper helper = new DBHelper(context);
             DBIdentityProvider ident = new DBIdentityProvider(helper);
             int version = -1;
-            gp.forceUpdate(id, dynGroupUri, context, ident, version);
+            gp.forceUpdate(id, dynGroupUri, context, ident, version, true);
             ident.close();
             helper.close();
         }

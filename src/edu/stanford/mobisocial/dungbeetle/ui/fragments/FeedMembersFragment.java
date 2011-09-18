@@ -30,12 +30,16 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
@@ -59,6 +63,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
     private Uri mFeedUri;
+    private String mFeedName;
 
     private void onClickNew(View v) {
         Intent share = new Intent(Intent.ACTION_SEND);
@@ -76,6 +81,19 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 		super.onCreate(savedInstanceState);
 		mHelper = new DBHelper(getActivity());
 		getLoaderManager().initLoader(0, null, this);
+		final Context context = this.getActivity();
+        final GroupProviders.GroupProvider h = GroupProviders.forUri(mFeedUri);
+        final IdentityProvider ident = new DBIdentityProvider(mHelper);
+        Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+        try {
+            // group exists already, load view
+            final Group g = mg.get();
+
+            g.forceUpdate(context);
+        }
+        catch(Maybe.NoValError e) { }
+        ident.close();
+        Helpers.resendProfile(context);
 	}
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -260,7 +278,9 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     @Override
     public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
         mFeedUri = getArguments().getParcelable("feed_uri");
-        mGroup = mHelper.groupForFeedName(mFeedUri.getLastPathSegment());
+        mFeedName = mFeedUri.getLastPathSegment();
+        mGroup = mHelper.groupForFeedName(mFeedName);
+        
         long gid;
         try {
             gid = mGroup.get().id;

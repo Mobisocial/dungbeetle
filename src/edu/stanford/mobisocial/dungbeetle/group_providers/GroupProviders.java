@@ -66,7 +66,7 @@ public class GroupProviders {
         abstract public String feedName(Uri uri);
         abstract public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName);
         public void forceUpdate(final long groupId, final Uri uriIn, 
-                                final Context context, final IdentityProvider ident, final int version){
+                                final Context context, final IdentityProvider ident, final int version, final boolean broadcastPresence){
             (new Thread(){
                     public void run(){
                         GroupProvider.this.handle(groupId, uriIn, context, ident, version, true);
@@ -77,7 +77,9 @@ public class GroupProviders {
                             // group exists already, load view
                             Group g = mg.get();
                             Uri feedUri = Feed.uriForName(g.feedName);
-                            Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), feedUri);
+                            if (broadcastPresence) {
+                            	Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), feedUri);
+                            }
                         }
                         catch(Maybe.NoValError e){
                             // group does not exist yet, time to prompt for join
