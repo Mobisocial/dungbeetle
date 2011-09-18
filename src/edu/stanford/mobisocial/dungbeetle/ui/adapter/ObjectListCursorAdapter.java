@@ -34,13 +34,8 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         final LayoutInflater inflater = LayoutInflater.from(context);
         View v = inflater.inflate(R.layout.objects_item, parent, false);
         bindView(v, context, c);
-        return v;
-    }
-
-    @Override
-    public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache, true);
         
+
         int feedCol = -1;
         String[] cols = c.getColumnNames();
         // There are two selected 'feed_name' columns, one can be null.
@@ -61,6 +56,14 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
 
 
+        
+        return v;
+    }
+
+    @Override
+    public void bindView(View v, Context context, Cursor c) {
+        DbObject.bindView(v, context, c, mContactCache, true);
+        
     }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {

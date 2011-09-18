@@ -145,8 +145,11 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        ((ObjectListCursorAdapter) mObjects).closeCursor();
         mContactCache.close();
+    }
+    
+    public void closeCursor() {
+        ((ObjectListCursorAdapter) mObjects).closeCursor();
     }
 
     @Override
