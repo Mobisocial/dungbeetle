@@ -165,7 +165,14 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onDestroy() {
     	super.onDestroy();
-        ((ObjectListCursorAdapter) mObjects).closeCursor();
+    	if(mLoader != null)
+    		mLoader.cancelLoad();
+    	
+    	//the mObjects field is accessed by the background loader
+    	synchronized (this) {
+    		if(mObjects != null)
+    			((ObjectListCursorAdapter) mObjects).closeCursor();
+    	}
     }
 
     @Override
@@ -237,7 +244,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+    	//the mObjects field is accessed by the ui thread as well
+    	synchronized (this) {
+            mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+		}
         setListAdapter(mObjects);
     }
 
