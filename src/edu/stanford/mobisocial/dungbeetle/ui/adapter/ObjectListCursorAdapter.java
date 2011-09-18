@@ -35,25 +35,6 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         View v = inflater.inflate(R.layout.objects_item, parent, false);
         bindView(v, context, c);
 
-        int feedCol = -1;
-        String[] cols = c.getColumnNames();
-        // There are two selected 'feed_name' columns, one can be null.
-        for (int i = 0; i < cols.length; i++) {
-            if (cols[i].equals(DbObject.FEED_NAME)) {
-                feedCol = i;
-                break;
-            }
-        }
-
-        String feedName = c.getString(feedCol);
-        
-        ContentValues cv = new ContentValues();
-        cv.put(Group.NUM_UNREAD, 0);
-        
-        context.getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
-        
-        context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);        
-
         return v;
     }
 
