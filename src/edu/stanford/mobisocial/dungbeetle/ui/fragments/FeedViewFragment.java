@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -45,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -56,6 +58,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
@@ -81,11 +84,14 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
+	
+	private String feedName;
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
+        feedName = mFeedUri.getLastPathSegment();
     }
 
     @Override
@@ -165,7 +171,29 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onDestroy() {
     	super.onDestroy();
-        ((ObjectListCursorAdapter) mObjects).closeCursor();
+		((ObjectListCursorAdapter) mObjects).closeCursor();
+    	resetUnreadMessages();
+    }
+    
+    @Override
+    public void onPause() {
+    	super.onPause();
+    	resetUnreadMessages();
+    }
+    
+    private void resetUnreadMessages() {
+
+        try {
+	        ContentValues cv = new ContentValues();
+	        cv.put(Group.NUM_UNREAD, 0);
+	        
+	        this.getActivity().getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
+	        
+	        this.getActivity().getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);        
+        }
+        catch (Exception e) {
+        	
+        }
     }
 
     @Override

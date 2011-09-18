@@ -30,24 +30,28 @@ public class PresenceAwareNotify {
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
 
+    	boolean doVibrate = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
-            return;
+            doVibrate = false;
         }
                 
         if (Push2TalkPresence.getInstance().isOnCall()) {
-            return;
+        	doVibrate = false;
         }
 
         if (MusubiBaseActivity.getInstance().amResumed()) {
             // TODO: Filter per getInstance().getFeedUri(), but how do we get info here?
-            return;
+        	doVibrate = false;
         }
 
         Notification notification = new Notification(
             R.drawable.icon, notificationTitle, System.currentTimeMillis());
 
-        notification.vibrate = VIBRATE;
         // Disable vibrate if busy
+        if(doVibrate) {
+        	notification.vibrate = VIBRATE;
+    	}
+        
         Cursor c = mContext.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
             null, 
