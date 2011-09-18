@@ -64,9 +64,8 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         // Get binary bytes for encode
         byte[] data = getBytesFromFile(is);
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
         Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
-                data, 0, data.length, options);
+                data, 0, data.length, null);
 
         // Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
         // Uri.fromFile(file) );
