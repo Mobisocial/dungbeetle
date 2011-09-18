@@ -169,13 +169,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     }
     
     @Override
-    public void onDestroy() {
-    	super.onDestroy();
-		((ObjectListCursorAdapter) mObjects).closeCursor();
-    	resetUnreadMessages();
-    }
-    
-    @Override
     public void onPause() {
     	super.onPause();
     	resetUnreadMessages();
@@ -194,6 +187,22 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         catch (Exception e) {
         	
         }
+    }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    
+    	if(mLoader != null)
+    		mLoader.cancelLoad();
+    	
+    	//the mObjects field is accessed by the background loader
+    	synchronized (this) {
+    		if(mObjects != null)
+    			((ObjectListCursorAdapter) mObjects).closeCursor();
+    	}
+
+    	resetUnreadMessages();
     }
 
     @Override
@@ -265,7 +274,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+    	//the mObjects field is accessed by the ui thread as well
+    	synchronized (this) {
+            mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+		}
         setListAdapter(mObjects);
     }
 
