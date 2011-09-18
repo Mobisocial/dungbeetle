@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONException;
@@ -21,6 +22,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -78,6 +80,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private EditText mStatusText;
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
+	private CursorLoader mLoader;
 
     @Override
     public void onAttach(Activity activity) {
@@ -126,8 +129,19 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mObjects.getItem(position);
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
+    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
+            	new String[] { 
+            		DbObject.JSON,
+            		DbObject.RAW,
+            	},
+            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+        if(!cursor.moveToFirst())
+        	return;
+        
+        final String jsonSrc = cursor.getString(0);
+        final byte[] raw = cursor.getBlob(1);
+        cursor.close();
+
         if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
         try{
             JSONObject obj = new JSONObject(jsonSrc);
@@ -145,7 +159,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        ((ObjectListCursorAdapter) mObjects).closeCursor();
         mContactCache.close();
     }
 
@@ -212,7 +225,8 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+        mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+        return mLoader;
     }
 
     @Override
@@ -228,9 +242,21 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 
     void showMenuForObj(int position) {
         Cursor c = (Cursor)mObjects.getItem(position);
-        final String type = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
-        final String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        final byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
+    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
+            	new String[] { 
+            		DbObject.JSON,
+            		DbObject.RAW,
+            		DbObject.TYPE,
+            	},
+            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+        if(!cursor.moveToFirst())
+        	return;
+        
+        final String type = cursor.getString(2);
+        final String jsonSrc = cursor.getString(0);
+        final byte[] raw = cursor.getBlob(1);
+        cursor.close();
+
         final JSONObject json;
         try {
             json = new JSONObject(jsonSrc);
@@ -387,16 +413,16 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 	public void onScroll(AbsListView view, int firstVisible,
 			int visibleCount, int totalCount) {
 		if(mObjects == null)
-			return;
+			return;		
 		
-		boolean loadMore = /* maybe add a padding */
-            firstVisible + visibleCount >= totalCount;
-
-    	if (loadMore) {
-    		Log.w(TAG, "load more");
-    		((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
-    	}
-		
+//		boolean loadMore = /* maybe add a padding */
+//	            firstVisible + visibleCount >= totalCount;
+//
+//    	if (loadMore) {
+//    		Log.w(TAG, "load more");
+//    		mLoader.cancelLoad();
+//    		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
+//    	}
 	}
 
 	@Override

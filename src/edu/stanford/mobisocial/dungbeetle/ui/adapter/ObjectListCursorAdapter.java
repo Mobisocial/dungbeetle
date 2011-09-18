@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui.adapter;
 
+import java.util.Date;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -20,13 +22,10 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class ObjectListCursorAdapter extends CursorAdapter {
     private ContactCache mContactCache;
 
-    public Cursor originalCursor;
-
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
         mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
-        originalCursor = null;
     }
 
     @Override
@@ -40,50 +39,37 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     @Override
     public void bindView(View v, Context context, Cursor c) {
         DbObject.bindView(v, context, c, mContactCache, true);
+        String feedName = c.getString(1);
         
-        int feedCol = -1;
-        String[] cols = c.getColumnNames();
-        // There are two selected 'feed_name' columns, one can be null.
-        for (int i = 0; i < cols.length; i++) {
-            if (cols[i].equals(DbObject.FEED_NAME)) {
-                feedCol = i;
-                break;
-            }
-        }
-
-        String feedName = c.getString(feedCol);
-        
-        ContentValues cv = new ContentValues();
-        cv.put(Group.NUM_UNREAD, 0);
-        
-        context.getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
-        
-        context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
+//        ContentValues cv = new ContentValues();
+//        cv.put(Group.NUM_UNREAD, 0);
+//        //TODO we need to cache this right? no reason to write to db every row
+//        context.getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
+//        
+//        context.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
 
 
     }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
-        return new CursorLoader(context, feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 0, 15");
+        return new CursorLoader(context, feedUri, 
+        	new String[] { 
+        		DbObject._ID,
+        		DbObject.FEED_NAME
+        	},
+        	DbObjects.getFeedObjectClause(), null, DbObject._ID + 
+//        	" DESC LIMIT 15");
+    		" DESC");
     }
-    
-    public void queryLaterObjects(Context context, Uri feedUri, int total) {
+    public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
     	int newTotal = total + 15;
-		Cursor newCursor = (new CursorLoader(context, feedUri, null,DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal)).loadInBackground(); 
-		
-    	if (originalCursor == null) {
-    		originalCursor = this.swapCursor(newCursor);
-    	}	
-    	else {
-    		this.changeCursor(newCursor);
-    	}
+    	CursorLoader cl = new CursorLoader(context, feedUri, 
+            	new String[] { 
+            		DbObject._ID,
+            		DbObject.FEED_NAME
+            	},
+            	DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal);
+		changeCursor(cl.loadInBackground());
+		return cl;
     }
-    
-    public void closeCursor() {
-    	if (originalCursor != null) {
-    		originalCursor.close();
-    	}
-    }
-    
 }

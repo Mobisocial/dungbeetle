@@ -8,12 +8,15 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
+import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -84,8 +87,9 @@ public class DbObject {
         } catch (Exception e) {
             Log.wtf("Bad data from db", e);
             return null;
-        }
+        } 
     }
+    public static final Uri OBJ_URI = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/obj");
     /**
      * @param v the view to bind
      * @param context standard activity context
@@ -94,12 +98,26 @@ public class DbObject {
      * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
      */
     public static void bindView(View v, Context context, Cursor c, ContactCache contactCache, boolean allowInteractions) {
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
-        Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
-        Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
+    	//there is probably a utility or should be one that does this
+    	Cursor cursor = context.getContentResolver().query(OBJ_URI,
+            	new String[] { 
+            		DbObject.JSON,
+            		DbObject.RAW,
+            		DbObject.CONTACT_ID,
+            		DbObject.TIMESTAMP
+            	},
+            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+        if(!cursor.moveToFirst())
+        	return;
+        
+        String jsonSrc = cursor.getString(0);
+        byte[] raw = cursor.getBlob(1);
+        Long contactId = cursor.getLong(2);
+        Long timestamp = cursor.getLong(3);
         Date date = new Date(timestamp);
-
+        cursor.close();
+       	///////
+        
         try{
             Contact contact = contactCache.getContact(contactId).get();
 

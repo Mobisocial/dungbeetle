@@ -209,7 +209,13 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         if (mLoader == null) {
-            mLoader = new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
+            mLoader = new CursorLoader(getActivity(), feedlist, 
+        		new String[] { 
+            		DbObject.TABLE + "." + DbObject._ID, //must be in position 0 for bind view
+            		DbObject.TABLE + "." + DbObject.FEED_NAME,
+                    Group.TABLE + ".*"
+            	}, 
+        		getFeedObjectClause(), null, null);
         }
         return mLoader;
     }
