@@ -44,12 +44,16 @@
       </intent-filter>
 
       <intent-filter android:priority="100">
-    <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
       </intent-filter>
 
+      <intent-filter android:priority="100">
+    <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
+      </intent-filter>
  
     </activity>
 
