@@ -161,6 +161,12 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         super.onDestroyView();
         mContactCache.close();
     }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+        ((ObjectListCursorAdapter) mObjects).closeCursor();
+    }
 
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -415,14 +421,14 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 		if(mObjects == null)
 			return;		
 		
-//		boolean loadMore = /* maybe add a padding */
-//	            firstVisible + visibleCount >= totalCount;
-//
-//    	if (loadMore) {
-//    		Log.w(TAG, "load more");
-//    		mLoader.cancelLoad();
-//    		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
-//    	}
+		boolean loadMore = /* maybe add a padding */
+	            firstVisible + visibleCount >= totalCount;
+
+    	if (loadMore) {
+    		Log.w(TAG, "load more");
+    		mLoader.cancelLoad();
+    		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
+    	}
 	}
 
 	@Override
