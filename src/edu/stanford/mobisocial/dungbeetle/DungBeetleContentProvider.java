@@ -34,7 +34,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.mobisocial.db";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
-	static final boolean DBG = true;
+	static final boolean DBG = false;
 	public static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
@@ -524,5 +524,6 @@ public class DungBeetleContentProvider extends ContentProvider {
             Uri uri = Feed.uriForName(c.getString(0));
             resolver.notifyChange(uri, null);
         }
+        c.close();
     }
 }

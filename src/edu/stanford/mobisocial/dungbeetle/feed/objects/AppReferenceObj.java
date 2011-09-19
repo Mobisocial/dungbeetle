@@ -172,17 +172,17 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             String[] projection = new String[] {"json"};
             String order = "_id desc LIMIT 1";
             Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
-            if (c.moveToFirst()) {
-                try {
-                    return new JSONObject(c.getString(0));
-                } catch (JSONException e) {
-                    Log.e(TAG, "not really json", e);
-                } finally {
-                    c.close();
-                }
-            } else {
-                c.close();
-            }
+            try {
+	            if (c.moveToFirst()) {
+	            	try {
+	                    return new JSONObject(c.getString(0));
+	                } catch (JSONException e) {
+	                    Log.e(TAG, "not really json", e);
+	                }
+	            }
+        	} finally {
+        		c.close();
+        	}
         } else if (appReference.has("state")) {
             return appReference;
         }

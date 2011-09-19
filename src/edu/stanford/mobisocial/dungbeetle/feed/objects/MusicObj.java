@@ -84,7 +84,7 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
         StringBuilder status = new StringBuilder();
         String a = obj.optString(ARTIST);
         String b = obj.optString(TRACK);
-        if (b == null || b.isEmpty()) {
+        if (b == null || b.length() == 0) {
             b = obj.optString(ALBUM);
         }
         status.append(a).append(" - ").append(b);

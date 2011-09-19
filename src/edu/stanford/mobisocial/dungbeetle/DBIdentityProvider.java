@@ -111,15 +111,18 @@ public class DBIdentityProvider implements IdentityProvider {
 		}
         Cursor c = mDb.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
             Contact.PERSON_ID + " = ?", new String[]{id}, null, null, null);
-        c.moveToFirst();
-        if (c.isAfterLast()) {
-            return null;
+        try {
+	        c.moveToFirst();
+	        if (c.isAfterLast()) {
+	            return null;
+	        }
+	
+	        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
+	            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
+	        return k;
+        } finally {
+        	c.close();
         }
-
-        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
-            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
-        c.close();
-        return k;
     }
 
 	public List<RSAPublicKey> publicKeysForContactIds(List<Long> ids){
@@ -134,14 +137,18 @@ public class DBIdentityProvider implements IdentityProvider {
         String idList = buffer.toString();
         Cursor c = mDb.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
                 Contact._ID + " IN (" + idList + ")", null, null, null, null);
-        c.moveToFirst();
-        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
-        while (!c.isAfterLast()) {
-            result.add(publicKeyFromString(c.getString(
-                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
-            c.moveToNext();
+        try {
+	        c.moveToFirst();
+	        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
+	        while (!c.isAfterLast()) {
+	            result.add(publicKeyFromString(c.getString(
+	                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
+	            c.moveToNext();
+	        }
+	        return result;
+        } finally {
+        	c.close();
         }
-        return result;
     }
 
     public String personIdForPublicKey(RSAPublicKey key){

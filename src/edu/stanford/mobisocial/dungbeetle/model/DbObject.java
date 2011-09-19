@@ -107,6 +107,10 @@ public class DbObject {
             		DbObject.TIMESTAMP
             	},
             	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+    	if(cursor == null) {
+    		Log.wtf("Dbbject", "cursor was null for bund view of db object");
+    		return;
+    	}
         if(!cursor.moveToFirst())
         	return;
         

@@ -131,6 +131,8 @@ ORDER BY _id ASC
         DBHelper helper = new DBHelper(context);
         this.context = context;
         
+        //TODO: this cursor really need to be closed somewhere!!!  it may be but its sketchy
+        
         c = helper.getReadableDatabase().query(DbObject.TABLE, null, DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject._ID+" >= (SELECT "+DbObject._ID+" FROM "+DbObject.TABLE+" WHERE "+DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject.SEQUENCE_ID+"=? AND "+DbObject.TIMESTAMP+"=?)", new String[]{objData.optString("feedName"), objData.optString("feedName"), objData.optString("sequenceId"), objData.optString("timestamp")}, null, null, DbObject._ID + " ASC");
 
         c.moveToFirst();

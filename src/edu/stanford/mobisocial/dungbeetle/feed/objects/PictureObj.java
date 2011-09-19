@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -60,20 +61,33 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         // Query gallery for camera picture via
         // Android ContentResolver interface
         ContentResolver cr = context.getContentResolver();
-        InputStream is = cr.openInputStream(imageUri);
-        // Get binary bytes for encode
-        byte[] data = getBytesFromFile(is);
+        
+		BitmapFactory.Options options = new BitmapFactory.Options();
+		options.inJustDecodeBounds = true;
+		BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
+		
+		
+		int targetSize = 200;
+		int xScale = (options.outWidth  + targetSize - 1) / targetSize;
+		int yScale = (options.outHeight + targetSize - 1) / targetSize;
+		
+		int scale = xScale < yScale ? xScale : yScale;
+		//uncomment this to get faster power of two scaling
+		//for(int i = 0; i < 32; ++i) {
+		//	int mushed = scale & ~(1 << i);
+		//	if(mushed != 0)
+		//		scale = mushed;
+		//}
+		
+		options.inJustDecodeBounds = false;
+		options.inSampleSize = scale;
+		
+		Bitmap sourceBitmap = BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
 
-        Bitmap sourceBitmap = BitmapFactory.decodeByteArray(
-                data, 0, data.length, null);
-
-        // Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
-        // Uri.fromFile(file) );
         int width = sourceBitmap.getWidth();
         int height = sourceBitmap.getHeight();
         int cropSize = Math.min(width, height);
 
-        int targetSize = 200;
         float scaleSize = ((float) targetSize) / cropSize;
 
         Matrix matrix = new Matrix();
@@ -88,7 +102,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
-        data = baos.toByteArray();
+        byte[] data = baos.toByteArray();
         sourceBitmap.recycle();
         resizedBitmap.recycle();
         System.gc();

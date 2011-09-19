@@ -123,6 +123,7 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
             createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
         	}
+        	c.close();
     }
 
 	@Override
@@ -553,7 +554,7 @@ public class DBHelper extends SQLiteOpenHelper {
             while (c.moveToNext()) {
                 resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
             }
-
+            c.close();
             return seqId;
         }
         catch(Exception e){
@@ -646,11 +647,15 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             null,
             null);
-        c.moveToFirst();
-        if(!c.isAfterLast()){
-            long max = c.getLong(0);
-            Log.i(TAG, "Found max seq num: " + max);
-            return max;
+        try {
+            c.moveToFirst();
+	        if(!c.isAfterLast()){
+	            long max = c.getLong(0);
+	            Log.i(TAG, "Found max seq num: " + max);
+	            return max;
+	        }
+        } finally {
+            c.close();
         }
         return -1;
     }
@@ -801,11 +806,15 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             null,
             "timestamp DESC");
-        c.moveToFirst();
-        if(!c.isAfterLast()) {
-        	return true;
-        } else {
-        	return false;
+        try {
+	        c.moveToFirst();
+	        if(!c.isAfterLast()) {
+	        	return true;
+	        } else {
+	        	return false;
+	        }
+        } finally {
+        	c.close();
         }
     }
     public Cursor queryDynamicGroups() {
@@ -1009,9 +1018,13 @@ public class DBHelper extends SQLiteOpenHelper {
             Group.FEED_NAME + "=?",
             new String[]{feedName},
             null,null,null);
-        c.moveToFirst();
-        if(c.isAfterLast()) return Maybe.unknown();
-        else return Maybe.definitely(new Group(c));
+        try {
+	        c.moveToFirst();
+	        if(c.isAfterLast()) return Maybe.unknown();
+	        else return Maybe.definitely(new Group(c));
+        } finally {
+        	c.close();
+        }
     }
 
     public static String joinWithSpaces(String... strings) {
@@ -1125,18 +1138,21 @@ public class DBHelper extends SQLiteOpenHelper {
         Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + " FROM " +
         		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
         		null);
-        c.moveToFirst();
-        if(!c.moveToFirst()) {
-        	// no such person
-        	return null;
+        try {
+	        c.moveToFirst();
+	        if(!c.moveToFirst()) {
+	        	// no such person
+	        	return null;
+	        }
+	    	long id = c.getLong(0);
+			try {
+				return contactForContactId(id).get();
+			} catch (NoValError e) {
+				return null;
+			}
+        } finally {
+	        c.close();
         }
-    	long id = c.getLong(0);
-        c.close();
-		try {
-			return contactForContactId(id).get();
-		} catch (NoValError e) {
-			return null;
-		}
     }    
     //marks all friends as nearby whose keys are in the specified set.  everyone outside the set is marked not nearby
     public void updateNearby(Set<byte[]> nearby) {

@@ -115,7 +115,9 @@ public class NearbyGroupsActivity extends ListActivity {
         mAdapter = new GroupAdapter(this, R.layout.nearby_groups_item, mGroupList);
         setListAdapter(mAdapter);
 
-        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+        //the other helper method isnt applicapple because the musubi dashboard
+        //activity is not a base class
+        if (MusubiBaseActivity.isDeveloperModeEnabled(this)) {
             new AlertDialog.Builder(this)
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
                         @Override

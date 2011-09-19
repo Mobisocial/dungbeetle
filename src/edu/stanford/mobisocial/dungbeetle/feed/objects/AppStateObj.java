@@ -113,7 +113,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
         if (appState != null) {
             content = appState;
         } else {
-            Log.wtf(TAG, "Missing inner content");
+            Log.e(TAG, "Missing inner content, probably because of format changes");
         }
 
 	    boolean rendered = false;
@@ -226,15 +226,15 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
             String[] projection = new String[] {"json"};
             String order = "_id desc LIMIT 1";
             Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
-            if (c.moveToFirst()) {
-                try {
-                    return new JSONObject(c.getString(0));
-                } catch (JSONException e) {
-                    Log.e(TAG, "not really json", e);
-                } finally {
-                    c.close();
-                }
-            } else {
+            try {
+	            if (c.moveToFirst()) {
+	                try {
+	                    return new JSONObject(c.getString(0));
+	                } catch (JSONException e) {
+	                    Log.e(TAG, "not really json", e);
+	                }
+	            }
+            } finally {
                 c.close();
             }
         }
