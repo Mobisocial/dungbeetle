@@ -61,6 +61,7 @@ public class LaunchApplicationAction implements FeedAction {
                 DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
                 Helpers.sendToFeed(context, obj, feedUri);
 
+                mIdent.close();
                 mHelper.close();
 
                 

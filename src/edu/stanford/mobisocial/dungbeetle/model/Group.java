@@ -84,7 +84,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version, true);
+        gp.forceUpdate(id, uri, context, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
@@ -94,7 +94,7 @@ public class Group{
         IdentityProvider ident = new DBIdentityProvider(helper);
         GroupProviders.GroupProvider gp = GroupProviders.forUri(Uri.parse(dynUpdateUri));
         int version = -1;
-        gp.forceUpdate(id, Uri.parse(dynUpdateUri), context, ident, version, false);
+        gp.forceUpdate(id, Uri.parse(dynUpdateUri), context, version, false);
         ident.close();
 
     }
@@ -115,7 +115,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version, true);
+        gp.forceUpdate(id, uri, context, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
@@ -130,7 +130,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version, true);
+        gp.forceUpdate(id, uri, context, version, true);
         helper.close();
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
@@ -157,7 +157,7 @@ public class Group{
             DBHelper helper = new DBHelper(context);
             DBIdentityProvider ident = new DBIdentityProvider(helper);
             int version = -1;
-            gp.forceUpdate(id, dynGroupUri, context, ident, version, true);
+            gp.forceUpdate(id, dynGroupUri, context, version, true);
             ident.close();
             helper.close();
         }

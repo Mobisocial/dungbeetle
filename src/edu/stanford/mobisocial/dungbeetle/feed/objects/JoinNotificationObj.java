@@ -74,13 +74,14 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
 
             new Thread(){
                 public void run(){
-                    h.handle(g.id, uri, context, ident, g.version, false);
+                    h.handle(g.id, uri, context, g.version, false);
                 }
             }.start();
         }
         catch(Maybe.NoValError e) { }
         ident.close();
         Helpers.resendProfile(context);
+        helper.close();
         return null;
     }
 
