@@ -278,6 +278,8 @@ public class VoiceQuickRecordActivity extends Activity
 		try {
 			in = new FileInputStream(inFilename);
 			totalAudioLen = in.getChannel().size();
+			if(totalAudioLen > DBHelper.SIZE_LIMIT * 3 / 4)
+				totalAudioLen = DBHelper.SIZE_LIMIT * 3 / 4;
 			rawBytes = new byte[(int)totalAudioLen];
 			track = new AudioTrack(AudioManager.STREAM_MUSIC, RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, (int)totalAudioLen, AudioTrack.MODE_STATIC);
 	              
