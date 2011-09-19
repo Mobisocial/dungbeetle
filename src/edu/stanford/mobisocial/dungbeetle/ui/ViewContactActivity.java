@@ -236,8 +236,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
      */
 
     public static class EditProfileFragment extends Fragment {
-        private DBHelper mHelper;
-        private IdentityProvider mIdent;
         private EditText mProfileName;
         private EditText mProfileAbout;
 
@@ -251,41 +249,46 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
-            mHelper = new DBHelper(getActivity());
-            mIdent = new DBIdentityProvider(mHelper);
-
-            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
-            mProfileAbout = (EditText) getView().findViewById(R.id.edit_profile_about);
-
-            mProfileName.setText(mIdent.userName());
-            Cursor c = getActivity().getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
-                    DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
-                            "profile", Long.toString(Contact.MY_ID)
-                    }, DbObject.TIMESTAMP + " DESC");
-
-            if (c.moveToFirst()) {
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                try {
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    String name = obj.optString("name");
-                    String about = obj.optString("about");
-                    mProfileName.setText(name);
-                    mProfileAbout.setText(about);
-                } catch (JSONException e) {
-                }
+            
+            final DBHelper mHelper = new DBHelper(getActivity());
+            final IdentityProvider mIdent = new DBIdentityProvider(mHelper);
+            try {
+	            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
+	            mProfileAbout = (EditText) getView().findViewById(R.id.edit_profile_about);
+	
+	            mProfileName.setText(mIdent.userName());
+	            Cursor c = getActivity().getContentResolver().query(
+	                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
+	                    DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
+	                            "profile", Long.toString(Contact.MY_ID)
+	                    }, DbObject.TIMESTAMP + " DESC");
+	
+	            if (c.moveToFirst()) {
+	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                try {
+	                    JSONObject obj = new JSONObject(jsonSrc);
+	                    String name = obj.optString("name");
+	                    String about = obj.optString("about");
+	                    mProfileName.setText(name);
+	                    mProfileAbout.setText(about);
+	                } catch (JSONException e) {
+	                }
+	            }
+	
+	            Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
+	            saveButton.setOnClickListener(new OnClickListener() {
+	                public void onClick(View v) {
+	                    String name = mProfileName.getText().toString();
+	                    String about = mProfileAbout.getText().toString();
+	                    MyInfo.setMyName(mHelper, mProfileName.getText().toString());
+	                    Helpers.updateProfile(getActivity(), name, about);
+	                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
+	                }
+	            });
+            } finally {
+            	mIdent.close();
+            	mHelper.close();
             }
-
-            Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
-            saveButton.setOnClickListener(new OnClickListener() {
-                public void onClick(View v) {
-                    String name = mProfileName.getText().toString();
-                    String about = mProfileAbout.getText().toString();
-                    MyInfo.setMyName(mHelper, mProfileName.getText().toString());
-                    Helpers.updateProfile(getActivity(), name, about);
-                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
-                }
-            });
         }
 
         @Override
@@ -295,8 +298,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
     }
 
     public static class ViewProfileFragment extends Fragment {
-        private IdentityProvider mIdent;
-        private DBHelper mHelper;
         private ImageView mIcon;
         private long mContactId;
 
@@ -307,9 +308,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-
-            mHelper = new DBHelper(getActivity());
-            mIdent = new DBIdentityProvider(mHelper);
         }
 
         @Override
@@ -347,7 +345,10 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         }
 
         public void refresh() {
-            Spinner presence = (Spinner) getView().findViewById(R.id.presence);
+        	View view = getView(); 
+        	if(view == null)
+        		return;
+            Spinner presence = (Spinner) view.findViewById(R.id.presence);
             if (mContactId == Contact.MY_ID) {
                 Cursor c = getActivity().getContentResolver().query(
                         Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
@@ -357,6 +358,8 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 
                 if (c.moveToFirst()) {
                     String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+                    DBHelper mHelper = new DBHelper(getActivity());
+                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
                     try {
                         JSONObject obj = new JSONObject(jsonSrc);
                         String name = obj.optString("name");
@@ -365,6 +368,9 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         mProfileEmail.setText(mIdent.userEmail());
                         mProfileAbout.setText(about);
                     } catch (JSONException e) {
+                    } finally {
+                    	mIdent.close();
+                    	mHelper.close();
                     }
                 }
 

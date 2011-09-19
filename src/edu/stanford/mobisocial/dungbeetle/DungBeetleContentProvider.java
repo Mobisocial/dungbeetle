@@ -267,8 +267,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             SQLiteDatabase db = mHelper.getWritableDatabase();
+            db.beginTransaction();
             try {
-                db.beginTransaction();
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
                 RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
