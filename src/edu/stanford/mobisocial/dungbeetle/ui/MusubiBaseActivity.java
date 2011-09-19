@@ -274,6 +274,9 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     public boolean isDeveloperModeEnabled() {
         return getSharedPreferences("main", 0).getBoolean("dev_mode", false);
     }
+    public static boolean isDeveloperModeEnabled(Context c) {
+        return c.getSharedPreferences("main", 0).getBoolean("dev_mode", false);
+    }
 
     public void setDeveloperMode(boolean enabled) {
         getSharedPreferences("main", 0).edit().putBoolean("dev_mode", enabled).commit();

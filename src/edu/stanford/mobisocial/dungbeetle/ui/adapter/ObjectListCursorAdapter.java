@@ -1,6 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.ui.adapter;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Date;
+
+import org.apache.commons.io.IOUtils;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -43,7 +48,8 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         DbObject.bindView(v, context, c, mContactCache, true);
         
     }
-    static final int BATCH_SIZE = 100;
+    
+    static final int BATCH_SIZE = getBestBatchSize();
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
         return new CursorLoader(context, feedUri, 
@@ -54,7 +60,26 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         	DbObjects.getFeedObjectClause(), null, DbObject._ID + 
         	" DESC LIMIT " + BATCH_SIZE);
     }
-    public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
+    private static int getBestBatchSize() {
+    	Runtime runtime = Runtime.getRuntime();
+    	if(runtime.availableProcessors() > 1)
+    		return 100;
+
+    	try {
+			File max_cpu_freq = new File("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+			byte[] freq_bytes = IOUtils.toByteArray(new FileInputStream(max_cpu_freq));
+			String freq_string = new String(freq_bytes);
+			double freq = Double.valueOf(freq_string);
+			if(freq > 950000) {
+				return 50;
+			}
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	}
+		return 15;
+	}
+
+	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
     	int newTotal = total + BATCH_SIZE;
     	CursorLoader cl = new CursorLoader(context, feedUri, 
             	new String[] { 

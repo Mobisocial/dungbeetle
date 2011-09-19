@@ -467,7 +467,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     	if (loadMore) {
     		Log.w(TAG, "load more");
     		mLoader.cancelLoad();
-    		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(getActivity(), mFeedUri, totalCount);
+    		Activity activity = getActivity();
+    		if(activity != null) {
+        		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(activity, mFeedUri, totalCount);
+    		}
     	}
 	}
 

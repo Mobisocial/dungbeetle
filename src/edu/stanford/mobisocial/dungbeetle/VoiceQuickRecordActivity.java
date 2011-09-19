@@ -150,6 +150,21 @@ public class VoiceQuickRecordActivity extends Activity
 						RECORDER_SAMPLERATE, RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING, bufferSize);
 		mStart = new Date();
 		mTimer = new Timer();
+		recorder.startRecording();
+		recordingThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					writeAudioDataToFile();
+				} finally {
+					//for some cases if we stop this before the above loop, then it blocks for ever on write!
+					recorder.stop();
+					recorder.release();
+					mTimer.cancel();
+				}
+			}
+		},"AudioRecorder Thread");
+		//must start after setup
 		mTimer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
@@ -167,20 +182,6 @@ public class VoiceQuickRecordActivity extends Activity
 				});
 			}
 		}, 1000, 500);
-		recorder.startRecording();
-		recordingThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					writeAudioDataToFile();
-				} finally {
-					//for some cases if we stop this before the above loop, then it blocks for ever on write!
-					recorder.stop();
-					recorder.release();
-					mTimer.cancel();
-				}
-			}
-		},"AudioRecorder Thread");
 		recordingThread.start();
 	}
 

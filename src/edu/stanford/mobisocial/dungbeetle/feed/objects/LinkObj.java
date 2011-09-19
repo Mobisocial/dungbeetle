@@ -124,7 +124,7 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 	
 	        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
 	            String type = content.optString(MIME_TYPE);
-	            if (type != null && !type.isEmpty()) {
+	            if (type != null && type.length() > 0) {
 	                intent.setDataAndType(uri, type);
 	            } else {
 	                intent.setData(uri);

@@ -60,9 +60,26 @@ public class PhotoTaker implements ActivityCallout {
 
 		file = new File(path, "image.tmp");
 		try {
-			//BitmapFactory.Options options = new BitmapFactory.Options();
-			//Bitmap sourceBitmap = BitmapFactory.decodeFile(file.getPath(), options);
-			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file));
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(new FileInputStream(file), null, options);
+			
+			
+			int targetSize = mSize;
+			int xScale = (options.outWidth + targetSize - 1) / targetSize;
+			int yScale = (options.outHeight + targetSize - 1) / targetSize;
+			
+			int scale = xScale < yScale ? xScale : yScale;
+			//uncomment this to get faster power of two scaling
+			//for(int i = 0; i < 32; ++i) {
+			//	int mushed = scale & ~(1 << i);
+			//	if(mushed != 0)
+			//		scale = mushed;
+			//}
+			
+			options.inJustDecodeBounds = false;
+			options.inSampleSize = scale;
+			Bitmap sourceBitmap = sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();
@@ -71,7 +88,6 @@ public class PhotoTaker implements ActivityCallout {
 
 			//TODO: it would be nice to have the PictureObj class handle all of this stuff
 			//   instead of duplicating a bunch of handling code.
-			int targetSize = mSize;
 			float scaleSize = ((float) targetSize) / cropSize;
 
 			Matrix matrix = new Matrix();
@@ -100,7 +116,7 @@ public class PhotoTaker implements ActivityCallout {
 
 			mResultHandler.onResult(data);
 		} catch (Exception e) {
-
+			Log.wtf(TAG, "failed snapshot exception", e);
 		}
 	}
 
