@@ -55,7 +55,7 @@
             <ImageView android:id="@+id/home_btn_latest"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_latest_button"/>
+                android:src="@drawable/home_latest_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_latest"/>
@@ -68,7 +68,7 @@
             <ImageView android:id="@+id/home_btn_friends"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_friends_button"/>
+                android:src="@drawable/home_friends_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_friends"/>
@@ -81,7 +81,7 @@
             <ImageView android:id="@+id/home_btn_profile"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_profile_button"/>
+                android:src="@drawable/home_profile_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_profile"/>
@@ -101,7 +101,7 @@
             <ImageView android:id="@+id/home_btn_groups"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_groups_button"/>
+                android:src="@drawable/home_groups_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_groups"/>
@@ -114,7 +114,7 @@
             <ImageView android:id="@+id/home_btn_new_group"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_new_group_button"/>
+                android:src="@drawable/home_new_group_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_new_group"/>
@@ -128,7 +128,7 @@
             <ImageView android:id="@+id/home_btn_nearby"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_nearby_button"/>
+                android:src="@drawable/home_nearby_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_nearby"/>
@@ -148,7 +148,7 @@
             <ImageView android:id="@+id/home_btn_settings"
                 style="@style/HomeButton"
                 android:onClick="onClickFeature"
-                android:src="@drawable/home_settings_button"/>
+                android:src="@drawable/home_settings_button" android:focusable="true"/>
             <TextView
                 style="@style/HomeText"
                 android:text="@string/title_settings"/>

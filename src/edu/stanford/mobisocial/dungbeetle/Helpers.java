@@ -294,6 +294,9 @@ public class Helpers {
     
 
     public static void updatePicture(final Context c, final byte[] data) {
+    	//fragments cause this
+    	if(c == null)
+    		return;
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
         JSONObject obj = ProfilePictureObj.json(data);

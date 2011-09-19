@@ -44,21 +44,25 @@ public class FriendRequest {
         }
         DBHelper helper = new DBHelper(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
-        // String name = ident.userName();
-        String email = ident.userEmail();
-        String profile = "{name:" + ident.userName() + "}";
-
-        PublicKey pubKey = ident.userPublicKey();
-        helper.close();
-
-        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
-                .path("musubi/join").appendQueryParameter("profile", profile)
-                .appendQueryParameter("email", email)
-                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
-        if (appendCapability) {
-            builder.appendQueryParameter("cap", cap);
+        try {
+	        // String name = ident.userName();
+	        String email = ident.userEmail();
+	        String profile = "{name:" + ident.userName() + "}";
+	
+	        PublicKey pubKey = ident.userPublicKey();
+	        helper.close();
+	
+	        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
+	                .path("musubi/join").appendQueryParameter("profile", profile)
+	                .appendQueryParameter("email", email)
+	                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
+	        if (appendCapability) {
+	            builder.appendQueryParameter("cap", cap);
+	        }
+	        return builder.build();
+        } finally {
+        	ident.close();
         }
-        return builder.build();
     }
 
     public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
