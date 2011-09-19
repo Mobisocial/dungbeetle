@@ -14,9 +14,11 @@ import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class SetProfileObjAction extends ObjAction {
     public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
-        String b64Bytes = objData.optString(PictureObj.DATA);
-        byte[] data = Base64.decode(b64Bytes);
-        Helpers.updatePicture(context, data);
+    	if(raw == null) {
+	        String b64Bytes = objData.optString(PictureObj.DATA);
+	        raw = Base64.decode(b64Bytes);
+    	}
+        Helpers.updatePicture(context, raw);
         Toast.makeText(context, "Set profile picture.", Toast.LENGTH_SHORT).show();
     }
 
