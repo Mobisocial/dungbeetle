@@ -71,7 +71,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 40;
+	public static final int VERSION = 41;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -283,8 +283,7 @@ public class DBHelper extends SQLiteOpenHelper {
             
         }
         
-        if(oldVersion <= 37) {
-            Log.w(TAG, "Adding column 'nearby' to contact table.");
+        if(oldVersion <= 40) {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PUBLIC_KEY_HASH_64 + " INTEGER DEFAULT 0");
             createIndex(db, "INDEX", "contacts_by_pkp", Contact.TABLE, Contact.PUBLIC_KEY_HASH_64);
             Cursor peeps = db.rawQuery("SELECT " + Contact._ID + "," + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE, null);
