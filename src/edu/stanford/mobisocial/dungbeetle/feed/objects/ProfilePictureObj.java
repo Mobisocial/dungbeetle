@@ -22,7 +22,7 @@ import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activator, NoNotify {
+public class ProfilePictureObj implements DbEntryHandler, NoNotify {
 	public static final String TAG = "ProfilePictureObj";
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";
@@ -57,7 +57,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         App.instance().contactImages.invalidate(from.id);
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    TextView textView = new TextView(context);
 	    textView.setText("New profile picture:");
 	    textView.setLayoutParams(CommonLayouts.FULL_WIDTH);
@@ -75,7 +75,7 @@ public class ProfilePictureObj implements DbEntryHandler, FeedRenderer, Activato
         String bytes = content.optString(DATA);
         intent.putExtra("b64Bytes", bytes);
         context.startActivity(intent); 
-    }
+    }*/
 
 	@Override
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {

@@ -5,14 +5,21 @@ import org.json.JSONObject;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
 
-public class InviteToGroupObj implements DbEntryHandler {
+public class InviteToGroupObj implements DbEntryHandler, FeedRenderer, Activator {
 	private static final String TAG = "InviteToGroupObj";
     public static final String TYPE = "invite_group";
     public static final String GROUP_NAME = "groupName";
@@ -69,5 +76,31 @@ public class InviteToGroupObj implements DbEntryHandler {
 		} catch (JSONException e) {
 			Log.e(TAG, "Error handling message: ", e);
 		}
+	}
+	@Override
+	public void render(Context context, ViewGroup frame, JSONObject content,
+			byte[] raw, boolean allowInteractions) {
+
+        TextView valueTV = new TextView(context);
+        valueTV.setText("Join me in '" +content.optString(GROUP_NAME)+"'");
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
+	}
+	@Override
+	public void activate(Context context, JSONObject content, byte[] raw) {
+		// TODO Auto-generated method stub
+		String groupName = content.optString(GROUP_NAME);
+		Uri dynUpdateUri = Uri.parse(content.optString(DYN_UPDATE_URI));
+
+		Intent launch = new Intent(Intent.ACTION_VIEW);
+        launch.setData(dynUpdateUri);
+		launch.putExtra("type", TYPE);
+		launch.putExtra("creator", false);
+		launch.putExtra(GROUP_NAME, groupName);
+		launch.putExtra(DYN_UPDATE_URI, dynUpdateUri);
+		context.startActivity(launch);
 	}
 }
