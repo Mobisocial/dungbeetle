@@ -21,6 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
@@ -65,6 +66,7 @@ public final class DbObjects {
         objs.add(new PhoneStateObj());
         objs.add(new MusicObj());
         objs.add(new FeedAnchorObj());
+        objs.add(new SharedSecretObj()) ;
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {

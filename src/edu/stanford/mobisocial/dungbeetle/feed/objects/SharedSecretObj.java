@@ -10,6 +10,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Pair;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -27,6 +28,7 @@ public class SharedSecretObj implements DbEntryHandler {
     	if(other.secret != null) {
     		return other.secret;
     	}
+    	//TODO: this really needs to be refactored into the contentprovider/helpers etc
         ContentValues values = new ContentValues();
         byte[] ss = new byte[32];
         random.nextBytes(ss);
@@ -34,7 +36,7 @@ public class SharedSecretObj implements DbEntryHandler {
         context.getContentResolver().update(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
             values, "_id=?", new String[]{String.valueOf(other.id)});
-        Helpers.sendMessage(context, other, new DbObject(TYPE, json(ss)));
+        Helpers.sendMessage(context, other.id, json(ss), TYPE);
         return ss;
     }
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
@@ -73,7 +75,6 @@ public class SharedSecretObj implements DbEntryHandler {
         }
 
         ContentValues values = new ContentValues();
-        random.nextBytes(ss);
         values.put(Contact.SHARED_SECRET, ss);
         context.getContentResolver().update(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
