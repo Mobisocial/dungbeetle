@@ -201,11 +201,7 @@ public class GroupProviders {
 	                        String encryptedPubK = o.getString("public_key");
 	                        final String pubKeyStr = Util.decryptAES(encryptedPubK, key);
 	                        final String email = Util.decryptAES(o.getString("email"), key);
-	
-	                        if(email.equals(ident.userEmail())){
-	                            continue;
-	                        }
-	
+		
 	                        final String encryptedProfile = o.getString("profile");
 	                        //final String groupSession = o.getString("group_session");
 	                        final String idInGroup = o.getString("group_id");
