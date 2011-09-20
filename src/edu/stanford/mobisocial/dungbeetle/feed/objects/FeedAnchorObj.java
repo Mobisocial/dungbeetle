@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -32,6 +33,9 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         return new DbObject(TYPE, json(parentFeedName));
     }
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
         try {
@@ -39,6 +43,10 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         } catch (JSONException e) {}
         return obj;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
             String type, JSONObject obj) {
@@ -48,7 +56,7 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
             return;
         }
 
-        Maybe<Group> parentGroup = Group.forFeed(context, parentFeedName);
+        Maybe<Group> parentGroup = Group.forFeedName(context, parentFeedName);
         if (!parentGroup.isKnown()) {
             Log.e(TAG, "No parent entry found for " + parentFeedName);
             return;

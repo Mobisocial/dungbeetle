@@ -11,6 +11,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
  * Sends the phone's state to any allowable silkworm thread.

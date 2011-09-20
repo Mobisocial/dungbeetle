@@ -8,5 +8,5 @@ import org.json.JSONObject;
  * visible entry in a feed.
  */
 public interface FeedRenderer {
-	public void render(Context context, ViewGroup frame, JSONObject content);
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions);
 }

@@ -44,7 +44,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
@@ -98,9 +97,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
+        //actually what ultimately gets called is DBHelper.queryGroups() so change stuff there
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-            null, selection, null, Group.NAME + " ASC");
+            null, selection, null, null);
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
@@ -113,7 +113,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         Cursor cursor = (Cursor)mGroups.getItem(info.position);
         final Group g = new Group(cursor);
         menu.setHeaderTitle(g.name);
-        String[] menuItems = new String[]{ "Delete", "Write to Tag" };
+        String[] menuItems = new String[]{ "Delete"};//, "Write to Tag" };
         for (int i = 0; i< menuItems.length; i++) {
             menu.add(Menu.NONE, i, i, menuItems[i]);
         }
@@ -146,11 +146,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id){
         Cursor cursor = (Cursor)mGroups.getItem(position);
         final Group g = new Group(cursor);
-        Intent viewGroupIntent = new Intent(GroupsActivity.this, FeedHomeActivity.class);
-        viewGroupIntent.putExtra("group_id", g.id);
-        viewGroupIntent.putExtra("group_name", g.name);
-        viewGroupIntent.putExtra("group_uri", g.dynUpdateUri);
-        startActivity(viewGroupIntent);
+        Group.view(this, g);
     }
 
     private class GroupListCursorAdapter extends CursorAdapter {

@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.util.Pair;
 
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -22,7 +23,14 @@ public class ProfileObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-     
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
+
     public static JSONObject json(String name, String about){
         JSONObject obj = new JSONObject();
         try{

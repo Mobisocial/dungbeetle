@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -36,7 +37,14 @@ public class SharedSecretObj implements DbEntryHandler {
         Helpers.sendMessage(context, other, new DbObject(TYPE, json(ss)));
         return ss;
     }
-    		
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
+
     public static JSONObject json(byte[] shared_secret){
         JSONObject obj = new JSONObject();
         try{

@@ -4,6 +4,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -11,6 +12,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,7 +38,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
  * A snapshot of an application's state.
  */
 public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
-	private static final String TAG = "DBAppState";
+	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = true;
 
     public static final String TYPE = "appstate";
@@ -52,7 +54,14 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     public String getType() {
         return TYPE;
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static AppState from(String packageName, String arg, String feedName, String groupUri) {
         return new AppState(json(packageName, arg, feedName, groupUri));
     }
@@ -98,13 +107,13 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
             content = appState;
         } else {
-            Log.wtf(TAG, "Missing inner content");
+            Log.e(TAG, "Missing inner content, probably because of format changes");
         }
 
 	    boolean rendered = false;
@@ -162,7 +171,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    String arg = content.optString(ARG);
@@ -176,6 +185,9 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 	    }
 	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
 	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+	    if (!(context instanceof Activity)) {
+	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    }
 	    context.startActivity(launch);
 	}
 
@@ -214,15 +226,15 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
             String[] projection = new String[] {"json"};
             String order = "_id desc LIMIT 1";
             Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
-            if (c.moveToFirst()) {
-                try {
-                    return new JSONObject(c.getString(0));
-                } catch (JSONException e) {
-                    Log.wtf(TAG, "not really json", e);
-                } finally {
-                    c.close();
-                }
-            } else {
+            try {
+	            if (c.moveToFirst()) {
+	                try {
+	                    return new JSONObject(c.getString(0));
+	                } catch (JSONException e) {
+	                    Log.e(TAG, "not really json", e);
+	                }
+	            }
+            } finally {
                 c.close();
             }
         }

@@ -1,7 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.text.util.Linkify;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -42,27 +48,50 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
-    public void render(Context context, ViewGroup frame, JSONObject content) {
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText(content.optString(TEXT));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        if(Linkify.addLinks(valueTV, Linkify.ALL)) {
+            if(!allowInteractions)
+            	valueTV.setMovementMethod(null);
+        }
         frame.addView(valueTV);
     }
 
+	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
 	@Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
+    	//linkify should have picked it up already but if we are in TV mode we
+    	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);
         String text = content.optString(TEXT);
-        Uri uri = Uri.parse(text);
-        String scheme = uri.getScheme();
-
-        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
-            intent.setData(Uri.parse(content.optString(TEXT)));
-            context.startActivity(intent);
-        }
+        
+        //launch the first thing that looks like a link
+        Matcher m = p.matcher(text);
+        while(m.find()) {
+	        Uri uri = Uri.parse(m.group());
+	        String scheme = uri.getScheme();
+	
+	        if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+                intent.setData(uri);
+	            if (!(context instanceof Activity)) {
+	                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	            }
+	            context.startActivity(intent);
+	            return;
+	        }
+        }    
     }
 }

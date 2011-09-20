@@ -1,9 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.model;
-import android.database.Cursor;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import java.util.Collection;
 
-public class MyInfo{
+import android.content.ContentValues;
+import android.database.Cursor;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+
+public class MyInfo {
     public static final String TABLE = "my_info";
     public static final String _ID = "_id";
     public static final String PUBLIC_KEY = "public_key";
@@ -32,4 +34,15 @@ public class MyInfo{
         return new ContactCollection(id, helper);
     }
 
+    public static void setMyName(DBHelper helper, String name) {
+        ContentValues cv = new ContentValues();
+        cv.put(MyInfo.NAME, name);
+        helper.getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
+    }
+
+    void setMyEmail(DBHelper helper, String email) {
+        ContentValues cv = new ContentValues();
+        cv.put(MyInfo.EMAIL, email);
+        helper.getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
+    }
 }

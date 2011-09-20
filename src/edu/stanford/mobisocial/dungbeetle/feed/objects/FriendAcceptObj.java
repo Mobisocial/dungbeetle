@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -36,7 +37,14 @@ public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandle
     public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     /**
      * Inserts a friend into the list of contacts based on a received
@@ -44,9 +52,10 @@ public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandle
      * a friend request.
      */
     @Override
-    public void handleUnprocessed(Context context, JSONObject msg) {
+    public Pair<JSONObject, byte[]> handleUnprocessed(Context context, JSONObject msg) {
         Uri uri = Uri.parse(msg.optString(URI));
         // TODO: prompt instead of auto-acccept?
         FriendRequest.acceptFriendRequest(context, uri, true);
+        return null;
     }
 }

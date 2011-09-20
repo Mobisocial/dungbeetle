@@ -5,14 +5,11 @@ import java.util.List;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.Nfc;
-import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
@@ -22,26 +19,21 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbViews;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
-import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
-import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
  * Represents a group by showing its feed and members.
- * TODO: Accept only a group_id extra and query for other parameters.
  */
-public class FeedHomeActivity extends DashboardBaseActivity
+public class FeedHomeActivity extends MusubiBaseActivity
         implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
     private Nfc mNfc;
     private String mGroupName;
@@ -67,60 +59,19 @@ public class FeedHomeActivity extends DashboardBaseActivity
         setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
 
-        mFeedViews = DbViews.getDefaultFeedViews();
-
-        // Create top-level tabs
-        //Resources res = getResources();
-        // res.getDrawable(R.drawable.icon)
-
+        mFeedViews = FeedViews.getDefaultFeedViews();
         Intent intent = getIntent();
-        Long group_id = null;
         String feed_name = null;
         String dyn_feed_uri = null;
-        // TODO: Depracate extras-based access in favor of Data field.
-        if (intent.hasExtra("group_id")) {
-            group_id = intent.getLongExtra("group_id", -1);
-            mGroupName = intent.getStringExtra("group_name");
-            feed_name = mGroupName;
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                feed_name = g.feedName;
-            } catch (Exception e) {}
-            dyn_feed_uri = intent.getStringExtra("group_uri");
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Group.MIME_TYPE)) {
-            group_id = Long.parseLong(getIntent().getData().getLastPathSegment());
-            Maybe<Group> maybeG = Group.forId(this, group_id);
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                feed_name = g.feedName;
-                dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
-            } catch (Exception e) {}
-        } else if (getIntent().getType() != null && getIntent().getType().equals(Feed.MIME_TYPE)) {
+        if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
-            Maybe<Group> maybeG = Group.forFeed(FeedHomeActivity.this, feedUri.getLastPathSegment());
+            Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feedUri.getLastPathSegment());
             try {
                 Group g = maybeG.get();
                 mGroupName = g.name;
                 feed_name = g.feedName;
                 dyn_feed_uri = g.dynUpdateUri;
-                group_id = g.id;
             } catch (Exception e) {}
-        } else if (getIntent().getData().getAuthority().equals("vnd.mobisocial.db")) {
-            String feedName = getIntent().getData().getLastPathSegment();
-            Maybe<Group>maybeG = Group.forFeed(this, feedName);
-            Group g = null;
-            try {
-               g = maybeG.get();
-            } catch (Exception e) {
-                g = Group.createForFeed(this, feedName);
-            }
-            mGroupName = g.name;
-            feed_name = g.feedName;
-            dyn_feed_uri = g.dynUpdateUri;
-            group_id = g.id;
         }
 
         if (dyn_feed_uri != null) {
@@ -132,7 +83,7 @@ public class FeedHomeActivity extends DashboardBaseActivity
         mColor= Feed.colorFor(feed_name);
         
         Bundle args = new Bundle();
-        args.putParcelable("feed_uri", mFeedUri);
+        args.putParcelable(FeedViewFragment.ARG_FEED_URI, mFeedUri);
         mActionsFragment = new FeedActionsFragment();
         mActionsFragment.setArguments(args);
 
@@ -140,12 +91,14 @@ public class FeedHomeActivity extends DashboardBaseActivity
             f.getFragment().setArguments(args);
         }
 
+        // TODO: Why is FeedActionsFragment.getActivity() null without this hack?
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (getSupportFragmentManager().findFragmentByTag("feedActions") == null) {
-            // first run.
-            ft.add(mActionsFragment, "feedActions");
-            ft.commit();
+        Fragment actions = getSupportFragmentManager().findFragmentByTag("feedActions");
+        if (actions != null) {
+            ft.remove(actions);
         }
+        ft.add(mActionsFragment, "feedActions");
+        ft.commit();
 
         PagerAdapter adapter = new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
         mFeedViewPager = (ViewPager)findViewById(R.id.feed_pager);
@@ -178,12 +131,14 @@ public class FeedHomeActivity extends DashboardBaseActivity
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
+        setFeedUri(mFeedUri);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
+        clearFeedUri();
     }
 
     @Override
@@ -229,8 +184,6 @@ public class FeedHomeActivity extends DashboardBaseActivity
         public Fragment getItem(int position) {
             return mFragments.get(position);
         }
-
-        
     }
 
     @Override
@@ -247,7 +200,7 @@ public class FeedHomeActivity extends DashboardBaseActivity
     public void onPageSelected(int position) {
         int c = mButtons.size();
         for (int i = 0; i < c; i++) {
-            mButtons.get(i).setBackgroundColor(R.color.background1);
+            mButtons.get(i).setBackgroundColor(Color.TRANSPARENT);
         }
         mButtons.get(position).setBackgroundColor(mColor);
     }

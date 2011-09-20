@@ -181,7 +181,9 @@ public class UIHelpers {
 			        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 			        data = baos.toByteArray();
-
+			        sourceBitmap.recycle();
+			        resizedBitmap.recycle();
+			        System.gc();
                     DbObject obj = PictureObj.from(data);
                     
                     for(int i = 0; i < using.length; i++) {

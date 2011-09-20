@@ -9,14 +9,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHandler {
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+
+public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHandler, FeedRenderer {
     private static final String TAG = "dbJoin";
     private static boolean DBG = false;
     public static final String TYPE = "join_notification";
@@ -39,13 +47,20 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
         }catch(JSONException e){}
         return obj;
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
 
     @Override
     public void handleDirectMessage(final Context context, Contact from, JSONObject obj) {
     }
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
     @Override
-    public void handleUnprocessed(final Context context, JSONObject obj) {
+    public Pair<JSONObject, byte[]> handleUnprocessed(final Context context, JSONObject obj) {
         if (DBG) Log.i(TAG, "Message to update group. ");
         String feedName = obj.optString("feedName");
         final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
@@ -59,11 +74,26 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
 
             new Thread(){
                 public void run(){
-                    h.handle(g.id, uri, context, ident, g.version, false);
+                    h.handle(g.id, uri, context, g.version, false);
                 }
             }.start();
         }
         catch(Maybe.NoValError e) { }
         ident.close();
+        Helpers.resendProfile(context);
+        helper.close();
+        return null;
+    }
+
+
+    @Override
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+        TextView valueTV = new TextView(context);
+        valueTV.setText("I'm here!");
+        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+        frame.addView(valueTV);
     }
 }

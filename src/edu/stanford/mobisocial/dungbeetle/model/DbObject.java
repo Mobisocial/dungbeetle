@@ -7,16 +7,16 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -40,6 +40,7 @@ public class DbObject {
 	public static final String CHILD_FEED_NAME = "child_feed";
 
     public static final String EXTRA_FEED_URI = "feed_uri";
+	public static final String RAW = "raw";
 
     private final Cursor mCursor;
     protected final String mType;
@@ -86,14 +87,41 @@ public class DbObject {
         } catch (Exception e) {
             Log.wtf("Bad data from db", e);
             return null;
-        }
+        } 
     }
-    public static void bindView(View v, Context context, Cursor c, ContactCache contactCache) {
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        Long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
-        Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
+    public static final Uri OBJ_URI = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/obj");
+    /**
+     * @param v the view to bind
+     * @param context standard activity context
+     * @param c the cursor source for the object in the db object table
+     * @param contactCache prevents copious lookups of contact information from the sqlite database
+     * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
+     */
+    public static void bindView(View v, Context context, Cursor c, ContactCache contactCache, boolean allowInteractions) {
+    	//there is probably a utility or should be one that does this
+    	Cursor cursor = context.getContentResolver().query(OBJ_URI,
+            	new String[] { 
+            		DbObject.JSON,
+            		DbObject.RAW,
+            		DbObject.CONTACT_ID,
+            		DbObject.TIMESTAMP
+            	},
+            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+    	if(cursor == null) {
+    		Log.wtf("Dbbject", "cursor was null for bund view of db object");
+    		return;
+    	}
+        if(!cursor.moveToFirst())
+        	return;
+        
+        String jsonSrc = cursor.getString(0);
+        byte[] raw = cursor.getBlob(1);
+        Long contactId = cursor.getLong(2);
+        Long timestamp = cursor.getLong(3);
         Date date = new Date(timestamp);
-
+        cursor.close();
+       	///////
+        
         try{
             Contact contact = contactCache.getContact(contactId).get();
 
@@ -118,10 +146,10 @@ public class DbObject {
                 ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
                 frame.removeAllViews();
                 frame.setTag(R.id.object_entry, c.getPosition());
-                FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-                if(renderer != null){
-                    renderer.render(context, frame, content);
-                }
+                
+        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
+        		if(renderer != null)
+        			renderer.render(context, frame, content, raw, allowInteractions);
             } catch (JSONException e) {
                 Log.e("db", "error opening json");
             }

@@ -24,6 +24,7 @@ import android.content.Context;
 
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Pair;
 
 public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 
@@ -41,6 +42,9 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         return Feed.forGroup(g);
     }
 
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
     public static JSONObject json(Group g){
         JSONObject obj = new JSONObject();
         try{
@@ -50,8 +54,12 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         }
         return obj;
     }
-	
-	public void render(Context context, ViewGroup frame, JSONObject content) {
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
+
+	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -63,9 +71,9 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content){
+    public void activate(Context context, JSONObject content, byte[] raw){
 	    Feed feedRef = new Feed(content);
-	    Maybe<Group> mg = Group.forFeed(context, feedRef.id());
+	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {
 	        Group g = mg.get();
             Group.view(context, g);

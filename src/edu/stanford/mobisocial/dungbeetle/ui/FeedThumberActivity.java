@@ -25,7 +25,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 
-public class FeedThumberActivity extends DashboardBaseActivity
+public class FeedThumberActivity extends MusubiBaseActivity
     implements ViewPager.OnPageChangeListener, LoaderManager.LoaderCallbacks<Cursor> {
 
     private ViewPager mFeedViewPager;
@@ -64,7 +64,7 @@ public class FeedThumberActivity extends DashboardBaseActivity
     public void onPageSelected(int position) {
         Uri feedUri = mFeeds.getFeedUri(position);
         // Feed.colorFor(feedUri.getLastPathSegment());  // : )
-        Maybe<Group> g = Group.forFeed(this, feedUri.getLastPathSegment());
+        Maybe<Group> g = Group.forFeed(this, feedUri);
         try {
             Log.d("musubi", "VIEWING FEED NAMED: " + g.get().name);
         } catch (NoValError e) {

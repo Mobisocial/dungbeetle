@@ -15,6 +15,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Binder;
 import android.util.Log;
+import android.util.Pair;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -26,8 +31,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 public class DungBeetleContentProvider extends ContentProvider {
-	public static final String AUTHORITY = 
-        "edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider";
+	public static final String AUTHORITY = "org.mobisocial.db";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
 	static final boolean DBG = false;
@@ -76,6 +80,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         return b.build();
     }
 
+    /**
+     * Inserts a message locally that has been received from some agent,
+     * typically from a remote device.
+     */
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 	    ContentResolver resolver = getContext().getContentResolver();
@@ -93,8 +101,10 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             try {
+            	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+
                 mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
-                    new JSONObject(values.getAsString(DbObject.JSON)));
+                    json);
 
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
@@ -102,14 +112,43 @@ public class DungBeetleContentProvider extends ContentProvider {
             } catch(JSONException e){
                 return null;
             }
+        } else if (match(uri, "feeds", "friend", ".+")) {
+            if (!appId.equals(SUPER_APP_ID)) {
+                return null;
+            }
+            try {
+                /*
+                 * A "virtual feed" for direct messaging with a friend.
+                 * This can be thought of us a sequence of objects "in reply to"
+                 * a virtual object between two contacts.
+                 */
+                /*long timestamp = new Date().getTime();
+                String type = values.getAsString(DbObject.TYPE);
+                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+                mHelper.prepareForSending(json, type, timestamp, appId);
+                mHelper.addObjectByJson(Contact.MY_ID, json, new byte[0]);*/
+                // stitch, stitch
+                long contactId = Long.parseLong(segs.get(2));
+                String type = values.getAsString(DbObject.TYPE);
+                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+                Helpers.sendMessage(getContext(), contactId, json, type);
+                resolver.notifyChange(uri, null);
+                return uri;
+            }
+            catch(JSONException e){
+                return null;
+            }
         } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
             try {
+            	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+
+
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
-                        new JSONObject(values.getAsString(DbObject.JSON)));
+                        json);
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
-                return Uri.parse(uri.toString());
+                return Uri.parse(uri.toString()); // TODO: is there a reason for this?
             }
             catch(JSONException e) {
                 return null;
@@ -228,8 +267,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             SQLiteDatabase db = mHelper.getWritableDatabase();
+            db.beginTransaction();
             try {
-                db.beginTransaction();
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
                 RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
@@ -291,6 +330,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 db.endTransaction();
             }
         } else {
+            Log.e(TAG, "Failed to insert into " + uri);
             return null;
         }
     }
@@ -343,9 +383,21 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "feedlist")) {
+        if(match(uri, "obj")) {
+            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+        } else if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/"));
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feedlist"));
+            return c;
+        } else if(match(uri, "feeds", ".+", "head")){
+            boolean isMe = segs.get(1).equals("me");
+            String feedName = isMe ? "friend" : segs.get(1);
+            String select = isMe ? DBHelper.andClauses(
+                selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
+            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
+                    select, selectionArgs, sortOrder);
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
+            if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         } else if(match(uri, "feeds", ".+")){
             boolean isMe = segs.get(1).equals("me");
@@ -357,48 +409,43 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, Feed.uriForName(feedName));
             if (isMe) c.setNotificationUri(resolver, Feed.uriForName("me"));
             return c;
-        }
-        else if(match(uri, "feeds", ".+", "head")){
-            boolean isMe = segs.get(1).equals("me");
-            String feedName = isMe ? "friend" : segs.get(1);
-            String select = isMe ? DBHelper.andClauses(
-                selection, DbObject.CONTACT_ID + "=" + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeedLatest(realAppId, feedName, projection,
+        } else if (match(uri, "feeds", "friend", ".+")) {
+            Long contactId = Long.parseLong(segs.get(2));
+            String select = selection;
+            Cursor c = mHelper.queryFriend(realAppId, contactId, projection,
                     select, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
-            if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
+            c.setNotificationUri(resolver, uri);
             return c;
-        }
-        else if(match(uri, "groups_membership", ".+")) {
+        } else if(match(uri, "groups_membership", ".+")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long contactId = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupsMembership(contactId);
             c.setNotificationUri(resolver, uri);
             return c;
-        }
-        else if(match(uri, "group_contacts", ".+")) {
+        } else if(match(uri, "group_contacts", ".+")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long group_id = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupContacts(group_id);
             c.setNotificationUri(resolver, uri);
             return c;
-        }
-        else if(match(uri, "local_user", ".+")) {
+        } else if(match(uri, "local_user", ".+")) {
             // currently available to any local app with a feed id.
             String feed_name = uri.getLastPathSegment();
             Cursor c = mHelper.queryLocalUser(feed_name);
             c.setNotificationUri(resolver, uri);
             return c;
-        }
-        else if(match(uri, "feed_members", ".+")) {
+        } else if(match(uri, "feed_members", ".+")) {
             String feedName = segs.get(1);
             Cursor c = mHelper.queryFeedMembers(feedName, realAppId);
             c.setNotificationUri(resolver, uri);
             return c;
-        }
-        else if(match(uri, "contacts") || 
-                match(uri, "subscribers") || 
-                match(uri, "groups") ||
+        } else if(match(uri, "groups")) {
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
+            Cursor c = mHelper.queryGroups();
+            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/groups"));
+            return c;
+        } else if(match(uri, "contacts") || 
+                match(uri, "subscribers") ||
                 match(uri, "group_members")){
 
             if(!realAppId.equals(SUPER_APP_ID)) return null;
@@ -407,8 +454,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                     segs.get(0), projection, selection, selectionArgs, null, null, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/" + segs.get(0)));
             return c;
-        }
-        else{
+        } else{
             Log.d(TAG, "Unrecognized query: " + uri);
             return null;
         }
@@ -478,5 +524,6 @@ public class DungBeetleContentProvider extends ContentProvider {
             Uri uri = Feed.uriForName(c.getString(0));
             resolver.notifyChange(uri, null);
         }
+        c.close();
     }
 }

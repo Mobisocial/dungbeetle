@@ -1,4 +1,4 @@
-package edu.stanford.mobisocial.dungbeetle.feed;
+package edu.stanford.mobisocial.dungbeetle.feed.view;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,22 +10,20 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.DefaultView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.PartyView;
-import edu.stanford.mobisocial.dungbeetle.feed.view.MapView;
-import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMapFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
-public class DbViews {
+public class FeedViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
     static {
         sFeedViews.add(new DefaultView());
-        sFeedViews.add(new PartyView());
+        sFeedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         sFeedViews.add(new MapView());
+        sFeedViews.add(new PartyView());
+        sFeedViews.add(new PresenceView());
         //sFeedViews.add(new StatsView());
     }
 
@@ -33,10 +31,22 @@ public class DbViews {
         return sFeedViews;
     }
 
+    public static List<FeedView> getDefaultFeedViews() {
+        List<FeedView> feedViews = new ArrayList<FeedView>();
+        feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
+        feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
+        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        //if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            feedViews.add(new PresenceView());
+        //}
+        return feedViews;
+    }
+
     public static void promptForView(final Context context, final Uri feedUri) {
-        String[] items = new String[DbViews.getFeedViews().size()];
+        String[] items = new String[getFeedViews().size()];
         int i = 0;
-        for (FeedView v : DbViews.getFeedViews()) {
+        for (FeedView v : getFeedViews()) {
             items[i++] = v.getName();
         }
 
@@ -44,7 +54,7 @@ public class DbViews {
             .setItems(items, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    FeedView v = DbViews.getFeedViews().get(which);
+                    FeedView v = FeedViews.getFeedViews().get(which);
                     Fragment f = v.getFragment();
                     Bundle args = new Bundle();
                     args.putParcelable("feed_uri", feedUri);
@@ -70,13 +80,5 @@ public class DbViews {
                 return name;
             }
         };
-    }
-
-    public static List<FeedView> getDefaultFeedViews() {
-        List<FeedView> feedViews = new ArrayList<FeedView>();
-        feedViews.add(DbViews.feedViewFrom("Feed", new FeedViewFragment()));
-        //feedViews.add(DbViews.feedViewFrom("Map", new FeedMapFragment()));
-        feedViews.add(DbViews.feedViewFrom("Members", new FeedMembersFragment()));
-        return feedViews;
     }
 }

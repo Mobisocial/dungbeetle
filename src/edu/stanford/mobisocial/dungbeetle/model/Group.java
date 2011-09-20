@@ -1,8 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.model;
+import java.util.Collection;
+import java.util.UUID;
+
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -11,10 +15,9 @@ import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-import java.util.Collection;
-import java.util.UUID;
-
 public class Group{
+    // Prefer Feed.MIME_TYPE.
+    @Deprecated
     public static final String MIME_TYPE = "vnd.mobisocial.db/group";
     public static final String TABLE = "groups";
     public static final String _ID = "_id";
@@ -25,6 +28,7 @@ public class Group{
     public static final String LAST_UPDATED = "last_updated";
     public static final String LAST_OBJECT_ID = "last_object_id";
     public static final String PARENT_FEED_ID = "parent_feed_id";
+    public static final String NUM_UNREAD = "num_unread";
 
     public final String feedName;
     public final String name;
@@ -56,9 +60,16 @@ public class Group{
         return g;
     }
 
-    public static Maybe<Group> forFeed(Context context, String feed) {
+    public static Maybe<Group> forFeed(Context context, Uri feed) {
         DBHelper helper = new DBHelper(context);
-        Maybe<Group> g = helper.groupForFeedName(feed);
+        Maybe<Group> g = helper.groupForFeedName(feed.getLastPathSegment());
+        helper.close();
+        return g;
+    }
+
+    public static Maybe<Group> forFeedName(Context context, String feedName) {
+        DBHelper helper = new DBHelper(context);
+        Maybe<Group> g = helper.groupForFeedName(feedName);
         helper.close();
         return g;
     }
@@ -73,9 +84,19 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
+    }
+    
+    public void forceUpdate(Context context) {
+        DBHelper helper = new DBHelper(context);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        GroupProviders.GroupProvider gp = GroupProviders.forUri(Uri.parse(dynUpdateUri));
+        int version = -1;
+        gp.forceUpdate(id, Uri.parse(dynUpdateUri), context, version, false);
+        ident.close();
+
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
@@ -94,7 +115,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, version, true);
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
@@ -109,16 +130,20 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
         int version = -1;
-        gp.forceUpdate(id, uri, context, ident, version);
+        gp.forceUpdate(id, uri, context, version, true);
         helper.close();
         ident.close();
         return new Group(id, groupName, uri.toString(), feedName, version);
     }
 
+    /**
+     * Launches an activity to view a group. Deprecated in favor of Feed.view()
+     */
+    @Deprecated
     public static void view(Context context, Group group) {
+        Uri feedUri = Feed.uriForName(group.feedName);
         Intent launch = new Intent(Intent.ACTION_VIEW);
-        Uri ref = Uri.parse("content://mobisocial.db/group").buildUpon().appendPath(""+group.id).build();
-        launch.setDataAndType(ref, Group.MIME_TYPE);
+        launch.setDataAndType(feedUri, Feed.MIME_TYPE);
         context.startActivity(launch);
     }
 
@@ -132,7 +157,7 @@ public class Group{
             DBHelper helper = new DBHelper(context);
             DBIdentityProvider ident = new DBIdentityProvider(helper);
             int version = -1;
-            gp.forceUpdate(id, dynGroupUri, context, ident, version);
+            gp.forceUpdate(id, dynGroupUri, context, version, true);
             ident.close();
             helper.close();
         }

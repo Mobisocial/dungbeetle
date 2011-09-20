@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -28,21 +29,33 @@ public class DBIdentityProvider implements IdentityProvider {
 	private final RSAPublicKey mPubKey;
 	private final String mPubKeyTag;
 	private final RSAPrivateKey mPrivKey;
-	private final SQLiteOpenHelper mDb;
-
     private final String mEmail;
     private final String mName;
+    private final SQLiteDatabase mDb;
+
+    private final String mPubKeyString;
+
+    private Exception mUnclosedException;
+    @Override
+    protected void finalize() throws Throwable {
+    	if(mUnclosedException != null) {
+    		throw mUnclosedException;
+    	}
+        super.finalize();
+    }
 
 	public DBIdentityProvider(SQLiteOpenHelper db) {
-        mDb = db;
-		Cursor c = db.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		mUnclosedException = new Exception("Finalized without close being called. Created at...");
+		mDb = db.getReadableDatabase();
+		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         if (c.isAfterLast()) {
             c.close();
             throw new IllegalStateException("Missing my_info entry!");
         }
 
-        mPubKey = publicKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY)));
+        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
+        mPubKey = publicKeyFromString(mPubKeyString);
         mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
         mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
         mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
@@ -61,7 +74,7 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
     public String userProfile() {
-		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
 
 		JSONObject obj = new JSONObject();
@@ -72,6 +85,10 @@ public class DBIdentityProvider implements IdentityProvider {
         } catch(JSONException e) { }
         c.close();
         return obj.toString(); 
+    }
+
+    public String userPublicKeyString() {
+        return mPubKeyString;
     }
 
 	public RSAPublicKey userPublicKey(){
@@ -87,7 +104,7 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public Contact contactForUser(){
-		Cursor c = mDb.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         long id = Contact.MY_ID;
         String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
@@ -102,17 +119,20 @@ public class DBIdentityProvider implements IdentityProvider {
 		if(id.equals(mPubKeyTag)) {
 			return mPubKey;
 		}
-        Cursor c = mDb.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
+        Cursor c = mDb.query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
             Contact.PERSON_ID + " = ?", new String[]{id}, null, null, null);
-        c.moveToFirst();
-        if (c.isAfterLast()) {
-            return null;
+        try {
+	        c.moveToFirst();
+	        if (c.isAfterLast()) {
+	            return null;
+	        }
+	
+	        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
+	            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
+	        return k;
+        } finally {
+        	c.close();
         }
-
-        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
-            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
-        c.close();
-        return k;
     }
 
 	public List<RSAPublicKey> publicKeysForContactIds(List<Long> ids){
@@ -125,33 +145,25 @@ public class DBIdentityProvider implements IdentityProvider {
             }
         }
         String idList = buffer.toString();
-        Cursor c = mDb.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
+        Cursor c = mDb.query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
                 Contact._ID + " IN (" + idList + ")", null, null, null, null);
-        c.moveToFirst();
-        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
-        while (!c.isAfterLast()) {
-            result.add(publicKeyFromString(c.getString(
-                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
-            c.moveToNext();
+        try {
+	        c.moveToFirst();
+	        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
+	        while (!c.isAfterLast()) {
+	            result.add(publicKeyFromString(c.getString(
+	                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
+	            c.moveToNext();
+	        }
+	        return result;
+        } finally {
+        	c.close();
         }
-        return result;
     }
 
     public String personIdForPublicKey(RSAPublicKey key){
-        return makePersonIdForPublicKey(key);
+        return edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
     }
-
-    public static String makePersonIdForPublicKey(PublicKey key) {
-		String me = null;
-		try {
-			me = Util.SHA1(key.getEncoded());
-		} catch (Exception e) {
-			throw new IllegalArgumentException(
-                "Could not compute SHA1 of public key.");
-		}
-		return me.substring(0, 10);
-    }
-
 
     public static KeyPair generateKeyPair(){
         try {
@@ -195,6 +207,7 @@ public class DBIdentityProvider implements IdentityProvider {
 
     @Override
     public void close() {
+    	mUnclosedException = null;
         mDb.close();
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="45"
+	  android:versionCode="63"
 	  android:versionName="0.2"
 	  android:installLocation="auto"
 	  >
@@ -37,6 +37,7 @@
     <activity android:name=".ui.HomeActivity"
 	      android:label="@string/app_name"
 	      android:windowSoftInputMode="stateHidden"
+	      android:clearTaskOnLaunch="true"
 	      >
       <intent-filter>
 	    <action android:name="android.intent.action.MAIN" />
@@ -44,19 +45,27 @@
       </intent-filter>
 
       <intent-filter android:priority="100">
-    <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
       </intent-filter>
 
+      <intent-filter android:priority="100">
+    <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
+      </intent-filter>
  
     </activity>
 
 	<activity android:name=".ui.FeedListActivity"
 	      android:label="@string/title_latest">
     </activity>
-
+    <activity android:name="com.google.zxing.client.android.encode.EncodeActivity"
+	      android:label="Encode Barcode"
+	      android:theme="@android:style/Theme.Dialog">
+    </activity>
+    
     <activity android:name=".ui.FeedThumberActivity" android:label="@string/title_latest" />
     <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
     
@@ -75,7 +84,7 @@
     </activity>
 
     <provider android:name=".DungBeetleContentProvider"
-	      android:authorities="edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider" />
+	      android:authorities="org.mobisocial.db" />
 
     <service android:name=".DungBeetleService"/>
     <service android:name="edu.stanford.mobisocial.dungbeetle.location.UpdateLocation"/>
@@ -109,16 +118,25 @@
 	      ></activity>
 
     <activity android:name="NewGroupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
-    <activity android:name="VoiceRecorderActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
+    <activity android:name="PhotoQuickTakeActivity" 
+              android:theme="@android:style/Theme.Dialog"></activity> 
+    <activity android:name="VoiceQuickRecordActivity" 
+              android:theme="@android:style/Theme.Dialog"
+              android:taskAffinity=""></activity> 
+     <activity android:name="VoiceRecorderActivity" 
+              android:theme="@android:style/Theme.Dialog"
+              android:taskAffinity=""></activity>         
     <activity android:name="DropboxBackupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
     <activity android:name="FeedActivity"  android:label="@string/title_group" ></activity> 
-    <activity android:name="ProfileActivity"  android:label="@string/title_profile" ></activity> 
+    <activity android:name=".ui.ViewContactActivity"
+    	android:label="@string/title_profile" 
+    	android:windowSoftInputMode="stateHidden" /> 
     <activity android:name="AddGroupActivity"  android:label="@string/app_name" ></activity> 
     <activity android:name="FriendsActivity"  android:label="@string/title_friends" ></activity>
     <activity android:name="GroupsActivity"  android:label="@string/title_groups" ></activity> 
     <activity 
-    	android:name=".ui.FeedHomeActivity"
-    	android:label="@string/title_groups"
+        	android:name=".ui.FeedHomeActivity"
+        	android:label="@string/title_groups"
 	    android:windowSoftInputMode="stateHidden">
 	      
 	      <intent-filter>
@@ -131,10 +149,9 @@
 		      <category android:name="android.intent.category.DEFAULT" />
 		      <data android:mimeType="vnd.mobisocial.db/feed" />
 	      </intent-filter>
-	      </activity> 
-    <activity android:name="ViewContactActivity"  android:label="@string/title_friend" ></activity>
-    <activity android:name="ViewContactTabActivity"  android:label="@string/title_friend" >
-      <intent-filter>
+      </activity> 
+    <activity android:name="ViewContactActivity"  android:label="@string/title_friend" >
+       <intent-filter>
 	      <action android:name="android.intent.action.VIEW"/>
 	      <category android:name="android.intent.category.DEFAULT" />
 	      <data android:mimeType="vnd.mobisocial.db/contact" />
@@ -185,7 +202,7 @@
       <activity android:name=".NearbyGroupsActivity"
             android:theme="@style/Theme.D1"
             android:label="@string/title_nearby"
-            
+            android:noHistory="true"
             />
 
     <activity
@@ -288,5 +305,11 @@
       </intent-filter>
     
     </activity>
+    
+    <receiver android:name=".RemoteControlReceiver">
+    <intent-filter>
+        <action android:name="android.intent.action.MEDIA_BUTTON" />
+    </intent-filter>
+</receiver>
   </application>
 </manifest> 

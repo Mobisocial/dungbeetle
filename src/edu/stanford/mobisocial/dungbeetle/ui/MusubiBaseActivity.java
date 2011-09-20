@@ -20,19 +20,24 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
+import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
 
 /**
  * This is the base class for activities in the dashboard application. It
@@ -42,10 +47,12 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  * method for displaying a message to the screen via the Toast class.
  */
 
-public abstract class DashboardBaseActivity extends FragmentActivity implements InstrumentedActivity {
-
+public abstract class MusubiBaseActivity extends FragmentActivity implements InstrumentedActivity {
+    @SuppressWarnings("unused")
+    private static final String TAG = "msb-dashbaord";
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
+    private static MusubiBaseActivity sInstance;
 
 
     /**
@@ -57,11 +64,13 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
      */
 
     protected DBHelper mHelper;
+    private RemoteControlRegistrar remoteControlRegistrar;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // setContentView(R.layout.activity_default);
+        sInstance = this;
         mHelper = new DBHelper(this);
+        remoteControlRegistrar = new RemoteControlRegistrar(this, RemoteControlReceiver.class);
     }
 
     /**
@@ -74,6 +83,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onDestroy() {
         super.onDestroy();
+        remoteControlRegistrar.unregisterRemoteControl();
     }
 
     /**
@@ -88,6 +98,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onPause() {
         super.onPause();
+        mResumed = false;
     }
 
     /**
@@ -107,6 +118,10 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
 
     protected void onResume() {
         super.onResume();
+        sInstance = this;
+        remoteControlRegistrar.registerRemoteControl();
+        new PresenceAwareNotify(this).cancelAll();
+        mResumed = true;
     }
 
     /**
@@ -233,7 +248,7 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(DashboardBaseActivity.this, text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MusubiBaseActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -256,5 +271,86 @@ public abstract class DashboardBaseActivity extends FragmentActivity implements 
         }
     }
 
-} // end class
+    public boolean isDeveloperModeEnabled() {
+        return getSharedPreferences("main", 0).getBoolean("dev_mode", false);
+    }
+    public static boolean isDeveloperModeEnabled(Context c) {
+        return c.getSharedPreferences("main", 0).getBoolean("dev_mode", false);
+    }
+
+    public void setDeveloperMode(boolean enabled) {
+        getSharedPreferences("main", 0).edit().putBoolean("dev_mode", enabled).commit();
+    }
+
+    public static MusubiBaseActivity getInstance() {
+        return sInstance;
+    }
+
+    public RemoteControlRegistrar getRemoteControlRegistrar() {
+        return remoteControlRegistrar;
+    }
+
+    private boolean mResumed;
+    public boolean amResumed() {
+        return mResumed;
+    }
+
+    private Uri mFeedUri;
+    public void setFeedUri(Uri feedUri) {
+        mFeedUri = feedUri;
+    }
+
+    public void clearFeedUri() {
+        mFeedUri = null;
+    }
+
+    public Uri getFeedUri() {
+        return mFeedUri;
+    }
+
+    private KeyEvent.Callback mOnKeyListener;
+    public void setOnKeyListener(KeyEvent.Callback listener) {
+        mOnKeyListener = listener;
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyUp(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyLongPress(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if (mOnKeyListener.onKeyDown(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        if (mOnKeyListener != null) {
+            if  (mOnKeyListener.onKeyMultiple(keyCode, repeatCount, event)) {
+                return true;
+            }
+        }
+        return super.onKeyMultiple(keyCode, repeatCount, event);
+    }
+}
 

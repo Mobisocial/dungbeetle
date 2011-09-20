@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 /**
@@ -31,7 +32,7 @@ public abstract class DatabaseObjHandler extends ObjHandler {
         String selection = DbObject.FEED_NAME + "=? AND "  + DbObject.CONTACT_ID + "=? AND " + DbObject.SEQUENCE_ID + "=?";
         String[] selectionArgs = new String[] {feedName, String.valueOf(contactID), String.valueOf(sequenceID)};
         
-        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, null, null);
+        Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, DbObject.CONTACT_ID + " DESC", "1");
         
         if (objC.moveToFirst()) {
             objId = objC.getLong(0);
@@ -45,8 +46,9 @@ public abstract class DatabaseObjHandler extends ObjHandler {
     }
 
     @Override
-    public final void handleObj(Context context, Uri feedUri, long contactId, long sequenceId, DbEntryHandler typeInfo, JSONObject json) {
-        long objId = getObjectId(feedUri, contactId, sequenceId);
+    public final void handleObj(Context context, Uri feedUri, Contact contact,
+            long sequenceId, DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
+        long objId = getObjectId(feedUri, contact.id, sequenceId);
         handleObj(context, feedUri, objId);
     }
 

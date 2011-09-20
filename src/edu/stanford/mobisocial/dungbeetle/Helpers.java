@@ -1,28 +1,34 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import edu.stanford.mobisocial.dungbeetle.feed.objects.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import org.json.JSONObject;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.net.Uri;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONObject;
-import android.content.ContentValues;
-import android.net.Uri;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.content.Context;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class Helpers {
     public static final String TAG = "Helpers";
@@ -121,6 +127,16 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void sendMessage(final Context c, long contactId, JSONObject obj, String type) {
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, type);
+        String to = Long.toString(contactId);
+        values.put(DbObject.DESTINATION, to);
+        c.getContentResolver().insert(url, values);
+    }
+
     public static void sendMessage(final Context c,
                                    final Collection<Contact> contacts,
                                    final DbObject obj) {
@@ -161,29 +177,12 @@ public class Helpers {
             ids[i] = me.id;
             i++;
         }
-        Maybe<Group> group = Group.forFeed(c, threadUri.toString());
+        Maybe<Group> group = Group.forFeed(c, threadUri);
         try {
             sendGroupInvite(c, ids, group.get());
         } catch (NoValError e) {
-            Log.e(TAG, "Could not send group invite; no group for " + threadUri);
+            Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
         }
-    }
-
-    public static void updatePicture(final Context c, final byte[] data) {
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        ContentValues values = new ContentValues();
-        JSONObject obj = ProfilePictureObj.json(data);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
-        c.getContentResolver().insert(url, values); 
-
-        values = new ContentValues();
-        values.put(MyInfo.PICTURE, data);
-        c.getContentResolver().update(
-            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
-            values, null, null);
-
-        App.instance().contactImages.invalidate(Contact.MY_ID);
     }
     
     
@@ -200,6 +199,16 @@ public class Helpers {
         values.put(DbObject.JSON, obj.getJson().toString());
         values.put(DbObject.TYPE, obj.getType());
         c.getContentResolver().insert(feed, values); 
+    }
+
+    /**
+     * A convenience method for sending an object to multiple feeds.
+     * TODO: This should be made much more efficient if it proves useful.
+     */
+    public static void sendToFeeds(Context c, DbObject obj, Collection<Uri> feeds) {
+        for (Uri feed : feeds) {
+            sendToFeed(c, obj, feed);
+        }
     }
 
     public static void updatePresence(final Context c, final int presence){
@@ -258,6 +267,21 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void resendProfile(final Context c) {
+        DBHelper helper = new DBHelper(c);
+        IdentityProvider ident = new DBIdentityProvider(helper);
+        Log.w(TAG, "attempting to resend");
+        try {
+            JSONObject profileJson = new JSONObject(ident.userProfile());
+            updateProfile(c, profileJson.optString("name"), "");
+            updatePicture(c, Base64.decode(profileJson.optString("picture")));
+            Log.w(TAG, "resending profile");
+        }
+        catch (Exception e) {
+        }
+        ident.close();
+    }
+
     public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
@@ -265,6 +289,28 @@ public class Helpers {
         values.put(DbObject.JSON, obj.toString());
         values.put(DbObject.TYPE, ProfileObj.TYPE);
         c.getContentResolver().insert(url, values);
+    }
+
+    
+
+    public static void updatePicture(final Context c, final byte[] data) {
+    	//fragments cause this
+    	if(c == null)
+    		return;
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        ContentValues values = new ContentValues();
+        JSONObject obj = ProfilePictureObj.json(data);
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
+        c.getContentResolver().insert(url, values); 
+
+        values = new ContentValues();
+        values.put(MyInfo.PICTURE, data);
+        c.getContentResolver().update(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
+            values, null, null);
+
+        App.instance().contactImages.invalidate(Contact.MY_ID);
     }
 
     public static void updateLastPresence(final Context c, 

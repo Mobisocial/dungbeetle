@@ -78,6 +78,9 @@ public class PhotosPresence extends FeedPresence {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
+        sourceBitmap.recycle();
+        resizedBitmap.recycle();
+        System.gc();
         return PictureObj.from(data);
     }
 

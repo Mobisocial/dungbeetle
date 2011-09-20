@@ -3,40 +3,32 @@ import android.database.Cursor;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import java.util.AbstractCollection;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * Lazy iterator of contacts in a group.
  */
 public class ContactCollection extends AbstractCollection<Contact> {
-    public final Cursor mCursor;
+	//This used to lazy load through an iterator, but the problem with
+	//that is that it isn't possible to know when to clean up
+	//the cursor!
+	LinkedList<Contact> contacts_ = new LinkedList<Contact>();
 
     public ContactCollection(long groupId, DBHelper helper){
-        mCursor = helper.queryGroupContacts(groupId);
+        Cursor cursor = helper.queryGroupContacts(groupId);
+        if(cursor.moveToFirst()) do {
+        	contacts_.add(new Contact(cursor));
+        } while(cursor.moveToNext());
+        cursor.close();
     }
 
     @Override
     public int size(){
-        return mCursor.getCount();
+        return contacts_.size();
     }
 
     @Override
     public Iterator<Contact> iterator(){
-        mCursor.moveToFirst();
-        return new Iterator<Contact>(){
-            @Override
-            public Contact next(){
-                Contact c = new Contact(mCursor);
-                mCursor.moveToNext();
-                return c;
-            }
-            @Override
-            public boolean hasNext(){
-                return !mCursor.isAfterLast();
-            }
-            @Override
-            public void remove(){
-                throw new UnsupportedOperationException();
-            }
-        };
+    	return contacts_.iterator();
     }
 }

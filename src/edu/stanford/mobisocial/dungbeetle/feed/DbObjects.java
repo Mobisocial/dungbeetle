@@ -87,17 +87,9 @@ public final class DbObjects {
         return null;
 	}
 
-	public static DbEntryHandler getIncomingMessageHandler(JSONObject json) {
+	public static DbEntryHandler getMessageHandler(JSONObject json) {
 	    String type = json.optString("type");
-        for (DbEntryHandler obj : objs) {
-            if (obj instanceof DbEntryHandler) {
-                DbEntryHandler o = (DbEntryHandler)obj;
-                if (o.getType().equals(type)) {
-                    return o;
-                }
-            }
-        }
-        return null;
+	    return forType(type);
 	}
 
 	public static String[] getRenderableTypes() {

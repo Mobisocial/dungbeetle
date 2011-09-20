@@ -53,13 +53,17 @@ public class ContactCache extends ContentObserver {
                         Contact._ID + "=?", new String[] {
                             String.valueOf(id)
                         }, null);
-                c.moveToFirst();
-                if (c.isAfterLast()) {
-                    return Maybe.unknown();
-                } else {
-                    Contact contact = new Contact(c);
-                    mContactCache.put(id, contact);
-                    return Maybe.definitely(contact);
+                try {
+	                c.moveToFirst();
+	                if (c.isAfterLast()) {
+	                    return Maybe.unknown();
+	                } else {
+	                    Contact contact = new Contact(c);
+	                    mContactCache.put(id, contact);
+	                    return Maybe.definitely(contact);
+	                }
+                } finally {
+                	c.close();
                 }
             }
         }

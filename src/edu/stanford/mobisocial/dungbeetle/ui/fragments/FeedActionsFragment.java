@@ -15,6 +15,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.android.Contents;
+import com.google.zxing.client.android.Intents;
+import com.google.zxing.client.android.encode.EncodeActivity;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -33,12 +38,14 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.DbViews;
+import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
  * A UI-less fragment that adds feed actions to the menu and action bar.
@@ -51,6 +58,7 @@ public class FeedActionsFragment extends Fragment {
     private Uri mFeedUri;
     private Uri mExternalFeedUri;
     private String mGroupName;
+    private boolean mDualPane;
 
     private static final int REQUEST_BT_BROADCAST = 2;
     private static final int REQUEST_BT_ENABLE = 3;
@@ -59,12 +67,13 @@ public class FeedActionsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        if (!getArguments().containsKey("feed_uri")) {
+        if (!getArguments().containsKey(FeedViewFragment.ARG_FEED_URI)) {
             throw new IllegalArgumentException("FeedActionFragment created with no feed_uri argument.");
         }
-        mFeedUri = getArguments().getParcelable("feed_uri");
+        mFeedUri = getArguments().getParcelable(FeedViewFragment.ARG_FEED_URI);
+        mDualPane = getArguments().getBoolean(FeedViewFragment.ARG_DUAL_PANE, false);
 
-        Maybe<Group> maybeG = Group.forFeed(getActivity(), mFeedUri.getLastPathSegment());
+        Maybe<Group> maybeG = Group.forFeedName(getActivity(), mFeedUri.getLastPathSegment());
         try {
             Group g = maybeG.get();
             mGroupName = g.name;
@@ -75,10 +84,13 @@ public class FeedActionsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem item;
-        /*item = menu.add(0, MENU_VIEW, 0, "View");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-        }*/
+        Log.d(TAG, "creating menu " + mDualPane);
+        if (mDualPane) {
+            item = menu.add(0, MENU_VIEW, 0, "View");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            }
+        }
         item = menu.add(0, MENU_SHARE, 0, "Share");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
@@ -88,7 +100,7 @@ public class FeedActionsFragment extends Fragment {
     public boolean onOptionsItemSelected (MenuItem item){
         switch (item.getItemId()) {
             case MENU_VIEW: {
-                DbViews.promptForView(getActivity(), mFeedUri);
+                FeedViews.promptForView(getActivity(), mFeedUri);
                 return true;
             }
             case MENU_SHARE: {
@@ -101,7 +113,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void promptForSharing() {
         new AlertDialog.Builder(getActivity())
-            .setTitle("Share thread...")
+            .setTitle("Share group...")
             .setItems(new String[] {"Send to friend", "Broadcast nearby", "QR code"}, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -122,7 +134,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void sendToFriend() {
         new AlertDialog.Builder(getActivity())
-        .setTitle("Share thread...")
+        .setTitle("Share group...")
         .setItems(new String[] {"From Musubi", "Other..."}, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -155,29 +167,35 @@ public class FeedActionsFragment extends Fragment {
     }
 
     private void broadcastNearby() {
-        new AlertDialog.Builder(getActivity())
-            .setTitle("Share thread...")
-            .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            requestBluetooth();
-                            break;
-                        case 1:
-                            broadcastGps();
-                            break;
+        if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+            new AlertDialog.Builder(getActivity())
+                .setTitle("Share group...")
+                .setItems(new String[] {"Use Bluetooth (beta)", "Use GPS"}, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                requestBluetooth();
+                                break;
+                            case 1:
+                                broadcastGps();
+                                break;
+                        }
                     }
-                }
-            }).show();
+                }).show();
+        }
+        else {
+            broadcastGps();
+        }
     }
 
     private void showQR() {
-        String qrl = "http://chart.apis.google.com/chart?cht=qr&chs=300x300&chl=";
-        qrl += URLEncoder.encode(ThreadRequest.getInvitationUri(
+        Intent qrIntent = new Intent(Intents.Encode.ACTION);
+        qrIntent.setClass(getActivity(), EncodeActivity.class);
+        qrIntent.putExtra(Intents.Encode.TYPE, Contents.Type.TEXT);
+        qrIntent.putExtra(Intents.Encode.DATA, ThreadRequest.getInvitationUri(
                 getActivity(), mExternalFeedUri).toString());
-        Intent qri = new Intent(Intent.ACTION_VIEW, Uri.parse(qrl));
-        startActivity(qri);
+        startActivity(qrIntent);
     }
 
     @Override
@@ -215,7 +233,7 @@ public class FeedActionsFragment extends Fragment {
 
     public void broadcastBluetooth() {
         // BluetoothNdef.share
-        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri.toString());
+        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri);
         try {
             Group g = group.get();
             JSONObject json = new JSONObject();

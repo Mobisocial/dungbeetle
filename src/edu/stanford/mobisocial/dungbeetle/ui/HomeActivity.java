@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
 
@@ -21,9 +22,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -35,7 +39,6 @@ import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
-import edu.stanford.mobisocial.dungbeetle.ProfileActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
@@ -49,7 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
-public class HomeActivity extends DashboardBaseActivity {
+public class HomeActivity extends MusubiBaseActivity {
     public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
     public static final String SHARE_SCHEME = "db-share-contact";
@@ -77,8 +80,15 @@ public class HomeActivity extends DashboardBaseActivity {
             }
         } catch (ClassCastException e) {}
 
-        setContentView(R.layout.activity_home);
-        DashboardBaseActivity.doTitleBar(this);
+        
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        if(metrics.heightPixels > metrics.widthPixels)
+        	setContentView(R.layout.activity_home_portrait);
+        else
+        	setContentView(R.layout.activity_home_landscape);
+        MusubiBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
         
@@ -201,20 +211,23 @@ public class HomeActivity extends DashboardBaseActivity {
 //		helper.close();
     }
 
-	
     public Uri uriFromNdef(NdefMessage... messages) {
-        if(messages.length == 0){
+        if (messages.length == 0 ||  messages[0].getRecords().length == 0) {
             return null;
         }
-        
-       return Uri.parse(new String(messages[0].getRecords()[0].getPayload()));
+
+        try {
+            return NdefFactory.parseUri(messages[0].getRecords()[0]);
+        } catch (FormatException e) {
+            return null;
+        }
     }
 
     protected void doHandleInput(Uri uri) {
         if (uri == null) {
             return;
         }
-
+        
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
             Intent intent = new Intent(getIntent());
@@ -278,6 +291,7 @@ public class HomeActivity extends DashboardBaseActivity {
 
     public void pushContactInfoViaNfc() {
     	Uri uri = FriendRequest.getInvitationUri(this);
+    	Log.w(TAG, "pushing " + uri.toString());
         NdefRecord urlRecord = new NdefRecord(
             NdefRecord.TNF_ABSOLUTE_URI, 
             NdefRecord.RTD_URI, new byte[] {},
@@ -296,6 +310,7 @@ public class HomeActivity extends DashboardBaseActivity {
             List<String> segments = uri.getPathSegments();
             if (segments.contains("join")) {
                 FriendRequest.acceptFriendRequest(this, getIntent().getData(), false);
+                return true;
             } else if (segments.contains("thread")) {
                 ThreadRequest.acceptThreadRequest(this, getIntent().getData());
                 return true;
@@ -315,7 +330,6 @@ public class HomeActivity extends DashboardBaseActivity {
     public void onResume() {
         super.onResume();
         mNfc.onResume(this);
-        new PresenceAwareNotify(this).cancelAll();
         pushContactInfoViaNfc();
     }
 
@@ -354,7 +368,7 @@ public class HomeActivity extends DashboardBaseActivity {
                 startActivity(intent);
                 break;
             case R.id.home_btn_profile:
-                intent = new Intent().setClass(getApplicationContext(), ProfileActivity.class);
+                intent = new Intent().setClass(getApplicationContext(), ViewContactActivity.class);
                 intent.putExtra("contact_id", Contact.MY_ID);
                 startActivity(intent);
                 break;
@@ -381,11 +395,8 @@ public class HomeActivity extends DashboardBaseActivity {
                                 StatusObj.from("Welcome to " + g.name + "!"),
                                 Feed.uriForName(g.feedName));
 
-                        Intent launch = new Intent();
-                        launch.setClass(HomeActivity.this, FeedHomeActivity.class);
-                        launch.putExtra("group_name", g.name);
-                        launch.putExtra("group_id", g.id);
-                        launch.putExtra("group_uri", g.dynUpdateUri);
+                        Intent launch = new Intent(Intent.ACTION_VIEW);
+                        launch.setDataAndType(Feed.uriForName(g.feedName), Feed.MIME_TYPE);
                         startActivity(launch);
                     }
                 });

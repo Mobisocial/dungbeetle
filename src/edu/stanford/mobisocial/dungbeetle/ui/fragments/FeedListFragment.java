@@ -108,18 +108,29 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
             String feedName = c.getString(feedCol);
             String groupName = c.getString(c.getColumnIndexOrThrow(Group.NAME));
+            int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
-            DbObject.bindView(v, getActivity(), c, mContactCache);
+            DbObject.bindView(v, getActivity(), c, mContactCache, false);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
                 Group g = new Group(c);
                 v.setTag(R.id.group_name, g.name);
                 v.setTag(R.id.group_id, g.id);
                 v.setTag(R.id.group_uri, g.dynUpdateUri);
-                labelView.setText(g.name);
+                if (numUnread > 0) {
+                    labelView.setText(g.name + " (" + numUnread + " unread messages)");
+                }
+                else {
+                	labelView.setText(g.name);
+                }
             } else {
-                labelView.setText(feedName);
+            	if (numUnread > 0) {
+            		labelView.setText(feedName + " (" + numUnread + " unread messages)");
+            	}
+            	else {
+            		labelView.setText(feedName);
+            	}
             }
             int color = Feed.colorFor(feedName);
             labelView.setBackgroundColor(color);
@@ -198,7 +209,13 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         if (mLoader == null) {
-            mLoader = new CursorLoader(getActivity(), feedlist, null, getFeedObjectClause(), null, null);
+            mLoader = new CursorLoader(getActivity(), feedlist, 
+        		new String[] { 
+            		DbObject.TABLE + "." + DbObject._ID, //must be in position 0 for bind view
+            		DbObject.TABLE + "." + DbObject.FEED_NAME,
+                    Group.TABLE + ".*"
+            	}, 
+        		getFeedObjectClause(), null, null);
         }
         return mLoader;
     }

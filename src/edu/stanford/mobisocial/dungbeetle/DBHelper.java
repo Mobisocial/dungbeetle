@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
@@ -37,10 +38,16 @@ import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
+import android.graphics.Picture;
 import android.os.Environment;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -49,6 +56,7 @@ import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -58,11 +66,13 @@ import android.net.Uri;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
+	private static final boolean DBG = true;
 	public static final String DB_NAME = "MUSUBI.db";
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 38;
+	public static final int VERSION = 40;
+	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
 	public DBHelper(Context context) {
@@ -107,31 +117,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return false;
     }
 	
-    public boolean importDatabaseFromSD(String dbPath) throws IOException {
-
-        // Close the SQLiteOpenHelper so it will commit the created empty
-        // database to internal storage.
-        close();
-        
-        File data = Environment.getDataDirectory();
-        File newDb = new File(dbPath);
-        File oldDb = new File(data, DB_PATH+DB_NAME);
-        if (newDb.exists()) {
-            Util.copyFile(new FileInputStream(newDb), new FileOutputStream(oldDb));
-            // Access the copied database so SQLiteHelper will cache it and mark
-            // it as created.
-            getWritableDatabase().close();
-            checkEncodedExists(getReadableDatabase());
-                
-            Intent DBServiceIntent = new Intent(mContext, DungBeetleService.class);
-            mContext.stopService(DBServiceIntent);
-            mContext.startService(DBServiceIntent);
-            return true;
-        }
-        return false;
-    }
-
-    private void checkEncodedExists(SQLiteDatabase db) {
+    void checkEncodedExists(SQLiteDatabase db) {
         	Cursor c = db.rawQuery("SELECT * FROM " + DbObject.TABLE, null);
         	try {
             	c.getColumnIndexOrThrow(DbObject.ENCODED);
@@ -141,6 +127,7 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
             createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
         	}
+        	c.close();
     }
 
 	@Override
@@ -230,6 +217,72 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'last_object_id' to group table.");
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.LAST_OBJECT_ID + " INTEGER DEFAULT -1");
         }
+        if (oldVersion <= 37) {
+            // Can't easily drop columns, but 'update_id' and 'is_child_feed' are dead columns.
+
+            Log.w(TAG, "Adding column 'num_unread' to group table.");
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.NUM_UNREAD + " INTEGER DEFAULT 0");
+        }
+        if(oldVersion <= 38) {
+            Log.w(TAG, "Adding column 'raw' to object table.");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
+        }
+        if(oldVersion <= 39) {
+            Log.w(TAG, "Converting voice and picture objs to raw.");
+
+          Log.w(TAG, "Converting objs to raw.");
+          Cursor c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { PictureObj.TYPE }, null, null, null);
+          ArrayList<Long> ids = new ArrayList<Long>();            
+          if(c.moveToFirst()) do {
+      			ids.add(c.getLong(0));
+          } while(c.moveToNext());
+          c.close();
+          DbEntryHandler dbh = DbObjects.forType(PictureObj.TYPE);
+          for(Long id : ids) {
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            if(c.moveToFirst()) try {
+	            	String json = c.getString(0);
+	            	byte[] raw = c.getBlob(1);
+	            	c.close();
+	            	if(raw == null) {
+	            		Pair<JSONObject, byte[]> p = dbh.splitRaw(new JSONObject(json));
+	            		if(p != null) {
+	            			json = p.first.toString();
+	            			raw = p.second;
+	            			updateJsonAndRaw(db, id, json, raw);
+	            		}
+	            	}
+      		} catch(JSONException e) {}
+	            c.close();
+          }
+          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
+          ids = new ArrayList<Long>();            
+          if(c.moveToFirst()) do {
+      			ids.add(c.getLong(0));
+          } while(c.moveToNext());
+          c.close();
+          dbh = DbObjects.forType(VoiceObj.TYPE);
+          for(Long id : ids) {
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            if(c.moveToFirst()) try {
+	            	String json = c.getString(0);
+	            	byte[] raw = c.getBlob(1);
+	            	c.close();
+	            	if(raw == null) {
+	            		Pair<JSONObject, byte[]> p = dbh.splitRaw(new JSONObject(json));
+	            		if(p != null) {
+	            			json = p.first.toString();
+	            			raw = p.second;
+	            			updateJsonAndRaw(db, id, json, raw);
+	            		}
+	            	}
+      		} catch(JSONException e) {}
+	            c.close();
+          	}
+            
+            
+        }
+        
         if(oldVersion <= 37) {
             Log.w(TAG, "Adding column 'nearby' to contact table.");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PUBLIC_KEY_HASH_64 + " INTEGER DEFAULT 0");
@@ -308,7 +361,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
                         DbObject.ENCODED, "BLOB",
-                        DbObject.CHILD_FEED_NAME, "TEXT"
+                        DbObject.CHILD_FEED_NAME, "TEXT",
+                        DbObject.RAW, "BLOB"
                         );
             createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
@@ -347,7 +401,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.VERSION, "INTEGER DEFAULT -1",
                     Group.LAST_UPDATED, "INTEGER",
                     Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
-                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1"
+                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
+                    Group.NUM_UNREAD, "INTEGER DEFAULT 0"
                         );
             
             createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
@@ -389,28 +444,6 @@ public class DBHelper extends SQLiteOpenHelper {
         Log.d(TAG, "Generated priv key: **************");
     }
 
-    public void generateAndStorePersonalInfo(){
-        SQLiteDatabase db = getWritableDatabase();
-
-        String email = getUserEmail();
-        String name = email; // How to get this?
-
-        KeyPair keypair = DBIdentityProvider.generateKeyPair();
-        PrivateKey privateKey = keypair.getPrivate();
-        PublicKey publicKey = keypair.getPublic();
-        String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-        String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.PUBLIC_KEY, pubKeyStr);
-        cv.put(MyInfo.PRIVATE_KEY, privKeyStr);
-        cv.put(MyInfo.NAME, name);
-        cv.put(MyInfo.EMAIL, email);
-        db.insertOrThrow(MyInfo.TABLE, null, cv);
-        Log.d(TAG, "Generated public key: " + pubKeyStr);
-        Log.d(TAG, "Generated priv key: **************");
-    }
-    
-
     private String getUserEmail(){
         Account[] accounts = AccountManager.get(mContext).getAccounts();
         String possibleEmail = "NA";
@@ -422,40 +455,38 @@ public class DBHelper extends SQLiteOpenHelper {
         return possibleEmail;
     }
 
-    void setMyName(String name) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.NAME, name);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
-    void setMyEmail(String email) {
-        ContentValues cv = new ContentValues();
-        cv.put(MyInfo.EMAIL, email);
-        getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
-    }
-
     long addToOutgoing(String appId, String to, String type, JSONObject json){
         return addToOutgoing(getWritableDatabase(), 
                              appId, to, type, json);
     }
-    
+
+    void prepareForSending(JSONObject json, String type, long timestamp, String appId)
+            throws JSONException {
+        json.put("type", type);
+        json.put("feedName", "friend");
+        json.put("timestamp", timestamp);
+        json.put("appId", appId);
+    }
+
     long addToOutgoing(
         SQLiteDatabase db, String appId, String to, String type, JSONObject json) {
+        if (DBG) {
+            Log.d(TAG, "Adding to outgoing; to: " + to + ", json: " + json);
+        }
         try{
             long timestamp = new Date().getTime();
-            json.put("type", type);
-            json.put("feedName", "direct");
-            json.put("timestamp", timestamp);
-            json.put("appId", appId);
+            prepareForSending(json, type, timestamp, appId);
             ContentValues cv = new ContentValues();
             cv.put(DbObject.APP_ID, appId);
-            cv.put(DbObject.FEED_NAME, "direct");
+            cv.put(DbObject.FEED_NAME, "friend");
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
             cv.put(DbObject.DESTINATION, to);
             cv.put(DbObject.TYPE, type);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.SEQUENCE_ID, 0);
             cv.put(DbObject.TIMESTAMP, timestamp);
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
             db.insertOrThrow(DbObject.TABLE, null, cv);
             return 0;
         }
@@ -465,6 +496,14 @@ public class DBHelper extends SQLiteOpenHelper {
             return -1;
         }
     }
+    void updateJsonAndRaw(SQLiteDatabase db, long id, String json, byte[] raw) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.JSON, json);
+    	cv.put(DbObject.RAW, raw);
+    	db.update(DbObject.TABLE, cv, DbObject._ID + " = ?" , new String[] { String.valueOf(id)});
+    }
+    
+    
 
     long addToFeed(String appId, String feedName, String type, JSONObject json) {
         try{
@@ -487,7 +526,13 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
-            getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
+            Long objId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+
+            FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
+            mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), objId);
+            
             return nextSeqId;
         }
         catch(Exception e) {
@@ -498,7 +543,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, byte[] encoded){
+    long addObjectByJson(long contactId, JSONObject json, byte[] encoded, byte[] raw){
         try{
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
             long timestamp = json.getLong(DbObjects.TIMESTAMP);
@@ -515,9 +560,12 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.ENCODED, encoded);
             cv.put(DbObject.SENT, 1);
+            cv.put(DbObject.RAW, raw);
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
+            if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
+            	throw new RuntimeException("Messasge size is too large for sending");
             getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
             ContentResolver resolver = mContext.getContentResolver();
@@ -525,11 +573,11 @@ public class DBHelper extends SQLiteOpenHelper {
             while (c.moveToNext()) {
                 resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
             }
-
+            c.close();
             return seqId;
         }
         catch(Exception e){
-            Log.e(TAG, e.getMessage());
+            if (DBG) Log.e(TAG, "Error adding object by json.", e);
             return -1;
         }
     }
@@ -546,7 +594,7 @@ public class DBHelper extends SQLiteOpenHelper {
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
             PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
             cv.put(Contact.PUBLIC_KEY_HASH_64, hashPublicKey(key.getEncoded()));
-            String tag = DBIdentityProvider.makePersonIdForPublicKey(key);
+            String tag = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
             String name = cv.getAsString(Contact.NAME);
             assert (name != null) && name.length() > 0;
@@ -619,11 +667,15 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             null,
             null);
-        c.moveToFirst();
-        if(!c.isAfterLast()){
-            long max = c.getLong(0);
-            Log.i(TAG, "Found max seq num: " + max);
-            return max;
+        try {
+            c.moveToFirst();
+	        if(!c.isAfterLast()){
+	            long max = c.getLong(0);
+	            Log.i(TAG, "Found max seq num: " + max);
+	            return max;
+	        }
+        } finally {
+            c.close();
         }
         return -1;
     }
@@ -661,6 +713,25 @@ public class DBHelper extends SQLiteOpenHelper {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
 
+        return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+                null, null, sortOrder, null);
+    }
+
+    public Cursor queryFriend(String realAppId, Long contactId, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder) {
+
+        StringBuilder friendFilter = new StringBuilder();
+        friendFilter.append(DbObject.FEED_NAME + " = 'friend'");
+        friendFilter.append(" AND ((").append(DbObject.DESTINATION)
+            .append(" = " + contactId +" AND ").append(DbObject.CONTACT_ID)
+            .append(" = " + Contact.MY_ID + " ) OR (")
+            .append(DbObject.DESTINATION).append(" is null AND ")
+            .append(DbObject.CONTACT_ID).append(" = " + contactId + "))"); 
+        String select = andClauses(selection, friendFilter.toString());
+        if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
+            select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
+        }
+        if (DBG) Log.d(TAG, "Friend query selection: " + select);
         return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
     }
@@ -742,6 +813,11 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public boolean queryAlreadyReceived(byte[] encoded) {
+    	//sqlite can barf receiving a large message because this query is
+    	//just too memory consuming.  just skip it for long objects...
+    	//TODO: XXX EVIL!!!
+    	if(encoded.length > SIZE_LIMIT)
+    		return false;
         Cursor c = getReadableDatabase().query(
             DbObject.TABLE,
             new String[]{ DbObject._ID },
@@ -750,11 +826,15 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             null,
             "timestamp DESC");
-        c.moveToFirst();
-        if(!c.isAfterLast()) {
-        	return true;
-        } else {
-        	return false;
+        try {
+	        c.moveToFirst();
+	        if(!c.isAfterLast()) {
+	        	return true;
+	        } else {
+	        	return false;
+	        }
+        } finally {
+        	c.close();
         }
     }
     public Cursor queryDynamicGroups() {
@@ -769,6 +849,16 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
+    public void markFeedAsRead(String feedName) {
+        ContentValues cv = new ContentValues();
+        cv.put(Group.NUM_UNREAD, 0);
+        getWritableDatabase().update(
+        		Group.TABLE, 
+            cv,
+            Group.FEED_NAME+"='"+feedName+"'",
+            null);
+    }
+    
     public void markObjectAsSent(long id) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.SENT, 1);
@@ -806,14 +896,15 @@ public class DBHelper extends SQLiteOpenHelper {
             GroupMember.TABLE + " G WHERE " + 
             "G." + GroupMember.GROUP_ID + "= ? " + 
             "AND " + 
-            "C." + Contact._ID + " = G." + GroupMember.CONTACT_ID,
+            "C." + Contact._ID + " = G." + GroupMember.CONTACT_ID + 
+            " ORDER BY " + Contact.NAME + " COLLATE NOCASE ASC",
             new String[] { String.valueOf(groupId) });
     }
 
     public Cursor queryFeedMembers(String feedName, String appId) {
         // TODO: Check appId against database.
         String query = new StringBuilder()
-            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME)
+            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
             .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
             .append(" FROM " + Contact.TABLE + " C, ")
             .append(GroupMember.TABLE + " M, ")
@@ -826,6 +917,16 @@ public class DBHelper extends SQLiteOpenHelper {
             .toString();
         return getReadableDatabase().rawQuery(query,
                 new String[] { feedName });
+    }
+
+    public Cursor queryGroups() {
+        String selection = DbObject.FEED_NAME + " not in " +
+                "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
+                " where " + DbObject.CHILD_FEED_NAME + " is not null)";
+        String[] selectionArgs = null;
+        //Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, null, null, Group.NAME + " ASC", null);
+        Cursor c = getReadableDatabase().query(Group.TABLE, null, selection, selectionArgs, null, null, Group.NAME + " COLLATE NOCASE ASC", null);
+        return c;
     }
 
     public Cursor queryLocalUser(String feed_name) {
@@ -912,6 +1013,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 	public Maybe<Group> groupForFeedName(String feed){
+	    
         Cursor c = getReadableDatabase().query(
             Group.TABLE,
             null,
@@ -936,9 +1038,13 @@ public class DBHelper extends SQLiteOpenHelper {
             Group.FEED_NAME + "=?",
             new String[]{feedName},
             null,null,null);
-        c.moveToFirst();
-        if(c.isAfterLast()) return Maybe.unknown();
-        else return Maybe.definitely(new Group(c));
+        try {
+	        c.moveToFirst();
+	        if(c.isAfterLast()) return Maybe.unknown();
+	        else return Maybe.definitely(new Group(c));
+        } finally {
+        	c.close();
+        }
     }
 
     public static String joinWithSpaces(String... strings) {
@@ -964,9 +1070,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded) {
+	public void markEncoded(long id, byte[] encoded, String json, byte[] raw) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.ENCODED, encoded);
+        cv.put(DbObject.JSON, json);
+        cv.put(DbObject.RAW, raw);
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
@@ -1134,18 +1242,21 @@ public class DBHelper extends SQLiteOpenHelper {
         Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + " FROM " +
         		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
         		null);
-        c.moveToFirst();
-        if(!c.moveToFirst()) {
-        	// no such person
-        	return null;
+        try {
+	        c.moveToFirst();
+	        if(!c.moveToFirst()) {
+	        	// no such person
+	        	return null;
+	        }
+	    	long id = c.getLong(0);
+			try {
+				return contactForContactId(id).get();
+			} catch (NoValError e) {
+				return null;
+			}
+        } finally {
+	        c.close();
         }
-    	long id = c.getLong(0);
-        c.close();
-		try {
-			return contactForContactId(id).get();
-		} catch (NoValError e) {
-			return null;
-		}
     }
 	//gets the contact for a public key
     public Contact getContactForPublicKey(long public_key) {
@@ -1198,4 +1309,11 @@ public class DBHelper extends SQLiteOpenHelper {
     public void setNearby(long public_key, boolean nearby) {
     	getWritableDatabase().execSQL("UPDATE " + Contact.TABLE + " SET nearby = " + (nearby ? "1" : "0") + " WHERE " + Contact.PUBLIC_KEY_HASH_64 + " = " + public_key);
     }
+
+	public String getDatabasePath() {
+		return DB_PATH+DB_NAME;
+	}
+	public void vacuum() {
+		getWritableDatabase().execSQL("VACUUM");
+	}
  }

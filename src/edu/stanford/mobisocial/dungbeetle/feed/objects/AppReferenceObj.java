@@ -4,6 +4,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,6 +15,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -36,13 +38,14 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * A pointer to an application instance feed.
  */
 public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
-	private static final String TAG = "InviteToSharedAppObj";
+	private static final String TAG = "AppReferenceObj";
 	private static final boolean DBG = true;
 
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";
+    public static final String CREATOR_ID = "creator_id";
     private final AppStateObj mAppStateObj = new AppStateObj();
 
     @Override
@@ -50,18 +53,27 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
         return TYPE;
     }
 
-    public static DbObject from(String packageName, String arg, String feedName, String groupUri) {
-        return new DbObject(TYPE, json(packageName, arg, feedName, groupUri));
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
+
+	public static DbObject from(String packageName, String arg, String feedName, String groupUri, long creatorId) {
+        return new DbObject(TYPE, json(packageName, arg, feedName, groupUri, creatorId));
     }
 
     public static JSONObject json(String packageName, String arg,
-            String appFeedName, String appGroupUri) {
+            String appFeedName, String appGroupUri, long creatorId) {
         JSONObject obj = new JSONObject();
         try {
             obj.put(PACKAGE_NAME, packageName);
             obj.put(ARG, arg);
             obj.put(DbObject.CHILD_FEED_NAME, appFeedName);
             obj.put(GROUP_URI, appGroupUri);
+            obj.put(CREATOR_ID, creatorId);
         } catch(JSONException e){}
         return obj;
     }
@@ -99,11 +111,11 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             contentIntent);
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content) {
+	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
-            mAppStateObj.render(context, frame, appState);
+            mAppStateObj.render(context, frame, appState, raw, allowInteractions);
             return;
         } else {
 	        String appName = content.optString(PACKAGE_NAME);
@@ -123,7 +135,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content) {
+	public void activate(Context context, final JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
@@ -139,14 +151,20 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
 	        String arg = content.optString(ARG);
 	        String state = null;
 	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
+	        
+	        launch.putExtra("creator_id", content.optLong("creator_id"));
+	        if (!(context instanceof Activity)) {
+	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	        }
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
-            mAppStateObj.activate(context, appContent);
+            mAppStateObj.activate(context, appContent, raw);
 	    }
 	}
 
    private JSONObject getAppState(Context context, JSONObject appReference) {
+        Log.w(TAG, appReference.toString());
         if (appReference.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
             Uri feedUri = Feed.uriForName(feedName);
@@ -154,17 +172,19 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             String[] projection = new String[] {"json"};
             String order = "_id desc LIMIT 1";
             Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
-            if (c.moveToFirst()) {
-                try {
-                    return new JSONObject(c.getString(0));
-                } catch (JSONException e) {
-                    Log.wtf(TAG, "not really json", e);
-                } finally {
-                    c.close();
-                }
-            } else {
-                c.close();
-            }
+            try {
+	            if (c.moveToFirst()) {
+	            	try {
+	                    return new JSONObject(c.getString(0));
+	                } catch (JSONException e) {
+	                    Log.e(TAG, "not really json", e);
+	                }
+	            }
+        	} finally {
+        		c.close();
+        	}
+        } else if (appReference.has("state")) {
+            return appReference;
         }
         return null;
     }

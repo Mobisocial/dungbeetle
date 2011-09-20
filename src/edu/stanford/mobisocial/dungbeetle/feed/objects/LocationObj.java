@@ -1,8 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -10,13 +14,14 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
+public class LocationObj implements DbEntryHandler, FeedRenderer, Activator, NoNotify {
     public static final String TYPE = "loc";
     public static final String COORD_LAT = "lat";
     public static final String COORD_LONG = "lon";
@@ -42,17 +47,27 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
+	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+		return objData;
+	}
+	@Override
+	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+		return null;
+	}
 
-    public void render(Context context, ViewGroup frame, JSONObject content) {
+    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
+        NumberFormat df =  DecimalFormat.getNumberInstance();
+        df.setMaximumFractionDigits(5);
+        df.setMinimumFractionDigits(5);
+        
+        String msg = "I'm at " + 
+        	df.format(content.optDouble(COORD_LAT)) +
+        	", " +
+        	df.format(content.optDouble(COORD_LONG));
 
-        String lat = "" + content.optDouble(COORD_LAT);
-        lat = lat.substring(0, lat.indexOf(".") + 5);
-        String lon = "" + content.optDouble(COORD_LONG);
-        lon = lon.substring(0, lon.indexOf(".") + 5);
-        String loc = "I'm at " + lat + ", " + lon;
 
-        valueTV.setText(loc);
+        valueTV.setText(msg);
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -61,7 +76,7 @@ public class LocationObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void activate(Context context, JSONObject content) {
+    public void activate(Context context, JSONObject content, byte[] raw) {
         String loc = "geo:" + content.optDouble(COORD_LAT) + "," +
                 content.optDouble(COORD_LONG) + "?z=17";
         Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));
