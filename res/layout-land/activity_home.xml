@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2011 Wglxy.com
+    Derived from Google IO Schedule App, Copyright 2010 Google, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/db1_root"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <LinearLayout style="@style/TitleBar" android:id="@+id/dashboardTitleBar">
+        <ImageView style="@style/TitleBarLogo"
+            android:contentDescription="@string/description_logo"
+            android:src="@drawable/title_logo" />
+
+        <ImageView style="@style/TitleBarSeparator" />
+        <TextView style="@style/TitleBarText" />
+        <ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_about"
+            android:src="@drawable/title_about"
+            android:onClick="onClickAbout" />
+        <!--<ImageButton style="@style/TitleBarAction"
+            android:contentDescription="@string/description_search"
+            android:src="@drawable/title_search"
+            android:onClick="onClickSearch" />-->
+</LinearLayout>
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:padding="6dip">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_latest"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_latest_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_latest"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_friends"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_friends_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_friends"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_profile"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_profile_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_profile"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_groups"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_groups_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_groups"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_new_group"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_new_group_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_new_group"/>
+        </LinearLayout>
+        
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_nearby"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_nearby_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_nearby"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <ImageView android:id="@+id/home_btn_settings"
+                style="@style/HomeButton"
+                android:onClick="onClickFeature"
+                android:src="@drawable/home_settings_button" android:focusable="true"/>
+            <TextView
+                style="@style/HomeText"
+                android:text="@string/title_settings"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
+</LinearLayout>
