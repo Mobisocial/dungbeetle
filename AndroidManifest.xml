@@ -37,7 +37,6 @@
     <activity android:name=".ui.HomeActivity"
 	      android:label="@string/app_name"
 	      android:windowSoftInputMode="stateHidden"
-	      android:clearTaskOnLaunch="true"
 	      >
       <intent-filter>
 	    <action android:name="android.intent.action.MAIN" />
