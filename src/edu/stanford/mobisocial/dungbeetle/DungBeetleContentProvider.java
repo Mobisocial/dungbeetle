@@ -267,7 +267,12 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            db.beginTransaction();
+            try { 
+            	db.beginTransaction();
+            } catch(Exception e) {
+            	Log.e(TAG, "Database probably locked:??", e);
+            	return null;
+            }
             try {
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
