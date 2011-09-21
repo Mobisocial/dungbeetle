@@ -1182,7 +1182,14 @@ public class DBHelper extends SQLiteOpenHelper {
 		getWritableDatabase().execSQL("VACUUM");
 	}
 
-	public void deleteProfileObjsFrom(long id) {
-		getWritableDatabase().delete(DbObject.TABLE, DbObject.CONTACT_ID + " = ?", new String[] {String.valueOf(id)});
+	public void deleteObj(long id) {
+		getWritableDatabase().delete(DbObject.TABLE, DbObject._ID + " = ?", new String[] {String.valueOf(id)});
 	}
+
+	public void clearEncoded(long id) {
+		ContentValues cv = new ContentValues();
+		cv.putNull(DbObject.ENCODED);
+		getWritableDatabase().update(DbObject.TABLE, cv, DbObject._ID + " = ?", new String[] {String.valueOf(id)});
+	}
+
  }

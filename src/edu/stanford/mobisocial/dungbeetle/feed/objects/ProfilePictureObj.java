@@ -56,13 +56,6 @@ public class ProfilePictureObj implements DbEntryHandler, NoNotify {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             values, "_id=?", new String[] { id });
         App.instance().contactImages.invalidate(from.id);
-        //emergency hack!
-        /*DBHelper dbh = new DBHelper(context);
-        try {
-        	dbh.deleteProfileObjsFrom(from.id);
-        } finally { 
-        	dbh.close();
-        }*/
 	}
 
 	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {

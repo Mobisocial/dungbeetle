@@ -393,6 +393,10 @@ public class MessagingManagerThread extends Thread {
                     mSentObjects.remove(mObjectId);
                 }
             }
+            mHelper.clearEncoded(mObjectId);
+            //todo: hack
+            if(mJson.optString(DbObject.TYPE).equals(ProfilePictureObj.TYPE))
+            	mHelper.deleteObj(mObjectId);
         }
 
 		@Override
