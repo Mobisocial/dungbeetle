@@ -34,6 +34,8 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
         }
 		int orientation = getResources().getConfiguration().orientation;
 		setRequestedOrientation(orientation);
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 
 	@Override

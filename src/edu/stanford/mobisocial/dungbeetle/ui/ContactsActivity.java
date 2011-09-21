@@ -29,6 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -131,7 +132,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         //registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
-	}
+		
+		//THIS is not derived from musubibaseactivity so it needs its own
+        startService(new Intent(this, DungBeetleService.class));
+    }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;

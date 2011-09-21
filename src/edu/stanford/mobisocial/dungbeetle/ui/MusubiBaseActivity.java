@@ -31,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
@@ -71,6 +72,8 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
         sInstance = this;
         mHelper = new DBHelper(this);
         remoteControlRegistrar = new RemoteControlRegistrar(this, RemoteControlReceiver.class);
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 
     /**

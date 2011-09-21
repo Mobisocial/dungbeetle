@@ -143,6 +143,8 @@ public class NearbyGroupsActivity extends ListActivity {
         else {
             promptGps();
         }
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 
     

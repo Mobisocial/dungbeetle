@@ -1181,4 +1181,8 @@ public class DBHelper extends SQLiteOpenHelper {
 	public void vacuum() {
 		getWritableDatabase().execSQL("VACUUM");
 	}
+
+	public void deleteProfileObjsFrom(long id) {
+		getWritableDatabase().delete(DbObject.TABLE, DbObject.CONTACT_ID + " = ?", new String[] {String.valueOf(id)});
+	}
  }

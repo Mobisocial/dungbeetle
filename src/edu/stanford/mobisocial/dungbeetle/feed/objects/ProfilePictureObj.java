@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -55,6 +56,13 @@ public class ProfilePictureObj implements DbEntryHandler, NoNotify {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             values, "_id=?", new String[] { id });
         App.instance().contactImages.invalidate(from.id);
+        //emergency hack!
+        DBHelper dbh = new DBHelper(context);
+        try {
+        	dbh.deleteProfileObjsFrom(from.id);
+        } finally { 
+        	dbh.close();
+        }
 	}
 
 	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
