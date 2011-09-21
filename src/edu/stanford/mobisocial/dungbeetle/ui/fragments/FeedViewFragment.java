@@ -76,7 +76,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public static final String ARG_DUAL_PANE = "dual_pane";
 
     private boolean DBG = false;
-    private ListAdapter mObjects;
+    private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
     private ContactCache mContactCache;
@@ -269,6 +269,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+        mLoader.loadInBackground();
         return mLoader;
     }
 
@@ -458,18 +459,18 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 	@Override
 	public void onScroll(AbsListView view, int firstVisible,
 			int visibleCount, int totalCount) {
-		if(mObjects == null)
+ 		if(mObjects == null)
 			return;		
 		
 		boolean loadMore = /* maybe add a padding */
-	            firstVisible + visibleCount >= totalCount;
+	            firstVisible + visibleCount >= mObjects.getTotalQueried();
 
     	if (loadMore) {
     		Log.w(TAG, "load more");
     		mLoader.cancelLoad();
     		Activity activity = getActivity();
     		if(activity != null) {
-        		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(activity, mFeedUri, totalCount);
+        		mLoader = mObjects.queryLaterObjects(activity, mFeedUri, totalCount);
     		}
     	}
 	}

@@ -27,6 +27,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class ObjectListCursorAdapter extends CursorAdapter {
     private ContactCache mContactCache;
 	private Cursor originalCursor;
+	private int mTotal = BATCH_SIZE;
 
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
@@ -50,6 +51,10 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     }
     
     static final int BATCH_SIZE = getBestBatchSize();
+    
+    public int getTotalQueried() {
+    	return mTotal;
+    }
 
     public static CursorLoader queryObjects(Context context, Uri feedUri) {
         return new CursorLoader(context, feedUri, 
@@ -80,13 +85,13 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 	}
 
 	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
-    	int newTotal = total + BATCH_SIZE;
+    	mTotal = total + BATCH_SIZE;
     	CursorLoader cl = new CursorLoader(context, feedUri, 
             	new String[] { 
             		DbObject._ID,
             		DbObject.FEED_NAME
             	},
-            	DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal);
+            	DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + mTotal);
 		Cursor newCursor = cl.loadInBackground(); 
 		
     	if (originalCursor == null) {
