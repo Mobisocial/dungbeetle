@@ -206,7 +206,7 @@ public class SettingsActivity extends Activity {
 	/*** Dashboard stuff ***/
 	public void goHome(Context context) {
 		final Intent intent = new Intent(context, HomeActivity.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 		context.startActivity(intent);
 	}
 
