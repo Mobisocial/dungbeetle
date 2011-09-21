@@ -38,11 +38,10 @@ import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -65,36 +64,40 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     private Uri mFeedUri;
     private String mFeedName;
 
-    private void onClickNew(View v) {
-        Intent share = new Intent(Intent.ACTION_SEND);
-        Uri friendRequest = FriendRequest.getInvitationUri(getActivity());
-        share.putExtra(Intent.EXTRA_TEXT,
-                "Be my friend on Musubi! Click here from your Android device: "
-                + friendRequest);
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
-        share.setType("text/plain");
-        startActivity(share);
-    }
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mHelper = new DBHelper(getActivity());
 		getLoaderManager().initLoader(0, null, this);
-		final Context context = this.getActivity();
-        final GroupProviders.GroupProvider h = GroupProviders.forUri(mFeedUri);
-        final IdentityProvider ident = new DBIdentityProvider(mHelper);
-        Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
-        try {
-            // group exists already, load view
-            final Group g = mg.get();
 
-            g.forceUpdate(context);
-        }
-        catch(Maybe.NoValError e) { }
-        ident.close();
-        Helpers.resendProfile(context);
+		groupUpdateHack();
 	}
+
+    private void groupUpdateHack() {
+        final Context context = getActivity();
+        if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
+            for (int i = 0; i < 29; i++) {
+                // If you are reading me, consider fixing
+                // the real problem rather than removing this spew.
+                Log.d("MUSUBI", "THIS IS A HORRIBLE HACK.");
+            }
+        }
+
+        new Thread() {
+            public void run() {
+                final IdentityProvider ident = new DBIdentityProvider(mHelper);
+                Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+                try {
+                    // group exists already, load view
+                    final Group g = mg.get();
+                    g.forceUpdate(context);
+                }
+                catch(Maybe.NoValError e) { }
+                ident.close();
+                Helpers.resendProfile(context);
+            };
+        }.start();
+    }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;

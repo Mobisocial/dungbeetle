@@ -1,29 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.group_providers;
-import android.content.ContentValues;
-import android.content.Context;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Handler;
-import android.util.Log;
-import edu.stanford.mobisocial.bumblebee.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -32,14 +13,34 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.util.Log;
+import edu.stanford.mobisocial.bumblebee.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class GroupProviders {
 
     public static final String TAG = "GroupProviders";
-    static final boolean DBG = false;
+    static final boolean DBG = MusubiBaseActivity.DBG;
 
     private static List<GroupProvider> mHandlers = 
         new ArrayList<GroupProvider>();
@@ -212,8 +213,8 @@ public class GroupProviders {
 	                                    values.put(Contact.PUBLIC_KEY, pubKeyStr);
 	
 	                                    String profile = "";
-	                                    if(encryptedProfile != "null" && encryptedProfile != "" && encryptedProfile != null) {
-	                                        Log.w(TAG, "["+encryptedProfile+"]");
+	                                    if(encryptedProfile != null && encryptedProfile.length() > 0 && !encryptedProfile.equals("null")) {
+	                                        if (DBG) Log.w(TAG, "encrypted profile: ["+encryptedProfile+"]");
 	                                        if(key == null) {
 	                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
 	                                                Log.wtf(TAG, "Null key while handling group request.", new Throwable());
@@ -229,7 +230,7 @@ public class GroupProviders {
 	                                        try{
 	                                            JSONObject profileJSON = new JSONObject(profile);
 	                                            values.put(Contact.NAME, profileJSON.getString("name"));
-	                                            Log.w(TAG, profileJSON.getString("picture"));
+	                                            if (DBG) Log.w(TAG, "image b64: " + profileJSON.getString("picture"));
 	                                            values.put(Contact.PICTURE, Base64.decode(profileJSON.getString("picture")));
 	                                        }
 	                                        catch(Exception e){
