@@ -464,7 +464,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 	            firstVisible + visibleCount >= mObjects.getTotalQueried();
 
     	if (loadMore) {
-    		Log.w(TAG, "load more");
     		mLoader.cancelLoad();
     		Activity activity = getActivity();
     		if(activity != null) {

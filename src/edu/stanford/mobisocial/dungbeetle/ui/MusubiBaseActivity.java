@@ -201,7 +201,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
 
     public void goHome(Context context) {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
     }
 
