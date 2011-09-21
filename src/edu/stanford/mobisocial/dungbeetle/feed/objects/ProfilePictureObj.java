@@ -57,12 +57,12 @@ public class ProfilePictureObj implements DbEntryHandler, NoNotify {
             values, "_id=?", new String[] { id });
         App.instance().contactImages.invalidate(from.id);
         //emergency hack!
-        DBHelper dbh = new DBHelper(context);
+        /*DBHelper dbh = new DBHelper(context);
         try {
         	dbh.deleteProfileObjsFrom(from.id);
         } finally { 
         	dbh.close();
-        }
+        }*/
 	}
 
 	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
