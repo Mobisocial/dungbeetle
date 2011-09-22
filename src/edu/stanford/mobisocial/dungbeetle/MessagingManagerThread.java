@@ -122,7 +122,7 @@ public class MessagingManagerThread extends Thread {
     // FYI: Invoked on connection reader thread
     private void handleIncomingMessage(final IncomingMessage incoming){
         final String personId = incoming.from();
-        final byte[] encoded = incoming.encoded();
+        final long hash = incoming.hash();
         final String contents = localize(incoming.contents());
    
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
@@ -130,9 +130,7 @@ public class MessagingManagerThread extends Thread {
             JSONObject in_obj = new JSONObject(contents);
             String feedName = in_obj.getString("feedName");
             String type = in_obj.optString(DbObjects.TYPE);
-            Log.w(TAG, "encoded length: " + encoded.length);
-            //if (encoded.length > 200000 || mHelper.queryAlreadyReceived(encoded)) {
-            if (mHelper.queryAlreadyReceived(encoded)) {
+            if (mHelper.queryAlreadyReceived(hash)) {
                 if (DBG) Log.i(TAG, "Message already received. " + contents);
                 return;
             }
@@ -166,7 +164,7 @@ public class MessagingManagerThread extends Thread {
                 
                 else {
                 
-					sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded, raw);
+					sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
 					Uri feedUri;
 	                if (feedName.equals("friend")) {
 	                   feedUri = Feed.uriForName("friend/" + contactId);

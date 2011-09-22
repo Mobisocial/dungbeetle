@@ -67,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 40;
+	public static final int VERSION = 41;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -278,6 +278,17 @@ public class DBHelper extends SQLiteOpenHelper {
             
             
         }
+        if(oldVersion <= 40) {
+            Log.w(TAG, "Adding column 'E' to object table.");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.HASH+ " INTEGER");
+            createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
+            db.execSQL("DROP INDEX objects_by_encoded");
+            db.delete(DbObject.TABLE, DbObject.TYPE + " = ?", new String[] {"profile"});
+            db.delete(DbObject.TABLE, DbObject.TYPE + " = ?", new String[] {"profilepicture"});
+            ContentValues cv = new ContentValues();
+            cv.putNull(DbObject.ENCODED);
+            db.update(DbObject.TABLE, cv, null, null);
+        }
         
         db.setVersion(VERSION);
     }
@@ -343,6 +354,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
+                        DbObject.HASH, "INTEGER",
                         DbObject.ENCODED, "BLOB",
                         DbObject.CHILD_FEED_NAME, "TEXT",
                         DbObject.RAW, "BLOB"
@@ -350,8 +362,8 @@ public class DBHelper extends SQLiteOpenHelper {
             createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
-            createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
+            createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
@@ -524,7 +536,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, byte[] encoded, byte[] raw){
+    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw){
         try{
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
             long timestamp = json.getLong(DbObjects.TIMESTAMP);
@@ -539,7 +551,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, seqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
-            cv.put(DbObject.ENCODED, encoded);
+            cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
             cv.put(DbObject.RAW, raw);
             if (json.has(DbObject.CHILD_FEED_NAME)) {
@@ -792,20 +804,15 @@ public class DBHelper extends SQLiteOpenHelper {
             "timestamp DESC");
     }
 
-    public boolean queryAlreadyReceived(byte[] encoded) {
-    	//sqlite can barf receiving a large message because this query is
-    	//just too memory consuming.  just skip it for long objects...
-    	//TODO: XXX EVIL!!!
-    	if(encoded.length > SIZE_LIMIT)
-    		return false;
+    public boolean queryAlreadyReceived(long hash) {
         Cursor c = getReadableDatabase().query(
             DbObject.TABLE,
             new String[]{ DbObject._ID },
-            DbObject.ENCODED + "= X'" + new String(Hex.encodeHex(encoded)) + "'",
+            DbObject.HASH + "= ?",
+            new String[] { String.valueOf(hash) },
             null,
             null,
-            null,
-            "timestamp DESC");
+            null);
         try {
 	        c.moveToFirst();
 	        if(!c.isAfterLast()) {
@@ -1060,6 +1067,24 @@ public class DBHelper extends SQLiteOpenHelper {
             cv,
             DbObject._ID + " = " + id,
             null);
+	}
+	public byte[] getEncoded(long id) {
+        Cursor c = getReadableDatabase().query(
+                DbObject.TABLE,
+                new String[]{ DbObject.ENCODED },
+                DbObject._ID + "=?",
+                new String[]{ String.valueOf(id) },
+                null,
+                null,
+                null);
+        
+        try {
+            if(!c.moveToFirst())
+            	return null;
+        	return c.getBlob(0);
+        } finally {
+        	c.close();
+        }
 	}
 	//gets all known people's id's, in other words, their public keys.
     public Set<byte[]> getPublicKeys() {
