@@ -368,14 +368,12 @@ public class MessagingManagerThread extends Thread {
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
-        protected byte[] mEncoded;
         protected JSONObject mJson;
         protected byte[] mRaw;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
         	//load the iv if it was already picked
         	int encoded_index = objs.getColumnIndexOrThrow(DbObject.ENCODED);
-        	mEncoded = objs.getBlob(encoded_index);        	
         }
 		@Override
 		public long getLocalUniqueId() {
@@ -399,13 +397,12 @@ public class MessagingManagerThread extends Thread {
 
 		@Override
 		public void onEncoded(byte[] encoded) {
-			mEncoded = encoded;
 			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
 		}
 
 		@Override
 		public byte[] getEncoded() {
-			return mEncoded;
+			return mHelper.getEncoded(mObjectId);
 		}
 		void processRawData() {
             DbEntryHandler h = DbObjects.getMessageHandler(mJson);
