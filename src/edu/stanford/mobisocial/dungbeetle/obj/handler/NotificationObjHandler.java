@@ -52,6 +52,7 @@ public class NotificationObjHandler extends ObjHandler {
             Maybe<Group> group = mHelper.groupForFeedName(feedName);
             Intent launch = new Intent(Intent.ACTION_VIEW);
             launch.setClass(context, FeedListActivity.class);
+            launch.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
                     launch, PendingIntent.FLAG_CANCEL_CURRENT);
     
