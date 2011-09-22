@@ -1,7 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.json.JSONException;
@@ -31,10 +30,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.KeyEvent.DispatcherState;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
@@ -43,15 +40,14 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
-import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -61,8 +57,8 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
@@ -193,13 +189,15 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public void onDestroy() {
     	super.onDestroy();
     
-    	if(mLoader != null)
+    	if(mLoader != null) {
     		mLoader.cancelLoad();
-    	
+    	}
+
     	//the mObjects field is accessed by the background loader
     	synchronized (this) {
-    		if(mObjects != null)
+    		if (mObjects != null) {
     			((ObjectListCursorAdapter) mObjects).closeCursor();
+    		}
     	}
 
     	resetUnreadMessages();

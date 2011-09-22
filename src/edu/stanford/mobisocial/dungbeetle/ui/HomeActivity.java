@@ -1,11 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
@@ -26,7 +22,6 @@ import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -46,7 +41,6 @@ import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
@@ -78,14 +72,7 @@ public class HomeActivity extends MusubiBaseActivity {
             }
         } catch (ClassCastException e) {}
 
-        
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
-        if(metrics.heightPixels > metrics.widthPixels)
-        	setContentView(R.layout.activity_home_portrait);
-        else
-        	setContentView(R.layout.activity_home_landscape);
+        setContentView(R.layout.activity_home);
         MusubiBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);

@@ -36,10 +36,7 @@ public class FeedViews {
         feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
-        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        //if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
-            feedViews.add(new PresenceView());
-        //}
+        feedViews.add(new PresenceView());
         return feedViews;
     }
 

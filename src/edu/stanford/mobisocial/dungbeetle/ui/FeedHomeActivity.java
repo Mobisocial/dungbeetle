@@ -106,7 +106,6 @@ public class FeedHomeActivity extends MusubiBaseActivity
         mFeedViewPager.setOnPageChangeListener(this);
         mFeedViewPager.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
 
-        new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
         int i = 0;
         for (FeedView f : mFeedViews) {
