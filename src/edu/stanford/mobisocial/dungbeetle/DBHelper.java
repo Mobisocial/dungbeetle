@@ -793,10 +793,13 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryUnsentObjects() {
         return getReadableDatabase().query(
             DbObject.TABLE,
-            new String[]{ DbObject._ID, DbObject.JSON,
+            new String[]{ DbObject._ID,
+            			  DbObject.ENCODED + " IS NOT NULL AS is_encoded",
+            			  DbObject.TYPE,
+            			  DbObject.JSON,
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
-                          DbObject.ENCODED},
+                        },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0) },
             null,

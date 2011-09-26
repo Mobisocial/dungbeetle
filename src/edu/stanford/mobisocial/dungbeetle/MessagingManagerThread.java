@@ -370,10 +370,11 @@ public class MessagingManagerThread extends Thread {
         protected long mObjectId;
         protected JSONObject mJson;
         protected byte[] mRaw;
+        protected boolean mDeleteOnCommit;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
-        	//load the iv if it was already picked
-        	int encoded_index = objs.getColumnIndexOrThrow(DbObject.ENCODED);
+            //todo: hack
+            mDeleteOnCommit = objs.getString(2).equals(ProfilePictureObj.TYPE);
         }
 		@Override
 		public long getLocalUniqueId() {
@@ -390,14 +391,16 @@ public class MessagingManagerThread extends Thread {
                 }
             }
             mHelper.clearEncoded(mObjectId);
-            //todo: hack
-            if(mJson.optString(DbObject.TYPE).equals(ProfilePictureObj.TYPE))
+            if(mDeleteOnCommit)
             	mHelper.deleteObj(mObjectId);
         }
 
 		@Override
 		public void onEncoded(byte[] encoded) {
 			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
+			mJson = null;
+			mRaw = null;
+			mBody = null;
 		}
 
 		@Override
@@ -430,17 +433,22 @@ public class MessagingManagerThread extends Thread {
                             subs.getColumnIndexOrThrow(Subscriber.CONTACT_ID)));
                 subs.moveToNext();
             }
+            subs.close();
+
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            try {
-				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-            // the processing code manipulates the json so this has to come first
-            mBody = globalize(mJson.toString());
-            processRawData();
+            //this obj is not yet encoded
+            if(objs.getInt(1) == 0) {
+	            try {
+					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+	            // the processing code manipulates the json so this has to come first
+	            mBody = globalize(mJson.toString());
+	            processRawData();
+        	}
         }
     }
 
@@ -455,15 +463,18 @@ public class MessagingManagerThread extends Thread {
                 Log.w(TAG, "Bad destination found: '" + to + "'");
                 mPubKeys = new ArrayList<RSAPublicKey>();
             }
-            try {
-				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-            mBody = globalize(mJson.toString());
-            processRawData();
+            //this obj is not yet encoded
+            if(objs.getInt(1) == 0) {
+	            try {
+					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+	            mBody = globalize(mJson.toString());
+	            processRawData();
+            }
         }
     }
 
