@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
@@ -130,14 +131,14 @@ public class FeedHomeActivity extends MusubiBaseActivity
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
-        setFeedUri(mFeedUri);
+        App.instance().setCurrentFeed(mFeedUri);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
-        clearFeedUri();
+        App.instance().setCurrentFeed(null);
     }
 
     @Override

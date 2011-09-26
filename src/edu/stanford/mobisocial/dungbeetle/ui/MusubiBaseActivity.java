@@ -20,7 +20,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -278,6 +277,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     public boolean isDeveloperModeEnabled() {
         return getSharedPreferences("main", 0).getBoolean("dev_mode", false);
     }
+
     public static boolean isDeveloperModeEnabled(Context c) {
         return c.getSharedPreferences("main", 0).getBoolean("dev_mode", false);
     }
@@ -297,19 +297,6 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     private boolean mResumed;
     public boolean amResumed() {
         return mResumed;
-    }
-
-    private Uri mFeedUri;
-    public void setFeedUri(Uri feedUri) {
-        mFeedUri = feedUri;
-    }
-
-    public void clearFeedUri() {
-        mFeedUri = null;
-    }
-
-    public Uri getFeedUri() {
-        return mFeedUri;
     }
 
     private KeyEvent.Callback mOnKeyListener;

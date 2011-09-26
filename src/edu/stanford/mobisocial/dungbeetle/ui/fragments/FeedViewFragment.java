@@ -167,22 +167,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     @Override
     public void onPause() {
     	super.onPause();
-    	resetUnreadMessages();
-    }
-    
-    private void resetUnreadMessages() {
-
-        try {
-	        ContentValues cv = new ContentValues();
-	        cv.put(Group.NUM_UNREAD, 0);
-	        
-	        this.getActivity().getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
-	        
-	        this.getActivity().getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);        
-        }
-        catch (Exception e) {
-        	
-        }
     }
     
     @Override
@@ -199,8 +183,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     			((ObjectListCursorAdapter) mObjects).closeCursor();
     		}
     	}
-
-    	resetUnreadMessages();
     }
 
     @Override
