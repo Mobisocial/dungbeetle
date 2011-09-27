@@ -1,7 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import mobisocial.nfc.Nfc;
@@ -41,8 +43,8 @@ public class PickContactsActivity extends TabActivity {
 	private ContactListCursorAdapter mContacts;
 	private GroupListCursorAdapter mGroups;
     private Intent mIntent;
-    private Set<Contact> mResultContacts = new HashSet<Contact>();
-    private Set<Group> mResultGroups = new HashSet<Group>();
+    private Map<Integer, Contact> mResultContacts = new HashMap<Integer, Contact>();
+    private Map<String, Group> mResultGroups = new HashMap<String, Group>();
 	protected final BitmapManager mgr = new BitmapManager(20);
 	private Nfc mNfc;
 
@@ -78,10 +80,10 @@ public class PickContactsActivity extends TabActivity {
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
-                    mResultContacts.remove(c);
+                    mResultContacts.remove(position);
                 } else {
                     checkBox.setChecked(true);
-                    mResultContacts.add(c);
+                    mResultContacts.put(position, c);
                 }
             }
         });
@@ -99,10 +101,10 @@ public class PickContactsActivity extends TabActivity {
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
-                    mResultGroups.remove(g);
+                    mResultGroups.remove(g.feedName);
                 } else {
                     checkBox.setChecked(true);
-                    mResultGroups.add(g);
+                    mResultGroups.put(g.feedName, g);
                 }
             }
         });
@@ -180,27 +182,27 @@ public class PickContactsActivity extends TabActivity {
                 return;
             }
             if (mResultContacts.size() > 0) {
-                Helpers.sendMessage(this, mResultContacts, outboundObj);
+                Helpers.sendMessage(this, mResultContacts.values(), outboundObj);
             }
             if (mResultGroups.size() > 0) {
-                for (Group g : mResultGroups) {
+                for (Group g : mResultGroups.values()) {
                     Helpers.sendToFeed(this, outboundObj, Feed.uriForName(g.feedName));
                 }
             }
         } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE) &&
                 mIntent.getStringExtra("type").equals("invite_app_feed")) {
             // TODO: Remove?
-            Helpers.sendAppFeedInvite(this, mResultContacts,
+            Helpers.sendAppFeedInvite(this, mResultContacts.values(),
                     mIntent.getStringExtra("sharedFeedName"),
                     mIntent.getStringExtra("packageName"));
         } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
             Uri threadUri = mIntent.getParcelableExtra("uri");
             Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
                     Toast.LENGTH_SHORT).show();
-            Helpers.sendThreadInvite(this, mResultContacts, threadUri);
+            Helpers.sendThreadInvite(this, mResultContacts.values(), threadUri);
         } else if (mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)) {
             long[] ids = new long[mResultContacts.size()];
-            Iterator<Contact> it = mResultContacts.iterator();
+            Iterator<Contact> it = mResultContacts.values().iterator();
             int i = 0;
             while(it.hasNext()){
                 Contact c = it.next();
@@ -240,7 +242,7 @@ public class PickContactsActivity extends TabActivity {
             ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
-            checkBox.setChecked(mResultContacts.contains(contact));
+            checkBox.setChecked(mResultContacts.containsKey(c.getPosition()));
         }
     }
 
@@ -269,7 +271,7 @@ public class PickContactsActivity extends TabActivity {
             //((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
-            checkBox.setChecked(mResultGroups.contains(group));
+            checkBox.setChecked(mResultGroups.containsKey(group.feedName));
         }
     }
 
