@@ -119,14 +119,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         System.gc(); // TODO: gross.
 
         JSONObject base = new JSONObject();
-        String localIp = ContentCorral.getLocalIpAddress();
-        if (localIp != null) {
-            try {
-                // TODO: Security breach hack?
-                base.put(LOCAL_IP, localIp);
-                base.put(LOCAL_URI, imageUri.toString());
-            } catch (JSONException e) {
-                Log.e(TAG, "impossible json error possible!");
+        if (ContentCorral.ENABLE_CONTENT_CORRAL) {
+            String localIp = ContentCorral.getLocalIpAddress();
+            if (localIp != null) {
+                try {
+                    // TODO: Security breach hack?
+                    base.put(LOCAL_IP, localIp);
+                    base.put(LOCAL_URI, imageUri.toString());
+                } catch (JSONException e) {
+                    Log.e(TAG, "impossible json error possible!");
+                }
             }
         }
         return from(base, data);
@@ -169,17 +171,21 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
     public void activate(Context context, JSONObject content, byte[] raw) {
-	    if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
+	    if (ContentCorral.ENABLE_CONTENT_CORRAL) {
     	    if (content.has(LOCAL_IP)) {
     	        // TODO: this is a proof-of-concept.
     	        Toast.makeText(context, "Trying to go HD", Toast.LENGTH_SHORT).show();
     	        try {
-    	            Uri fileUri = ContentCorral.fetchTempFile(context, content);
-    	            Intent i = new Intent(Intent.ACTION_VIEW, fileUri);
+    	            Uri fileUri = ContentCorral.fetchTempFile(context, content, "jpg");
+    	            Log.d(TAG, "Opening HD file " + fileUri);
+    	            Intent i = new Intent(Intent.ACTION_VIEW);
+    	            // TODO: move inside corral
+    	            i.setDataAndType(fileUri, "image/*");
     	            context.startActivity(i);
     	            return;
     	        } catch (IOException e) {
     	            Toast.makeText(context, "Failed to go HD", Toast.LENGTH_SHORT).show();
+    	            Log.e(TAG, "Failed to get hd content", e);
     	            // continue
     	        }
     	    }

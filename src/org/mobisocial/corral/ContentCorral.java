@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -12,6 +13,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.UUID;
 
@@ -30,7 +33,8 @@ public class ContentCorral {
 	private static final String TAG = "imageserver";
 	private AcceptThread mAcceptThread;
 	private Context mContext;
-	private Uri mBaseUri;
+
+	public static final boolean ENABLE_CONTENT_CORRAL = false;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
@@ -47,7 +51,6 @@ public class ContentCorral {
 			        Toast.LENGTH_SHORT).show();
 			return;
 		}
-		mBaseUri = Uri.parse("http://" + ip + ":" + SERVER_PORT);
 		mAcceptThread = new AcceptThread(SERVER_PORT);
 		mAcceptThread.start();
 	}
@@ -265,11 +268,18 @@ public class ContentCorral {
 	 * Returns a Uri that can be used remotely to
 	 * retrieve content from this device.
 	 */
-	public Uri uriForContent(String localContent) {
-	    return mBaseUri.buildUpon().appendQueryParameter("content", localContent).build();
+	public static Uri uriForContent(String localContent) {
+	    String ip = getLocalIpAddress();
+	    if (ip == null) return null;
+	    return uriForContent(ip, localContent);
 	}
 
-	public static Uri fetchTempFile(Context context, JSONObject obj) throws IOException {
+	public static Uri uriForContent(String host, String localContent) {
+        Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
+        return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
+	}
+
+	public static Uri fetchTempFile(Context context, JSONObject obj, String suffix) throws IOException {
 	    if (!(obj.has(PictureObj.LOCAL_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
 	    }
@@ -282,23 +292,63 @@ public class ContentCorral {
 	        }
 
 	        // Remote
-    	    URL url = new URL(obj.getString(PictureObj.LOCAL_URI));
+	        Uri remoteUri = uriForContent(
+	                obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
+    	    URL url = new URL(remoteUri.toString());
     	    InputStream is = url.openConnection().getInputStream();
 
     	    // Local
-    	    String fname = UUID.randomUUID().toString() + ".tmp"; // whatever
-    	    File tmp = new File(context.getCacheDir(), fname);
-    	    OutputStream out = new FileOutputStream(tmp);
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = is.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            out.close();
-    	    
+    	    String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
+    	    File tmp = new File(context.getExternalCacheDir(), fname);
+    	    if (!tmp.exists()) {
+    	        try {
+        	        OutputStream out = new FileOutputStream(tmp);
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = is.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    out.close();
+    	        } catch (IOException e) {
+	                if (tmp.exists()) {
+	                    tmp.delete();
+	                }
+    	            throw e;
+    	        }
+    	    }
     	    return Uri.parse("file://" + tmp.getAbsolutePath());
 	    } catch (JSONException e) {
 	        return null;
+	    } catch (NoSuchAlgorithmException e) {
+	        return null;
 	    }
 	}
+
+	private static class HashUtils {
+        private static String convertToHex(byte[] data) {
+            StringBuffer buf = new StringBuffer();
+            for (int i = 0; i < data.length; i++) {
+                int halfbyte = (data[i] >>> 4) & 0x0F;
+                int two_halfs = 0;
+                do {
+                    if ((0 <= halfbyte) && (halfbyte <= 9))
+                        buf.append((char) ('0' + halfbyte));
+                    else
+                        buf.append((char) ('a' + (halfbyte - 10)));
+                    halfbyte = data[i] & 0x0F;
+                } while (two_halfs++ < 1);
+            }
+            return buf.toString();
+        }
+
+        public static String SHA1(String text) throws NoSuchAlgorithmException,
+                UnsupportedEncodingException {
+            MessageDigest md;
+            md = MessageDigest.getInstance("SHA-1");
+            byte[] sha1hash = new byte[40];
+            md.update(text.getBytes("iso-8859-1"), 0, text.length());
+            sha1hash = md.digest();
+            return convertToHex(sha1hash);
+        }
+    }
 }
