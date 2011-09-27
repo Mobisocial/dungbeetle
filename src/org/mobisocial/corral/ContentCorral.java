@@ -279,6 +279,9 @@ public class ContentCorral {
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
 	}
 
+	// TODO: fetchTempFile(Context context, User user, JSONObject obj);
+	// Look up content based on user attributes (wifi, bt, proxy) and
+	// obj properties (uri, capability, signature).
 	public static Uri fetchTempFile(Context context, JSONObject obj, String suffix) throws IOException {
 	    if (!(obj.has(PictureObj.LOCAL_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
@@ -295,13 +298,13 @@ public class ContentCorral {
 	        Uri remoteUri = uriForContent(
 	                obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
-    	    InputStream is = url.openConnection().getInputStream();
 
     	    // Local
     	    String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
     	    File tmp = new File(context.getExternalCacheDir(), fname);
     	    if (!tmp.exists()) {
     	        try {
+    	            InputStream is = url.openConnection().getInputStream();
         	        OutputStream out = new FileOutputStream(tmp);
                     byte[] buf = new byte[1024];
                     int len;
