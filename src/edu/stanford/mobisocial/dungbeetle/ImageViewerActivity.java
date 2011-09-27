@@ -17,6 +17,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -88,22 +89,28 @@ public class ImageViewerActivity extends Activity {
                             public void run() {
                                 try {
                                     if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, content, "jpg")) {
-                                        toast("Trying to go HD");
+                                        toast("Trying to go HD...");
                                     }
                                     Log.d(TAG, "Trying to go HD...");
                                     final Uri fileUri = ContentCorral.fetchContent(
                                             ImageViewerActivity.this, content, "jpg");
                                     Log.d(TAG, "Opening HD file " + fileUri);
 
-                                    // TODO: apply rotation.
                                     InputStream is = getContentResolver().openInputStream(fileUri);
                                     BitmapFactory.Options options = new BitmapFactory.Options();
                                     options.inSampleSize = 4;
-                                    options.outHeight = im.getHeight();
-                                    options.outWidth = im.getWidth();
-                                    PhotoTaker.rotationForImage(ImageViewerActivity.this, fileUri);
+
+                                    Matrix matrix = new Matrix();
+                                    float rotation = PhotoTaker.rotationForImage(ImageViewerActivity.this, fileUri);
+                                    if (rotation != 0f) {
+                                        matrix.preRotate(rotation);
+                                    }
                                     bitmap = BitmapFactory.decodeStream(is, null, options);
 
+                                    int width = bitmap.getWidth();
+                                    int height = bitmap.getHeight();
+                                    bitmap = Bitmap.createBitmap(
+                                            bitmap, 0, 0, width, height, matrix, true);
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
