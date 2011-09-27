@@ -42,7 +42,7 @@ public class FriendRequest {
             p.edit().putString(PREF_FRIEND_CAPABILITY, capability).commit();
             cap = capability;
         }
-        DBHelper helper = new DBHelper(c);
+        DBHelper helper = DBHelper.getGlobal(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         try {
 	        // String name = ident.userName();

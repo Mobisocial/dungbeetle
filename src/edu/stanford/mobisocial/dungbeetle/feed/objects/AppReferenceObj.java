@@ -198,7 +198,7 @@ public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator,
             String type, JSONObject obj) {
         if (obj.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = obj.optString(DbObject.CHILD_FEED_NAME);
-            DBHelper helper = new DBHelper(context);
+            DBHelper helper = DBHelper.getGlobal(context);
             Maybe<Group> mg = helper.groupByFeedName(feedName);
             helper.close();
             if (!mg.isKnown() && obj.has(GROUP_URI)) {

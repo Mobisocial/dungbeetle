@@ -69,7 +69,7 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
 
         String feedName = feedUri.getLastPathSegment();
         Log.d(TAG, "Updating parent_feed_id for " + feedName);
-        DBHelper mHelper = new DBHelper(context);
+        DBHelper mHelper = DBHelper.getGlobal(context);
         ContentValues cv = new ContentValues();
         cv.put(Group.PARENT_FEED_ID, parentId);
         mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?",

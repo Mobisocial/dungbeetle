@@ -24,6 +24,7 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -88,7 +89,25 @@ public class DBHelper extends SQLiteOpenHelper {
 		    VERSION);
         mContext = context;
 	}
-	
+	public static DBHelper getGlobal(Context context) {
+		ContentProviderClient cpc = context.getContentResolver().acquireContentProviderClient(DungBeetleContentProvider.CONTENT_URI);
+		try {
+			DungBeetleContentProvider dbcp = (DungBeetleContentProvider)cpc.getLocalContentProvider();
+			return dbcp.getDBHelper();
+		} finally {
+			cpc.release();
+		}
+	}
+	private int mRefs = 1;
+	public synchronized void addRef() {
+		++mRefs;
+	}
+	@Override
+	public synchronized void close() {
+		if(--mRefs == 0) {
+			super.close();
+		}
+	}
     public boolean importDatabase(String dbPath) throws IOException {
 
         // Close the SQLiteOpenHelper so it will commit the created empty
@@ -119,7 +138,7 @@ public class DBHelper extends SQLiteOpenHelper {
             	c.getColumnIndexOrThrow(DbObject.ENCODED);
         	}
         	catch(Exception e) {
-            Log.w(TAG, "Adding column 'E' to object table.");
+            Log.w(TAG, "Adding column 'E' to object table.", e);
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
             createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
         	}
@@ -593,7 +612,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return getWritableDatabase().insertOrThrow(Contact.TABLE, null, cv);
         }
         catch(Exception e){
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage(), e);
             return -1;
         }
     }
@@ -609,7 +628,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return db.insertOrThrow(Subscriber.TABLE, null, cv);
         }
         catch(Exception e){
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage(), e);
             return -1;
         }
     }
@@ -625,7 +644,7 @@ public class DBHelper extends SQLiteOpenHelper {
     		return db.insertOrThrow(Group.TABLE, null, cv);
     	}
     	catch(Exception e){
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage(), e);
     		return -1;
     	}
     }

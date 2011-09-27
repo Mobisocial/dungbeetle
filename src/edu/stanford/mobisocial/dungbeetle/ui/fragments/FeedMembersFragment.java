@@ -67,7 +67,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		mHelper = new DBHelper(getActivity());
+		mHelper = DBHelper.getGlobal(getActivity());
 		getLoaderManager().initLoader(0, null, this);
 
 		groupUpdateHack();

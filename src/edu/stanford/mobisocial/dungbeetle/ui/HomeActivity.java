@@ -112,7 +112,7 @@ public class HomeActivity extends MusubiBaseActivity {
                             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 
                                     
-                            DBHelper helper = new DBHelper(HomeActivity.this);
+                            DBHelper helper = DBHelper.getGlobal(HomeActivity.this);
                             DBIdentityProvider ident = new DBIdentityProvider(helper);
                             nameValuePairs.add(new BasicNameValuePair("email", ident.userEmail()));
                             
@@ -176,7 +176,7 @@ public class HomeActivity extends MusubiBaseActivity {
         /* sample code for demonstration of the nearby functionality without
          * a real hookup to the service.
          */
-//        DBHelper helper = new DBHelper(HomeActivity.this);
+//        DBHelper helper = DBHelper.getGlobal(HomeActivity.this);
 //        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
 //
 //        Set<byte[]> ks = pkss.keySet();

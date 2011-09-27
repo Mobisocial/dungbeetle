@@ -65,7 +65,7 @@ public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHa
         String feedName = obj.optString("feedName");
         final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
         final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         final IdentityProvider ident = new DBIdentityProvider(helper);
         Maybe<Group> mg = helper.groupByFeedName(feedName);
         try {

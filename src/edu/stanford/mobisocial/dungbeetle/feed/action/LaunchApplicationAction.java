@@ -53,7 +53,7 @@ public class LaunchApplicationAction implements FeedAction {
 
                 // App reference in parent feed:
 
-                DBHelper mHelper = new DBHelper(context);
+                DBHelper mHelper = DBHelper.getGlobal(context);
                 DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
 
                 long creatorId = mIdent.userPublicKeyString().hashCode();

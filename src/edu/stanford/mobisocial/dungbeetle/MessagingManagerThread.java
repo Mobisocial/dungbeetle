@@ -68,7 +68,7 @@ public class MessagingManagerThread extends Thread {
     public MessagingManagerThread(final Context context){
         mContext = context;
         mMainThreadHandler = new Handler(context.getMainLooper());
-        mHelper = new DBHelper(context);
+        mHelper = DBHelper.getGlobal(context);
         mIdent = new DBIdentityProvider(mHelper);
         mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
 

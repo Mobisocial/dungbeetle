@@ -75,7 +75,7 @@ public class Contact implements Serializable{
     }
 
     public static Maybe<Contact> forId(Context context, long id) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         Maybe<Contact> contact = helper.contactForContactId(id);
         helper.close();
         return contact;

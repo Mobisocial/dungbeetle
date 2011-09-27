@@ -98,7 +98,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         Intent intent = getIntent();
 
         if (intent.hasExtra("group_id")) {    

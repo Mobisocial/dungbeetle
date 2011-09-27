@@ -250,7 +250,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
             
-            final DBHelper mHelper = new DBHelper(getActivity());
+            final DBHelper mHelper = DBHelper.getGlobal(getActivity());
             final IdentityProvider mIdent = new DBIdentityProvider(mHelper);
             try {
 	            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
@@ -358,7 +358,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 
                 if (c.moveToFirst()) {
                     String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                    DBHelper mHelper = new DBHelper(getActivity());
+                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
                     IdentityProvider mIdent = new DBIdentityProvider(mHelper);
                     try {
                         JSONObject obj = new JSONObject(jsonSrc);

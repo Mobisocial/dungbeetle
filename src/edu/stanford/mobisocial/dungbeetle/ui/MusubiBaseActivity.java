@@ -70,7 +70,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sInstance = this;
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         remoteControlRegistrar = new RemoteControlRegistrar(this, RemoteControlReceiver.class);
         //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
         startService(new Intent(this, DungBeetleService.class));

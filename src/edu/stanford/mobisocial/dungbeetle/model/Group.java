@@ -54,21 +54,21 @@ public class Group{
     }
 
     public static Maybe<Group> forId(Context context, long id) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         Maybe<Group> g = helper.groupForGroupId(id);
         helper.close();
         return g;
     }
 
     public static Maybe<Group> forFeed(Context context, Uri feed) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         Maybe<Group> g = helper.groupForFeedName(feed.getLastPathSegment());
         helper.close();
         return g;
     }
 
     public static Maybe<Group> forFeedName(Context context, String feedName) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         Maybe<Group> g = helper.groupForFeedName(feedName);
         helper.close();
         return g;
@@ -77,7 +77,7 @@ public class Group{
     public static Group createForFeed(Context context, String feedName) {
         String groupName = feedName;
         if (feedName.length() > 3) feedName = feedName.substring(0, 3);
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         IdentityProvider ident = new DBIdentityProvider(helper);
         Uri uri = GroupProviders.defaultNewSessionUri(ident, groupName, feedName);
         Uri gUri = Helpers.insertGroup(context, groupName, uri.toString(), feedName);
@@ -90,7 +90,7 @@ public class Group{
     }
     
     public void forceUpdate(Context context) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         IdentityProvider ident = new DBIdentityProvider(helper);
         GroupProviders.GroupProvider gp = GroupProviders.forUri(Uri.parse(dynUpdateUri));
         int version = -1;
@@ -121,7 +121,7 @@ public class Group{
     }
 
     public static Group create(Context context) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         IdentityProvider ident = new DBIdentityProvider(helper);
         String feedName = UUID.randomUUID().toString();
         String groupName = feedName.substring(0, 3);
@@ -154,7 +154,7 @@ public class Group{
         long id = Long.valueOf(gUri.getLastPathSegment());
         if(id > -1){
             GroupProviders.GroupProvider gp = GroupProviders.forUri(dynGroupUri);
-            DBHelper helper = new DBHelper(context);
+            DBHelper helper = DBHelper.getGlobal(context);
             DBIdentityProvider ident = new DBIdentityProvider(helper);
             int version = -1;
             gp.forceUpdate(id, dynGroupUri, context, version, true);

@@ -73,7 +73,7 @@ public class GroupProviders {
                     	
                         GroupProvider.this.handle(groupId, uriIn, context, version, true);
                         
-                        DBHelper helper = new DBHelper(context);
+                        DBHelper helper = DBHelper.getGlobal(context);
                         Maybe<Group> mg = helper.groupForGroupId(groupId);
                         try{
                             // group exists already, load view
@@ -158,7 +158,7 @@ public class GroupProviders {
 
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
             
-                DBHelper mHelper = new DBHelper(context);
+                DBHelper mHelper = DBHelper.getGlobal(context);
                 DBIdentityProvider ident = new DBIdentityProvider(mHelper);
                 try {
 	                final String pubKey = DBIdentityProvider.publicKeyToString(ident.userPublicKey());

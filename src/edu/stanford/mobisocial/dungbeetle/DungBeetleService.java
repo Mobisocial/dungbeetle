@@ -21,7 +21,7 @@ public class DungBeetleService extends Service {
 
     @Override
     public void onCreate() {
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
         mMessagingManagerThread = new MessagingManagerThread(this);
