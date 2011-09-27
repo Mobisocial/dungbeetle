@@ -20,7 +20,7 @@ public class NewGroupActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_group);
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
 
 		((Button)findViewById(R.id.newGroupOk)).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

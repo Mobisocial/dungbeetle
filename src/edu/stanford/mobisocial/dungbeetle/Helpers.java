@@ -268,7 +268,7 @@ public class Helpers {
     }
 
     public static void resendProfile(final Context c) {
-        DBHelper helper = new DBHelper(c);
+        DBHelper helper = DBHelper.getGlobal(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         Log.w(TAG, "attempting to resend");
         try {

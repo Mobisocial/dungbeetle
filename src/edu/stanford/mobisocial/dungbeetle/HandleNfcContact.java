@@ -57,7 +57,7 @@ public class HandleNfcContact extends Activity {
             final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri, false);
 		    saveButton.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
-                        DBHelper helper = new DBHelper(HandleNfcContact.this);
+                        DBHelper helper = DBHelper.getGlobal(HandleNfcContact.this);
                         IdentityProvider ident = new DBIdentityProvider(helper);
 
                         try {

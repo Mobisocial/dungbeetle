@@ -22,7 +22,7 @@ public class ContactCache extends ContentObserver {
     public ContactCache(Context context) {
         super(new Handler(context.getMainLooper()));
         mContext = context;
-        mHelper = new DBHelper(context); 
+        mHelper = DBHelper.getGlobal(context); 
         mIdent = new DBIdentityProvider(mHelper);
         context.getContentResolver().registerContentObserver(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), true, this);

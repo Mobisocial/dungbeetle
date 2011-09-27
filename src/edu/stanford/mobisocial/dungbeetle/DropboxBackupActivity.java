@@ -192,7 +192,7 @@ public class DropboxBackupActivity extends Activity {
             	    Intent intent = getIntent();
                 int contact_id = intent.getIntExtra("action", -1);
 
-                DBHelper mHelper = new DBHelper(this);
+                DBHelper mHelper = DBHelper.getGlobal(this);
                 mHelper.getReadableDatabase().close();
                 File data = Environment.getDataDirectory();
                 String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"+DBHelper.DB_NAME;

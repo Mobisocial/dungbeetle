@@ -70,7 +70,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
             getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         }
 
-        mHelper = new DBHelper(getActivity());
+        mHelper = DBHelper.getGlobal(getActivity());
         mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }

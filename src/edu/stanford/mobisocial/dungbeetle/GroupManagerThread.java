@@ -22,7 +22,7 @@ public class GroupManagerThread extends Thread {
 
     public GroupManagerThread(final Context context){
         mContext = context;
-        mHelper = new DBHelper(context);
+        mHelper = DBHelper.getGlobal(context);
         mIdent = new DBIdentityProvider(mHelper);
         profile = mIdent.userProfile();
     }

@@ -31,7 +31,7 @@ public class DBIdentityProvider implements IdentityProvider {
 	private final RSAPrivateKey mPrivKey;
     private final String mEmail;
     private final String mName;
-    private final SQLiteDatabase mDb;
+    private final DBHelper mHelper;
 
     private final String mPubKeyString;
 
@@ -44,10 +44,11 @@ public class DBIdentityProvider implements IdentityProvider {
         super.finalize();
     }
 
-	public DBIdentityProvider(SQLiteOpenHelper db) {
+	public DBIdentityProvider(DBHelper helper) {
+		mHelper = helper;
+		helper.addRef();
 		mUnclosedException = new Exception("Finalized without close being called. Created at...");
-		mDb = db.getReadableDatabase();
-		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         if (c.isAfterLast()) {
             c.close();
@@ -74,7 +75,7 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
     public String userProfile() {
-		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
 
 		JSONObject obj = new JSONObject();
@@ -104,7 +105,7 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public Contact contactForUser(){
-		Cursor c = mDb.rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
+		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
 		c.moveToFirst();
         long id = Contact.MY_ID;
         String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
@@ -119,7 +120,7 @@ public class DBIdentityProvider implements IdentityProvider {
 		if(id.equals(mPubKeyTag)) {
 			return mPubKey;
 		}
-        Cursor c = mDb.query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
+        Cursor c = mHelper.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
             Contact.PERSON_ID + " = ?", new String[]{id}, null, null, null);
         try {
 	        c.moveToFirst();
@@ -145,7 +146,7 @@ public class DBIdentityProvider implements IdentityProvider {
             }
         }
         String idList = buffer.toString();
-        Cursor c = mDb.query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
+        Cursor c = mHelper.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
                 Contact._ID + " IN (" + idList + ")", null, null, null, null);
         try {
 	        c.moveToFirst();
@@ -208,6 +209,6 @@ public class DBIdentityProvider implements IdentityProvider {
     @Override
     public void close() {
     	mUnclosedException = null;
-        mDb.close();
+    	mHelper.close();
     }
 }

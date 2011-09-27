@@ -34,7 +34,8 @@ public class DungBeetleContentProvider extends ContentProvider {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
-	public DungBeetleContentProvider() {}
+	public DungBeetleContentProvider() {
+	}
 
 	@Override
 	protected void finalize() throws Throwable {
@@ -262,18 +263,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            for(;;) {
-	            try { 
-	            	db.beginTransaction();
-	            	break;
-	            } catch(Exception e) {
-	            	Log.e(TAG, "Database probably locked:??", e);
-	            	try {
-						Thread.sleep(50);
-					} catch (InterruptedException e1) {
-					}
-	            }
-            }
+        	db.beginTransaction();
             try {
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
@@ -372,7 +362,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
         mIdent = new DBIdentityProvider(mHelper);
-        return mHelper.getWritableDatabase() == null;
+        boolean ok = mHelper.getWritableDatabase() == null;
+        if(!ok)
+        	return false;
+		return true;
     }
 
     @Override
@@ -532,4 +525,9 @@ public class DungBeetleContentProvider extends ContentProvider {
         }
         c.close();
     }
+
+	public DBHelper getDBHelper() {
+		mHelper.addRef();
+		return mHelper;
+	}
 }

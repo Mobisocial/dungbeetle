@@ -93,7 +93,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
 		setContentView(R.layout.groups);
         setTitleFromActivityLabel (R.id.title_text);
         
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";

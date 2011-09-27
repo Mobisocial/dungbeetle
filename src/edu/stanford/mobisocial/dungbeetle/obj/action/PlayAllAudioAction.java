@@ -128,7 +128,7 @@ ORDER BY _id ASC
         }
 	
     public void onAct(Context context, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
         
         //TODO: this cursor really need to be closed somewhere!!!  it may be but its sketchy
