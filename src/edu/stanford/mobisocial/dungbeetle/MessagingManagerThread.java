@@ -286,8 +286,7 @@ public class MessagingManagerThread extends Thread {
             Cursor objs = mHelper.queryUnsentObjects();
             try {
                 if (DBG) Log.i(TAG, objs.getCount() + " objects...");
-                objs.moveToFirst();
-                while (!objs.isAfterLast()) {
+                if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
                     String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
@@ -346,8 +345,7 @@ public class MessagingManagerThread extends Thread {
                             mMessenger.sendMessage(m);
                         }
                     }
-                    objs.moveToNext();
-                }
+                } while(objs.moveToNext());
                 if (notSendingObjects.size() > 0) {
                     if (DBG) Log.d(TAG, "Marking " + notSendingObjects.size() + " objects sent");
                     mHelper.markObjectsAsSent(notSendingObjects);
