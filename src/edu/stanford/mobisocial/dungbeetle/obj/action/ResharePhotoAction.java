@@ -44,6 +44,7 @@ public class ResharePhotoAction extends ObjAction {
             outStream.close();
 
             bitmap.recycle();
+            bitmap = null;
             System.gc();
             Intent intent = new Intent(android.content.Intent.ACTION_SEND);  
             intent.setType("image/png");
