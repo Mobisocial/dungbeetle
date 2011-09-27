@@ -119,14 +119,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         System.gc(); // TODO: gross.
 
         JSONObject base = new JSONObject();
-        String localIp = ContentCorral.getLocalIpAddress();
-        if (localIp != null) {
-            try {
-                // TODO: Security breach hack?
-                base.put(LOCAL_IP, localIp);
-                base.put(LOCAL_URI, imageUri.toString());
-            } catch (JSONException e) {
-                Log.e(TAG, "impossible json error possible!");
+        if (ContentCorral.ENABLE_CONTENT_CORRAL) {
+            String localIp = ContentCorral.getLocalIpAddress();
+            if (localIp != null) {
+                try {
+                    // TODO: Security breach hack?
+                    base.put(LOCAL_IP, localIp);
+                    base.put(LOCAL_URI, imageUri.toString());
+                } catch (JSONException e) {
+                    Log.e(TAG, "impossible json error possible!");
+                }
             }
         }
         return from(base, data);
@@ -169,35 +171,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
     public void activate(Context context, JSONObject content, byte[] raw) {
-	    if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
-    	    if (content.has(LOCAL_IP)) {
-    	        // TODO: this is a proof-of-concept.
-    	        Toast.makeText(context, "Trying to go HD", Toast.LENGTH_SHORT).show();
-    	        try {
-    	            Uri fileUri = ContentCorral.fetchTempFile(context, content);
-    	            Intent i = new Intent(Intent.ACTION_VIEW, fileUri);
-    	            context.startActivity(i);
-    	            return;
-    	        } catch (IOException e) {
-    	            Toast.makeText(context, "Failed to go HD", Toast.LENGTH_SHORT).show();
-    	            // continue
-    	        }
-    	    }
+	    Intent intent = new Intent(context, ImageViewerActivity.class);
+	    intent.putExtra("obj", content.toString());
+	    if (raw != null) {
+	        intent.putExtra("bytes", raw);
 	    }
-
-	    viewRawData(context, content, raw);
-    }
-
-	private void viewRawData(Context context, JSONObject content, byte[] raw) {
-	    if(raw == null)
-            raw = Base64.decode(content.optString(DATA));
-        Intent intent = new Intent(context, ImageViewerActivity.class);
-        intent.putExtra("bytes", raw);
-        if (!(context instanceof Activity)) {
+	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        context.startActivity(intent); 
-	}
+	    context.startActivity(intent);
+    }
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
