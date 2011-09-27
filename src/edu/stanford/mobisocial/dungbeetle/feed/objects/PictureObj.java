@@ -1,16 +1,26 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mobisocial.corral.ContentCorral;
+
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.util.Log;
+import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.App;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -19,25 +29,22 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-
-import android.net.Uri;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import android.util.Log;
-import android.util.Pair;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
     public static final String DATA = "data";
+
+    public static final String LOCAL_URI = "localUri";
+    // TODO: This is a hack, with many ways to fix. For example,
+    // it can be used with its timestamp and an instance variable to
+    // track a users' latest ip address.
+    // Security should also be considered.
+    public static final String LOCAL_IP = "localIp";
 
     @Override
     public String getType() {
@@ -49,6 +56,10 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
      */
     public static DbObject from(byte[] data) {
         return new DbObject(TYPE, PictureObj.json(data));
+    }
+
+    public static DbObject from(JSONObject base, byte[] data) {
+        return new DbObject(TYPE, PictureObj.json(base, data));
     }
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
@@ -105,17 +116,33 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         byte[] data = baos.toByteArray();
         sourceBitmap.recycle();
         resizedBitmap.recycle();
-        System.gc();
-        return from(data);
+        System.gc(); // TODO: gross.
+
+        JSONObject base = new JSONObject();
+        String localIp = ContentCorral.getLocalIpAddress();
+        if (localIp != null) {
+            try {
+                // TODO: Security breach hack?
+                base.put(LOCAL_IP, localIp);
+                base.put(LOCAL_URI, imageUri.toString());
+            } catch (JSONException e) {
+                Log.e(TAG, "impossible json error possible!");
+            }
+        }
+        return from(base, data);
     }
 
     public static JSONObject json(byte[] data){
-        String encoded = Base64.encodeToString(data, false);
         JSONObject obj = new JSONObject();
+        return json(obj, data);
+    }
+
+    public static JSONObject json(JSONObject base, byte[] data){
+        String encoded = Base64.encodeToString(data, false);
         try{
-            obj.put("data", encoded);
+            base.put("data", encoded);
         }catch(JSONException e){}
-        return obj;
+        return base;
     }
 	
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
@@ -141,17 +168,36 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
-		if(raw == null)
-	        raw = Base64.decode(content.optString(DATA));
+    public void activate(Context context, JSONObject content, byte[] raw) {
+	    if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
+    	    if (content.has(LOCAL_IP)) {
+    	        // TODO: this is a proof-of-concept.
+    	        Toast.makeText(context, "Trying to go HD", Toast.LENGTH_SHORT).show();
+    	        try {
+    	            Uri fileUri = ContentCorral.fetchTempFile(context, content);
+    	            Intent i = new Intent(Intent.ACTION_VIEW, fileUri);
+    	            context.startActivity(i);
+    	            return;
+    	        } catch (IOException e) {
+    	            // continue
+    	        }
+    	    }
+	    }
+
+	    viewRawData(context, content, raw);
+    }
+
+	private void viewRawData(Context context, JSONObject content, byte[] raw) {
+	    if(raw == null)
+            raw = Base64.decode(content.optString(DATA));
         Intent intent = new Intent(context, ImageViewerActivity.class);
-        String bytes = content.optString(DATA);
         intent.putExtra("bytes", raw);
         if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(intent); 
-    }
+	}
+
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
 			if(raw != null)

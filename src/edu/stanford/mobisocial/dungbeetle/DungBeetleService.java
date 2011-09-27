@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import org.mobisocial.corral.ContentCorral;
+
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
@@ -12,6 +14,7 @@ public class DungBeetleService extends Service {
 	private NotificationManager mNotificationManager;
 	private MessagingManagerThread mMessagingManagerThread;
 	private GroupManagerThread mGroupManagerThread;
+	private ContentCorral mContentCorral;
     private DBHelper mHelper;
     public static final String TAG = "DungBeetleService";
 
@@ -29,6 +32,10 @@ public class DungBeetleService extends Service {
 
         // mPresenceThread = new PresenceThread(this);
         // mPresenceThread.start();
+
+        // TODO: content corral should manage it's own ip ups and downs.
+        mContentCorral = new ContentCorral(this);
+        mContentCorral.start();
     }
 
 

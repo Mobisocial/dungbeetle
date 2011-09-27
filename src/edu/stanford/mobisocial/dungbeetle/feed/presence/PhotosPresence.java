@@ -1,15 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Handler;
 import android.provider.MediaStore.Images;
@@ -50,40 +45,6 @@ public class PhotosPresence extends FeedPresence {
         }
     }
 
-    private DbObject pictureFromUri(Context context, Uri img) throws FileNotFoundException {
-        Bitmap sourceBitmap = BitmapFactory.decodeStream(
-                context.getApplicationContext().getContentResolver().openInputStream(img));
-        int width = sourceBitmap.getWidth();
-        int height = sourceBitmap.getHeight();
-
-        int newWidth = 250;
-        float scale = ((float)newWidth)/width;
-
-        Matrix matrix = new Matrix();
-
-        if (img.getScheme().equals("content")) {
-            String[] projection = { Images.ImageColumns.ORIENTATION };
-            Cursor c = context.getContentResolver().query(img, projection, null, null, null);
-            if (c.moveToFirst()) {
-                int rotation = c.getInt(0);
-                if (rotation != 0f) {
-                    matrix.preRotate(rotation);
-                }
-            }
-        }
-
-        matrix.postScale(scale, scale);
-        Bitmap resizedBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, width,
-                height, matrix, true);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        byte[] data = baos.toByteArray();
-        sourceBitmap.recycle();
-        resizedBitmap.recycle();
-        System.gc();
-        return PictureObj.from(data);
-    }
-
     class PhotoContentObserver extends ContentObserver {
         private final Context mmContext;
         private Uri mLastShared;
@@ -101,7 +62,7 @@ public class PhotosPresence extends FeedPresence {
                         return;
                     }
                     mLastShared = photo;
-                    DbObject obj = pictureFromUri(mmContext, photo);
+                    DbObject obj = PictureObj.from(mmContext, photo);
                     for (Uri uri : getFeedsWithPresence()) {
                         Helpers.sendToFeed(mmContext, obj, uri);
                     }
