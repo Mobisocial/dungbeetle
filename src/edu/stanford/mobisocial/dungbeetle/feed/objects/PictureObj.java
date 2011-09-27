@@ -179,6 +179,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     	            context.startActivity(i);
     	            return;
     	        } catch (IOException e) {
+    	            Toast.makeText(context, "Failed to go HD", Toast.LENGTH_SHORT).show();
     	            // continue
     	        }
     	    }
