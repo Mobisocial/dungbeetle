@@ -21,6 +21,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Process;
 import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
@@ -274,6 +275,7 @@ public class MessagingManagerThread extends Thread {
 
     @Override
     public void run() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         Set<Long> notSendingObjects = new HashSet<Long>();
         if (DBG) Log.i(TAG, "Running...");
         mMessenger.init();
