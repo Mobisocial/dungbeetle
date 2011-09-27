@@ -134,7 +134,9 @@ public class DbObject {
                 sViewProfileAction = new OnClickViewProfile((Activity)context);
             }
             icon.setTag(contactId);
-            icon.setOnClickListener(sViewProfileAction);
+            if (allowInteractions) {
+                icon.setOnClickListener(sViewProfileAction);
+            }
             // TODO: this is horrible
             ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
 
