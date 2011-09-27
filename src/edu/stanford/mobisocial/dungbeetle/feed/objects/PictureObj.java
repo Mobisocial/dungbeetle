@@ -171,39 +171,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
     public void activate(Context context, JSONObject content, byte[] raw) {
-	    if (ContentCorral.ENABLE_CONTENT_CORRAL) {
-    	    if (content.has(LOCAL_IP)) {
-    	        // TODO: this is a proof-of-concept.
-    	        Toast.makeText(context, "Trying to go HD", Toast.LENGTH_SHORT).show();
-    	        try {
-    	            Uri fileUri = ContentCorral.fetchTempFile(context, content, "jpg");
-    	            Log.d(TAG, "Opening HD file " + fileUri);
-    	            Intent i = new Intent(Intent.ACTION_VIEW);
-    	            // TODO: move inside corral
-    	            i.setDataAndType(fileUri, "image/*");
-    	            context.startActivity(i);
-    	            return;
-    	        } catch (IOException e) {
-    	            Toast.makeText(context, "Failed to go HD", Toast.LENGTH_SHORT).show();
-    	            Log.e(TAG, "Failed to get hd content", e);
-    	            // continue
-    	        }
-    	    }
+	    Intent intent = new Intent(context, ImageViewerActivity.class);
+	    intent.putExtra("obj", content.toString());
+	    if (raw != null) {
+	        intent.putExtra("bytes", raw);
 	    }
-
-	    viewRawData(context, content, raw);
-    }
-
-	private void viewRawData(Context context, JSONObject content, byte[] raw) {
-	    if(raw == null)
-            raw = Base64.decode(content.optString(DATA));
-        Intent intent = new Intent(context, ImageViewerActivity.class);
-        intent.putExtra("bytes", raw);
-        if (!(context instanceof Activity)) {
+	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        context.startActivity(intent); 
-	}
+	    context.startActivity(intent);
+    }
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {

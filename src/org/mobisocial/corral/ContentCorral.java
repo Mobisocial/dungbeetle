@@ -16,7 +16,6 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
-import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,8 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 
 public class ContentCorral {
 	private static final int SERVER_PORT = 8224;
-	private static File CAMERA_ROOT = null;
-	private static final String TAG = "imageserver";
+	private static final String TAG = "ContentCorral";
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
@@ -282,7 +280,7 @@ public class ContentCorral {
 	// TODO: fetchTempFile(Context context, User user, JSONObject obj);
 	// Look up content based on user attributes (wifi, bt, proxy) and
 	// obj properties (uri, capability, signature).
-	public static Uri fetchTempFile(Context context, JSONObject obj, String suffix) throws IOException {
+	public static Uri fetchContent(Context context, JSONObject obj, String suffix) throws IOException {
 	    if (!(obj.has(PictureObj.LOCAL_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
 	    }
@@ -326,6 +324,27 @@ public class ContentCorral {
 	        return null;
 	    }
 	}
+
+	public static boolean fileAvailableLocally(Context context, JSONObject obj, String suffix) {
+	    try {
+    	    String localIp = getLocalIpAddress();
+            String ip = obj.getString(PictureObj.LOCAL_IP);
+            if (localIp != null && localIp.equals(ip)) {
+                return true;
+            }
+    
+            // Remote
+            Uri remoteUri = uriForContent(
+                    obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
+
+            // Local
+            String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
+            File tmp = new File(context.getExternalCacheDir(), fname);
+            return tmp.exists();
+	    } catch (Exception e) {
+	        return false;
+	    }
+    }
 
 	private static class HashUtils {
         private static String convertToHex(byte[] data) {

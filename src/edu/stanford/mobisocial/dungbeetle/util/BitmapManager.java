@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.util;
 import android.net.Uri;
 import android.widget.ImageView;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -61,6 +62,30 @@ public class BitmapManager{
 
 	protected boolean hasBitmap(long id){
         return cache.get(id) != null;
+    }
+
+	public Bitmap getBitmap(long id, Context context, Uri uri){
+        Bitmap bm = cache.get(id);
+        if(bm != null) {
+            return bm;
+        }
+        else{
+            try{
+                InputStream is = context.getContentResolver().openInputStream(uri);
+                BufferedInputStream bis = new BufferedInputStream(is);
+                Bitmap newBm = BitmapFactory.decodeStream(bis);
+                bis.close();
+                is.close();
+                if(newBm != null){
+                    cache.put(id, newBm);
+                }
+                return newBm;
+            }
+            catch(IOException e){
+                System.err.println();
+                return null;
+            }
+        }
     }
 
 	public Bitmap getBitmap(long id, String url){
