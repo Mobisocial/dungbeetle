@@ -88,6 +88,9 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
                 final IdentityProvider ident = new DBIdentityProvider(mHelper);
                 Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
                 try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {}
+                try {
                     // group exists already, load view
                     final Group g = mg.get();
                     g.forceUpdate(context);
