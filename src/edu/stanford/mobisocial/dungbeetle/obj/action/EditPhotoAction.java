@@ -28,7 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 /**
- * Sends a picture object using the standard Android "SEND" intent.
+ * Edits a picture object using the standard Android "EDIT" intent.
  *
  */
 public class EditPhotoAction extends ObjAction {
