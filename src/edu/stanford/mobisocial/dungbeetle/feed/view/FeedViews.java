@@ -14,6 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedSlideshowFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
 public class FeedViews {
@@ -23,6 +24,7 @@ public class FeedViews {
         sFeedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         sFeedViews.add(new MapView());
         sFeedViews.add(new PartyView());
+        sFeedViews.add(FeedViews.feedViewFrom("Timeshow", new FeedSlideshowFragment()));
         sFeedViews.add(new PresenceView());
         //sFeedViews.add(new StatsView());
     }

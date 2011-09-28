@@ -71,7 +71,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public static final String ARG_FEED_URI = "feed_uri";
     public static final String ARG_DUAL_PANE = "dual_pane";
 
-    private boolean DBG = false;
+    private boolean DBG = true;
     private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
@@ -80,14 +80,12 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
-	
-	private String feedName;
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-        feedName = mFeedUri.getLastPathSegment();
+        if (DBG) Log.d(TAG, "Attaching fragment to feed " + mFeedUri);
     }
 
     @Override
