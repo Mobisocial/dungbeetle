@@ -16,6 +16,11 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
+/**
+ * Adds a PictureObj to a feed from an external Android application
+ * such as the Gallery.
+ *
+ */
 public class GalleryAction implements FeedAction {
 
     @Override

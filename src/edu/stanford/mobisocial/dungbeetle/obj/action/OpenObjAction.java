@@ -7,11 +7,16 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import android.content.Context;
+import android.net.Uri;
 
+/**
+ * Opens the given Obj using its {@link Activator}.
+ *
+ */
 public class OpenObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         if (objType instanceof Activator) {
             ((Activator) objType).activate(context, objData, raw);
         }

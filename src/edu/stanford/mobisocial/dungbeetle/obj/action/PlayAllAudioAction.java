@@ -1,43 +1,41 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.json.JSONObject;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.net.Uri;
+import android.os.Environment;
+import android.util.Base64;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import android.util.Base64;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.app.Activity;
-import android.util.Log;
-import android.os.Environment;
-
-import android.media.MediaPlayer;
-import java.io.File;
-import java.io.OutputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-
-import android.media.AudioRecord;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.database.Cursor;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.content.DialogInterface;
-
+/**
+ * Plays all audio clips that are at least as recent than the one
+ * being clicked.
+ *
+ */
 public class PlayAllAudioAction extends ObjAction {
 
     private static final int RECORDER_BPP = 16;
@@ -127,7 +125,7 @@ ORDER BY _id ASC
             
         }
 	
-    public void onAct(Context context, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
         DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
         
