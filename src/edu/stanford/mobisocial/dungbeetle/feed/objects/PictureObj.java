@@ -115,7 +115,9 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
         byte[] data = baos.toByteArray();
         sourceBitmap.recycle();
+        sourceBitmap = null;
         resizedBitmap.recycle();
+        resizedBitmap = null;
         System.gc(); // TODO: gross.
 
         JSONObject base = new JSONObject();
