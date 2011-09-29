@@ -6,6 +6,8 @@ import java.util.List;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
+
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -137,29 +139,15 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public List<RSAPublicKey> publicKeysForContactIds(List<Long> ids){
-        Iterator<Long> iter = ids.iterator();
-        StringBuffer buffer = new StringBuffer();
-        while (iter.hasNext()) {
-            buffer.append(iter.next());
-            if(iter.hasNext()){
-                buffer.append(",");
-            }
-        }
-        String idList = buffer.toString();
-        Cursor c = mHelper.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
-                Contact._ID + " IN (" + idList + ")", null, null, null, null);
-        try {
-	        c.moveToFirst();
-	        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
-	        while (!c.isAfterLast()) {
-	            result.add(publicKeyFromString(c.getString(
-	                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
-	            c.moveToNext();
-	        }
-	        return result;
-        } finally {
-        	c.close();
-        }
+        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>(ids.size());
+        SQLiteStatement s = mHelper.getReadableDatabase().compileStatement("SELECT " + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE + " WHERE " + Contact._ID + " = ?");
+		for(Long id : ids) {
+			s.bindLong(1, id.longValue());
+			String pks = s.simpleQueryForString();
+			result.add(publicKeyFromString(pks));
+		}
+		s.close();
+		return result;
     }
 
     public String personIdForPublicKey(RSAPublicKey key){

@@ -316,12 +316,11 @@ public class MessagingManagerThread extends Thread {
                     }
                     if (mSentObjects.contains(objId)) {
                         if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
-                        objs.moveToNext();
                         continue;
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
                     if (to != null) {
-                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending direct message " + m);
                         if (m.toPublicKeys().isEmpty()) {
                             Log.w(TAG, "No addressees for direct message " + objId);
@@ -333,7 +332,7 @@ public class MessagingManagerThread extends Thread {
                             mMessenger.sendMessage(m);
                         }
                     } else {
-                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending feed object " + objId + ": " + m);
                         if(m.toPublicKeys().isEmpty()) {
                             Log.i(TAG, "No addresses for feed message " + objId);
@@ -421,7 +420,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg {
-        public OutgoingFeedObjectMsg(Cursor objs){
+        public OutgoingFeedObjectMsg(Cursor objs, JSONObject json){
         	super(objs);
             String feedName = objs.getString(
                 objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
@@ -438,13 +437,7 @@ public class MessagingManagerThread extends Thread {
             mPubKeys = mIdent.publicKeysForContactIds(ids);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
-	            try {
-					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
+				mJson = json;
 	            // the processing code manipulates the json so this has to come first
 	            mBody = globalize(mJson.toString());
 	            processRawData();
@@ -453,7 +446,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg {
-        public OutgoingDirectObjectMsg(Cursor objs) {
+        public OutgoingDirectObjectMsg(Cursor objs, JSONObject json) {
             super(objs);
             String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
             try {
@@ -465,14 +458,9 @@ public class MessagingManagerThread extends Thread {
             }
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
-	            try {
-					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
+				mJson = json;
 	            mBody = globalize(mJson.toString());
+	            // the processing code manipulates the json so this has to come first
 	            processRawData();
             }
         }
