@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.SoftReference;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -374,6 +375,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private abstract class OutgoingMsg implements OutgoingMessage {
+    	protected SoftReference<byte[]> mEncoded;
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
@@ -393,19 +395,27 @@ public class MessagingManagerThread extends Thread {
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
         public void onCommitted() {
-            mHelper.markObjectAsSent(mObjectId);
-            if (mSentObjects.contains(mObjectId)) {
-                synchronized (mSentObjects) {
-                    mSentObjects.remove(mObjectId);
-                }
-            }
-            mHelper.clearEncoded(mObjectId);
-            if(mDeleteOnCommit)
-            	mHelper.deleteObj(mObjectId);
+        	mEncoded.clear();
+        	mHelper.getWritableDatabase().beginTransaction();
+        	try {
+	            mHelper.markObjectAsSent(mObjectId);
+	            if (mSentObjects.contains(mObjectId)) {
+	                synchronized (mSentObjects) {
+	                    mSentObjects.remove(mObjectId);
+	                }
+	            }
+	            mHelper.clearEncoded(mObjectId);
+	            if(mDeleteOnCommit)
+	            	mHelper.deleteObj(mObjectId);
+	            mHelper.getWritableDatabase().setTransactionSuccessful();
+        	} finally {
+        		mHelper.getWritableDatabase().endTransaction();
+        	}
         }
 
 		@Override
 		public void onEncoded(byte[] encoded) {
+			mEncoded = new SoftReference<byte[]>(encoded);
 			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
 			mJson = null;
 			mRaw = null;
@@ -414,7 +424,12 @@ public class MessagingManagerThread extends Thread {
 
 		@Override
 		public byte[] getEncoded() {
-			return mHelper.getEncoded(mObjectId);
+			byte[] cached = mEncoded != null ? mEncoded.get() : null;
+			if(cached != null)
+				return cached;
+			cached = mHelper.getEncoded(mObjectId);
+			mEncoded = new SoftReference<byte[]>(cached);
+			return cached;
 		}
 		void processRawData() {
             DbEntryHandler h = DbObjects.getMessageHandler(mJson);

@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 42;
+	public static final int VERSION = 43;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -312,7 +312,11 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP INDEX objects_by_sequence_id");
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
         }
-        
+        //secret to life, etc
+        if(oldVersion <= 42) {
+            db.execSQL("DROP INDEX objects_by_creator_id");
+            db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
+        }
         db.setVersion(VERSION);
     }
 
@@ -384,7 +388,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         );
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
-            createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
+            db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
 
@@ -676,12 +680,12 @@ public class DBHelper extends SQLiteOpenHelper {
     private long getFeedMaxSequenceId(long contactId, String feedName){
         Cursor c = getReadableDatabase().query(
             DbObject.TABLE,
-            new String[]{ "max(" + DbObject.SEQUENCE_ID + ")" },
+            new String[]{ DbObject.SEQUENCE_ID },
             DbObject.CONTACT_ID + "=? AND " + DbObject.FEED_NAME + "=?",
             new String[]{ String.valueOf(contactId), feedName },
             null,
             null,
-            null);
+            DbObject.SEQUENCE_ID + " DESC LIMIT 1");
         try {
             c.moveToFirst();
 	        if(!c.isAfterLast()){
