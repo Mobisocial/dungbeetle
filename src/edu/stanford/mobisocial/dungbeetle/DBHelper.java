@@ -817,21 +817,23 @@ public class DBHelper extends SQLiteOpenHelper {
             null);
     }
 
-    public Cursor queryUnsentObjects() {
+    public Cursor queryUnsentObjects(long max_sent) {
+    	//TODO: fix indexes again
         return getReadableDatabase().query(
             DbObject.TABLE,
             new String[]{ DbObject._ID,
             			  DbObject.ENCODED + " IS NOT NULL AS is_encoded",
             			  DbObject.TYPE,
+            			  DbObject.SENT,
             			  DbObject.JSON,
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
                         },
-            DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=?",
-            new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0) },
+            DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
+            new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},
             null,
             null,
-            "timestamp DESC");
+            DbObject._ID + " ASC");
     }
 
     public boolean queryAlreadyReceived(long hash) {
