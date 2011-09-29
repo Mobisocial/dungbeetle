@@ -35,7 +35,11 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 
-
+/**
+ * Pick contacts and/or groups for various purposes.
+ * TODO: Remove TabActivity in favor of fragments;
+ * Make activity a floating window.
+ */
 public class PickContactsActivity extends TabActivity {
 
 	private ContactListCursorAdapter mContacts;
@@ -62,15 +66,29 @@ public class PickContactsActivity extends TabActivity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.pick_contacts);
+
 		mIntent = getIntent();
 		mNfc = new Nfc(this);
 
-		/** Contacts **/
+		if (INTENT_ACTION_PICK_CONTACTS.equals(mIntent.getAction())) {
+		    Uri feedUri = mIntent.getParcelableExtra(INTENT_EXTRA_PARENT_FEED);
+		    selectFeedMembersUi(feedUri);
+		} else {
+		    selectRecipientsUi();
+		}
+    }
+
+	/**
+	 * Select from both groups and contacts.
+	 */
+	private void selectRecipientsUi() {
+	    setContentView(R.layout.pick_contacts_and_groups);
+
+        /** Contacts **/
         Cursor c = getContentResolver().query(Uri.parse(
                 DungBeetleContentProvider.CONTENT_URI + "/contacts"), null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
-		mContacts = new ContactListCursorAdapter(this, c);
-		ListView contactsV = (ListView) findViewById(R.id.contacts_list);
+        mContacts = new ContactListCursorAdapter(this, c);
+        ListView contactsV = (ListView) findViewById(R.id.contacts_list);
         contactsV.setAdapter(mContacts);
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -117,6 +135,58 @@ public class PickContactsActivity extends TabActivity {
             "Contacts",null).setContent(R.id.tab1);
         tabHost.addTab(spec);
         
+        tabHost.setCurrentTab(0);
+
+        Button okButton = (Button)findViewById(R.id.ok_button);
+        okButton.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    handleOk();
+                }
+            });
+
+        if (getIntent().hasExtra(INTENT_EXTRA_NFC_SHARE)) {
+            mNfc.share((NdefMessage)getIntent().getParcelableExtra(INTENT_EXTRA_NFC_SHARE));
+        }
+	}
+
+	/**
+	 * Select a subset of members from a feed.
+	 */
+	private void selectFeedMembersUi(Uri feedUri) {
+        setContentView(R.layout.pick_contacts);
+
+        /** Contacts **/
+        Cursor c;
+        if (feedUri != null) {
+            c = new DBHelper(this).queryFeedMembers(feedUri.getLastPathSegment());
+        } else {
+            c = getContentResolver().query(Uri.parse(
+                    DungBeetleContentProvider.CONTENT_URI + "/contacts"),
+                    null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
+        }
+        mContacts = new ContactListCursorAdapter(this, c);
+        ListView contactsV = (ListView) findViewById(R.id.contacts_list);
+        contactsV.setAdapter(mContacts);
+        contactsV.setOnItemClickListener(new OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.d(TAG, "WELL IT CLICKED");
+                Cursor cursor = (Cursor)mContacts.getItem(position);
+                Contact c = new Contact(cursor);
+                final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
+                if (checkBox.isChecked()) {
+                    checkBox.setChecked(false);
+                    mResultContacts.remove(position);
+                } else {
+                    checkBox.setChecked(true);
+                    mResultContacts.put(position, c);
+                }
+            }
+        });
+
+        TabHost tabHost = getTabHost();
+        TabHost.TabSpec spec = tabHost.newTabSpec("contacts").setIndicator(
+            "Contacts",null).setContent(R.id.tab1);
+        tabHost.addTab(spec);
         tabHost.setCurrentTab(0);
 
         Button okButton = (Button)findViewById(R.id.ok_button);

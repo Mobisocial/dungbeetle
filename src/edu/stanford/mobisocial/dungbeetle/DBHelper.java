@@ -928,6 +928,23 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] { feedName });
     }
 
+    public Cursor queryFeedMembers(String feedName) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
+            .append(" FROM " + Contact.TABLE + " C, ")
+            .append(GroupMember.TABLE + " M, ")
+            .append(Group.TABLE + " G")
+            .append(" WHERE ")
+            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+            .append(" AND ")
+            .append("G." + Group.FEED_NAME + " = ? AND " )
+            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { feedName });
+    }
+
     public Cursor queryGroups() {
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +

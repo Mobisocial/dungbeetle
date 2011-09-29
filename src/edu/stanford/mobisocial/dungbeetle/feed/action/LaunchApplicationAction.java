@@ -171,6 +171,9 @@ public class LaunchApplicationAction implements FeedAction {
             if (resultCode == Activity.RESULT_OK) {
                 Intent launch = new Intent(ACTION_MULTIPLAYER);
                 launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                long[] contactIds = data.getLongArrayExtra("contacts");
+                // TODO: Create a FixedMembershipObj or something, list
+                // public keys. Send to entire feed, create subfeed (I think).
                 Log.d(TAG, "THIS IS WHERE I WOULD LAUNCH THE APP WITH MEMBERS ASSIGNED");
             }
         }
