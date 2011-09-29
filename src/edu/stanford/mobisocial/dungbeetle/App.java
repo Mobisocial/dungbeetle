@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ImageCache;
 
@@ -23,6 +25,8 @@ public class App extends Application {
     private static App instance;
     private SecureRandom secureRandom;
     private Uri mFeedUri;
+
+    private String mLocalPersonId;
 
     public static App instance(){
         if(instance != null) return instance;
@@ -64,6 +68,23 @@ public class App extends Application {
             }
         }
 
+    }
+
+    public String getLocalPersonId() {
+        if (mLocalPersonId == null) {
+            initLocalUser();
+        }
+        return mLocalPersonId;
+    }
+
+    private void initLocalUser() {
+        DBHelper mHelper = DBHelper.getGlobal(this);
+        DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+
+        mLocalPersonId = mIdent.userPersonId();
+
+        mIdent.close();
+        mHelper.close();
     }
 
     public void setCurrentFeed(Uri feedUri) {
