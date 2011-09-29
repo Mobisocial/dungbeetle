@@ -58,6 +58,7 @@ public class PickContactsActivity extends TabActivity {
         "edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS";
 
     public static final String INTENT_EXTRA_NFC_SHARE = "mobisocial.dungbeetle.NFC_SHARE";
+    public static final String INTENT_EXTRA_PARENT_FEED = "feed";
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
