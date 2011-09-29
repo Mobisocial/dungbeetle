@@ -59,7 +59,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
-    public static final boolean DBG = false;
+    public static final boolean DBG = true;
     private Context mContext;
     private MessengerService mMessenger;
     private ObjectContentObserver mOco;
