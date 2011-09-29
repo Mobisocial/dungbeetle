@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 41;
+	public static final int VERSION = 42;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -308,6 +308,10 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.putNull(DbObject.ENCODED);
             db.update(DbObject.TABLE, cv, null, null);
         }
+        if(oldVersion <= 41) {
+            db.execSQL("DROP INDEX objects_by_sequence_id");
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
+        }
         
         db.setVersion(VERSION);
     }
@@ -378,7 +382,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.CHILD_FEED_NAME, "TEXT",
                         DbObject.RAW, "BLOB"
                         );
-            createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
