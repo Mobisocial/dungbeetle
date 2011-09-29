@@ -66,7 +66,6 @@ public class MessagingManagerThread extends Thread {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
     private Handler mMainThreadHandler;
-    private final Set<Long>mSentObjects = new HashSet<Long>();
     private final FeedModifiedObjHandler mFeedModifiedObjHandler;
     private final MessageDropHandler mMessageDropHandler;
 
@@ -290,17 +289,21 @@ public class MessagingManagerThread extends Thread {
         Set<Long> notSendingObjects = new HashSet<Long>();
         if (DBG) Log.i(TAG, "Running...");
         mMessenger.init();
+        long max_sent = -1;
         while (!interrupted()) {
             mOco.waitForChange();
             if (DBG) Log.i(TAG, "Noticed change...");
             mOco.clearChanged();
-            Cursor objs = mHelper.queryUnsentObjects();
+            Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {
-                if (DBG) Log.i(TAG, objs.getCount() + " objects...");
+            	int i = 0;
+                Log.i(TAG, objs.getCount() + " objects...");
                 if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
                     String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
+                    max_sent = objId.longValue();
+
                     Uri feedUri = Feed.uriForName(feedName);
                     JSONObject json = null;
                     try {
@@ -325,10 +328,6 @@ public class MessagingManagerThread extends Thread {
                                     mContext, feedUri, Contact.MY_ID, -1, type, json);
                         }
                     }
-                    if (mSentObjects.contains(objId)) {
-                        if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
-                        continue;
-                    }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
                     if (to != null) {
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
@@ -337,9 +336,6 @@ public class MessagingManagerThread extends Thread {
                             Log.w(TAG, "No addressees for direct message " + objId);
                             notSendingObjects.add(objId);
                         } else {
-                            synchronized (mSentObjects) {
-                                mSentObjects.add(objId);
-                            }
                             mMessenger.sendMessage(m);
                         }
                     } else {
@@ -349,9 +345,6 @@ public class MessagingManagerThread extends Thread {
                             Log.i(TAG, "No addresses for feed message " + objId);
                             notSendingObjects.add(objId);
                         } else {
-                            synchronized (mSentObjects) {
-                                mSentObjects.add(objId);
-                            }
                             mMessenger.sendMessage(m);
                         }
                     }
@@ -399,11 +392,6 @@ public class MessagingManagerThread extends Thread {
         	mHelper.getWritableDatabase().beginTransaction();
         	try {
 	            mHelper.markObjectAsSent(mObjectId);
-	            if (mSentObjects.contains(mObjectId)) {
-	                synchronized (mSentObjects) {
-	                    mSentObjects.remove(mObjectId);
-	                }
-	            }
 	            mHelper.clearEncoded(mObjectId);
 	            if(mDeleteOnCommit)
 	            	mHelper.deleteObj(mObjectId);
