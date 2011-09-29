@@ -82,7 +82,7 @@
     <setup />
 
   <property name="doclava.file" 
-    value="libs/doclava-1.0.4.jar"/>
+    value="tools/doclava-1.0.4.jar"/>
 
   <target name="doclava">
     <javadoc packagenames="com.google.*,edu.*,org.*"
