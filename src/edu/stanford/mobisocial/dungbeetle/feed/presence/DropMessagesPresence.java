@@ -80,9 +80,7 @@ public class DropMessagesPresence extends FeedPresence {
     public static class MessageDropHandler extends ObjHandler {
 
         public boolean preFiltersObj(Context context, Uri feedUri) {
-            boolean a = getInstance().getFeedsWithPresence().contains(feedUri);
-            Log.d(TAG, "CHECKING FILTER " + feedUri + ", " + a);
-            return a;
+            return getInstance().getFeedsWithPresence().contains(feedUri);
         }
 
         @Override
