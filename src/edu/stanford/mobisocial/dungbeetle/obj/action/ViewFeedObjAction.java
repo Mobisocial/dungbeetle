@@ -13,7 +13,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ViewFeedObjAction extends ObjAction {
     @Override
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         if (objData.has(DbObject.CHILD_FEED_NAME)) {
             Uri appFeed = Feed.uriForName(objData.optString(DbObject.CHILD_FEED_NAME));
             Intent viewFeed = new Intent(Intent.ACTION_VIEW);

@@ -25,8 +25,12 @@ import java.io.FileOutputStream;
 import android.net.Uri;
 import android.util.Log;
 
-public class ResharePhotoAction extends ObjAction {
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+/**
+ * Sends a picture object using the standard Android "SEND" intent.
+ *
+ */
+public class ExportPhotoAction extends ObjAction {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         String b64Bytes = objData.optString(PictureObj.DATA);
         if (raw == null) {
         	raw = Base64.decode(b64Bytes);

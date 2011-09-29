@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.stanford.mobisocial.dungbeetle.obj.action.ClipboardObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.SetProfileObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.ViewFeedObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.PlayAllAudioAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.ResharePhotoAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ExportPhotoAction;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ObjActions {
@@ -19,7 +20,8 @@ public class ObjActions {
         sActions.add(new OpenObjAction());
         sActions.add(new ViewFeedObjAction());
         sActions.add(new PlayAllAudioAction());
-        sActions.add(new ResharePhotoAction());
+        sActions.add(new EditPhotoAction());
+        sActions.add(new ExportPhotoAction());
     }
 
     public static List<ObjAction> getObjActions() {

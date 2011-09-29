@@ -14,7 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
- * Sends the phone's state to any allowable silkworm thread.
+ * Sends notice of received/sent phone calls.
  *
  */
 public class PhonePresence extends FeedPresence {

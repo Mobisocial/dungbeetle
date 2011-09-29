@@ -1,23 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
-import java.util.Set;
-
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
-import android.telephony.TelephonyManager;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
- * Sends the phone's state to any allowable silkworm thread.
+ * Sends messages rapidly. For testing, not annoying friends!
  *
  */
 public class SpamPresence extends FeedPresence {

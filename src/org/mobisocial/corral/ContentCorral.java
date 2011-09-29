@@ -1,5 +1,6 @@
 package org.mobisocial.corral;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
@@ -21,14 +23,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
 public class ContentCorral {
 	private static final int SERVER_PORT = 8224;
 	private static final String TAG = "ContentCorral";
+	private static final boolean DBG = true;
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
@@ -184,65 +194,194 @@ public class ContentCorral {
         	Uri targetUri = Uri.parse("http://mock" + URLDecoder.decode(request[1]));
         	if (targetUri.getQueryParameter("content") == null) {
         	    try {
-        	        mmOutStream.write(header("HTTP/1.1 404 NOT FOUND"));
-        	    } catch (IOException e) {}
-        	    return;
-        	}
-        	Uri img = Uri.parse(targetUri.getQueryParameter("content"));
+                    mmOutStream.write(header("HTTP/1.1 404 NOT FOUND"));
+                } catch (IOException e) {
+                }
+                return;
+            }
+            Uri requestPath = Uri.parse(targetUri.getQueryParameter("content"));
 
-        	InputStream in;
-        	try {
-        		//img = Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI, imgId);
-        		in = mContext.getContentResolver().openInputStream(img);
-        	} catch (Exception e) {
-        		Log.d(TAG, "Error opening file", e);
-        		return;
-        	}
-        	
-        	try {
-        		byte[] buffer = new byte[4096];
-        		int r = 0;
-        		
-        		// Gross way to get length. What's the right way??
-        		int size = 0;
-        		while ((r = in.read(buffer)) > 0) {
-        			size += r;
-        		}
-        		
-        		in = mContext.getContentResolver().openInputStream(img);
-        		String filename = "img.jpg";
-        		mmOutStream.write(header("HTTP/1.1 200 OK"));
-        		mmOutStream.write(header("Content-Type: " + mContext.getContentResolver().getType(img)));
-        		mmOutStream.write(header("Content-Length: " + size));
-        		//mmOutStream.write(header("Content-Disposition: attachment; filename=\""+filename+"\""));
-        		mmOutStream.write(header(""));
-        		
-	        	
-	        	while ((r = in.read(buffer)) > 0) {
-	        		mmOutStream.write(buffer, 0, r);
-	        	}
-	        	
-        	} catch (Exception e) {
-        		Log.e(TAG, "Error sending file", e);
-        	} finally {
-        		try {
-        			mmOutStream.close();
-        		} catch (IOException e) {}
-        	}
+            if ("content".equals(requestPath.getScheme())) {
+                Log.d(TAG, "Retrieving for " + requestPath.getAuthority());
+                if (DungBeetleContentProvider.AUTHORITY.equals(requestPath.getAuthority())) {
+                    if (requestPath.getQueryParameter("obj") != null) {
+                        int objIndex = Integer.parseInt(requestPath.getQueryParameter("obj"));
+                        sendObj(requestPath, objIndex);
+                    } else {
+                        sendObjs(requestPath);
+                    }
+                } else {
+                    sendContent(requestPath);
+                }
+            }
         }
-        
+
+        private void sendContent(Uri requestPath) {
+            InputStream in;
+            try {
+                // img = Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI,
+                // imgId);
+                in = mContext.getContentResolver().openInputStream(requestPath);
+            } catch (Exception e) {
+                Log.d(TAG, "Error opening file", e);
+                return;
+            }
+
+            try {
+                byte[] buffer = new byte[4096];
+                int r = 0;
+
+                // Gross way to get length. What's the right way??
+                int size = 0;
+                while ((r = in.read(buffer)) > 0) {
+                    size += r;
+                }
+
+                in = mContext.getContentResolver().openInputStream(requestPath);
+                String filename = "img.jpg";
+                mmOutStream.write(header("HTTP/1.1 200 OK"));
+                mmOutStream.write(header("Content-Type: "
+                        + mContext.getContentResolver().getType(requestPath)));
+                mmOutStream.write(header("Content-Length: " + size));
+                // mmOutStream.write(header("Content-Disposition: attachment; filename=\""+filename+"\""));
+                mmOutStream.write(header(""));
+
+                while ((r = in.read(buffer)) > 0) {
+                    mmOutStream.write(buffer, 0, r);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending file", e);
+            } finally {
+                try {
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+        private void sendObj(Uri requestPath, int objIndex) {
+            InputStream in;
+            byte[] bytes;
+            try {
+                Uri uri = Feed.uriForName(requestPath.getPath().substring(1));
+                String[] projection = new String[] {
+                        DbObject._ID, DbObject.JSON
+                };
+                String selection = DbObjects.getFeedObjectClause();
+                String[] selectionArgs = null;
+                String sortOrder = DbObject._ID + " ASC";
+                Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
+                        selectionArgs, sortOrder);
+
+                if (!cursor.moveToPosition(objIndex)) {
+                    Log.d(TAG, "No obj found for " + uri);
+                    return;
+                }
+                String jsonStr = cursor.getString(1);
+                bytes = jsonStr.getBytes();
+                in = new ByteArrayInputStream(bytes);
+            } catch (Exception e) {
+                Log.d(TAG, "Error opening obj", e);
+                return;
+            }
+
+            try {
+                byte[] buffer = new byte[4096];
+                int r = 0;
+
+                mmOutStream.write(header("HTTP/1.1 200 OK"));
+                mmOutStream.write(header("Content-Type: text/plain"));
+                mmOutStream.write(header("Content-Length: " + bytes.length));
+                // mmOutStream.write(header("Content-Disposition: attachment; filename=\""+filename+"\""));
+                mmOutStream.write(header(""));
+
+                while ((r = in.read(buffer)) > 0) {
+                    Log.d(TAG, "sending: " + new String(buffer));
+                    mmOutStream.write(buffer, 0, r);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending file", e);
+            } finally {
+                try {
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+        private void sendObjs(Uri requestPath) {
+            // TODO: hard-coded limit of 30 in place.
+            InputStream in;
+            byte[] bytes;
+            StringBuilder jsonArrayBuilder = new StringBuilder("[");
+            try {
+                Uri uri = Feed.uriForName(requestPath.getPath().substring(1));
+                String[] projection = new String[] {
+                        DbObject._ID, DbObject.JSON
+                };
+                String selection = DbObjects.getFeedObjectClause();
+                String[] selectionArgs = null;
+                String sortOrder = DbObject._ID + " ASC LIMIT 30";
+                Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
+                        selectionArgs, sortOrder);
+
+                if (!cursor.moveToFirst()) {
+                    Log.d(TAG, "No objs found for " + uri);
+                    return;
+                }
+                jsonArrayBuilder.append(cursor.getString(1));
+                while (!cursor.isLast()) {
+                    cursor.moveToNext();
+                    String jsonStr = cursor.getString(1);
+                    jsonArrayBuilder.append(",").append(jsonStr);
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Error opening obj", e);
+                return;
+            }
+
+            bytes = jsonArrayBuilder.append("]").toString().getBytes();
+            in = new ByteArrayInputStream(bytes);
+            try {
+                byte[] buffer = new byte[4096];
+                int r = 0;
+
+                mmOutStream.write(header("HTTP/1.1 200 OK"));
+                mmOutStream.write(header("Content-Type: text/plain"));
+                mmOutStream.write(header("Content-Length: " + bytes.length));
+                // mmOutStream.write(header("Content-Disposition: attachment; filename=\""+filename+"\""));
+                mmOutStream.write(header(""));
+
+                while ((r = in.read(buffer)) > 0) {
+                    Log.d(TAG, "sending: " + new String(buffer));
+                    mmOutStream.write(buffer, 0, r);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error sending file", e);
+            } finally {
+                try {
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
         public void cancel() {
-        	try {
-        		mmSocket.close();
-        	} catch (IOException e) {}
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+            }
         }
     }
-    
+
     private byte[] header(String str) {
-    	return (str + "\r\n").getBytes();
+        return (str + "\r\n").getBytes();
     }
-    
-	public static String getLocalIpAddress() {
+
+    public static String getLocalIpAddress() {
 	    try {
 	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
 	            NetworkInterface intf = en.nextElement();
@@ -296,6 +435,7 @@ public class ContentCorral {
 	        Uri remoteUri = uriForContent(
 	                obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
+            if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
     	    // Local
     	    String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;

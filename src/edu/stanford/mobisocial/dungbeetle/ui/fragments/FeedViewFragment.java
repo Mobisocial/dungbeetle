@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.MFRecord;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -71,7 +72,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public static final String ARG_FEED_URI = "feed_uri";
     public static final String ARG_DUAL_PANE = "dual_pane";
 
-    private boolean DBG = false;
+    private boolean DBG = true;
     private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
@@ -80,14 +81,12 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
-	
-	private String feedName;
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-        feedName = mFeedUri.getLastPathSegment();
+        if (DBG) Log.d(TAG, "Attaching fragment to feed " + mFeedUri);
     }
 
     @Override
@@ -300,7 +299,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         ft.addToBackStack(null);
 
         // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(type, json, raw);
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(mFeedUri, type, json, raw);
         newFragment.show(ft, "dialog");
     }
 
@@ -308,9 +307,10 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         String mType;
         JSONObject mObj;
 		byte[] mRaw;
+		Uri mFeedUri;
 
-        public static ObjMenuDialogFragment newInstance(String type, JSONObject obj, byte[] raw) {
-            return new ObjMenuDialogFragment(type, obj, raw);
+        public static ObjMenuDialogFragment newInstance(Uri feedUri, String type, JSONObject obj, byte[] raw) {
+            return new ObjMenuDialogFragment(feedUri, type, obj, raw);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -318,7 +318,8 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             
         }
 
-        private ObjMenuDialogFragment(String type, JSONObject obj, byte[] raw) {
+        private ObjMenuDialogFragment(Uri feedUri, String type, JSONObject obj, byte[] raw) {
+            mFeedUri = feedUri;
             mType = type;
             mObj = obj;
             mRaw = raw;
@@ -327,6 +328,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             if (savedInstanceState != null) {
+                mFeedUri = savedInstanceState.getParcelable("feedUri");
                 mType = savedInstanceState.getString("type");
                 try {
                     mObj = new JSONObject(savedInstanceState.getString("obj"));
@@ -349,7 +351,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            actions.get(which).actOn(getActivity(), dbType, mObj, mRaw);
+                            actions.get(which).actOn(getActivity(), mFeedUri,dbType, mObj, mRaw);
                         }
                     }).create();
         }
@@ -359,6 +361,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             super.onSaveInstanceState(bundle);
             bundle.putString("type", mType);
             bundle.putString("obj", mObj.toString());
+            bundle.putParcelable("feedUri", mFeedUri);
         }
     }
 

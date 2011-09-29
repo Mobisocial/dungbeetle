@@ -85,7 +85,6 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.cancel(NOTIFY_ID);
         mNotificationManager.notify(NOTIFY_ID, notification);
     }
 

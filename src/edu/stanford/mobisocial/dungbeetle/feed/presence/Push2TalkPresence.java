@@ -11,6 +11,10 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
+/**
+ * Automatically plays back audio clips as they are received.
+ *
+ */
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "push2talk";
     private boolean mEnabled = false;

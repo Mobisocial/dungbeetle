@@ -84,14 +84,15 @@ public class FeedActionsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem item;
+        int placement = 0;
         Log.d(TAG, "creating menu " + mDualPane);
-        if (mDualPane) {
-            item = menu.add(0, MENU_VIEW, 0, "View");
+        if (mDualPane || MusubiBaseActivity.isDeveloperModeEnabled(getActivity())) {
+            item = menu.add(0, MENU_VIEW, placement++, "View");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
             }
         }
-        item = menu.add(0, MENU_SHARE, 0, "Share");
+        item = menu.add(0, MENU_SHARE, placement++, "Share");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
         }

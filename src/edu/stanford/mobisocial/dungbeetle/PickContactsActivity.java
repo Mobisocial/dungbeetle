@@ -1,10 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import mobisocial.nfc.Nfc;
 import android.app.TabActivity;
