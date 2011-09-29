@@ -39,6 +39,8 @@ import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
  * Pick contacts and/or groups for various purposes.
  * TODO: Remove TabActivity in favor of fragments;
  * Make activity a floating window.
+ * 
+ * TODO: Picker should return personId, not id.
  */
 public class PickContactsActivity extends TabActivity {
 
@@ -155,8 +157,6 @@ public class PickContactsActivity extends TabActivity {
 	 * Select a subset of members from a feed.
 	 */
 	private void selectFeedMembersUi(final Uri feedUri, final int max) {
-        setContentView(R.layout.pick_contacts);
-
         /** Contacts **/
         Cursor c;
         if (feedUri != null) {
@@ -166,6 +166,26 @@ public class PickContactsActivity extends TabActivity {
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                     null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
         }
+
+        if (c.getCount() == 0) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+
+        if (c.getCount() == 1) {
+            c.moveToFirst();
+            Contact contact = new Contact(c);
+            Intent result = new Intent();
+            result.putExtra("contacts", new long[] { contact.id });
+            c.close();
+
+            setResult(RESULT_OK, result);
+            finish();
+            return;
+        }
+
+        setContentView(R.layout.pick_contacts);
         mContacts = new ContactListCursorAdapter(this, c);
         ListView contactsV = (ListView) findViewById(R.id.contacts_list);
         contactsV.setAdapter(mContacts);
