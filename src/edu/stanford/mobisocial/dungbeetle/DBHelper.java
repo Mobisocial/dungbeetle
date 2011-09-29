@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 41;
+	public static final int VERSION = 43;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -308,7 +308,15 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.putNull(DbObject.ENCODED);
             db.update(DbObject.TABLE, cv, null, null);
         }
-        
+        if(oldVersion <= 41) {
+            db.execSQL("DROP INDEX objects_by_sequence_id");
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
+        }
+        //secret to life, etc
+        if(oldVersion <= 42) {
+            db.execSQL("DROP INDEX objects_by_creator_id");
+            db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
+        }
         db.setVersion(VERSION);
     }
 
@@ -378,9 +386,9 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.CHILD_FEED_NAME, "TEXT",
                         DbObject.RAW, "BLOB"
                         );
-            createIndex(db, "INDEX", "objects_by_sequence_id", DbObject.TABLE, DbObject.SEQUENCE_ID);
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
-            createIndex(db, "INDEX", "objects_by_creator_id", DbObject.TABLE, DbObject.CONTACT_ID);
+            db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
 
@@ -625,7 +633,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return db.insertOrThrow(Subscriber.TABLE, null, cv);
+            return db.insertWithOnConflict(Subscriber.TABLE, null, cv, SQLiteDatabase.CONFLICT_IGNORE);
         }
         catch(Exception e){
             Log.e(TAG, e.getMessage(), e);
@@ -672,12 +680,12 @@ public class DBHelper extends SQLiteOpenHelper {
     private long getFeedMaxSequenceId(long contactId, String feedName){
         Cursor c = getReadableDatabase().query(
             DbObject.TABLE,
-            new String[]{ "max(" + DbObject.SEQUENCE_ID + ")" },
+            new String[]{ DbObject.SEQUENCE_ID },
             DbObject.CONTACT_ID + "=? AND " + DbObject.FEED_NAME + "=?",
             new String[]{ String.valueOf(contactId), feedName },
             null,
             null,
-            null);
+            DbObject.SEQUENCE_ID + " DESC LIMIT 1");
         try {
             c.moveToFirst();
 	        if(!c.isAfterLast()){
@@ -915,6 +923,23 @@ public class DBHelper extends SQLiteOpenHelper {
         String query = new StringBuilder()
             .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
             .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
+            .append(" FROM " + Contact.TABLE + " C, ")
+            .append(GroupMember.TABLE + " M, ")
+            .append(Group.TABLE + " G")
+            .append(" WHERE ")
+            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+            .append(" AND ")
+            .append("G." + Group.FEED_NAME + " = ? AND " )
+            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { feedName });
+    }
+
+    public Cursor queryFeedMembers(String feedName) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
             .append(" FROM " + Contact.TABLE + " C, ")
             .append(GroupMember.TABLE + " M, ")
             .append(Group.TABLE + " G")

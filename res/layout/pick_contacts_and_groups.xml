@@ -7,13 +7,14 @@
     android:layout_gravity="center_horizontal"
     >
 
-<LinearLayout
+
+  <LinearLayout
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       android:layout_weight="1"
       android:orientation="vertical"
       >
-	<TabHost android:id="@android:id/tabhost"
+    <TabHost android:id="@android:id/tabhost"
 	     android:layout_width="fill_parent"
 	     android:layout_height="fill_parent">
       <LinearLayout
@@ -29,7 +30,9 @@
 	    android:layout_width="fill_parent"
 	    android:layout_height="fill_parent"
 	    android:padding="5dp">
- 	<LinearLayout
+
+
+	  <LinearLayout
 	      android:layout_width="fill_parent"
 	      android:layout_height="fill_parent"
 	      android:orientation="vertical"
@@ -40,10 +43,23 @@
 		android:layout_height="fill_parent"
 		/>
 	  </LinearLayout>
-	  </FrameLayout>
+
+	  <LinearLayout
+	      android:layout_width="fill_parent"
+	      android:layout_height="fill_parent"
+	      android:orientation="vertical"
+	      android:id="@+id/tab2">
+      <ListView
+		android:id="@+id/groups_list"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		/>
 	  </LinearLayout>
-	  </TabHost>
-	  </LinearLayout>
+
+	</FrameLayout>
+      </LinearLayout>
+    </TabHost>
+  </LinearLayout>
 
 
   <LinearLayout

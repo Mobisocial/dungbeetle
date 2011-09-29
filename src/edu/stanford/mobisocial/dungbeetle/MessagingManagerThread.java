@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.SoftReference;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -316,12 +317,11 @@ public class MessagingManagerThread extends Thread {
                     }
                     if (mSentObjects.contains(objId)) {
                         if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
-                        objs.moveToNext();
                         continue;
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
                     if (to != null) {
-                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending direct message " + m);
                         if (m.toPublicKeys().isEmpty()) {
                             Log.w(TAG, "No addressees for direct message " + objId);
@@ -333,7 +333,7 @@ public class MessagingManagerThread extends Thread {
                             mMessenger.sendMessage(m);
                         }
                     } else {
-                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending feed object " + objId + ": " + m);
                         if(m.toPublicKeys().isEmpty()) {
                             Log.i(TAG, "No addresses for feed message " + objId);
@@ -365,6 +365,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private abstract class OutgoingMsg implements OutgoingMessage {
+    	protected SoftReference<byte[]> mEncoded;
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
@@ -384,19 +385,27 @@ public class MessagingManagerThread extends Thread {
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
         public void onCommitted() {
-            mHelper.markObjectAsSent(mObjectId);
-            if (mSentObjects.contains(mObjectId)) {
-                synchronized (mSentObjects) {
-                    mSentObjects.remove(mObjectId);
-                }
-            }
-            mHelper.clearEncoded(mObjectId);
-            if(mDeleteOnCommit)
-            	mHelper.deleteObj(mObjectId);
+        	mEncoded.clear();
+        	mHelper.getWritableDatabase().beginTransaction();
+        	try {
+	            mHelper.markObjectAsSent(mObjectId);
+	            if (mSentObjects.contains(mObjectId)) {
+	                synchronized (mSentObjects) {
+	                    mSentObjects.remove(mObjectId);
+	                }
+	            }
+	            mHelper.clearEncoded(mObjectId);
+	            if(mDeleteOnCommit)
+	            	mHelper.deleteObj(mObjectId);
+	            mHelper.getWritableDatabase().setTransactionSuccessful();
+        	} finally {
+        		mHelper.getWritableDatabase().endTransaction();
+        	}
         }
 
 		@Override
 		public void onEncoded(byte[] encoded) {
+			mEncoded = new SoftReference<byte[]>(encoded);
 			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
 			mJson = null;
 			mRaw = null;
@@ -405,11 +414,15 @@ public class MessagingManagerThread extends Thread {
 
 		@Override
 		public byte[] getEncoded() {
-			return mHelper.getEncoded(mObjectId);
+			byte[] cached = mEncoded != null ? mEncoded.get() : null;
+			if(cached != null)
+				return cached;
+			cached = mHelper.getEncoded(mObjectId);
+			mEncoded = new SoftReference<byte[]>(cached);
+			return cached;
 		}
 		void processRawData() {
             DbEntryHandler h = DbObjects.getMessageHandler(mJson);
-            byte[] extracted_data = null;
             if (h != null && h instanceof OutgoingMessageHandler) {
             	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
             	if(r != null) {
@@ -421,7 +434,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg {
-        public OutgoingFeedObjectMsg(Cursor objs){
+        public OutgoingFeedObjectMsg(Cursor objs, JSONObject json){
         	super(objs);
             String feedName = objs.getString(
                 objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
@@ -438,13 +451,7 @@ public class MessagingManagerThread extends Thread {
             mPubKeys = mIdent.publicKeysForContactIds(ids);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
-	            try {
-					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
+				mJson = json;
 	            // the processing code manipulates the json so this has to come first
 	            mBody = globalize(mJson.toString());
 	            processRawData();
@@ -453,7 +460,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg {
-        public OutgoingDirectObjectMsg(Cursor objs) {
+        public OutgoingDirectObjectMsg(Cursor objs, JSONObject json) {
             super(objs);
             String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
             try {
@@ -465,14 +472,9 @@ public class MessagingManagerThread extends Thread {
             }
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
-	            try {
-					mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
+				mJson = json;
 	            mBody = globalize(mJson.toString());
+	            // the processing code manipulates the json so this has to come first
 	            processRawData();
             }
         }

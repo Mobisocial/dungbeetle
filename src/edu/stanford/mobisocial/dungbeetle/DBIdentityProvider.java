@@ -1,27 +1,24 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.List;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-
+import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import android.database.Cursor;
-import android.util.Log;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class DBIdentityProvider implements IdentityProvider {
 
@@ -137,29 +134,15 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
 	public List<RSAPublicKey> publicKeysForContactIds(List<Long> ids){
-        Iterator<Long> iter = ids.iterator();
-        StringBuffer buffer = new StringBuffer();
-        while (iter.hasNext()) {
-            buffer.append(iter.next());
-            if(iter.hasNext()){
-                buffer.append(",");
-            }
-        }
-        String idList = buffer.toString();
-        Cursor c = mHelper.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
-                Contact._ID + " IN (" + idList + ")", null, null, null, null);
-        try {
-	        c.moveToFirst();
-	        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
-	        while (!c.isAfterLast()) {
-	            result.add(publicKeyFromString(c.getString(
-	                    c.getColumnIndexOrThrow(Contact.PUBLIC_KEY))));
-	            c.moveToNext();
-	        }
-	        return result;
-        } finally {
-        	c.close();
-        }
+        ArrayList<RSAPublicKey> result = new ArrayList<RSAPublicKey>(ids.size());
+        SQLiteStatement s = mHelper.getReadableDatabase().compileStatement("SELECT " + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE + " WHERE " + Contact._ID + " = ?");
+		for(Long id : ids) {
+			s.bindLong(1, id.longValue());
+			String pks = s.simpleQueryForString();
+			result.add(publicKeyFromString(pks));
+		}
+		s.close();
+		return result;
     }
 
     public String personIdForPublicKey(RSAPublicKey key){

@@ -6,7 +6,6 @@ import java.util.List;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,26 +13,28 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
-import edu.stanford.mobisocial.dungbeetle.model.AppState;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
-
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class LaunchApplicationAction implements FeedAction {
 
     public static final String TAG = "LaunchApplicationAction";
+    public static final String ACTION_MULTIPLAYER = "mobisocial.intent.action.MULTIPLAYER";
 
     @Override
     public String getName() {
@@ -42,50 +43,23 @@ public class LaunchApplicationAction implements FeedAction {
 
     @Override
     public void onClick(final Context context, final Uri feedUri) {
-        promptForApplication(context, new OnAppSelected() {
-            @Override
-            public void onAppSelected(String pkg, String arg, Intent localLaunch) {
-                // Start new application feed:
-                Group g = Group.create(context);
-                Uri appFeedUri = Feed.uriForName(g.feedName);
-                DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
-                Helpers.sendToFeed(context, anchor, appFeedUri);
-
-                // App reference in parent feed:
-
-                DBHelper mHelper = DBHelper.getGlobal(context);
-                DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
-
-                long creatorId = mIdent.userPublicKeyString().hashCode();
-                
-                DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
-                Helpers.sendToFeed(context, obj, feedUri);
-
-                mIdent.close();
-                mHelper.close();
-
-                
-                AppReferenceObj appRefObj = new AppReferenceObj();
-                appRefObj.activate(context, obj.getJson(), null);
-            }
-        });
+        promptForApplication(context, feedUri);
     }
 
-    public static void promptForApplication(final Context context, final OnAppSelected callback) {
+    private void promptForApplication(final Context context, final Uri feedUri) {
         final PackageManager mgr = context.getPackageManager();
         final List<ResolveInfo> availableAppInfos = new ArrayList<ResolveInfo>();
         Intent i = new Intent();
 
-        /** 2-player applications **/
+        /** multiplayer applications **/
         List<ResolveInfo> infos;
-        i.setAction("mobisocial.intent.action.TWO_PLAYER");
-        i.addCategory("android.intent.category.LAUNCHER");
-        i.addCategory("android.intent.category.DEFAULT");
+        i.setAction(ACTION_MULTIPLAYER);
+        i.addCategory(Intent.CATEGORY_LAUNCHER);
         infos = mgr.queryIntentActivities(i, 0);
         availableAppInfos.addAll(infos);
-        final int numTwoPlayer = infos.size();
+        final int numNPlayer = infos.size();
 
-        /** Negotiate p2p connectivity out-of-band **/
+        /** Negotiate p2p connectivity via receivers **/
         i = new Intent();
         i.setAction("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
@@ -109,10 +83,9 @@ public class LaunchApplicationAction implements FeedAction {
                 final ResolveInfo info = availableAppInfos.get(item);
                 Intent i = new Intent();
                 i.setClassName(info.activityInfo.packageName, info.activityInfo.name);
-                if (item < numTwoPlayer) {
-                    i.setAction("mobisocial.intent.action.TWO_PLAYER");
-                    i.addCategory("android.intent.category.LAUNCHER");
-                    callback.onAppSelected(info.activityInfo.packageName, null, i);
+                if (item < numNPlayer) {
+                    ((InstrumentedActivity)context).doActivityForResult(
+                            new MembersSelectedCallout(context, feedUri));
                     return;
                 } else {
                     i.setAction("android.intent.action.CONFIGURE");
@@ -120,7 +93,7 @@ public class LaunchApplicationAction implements FeedAction {
                 }
 
                 BroadcastReceiver rec = new BroadcastReceiver() {
-                    public void onReceive(Context c, Intent i){
+                    public void onReceive(Context c, Intent i) {
                         Intent launch = new Intent();
                         launch.setAction(Intent.ACTION_MAIN);
                         launch.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -130,10 +103,7 @@ public class LaunchApplicationAction implements FeedAction {
                         if (resolved.size() > 0) {
                             ActivityInfo info = resolved.get(0).activityInfo;
                             String arg = getResultData();
-                            launch.setComponent(new ComponentName(info.packageName, info.name));
-                            launch.putExtra("creator", true);
-                            launch.putExtra("android.intent.extra.APPLICATION_ARGUMENT", arg);
-                            callback.onAppSelected(info.packageName, arg, launch);
+                            launchAppWithArgument(context, feedUri, info.packageName, arg);
                         } else {
                             Toast.makeText(context, "No applications found.",
                                     Toast.LENGTH_SHORT).show();
@@ -143,6 +113,7 @@ public class LaunchApplicationAction implements FeedAction {
                 context.sendOrderedBroadcast(i, null, rec, null, Activity.RESULT_OK, null, null);
             }
         });
+
         AlertDialog alert = builder.create();
         if (context instanceof InstrumentedActivity) {
             ((InstrumentedActivity)context).showDialog(alert);
@@ -158,5 +129,76 @@ public class LaunchApplicationAction implements FeedAction {
     @Override
     public boolean isActive() {
         return true;
+    }
+
+    private void launchAppWithArgument(Context context, Uri feedUri, String pkg, String arg) {
+        // Start new application feed:
+        Group g = Group.create(context);
+        Uri appFeedUri = Feed.uriForName(g.feedName);
+        DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
+        Helpers.sendToFeed(context, anchor, appFeedUri);
+
+        // App reference in parent feed:
+        DBHelper mHelper = DBHelper.getGlobal(context);
+        DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+
+        long creatorId = mIdent.userPublicKeyString().hashCode();
+        DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
+        Helpers.sendToFeed(context, obj, feedUri);
+
+        mIdent.close();
+        mHelper.close();
+
+        new AppReferenceObj().activate(context, obj.getJson(), null);
+    }
+
+    /**
+     * Callout used to select members for a new mutliplayer session
+     * and then launch the application upon choosing them.
+     */
+    class MembersSelectedCallout implements ActivityCallout {
+        private final Context mContext;
+        private final Uri mFeedUri;
+
+        public MembersSelectedCallout(Context context, Uri feedUri) {
+            mFeedUri = feedUri;
+            mContext = context;
+        }
+
+        @Override
+        public Intent getStartIntent() {
+            Intent i = new Intent(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+            i.putExtra(PickContactsActivity.INTENT_EXTRA_PARENT_FEED, mFeedUri);
+            return i;
+        }
+
+        @Override
+        public void handleResult(int resultCode, Intent data) {
+            if (resultCode == Activity.RESULT_OK) {
+                Intent launch = new Intent(ACTION_MULTIPLAYER);
+                launch.addCategory(Intent.CATEGORY_LAUNCHER);
+                long[] contactIds = data.getLongArrayExtra("contacts");
+                List<String> participantIds = new ArrayList<String>(contactIds.length);
+                try {
+                    for (long id : contactIds) {
+                        Maybe<Contact> annoyingContact = Contact.forId(mContext, id);
+                        Contact contact = annoyingContact.get();
+                        participantIds.add(contact.personId);
+                    }
+                } catch (NoValError e) {
+                    Log.e(TAG, "please, Please get rid of the maybe.");
+                    Toast.makeText(mContext, "Error getting app membership.",
+                            Toast.LENGTH_SHORT).show();
+                }
+
+                // TODO: Create a FixedMembershipObj or something, list
+                // public keys. Send to entire feed, create subfeed (I think).
+                Log.d(TAG, "THIS IS WHERE I WOULD LAUNCH THE APP WITH MEMBERS ASSIGNED");
+                Log.d(TAG, "I WOULD SEND IT TO:");
+                for (String k : participantIds) {
+                    Log.d(TAG, "     " + k);
+                }
+            }
+        }
     }
 }
