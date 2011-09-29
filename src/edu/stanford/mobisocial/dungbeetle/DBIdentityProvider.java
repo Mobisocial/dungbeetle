@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDoneException;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -138,8 +139,12 @@ public class DBIdentityProvider implements IdentityProvider {
         SQLiteStatement s = mHelper.getReadableDatabase().compileStatement("SELECT " + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE + " WHERE " + Contact._ID + " = ?");
 		for(Long id : ids) {
 			s.bindLong(1, id.longValue());
-			String pks = s.simpleQueryForString();
-			result.add(publicKeyFromString(pks));
+			try {
+				String pks = s.simpleQueryForString();
+				result.add(publicKeyFromString(pks));
+			} catch (SQLiteDoneException e) {
+				Log.e(TAG, "Data consisteny error: unknown contact id " + id);
+			}
 		}
 		s.close();
 		return result;
