@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -19,12 +20,17 @@ import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
  */
 public class DropMessagesPresence extends FeedPresence {
     private boolean mDropMessages = false;
-    private SpamThread mSpamThread;
+    private static DropMessagesPresence sInstance;
 
     // TODO: proper singleton.
     public static DropMessagesPresence getInstance() {
-        return new DropMessagesPresence();
+        if (sInstance == null) {
+            sInstance = new DropMessagesPresence();
+        }
+        return sInstance;
     }
+
+    private DropMessagesPresence() {}
 
     @Override
     public String getName() {
@@ -37,14 +43,11 @@ public class DropMessagesPresence extends FeedPresence {
             if (getFeedsWithPresence().size() == 0) {
                 Toast.makeText(context, "No longer ignoring your friends.", Toast.LENGTH_SHORT).show();
                 mDropMessages = false;
-                mSpamThread = null;
             }
         } else {
             if (getFeedsWithPresence().size() > 0) {
                 Toast.makeText(context, "Now ignoring your friends.", Toast.LENGTH_SHORT).show();
                 mDropMessages = true;
-                mSpamThread = new SpamThread(context);
-                mSpamThread.start();
             }
         }
     }
@@ -77,7 +80,9 @@ public class DropMessagesPresence extends FeedPresence {
     public static class MessageDropHandler extends ObjHandler {
 
         public boolean preFiltersObj(Context context, Uri feedUri) {
-            return getInstance().getFeedsWithPresence().contains(feedUri);
+            boolean a = getInstance().getFeedsWithPresence().contains(feedUri);
+            Log.d(TAG, "CHECKING FILTER " + feedUri + ", " + a);
+            return a;
         }
 
         @Override
