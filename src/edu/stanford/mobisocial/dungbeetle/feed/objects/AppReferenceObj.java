@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -40,6 +41,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
  * A pointer to an application instance feed.
+ * {@see LaunchApplicationAction}
  */
 public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "AppReferenceObj";

@@ -239,7 +239,7 @@ public class LaunchApplicationAction implements FeedAction {
                 
                 participantIds[0] = App.instance().getLocalPersonId();
                 try {
-                    int i = 0;
+                    int i = 1;
                     for (long id : contactIds) {
                         Maybe<Contact> annoyingContact = Contact.forId(mContext, id);
                         Contact contact = annoyingContact.get();
