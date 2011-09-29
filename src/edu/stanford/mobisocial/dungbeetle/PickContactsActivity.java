@@ -63,6 +63,7 @@ public class PickContactsActivity extends TabActivity {
 
     public static final String INTENT_EXTRA_NFC_SHARE = "mobisocial.dungbeetle.NFC_SHARE";
     public static final String INTENT_EXTRA_PARENT_FEED = "feed";
+    public static final String INTENT_EXTRA_MEMBERS_MAX = "max";
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -72,7 +73,8 @@ public class PickContactsActivity extends TabActivity {
 
 		if (INTENT_ACTION_PICK_CONTACTS.equals(mIntent.getAction())) {
 		    Uri feedUri = mIntent.getParcelableExtra(INTENT_EXTRA_PARENT_FEED);
-		    selectFeedMembersUi(feedUri);
+		    int max = mIntent.getIntExtra(INTENT_EXTRA_MEMBERS_MAX, -1);
+		    selectFeedMembersUi(feedUri, max);
 		} else {
 		    selectRecipientsUi();
 		}
@@ -152,7 +154,7 @@ public class PickContactsActivity extends TabActivity {
 	/**
 	 * Select a subset of members from a feed.
 	 */
-	private void selectFeedMembersUi(Uri feedUri) {
+	private void selectFeedMembersUi(final Uri feedUri, final int max) {
         setContentView(R.layout.pick_contacts);
 
         /** Contacts **/
@@ -169,7 +171,6 @@ public class PickContactsActivity extends TabActivity {
         contactsV.setAdapter(mContacts);
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "WELL IT CLICKED");
                 Cursor cursor = (Cursor)mContacts.getItem(position);
                 Contact c = new Contact(cursor);
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
@@ -177,8 +178,13 @@ public class PickContactsActivity extends TabActivity {
                     checkBox.setChecked(false);
                     mResultContacts.remove(position);
                 } else {
-                    checkBox.setChecked(true);
-                    mResultContacts.put(position, c);
+                    if (max > 0 && mResultContacts.size() < max) {
+                        checkBox.setChecked(true);
+                        mResultContacts.put(position, c);
+                    } else {
+                        Toast.makeText(PickContactsActivity.this,
+                                "Max participants is " + max + ".", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
