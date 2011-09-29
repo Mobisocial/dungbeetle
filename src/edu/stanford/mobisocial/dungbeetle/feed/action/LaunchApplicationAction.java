@@ -22,11 +22,14 @@ import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class LaunchApplicationAction implements FeedAction {
 
@@ -81,7 +84,8 @@ public class LaunchApplicationAction implements FeedAction {
                 Intent i = new Intent();
                 i.setClassName(info.activityInfo.packageName, info.activityInfo.name);
                 if (item < numNPlayer) {
-                    ((InstrumentedActivity)context).doActivityForResult(new MembersSelectedCallout(feedUri));
+                    ((InstrumentedActivity)context).doActivityForResult(
+                            new MembersSelectedCallout(context, feedUri));
                     return;
                 } else {
                     i.setAction("android.intent.action.CONFIGURE");
@@ -153,10 +157,12 @@ public class LaunchApplicationAction implements FeedAction {
      * and then launch the application upon choosing them.
      */
     class MembersSelectedCallout implements ActivityCallout {
+        private final Context mContext;
         private final Uri mFeedUri;
 
-        public MembersSelectedCallout(Uri feedUri) {
+        public MembersSelectedCallout(Context context, Uri feedUri) {
             mFeedUri = feedUri;
+            mContext = context;
         }
 
         @Override
@@ -172,9 +178,26 @@ public class LaunchApplicationAction implements FeedAction {
                 Intent launch = new Intent(ACTION_MULTIPLAYER);
                 launch.addCategory(Intent.CATEGORY_LAUNCHER);
                 long[] contactIds = data.getLongArrayExtra("contacts");
+                List<String> participantIds = new ArrayList<String>(contactIds.length);
+                try {
+                    for (long id : contactIds) {
+                        Maybe<Contact> annoyingContact = Contact.forId(mContext, id);
+                        Contact contact = annoyingContact.get();
+                        participantIds.add(contact.personId);
+                    }
+                } catch (NoValError e) {
+                    Log.e(TAG, "please, Please get rid of the maybe.");
+                    Toast.makeText(mContext, "Error getting app membership.",
+                            Toast.LENGTH_SHORT).show();
+                }
+
                 // TODO: Create a FixedMembershipObj or something, list
                 // public keys. Send to entire feed, create subfeed (I think).
                 Log.d(TAG, "THIS IS WHERE I WOULD LAUNCH THE APP WITH MEMBERS ASSIGNED");
+                Log.d(TAG, "I WOULD SEND IT TO:");
+                for (String k : participantIds) {
+                    Log.d(TAG, "     " + k);
+                }
             }
         }
     }

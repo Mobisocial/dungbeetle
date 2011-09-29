@@ -423,7 +423,6 @@ public class MessagingManagerThread extends Thread {
 		}
 		void processRawData() {
             DbEntryHandler h = DbObjects.getMessageHandler(mJson);
-            byte[] extracted_data = null;
             if (h != null && h instanceof OutgoingMessageHandler) {
             	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
             	if(r != null) {
