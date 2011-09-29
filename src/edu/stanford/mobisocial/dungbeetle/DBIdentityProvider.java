@@ -1,29 +1,24 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.List;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteStatement;
-
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-
+import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import android.database.Cursor;
-import android.util.Log;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
+import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class DBIdentityProvider implements IdentityProvider {
 
