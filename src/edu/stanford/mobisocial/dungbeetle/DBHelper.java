@@ -309,12 +309,12 @@ public class DBHelper extends SQLiteOpenHelper {
             db.update(DbObject.TABLE, cv, null, null);
         }
         if(oldVersion <= 41) {
-            db.execSQL("DROP INDEX objects_by_sequence_id");
+            //db.execSQL("DROP INDEX objects_by_sequence_id");
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
         }
         //secret to life, etc
         if(oldVersion <= 42) {
-            db.execSQL("DROP INDEX objects_by_creator_id");
+            //db.execSQL("DROP INDEX objects_by_creator_id");
             db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
         }
         db.setVersion(VERSION);
