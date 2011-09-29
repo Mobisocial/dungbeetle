@@ -83,7 +83,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 	    ContentResolver resolver = getContext().getContentResolver();
-        Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
+        if(DBG) Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
 
         final String appId = getCallingActivityId();
         if (appId == null) {
