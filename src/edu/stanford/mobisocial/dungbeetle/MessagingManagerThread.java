@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.MDRecord;
 
 import android.content.Context;
 import android.database.ContentObserver;
@@ -39,6 +40,8 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence.MessageDropHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -64,6 +67,7 @@ public class MessagingManagerThread extends Thread {
     private Handler mMainThreadHandler;
     private final Set<Long>mSentObjects = new HashSet<Long>();
     private final FeedModifiedObjHandler mFeedModifiedObjHandler;
+    private final MessageDropHandler mMessageDropHandler;
 
     public MessagingManagerThread(final Context context){
         mContext = context;
@@ -71,6 +75,7 @@ public class MessagingManagerThread extends Thread {
         mHelper = DBHelper.getGlobal(context);
         mIdent = new DBIdentityProvider(mHelper);
         mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
+        mMessageDropHandler = new MessageDropHandler();
 
         ConnectionStatus status = new ConnectionStatus(){
                 public boolean isConnected(){
@@ -131,6 +136,11 @@ public class MessagingManagerThread extends Thread {
             JSONObject in_obj = new JSONObject(contents);
             String feedName = in_obj.getString("feedName");
             String type = in_obj.optString(DbObjects.TYPE);
+            Uri feedPreUri = Feed.uriForName(feedName);
+            if (mMessageDropHandler.preFiltersObj(mContext, feedPreUri)) {
+                return;
+            }
+
             if (mHelper.queryAlreadyReceived(hash)) {
                 if (DBG) Log.i(TAG, "Message already received. " + contents);
                 return;
