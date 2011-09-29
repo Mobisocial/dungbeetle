@@ -17,6 +17,7 @@ public class Presence {
             sFeedPresence.add(Push2TalkPresence.getInstance());
             sFeedPresence.add(TVModePresence.getInstance());
             sFeedPresence.add(new SpamPresence());
+            sFeedPresence.add(DropMessagesPresence.getInstance());
     	}
     }
 
