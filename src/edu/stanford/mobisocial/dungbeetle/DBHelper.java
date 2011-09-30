@@ -36,13 +36,12 @@ import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
-import android.graphics.Picture;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
@@ -56,13 +55,10 @@ import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-
-import android.net.Uri;
 
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
@@ -542,7 +538,7 @@ public class DBHelper extends SQLiteOpenHelper {
     
 
     long addToFeed(String appId, String feedName, String type, JSONObject json) {
-        try{
+        try {
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
             json.put(DbObjects.TYPE, type);
@@ -566,8 +562,9 @@ public class DBHelper extends SQLiteOpenHelper {
             	throw new RuntimeException("Messasge size is too large for sending");
             Long objId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
+            DbEntryHandler typeInfo = DbObjects.getObjHandler(json);
             FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
-            mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), objId);
+            mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), typeInfo, json, objId);
             
             return nextSeqId;
         }
@@ -618,6 +615,22 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+    /**
+     * Adds a parent/child relation to the database given a child obj.
+     * The obj must have a {@link DbObjects#TARGET_HASH} field.
+     */
+    public void addObjRelation(JSONObject obj) {
+        if (obj == null) {
+            throw new NullPointerException();
+        }
+        if (!obj.has(DbObjects.TARGET_HASH)) {
+            throw new IllegalArgumentException("Requires an obj with a target_hash field.");
+        }
+
+        ContentValues cv = new ContentValues();
+        cv.put(DbRelation.OBJECT_HASH_A, obj.optString(DbObjects.TARGET_HASH));
+        getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
+    }
 
     long insertContact(ContentValues cv) {
         return insertContact(getWritableDatabase(), cv);

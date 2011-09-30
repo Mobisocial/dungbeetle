@@ -2,12 +2,16 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import java.util.Date;
 
-import android.content.ContentValues;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 
 /**
@@ -21,7 +25,13 @@ public class FeedModifiedObjHandler extends DatabaseObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, long objId) {
+    public void handleObj(Context context, Uri feedUri, DbEntryHandler typeInfo,
+            JSONObject json, long objId) {
+
+        if (!(typeInfo instanceof FeedRenderer)) {
+            return;
+        }
+
         String feedName = feedUri.getLastPathSegment();
         long timestamp = new Date().getTime();
 
