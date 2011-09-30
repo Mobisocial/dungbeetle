@@ -137,25 +137,20 @@ public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, Unproc
 	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
 	        Log.d(TAG, "Corraling video");
 	        if (ContentCorral.fileAvailableLocally(context, content)) {
-	            Intent i = new Intent(Intent.ACTION_VIEW);
-	            if (!(context instanceof Activity)) {
-	                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	            }
 	            try {
-                    i.setDataAndType(ContentCorral.fetchContent(context, content), "video/*");
+	                Uri contentUri = ContentCorral.fetchContent(context, content);
+	                startViewer(context, contentUri);
                 } catch (IOException e) {
-                    Toast.makeText(context, "Error playing video.", Toast.LENGTH_SHORT).show();
                     Log.e(TAG, "The corral tricked me", e);
                 }
-	            context.startActivity(i);
 	        } else {
-	            Toast.makeText(context, "Trying to pull video...", Toast.LENGTH_SHORT).show();
 	            Log.e(TAG, "trying to pull video");
 	            new Thread() {
 	                @Override
 	                public void run() {
 	                    try {
-                            ContentCorral.fetchContent(context, content);
+                            Uri contentUri = ContentCorral.fetchContent(context, content);
+                            startViewer(context, contentUri);
                         } catch (IOException e) {
                             Log.e(TAG, "Failed to corral", e);
                         }
@@ -164,6 +159,16 @@ public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, Unproc
 	        }
 	    }
     }
+
+	private void startViewer(Context context, Uri contentUri) {
+	    Log.d(TAG, "Launching viewer for " + contentUri);
+	    Intent i = new Intent(Intent.ACTION_VIEW);
+        if (!(context instanceof Activity)) {
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        i.setDataAndType(contentUri, "video/*");
+        context.startActivity(i);
+	}
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
@@ -201,5 +206,14 @@ public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, Unproc
         byte[] bytes = Base64.decode(json.optString(DATA));
         json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, bytes);
+	}
+
+	private final void toast(final Context context, final String text) {
+	    ((Activity)context).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, text, Toast.LENGTH_SHORT);
+            }
+        });
 	}
 }

@@ -48,6 +48,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -70,7 +71,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 43;
+	public static final int VERSION = 44;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -319,6 +320,10 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP INDEX objects_by_creator_id");
             db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
         }
+
+        if (oldVersion <= 43) {
+            createRelationBaseTable(db);
+        }
         db.setVersion(VERSION);
     }
 
@@ -437,6 +442,7 @@ public class DBHelper extends SQLiteOpenHelper {
             createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
                         GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
 
+            createRelationBaseTable(db);
 
             generateAndStorePersonalInfo(db);
 
@@ -445,6 +451,14 @@ public class DBHelper extends SQLiteOpenHelper {
             db.endTransaction();
             this.onOpen(db);
         //}
+	}
+
+	private final void createRelationBaseTable(SQLiteDatabase db) {
+	    createTable(db, DbRelation.TABLE, null,
+                DbRelation._ID, "INTEGER PRIMARY KEY",
+                DbRelation.OBJECT_HASH_A, "INTEGER",
+                DbRelation.OBJECT_HASH_B, "INTEGER"
+                );
 	}
 
     private void generateAndStorePersonalInfo(SQLiteDatabase db){
