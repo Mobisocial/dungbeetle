@@ -58,7 +58,7 @@ public class PhotosPresence extends FeedPresence {
             if (mSharePhotos) {
                 try {
                     Uri photo = getLatestCameraPhoto();
-                    if (photo != null && photo.equals(mLastShared)) {
+                    if (photo == null || photo.equals(mLastShared)) {
                         return;
                     }
                     mLastShared = photo;

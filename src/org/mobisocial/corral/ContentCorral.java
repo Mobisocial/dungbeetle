@@ -32,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
@@ -42,7 +43,7 @@ public class ContentCorral {
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
-	public static final boolean ENABLE_CONTENT_CORRAL = false;
+	public static final boolean CONTENT_CORRAL_ENABLED = true;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
@@ -419,7 +420,7 @@ public class ContentCorral {
 	// TODO: fetchTempFile(Context context, User user, JSONObject obj);
 	// Look up content based on user attributes (wifi, bt, proxy) and
 	// obj properties (uri, capability, signature).
-	public static Uri fetchContent(Context context, JSONObject obj, String suffix) throws IOException {
+	public static Uri fetchContent(Context context, JSONObject obj) throws IOException {
 	    if (!(obj.has(PictureObj.LOCAL_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
 	    }
@@ -438,6 +439,7 @@ public class ContentCorral {
             if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
     	    // Local
+            String suffix = suffixFor(obj);
     	    String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
     	    File tmp = new File(context.getExternalCacheDir(), fname);
     	    if (!tmp.exists()) {
@@ -465,7 +467,15 @@ public class ContentCorral {
 	    }
 	}
 
-	public static boolean fileAvailableLocally(Context context, JSONObject obj, String suffix) {
+	private static String suffixFor(JSONObject obj) {
+        if (PictureObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
+            return "jpg";
+        } else if (VideoObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
+            return "3gp";
+        }
+        return "tmp";
+    }
+    public static boolean fileAvailableLocally(Context context, JSONObject obj) {
 	    try {
     	    String localIp = getLocalIpAddress();
             String ip = obj.getString(PictureObj.LOCAL_IP);
@@ -478,6 +488,7 @@ public class ContentCorral {
                     obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
 
             // Local
+            String suffix = suffixFor(obj);
             String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
             File tmp = new File(context.getExternalCacheDir(), fname);
             return tmp.exists();

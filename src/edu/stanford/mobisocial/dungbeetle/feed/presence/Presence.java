@@ -11,6 +11,7 @@ public class Presence {
     static {
         sFeedPresence.add(new PhotosPresence());
     	if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+    	    sFeedPresence.add(new VideosPresence());
             sFeedPresence.add(new MusicPresence());
             sFeedPresence.add(new LocationPresence());
             sFeedPresence.add(new PhonePresence());
