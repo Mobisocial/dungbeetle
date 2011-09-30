@@ -20,6 +20,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class DBIdentityProvider implements IdentityProvider {
 
@@ -79,7 +80,7 @@ public class DBIdentityProvider implements IdentityProvider {
 		JSONObject obj = new JSONObject();
         try {
             obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
-            obj.put("picture", Base64.encodeToString(c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)), false));
+            obj.put("picture", FastBase64.encodeToString(c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE))));
             
         } catch(JSONException e) { }
         c.close();
@@ -167,12 +168,12 @@ public class DBIdentityProvider implements IdentityProvider {
 
 
     public static String publicKeyToString(PublicKey pubkey){
-        return Base64.encodeToString(pubkey.getEncoded(), false);
+        return FastBase64.encodeToString(pubkey.getEncoded());
     }
 
     public static RSAPublicKey publicKeyFromString(String str){
         try{
-            byte[] pubKeyBytes = Base64.decode(str);
+            byte[] pubKeyBytes = FastBase64.decode(str);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
             return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
@@ -184,7 +185,7 @@ public class DBIdentityProvider implements IdentityProvider {
 
     public static RSAPrivateKey privateKeyFromString(String str){
         try{
-            byte[] privKeyBytes = Base64.decode(str);
+            byte[] privKeyBytes = FastBase64.decode(str);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
             return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);

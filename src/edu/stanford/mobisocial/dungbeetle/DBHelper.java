@@ -55,6 +55,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -452,8 +453,8 @@ public class DBHelper extends SQLiteOpenHelper {
         KeyPair keypair = DBIdentityProvider.generateKeyPair();
         PrivateKey privateKey = keypair.getPrivate();
         PublicKey publicKey = keypair.getPublic();
-        String pubKeyStr = Base64.encodeToString(publicKey.getEncoded(), false);
-        String privKeyStr = Base64.encodeToString(privateKey.getEncoded(), false);
+        String pubKeyStr = FastBase64.encodeToString(publicKey.getEncoded());
+        String privKeyStr = FastBase64.encodeToString(privateKey.getEncoded());
         ContentValues cv = new ContentValues();
         cv.put(MyInfo.PUBLIC_KEY, pubKeyStr);
         cv.put(MyInfo.PRIVATE_KEY, privKeyStr);

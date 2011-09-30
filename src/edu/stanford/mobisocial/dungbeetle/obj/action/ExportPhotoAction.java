@@ -11,6 +11,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 import android.graphics.Bitmap;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -33,7 +34,7 @@ public class ExportPhotoAction extends ObjAction {
     public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
         String b64Bytes = objData.optString(PictureObj.DATA);
         if (raw == null) {
-        	raw = Base64.decode(b64Bytes);
+        	raw = FastBase64.decode(b64Bytes);
         }
         OutputStream outStream = null;
         File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");

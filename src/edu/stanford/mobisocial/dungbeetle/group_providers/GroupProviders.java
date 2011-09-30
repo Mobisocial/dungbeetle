@@ -34,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
@@ -127,7 +128,7 @@ public class GroupProviders {
             builder.appendPath("index.php");
             builder.appendQueryParameter("session", feedName);
             builder.appendQueryParameter("groupName", groupName);
-            builder.appendQueryParameter("key", Base64.encodeToString(Util.newAESKey(), false));
+            builder.appendQueryParameter("key", FastBase64.encodeToString(Util.newAESKey()));
             Uri uri = builder.build();
             return uri;
         }
@@ -140,7 +141,7 @@ public class GroupProviders {
                            final Context context, int version, boolean updateProfile){
 
             try{
-                final byte[] key = Base64.decode(uriIn.getQueryParameter("key"));
+                final byte[] key = FastBase64.decode(uriIn.getQueryParameter("key"));
 
                 // Build uri we will send to server
                 Uri.Builder b = new Uri.Builder();
@@ -231,7 +232,7 @@ public class GroupProviders {
 	                                            JSONObject profileJSON = new JSONObject(profile);
 	                                            values.put(Contact.NAME, profileJSON.getString("name"));
 	                                            if (DBG) Log.w(TAG, "image b64: " + profileJSON.getString("picture"));
-	                                            values.put(Contact.PICTURE, Base64.decode(profileJSON.getString("picture")));
+	                                            values.put(Contact.PICTURE, FastBase64.decode(profileJSON.getString("picture")));
 	                                        }
 	                                        catch(Exception e){
 	                                        }

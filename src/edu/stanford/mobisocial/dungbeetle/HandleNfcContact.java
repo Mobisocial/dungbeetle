@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -46,7 +47,7 @@ public class HandleNfcContact extends Activity {
             try{
                 JSONObject o = new JSONObject(mProfile);
                 mName = o.getString("name");
-                //mPicture = Base64.decode(o.getString("picture"));
+                //mPicture = FastBase64.decode(o.getString("picture"));
             }
             catch(Exception e){
             }
@@ -62,7 +63,7 @@ public class HandleNfcContact extends Activity {
 
                         try {
                             JSONObject profile = new JSONObject(ident.userProfile());
-                            byte[] data = Base64.decode(profile.getString("picture"));
+                            byte[] data = FastBase64.decode(profile.getString("picture"));
                             
                             Helpers.updatePicture(HandleNfcContact.this, data);
                         } catch(Exception e) { }

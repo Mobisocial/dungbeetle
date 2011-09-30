@@ -19,6 +19,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,7 +35,7 @@ public class ProfilePictureObj implements DbEntryHandler, NoNotify {
     }
 
     public static JSONObject json(byte[] data){
-        String encoded = Base64.encodeToString(data, Base64.DEFAULT);
+        String encoded = FastBase64.encodeToString(data);
         JSONObject obj = new JSONObject();
         try{
             obj.put("data", encoded);
@@ -48,7 +49,7 @@ public class ProfilePictureObj implements DbEntryHandler, NoNotify {
 	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
-		byte[] data = Base64.decode(obj.optString(DATA), Base64.DEFAULT);
+		byte[] data = FastBase64.decode(obj.optString(DATA));
 		String id = Long.toString(from.id);
 		ContentValues values = new ContentValues();
 		values.put(Contact.PICTURE, data);
