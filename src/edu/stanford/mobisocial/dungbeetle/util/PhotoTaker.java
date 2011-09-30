@@ -79,7 +79,7 @@ public class PhotoTaker implements ActivityCallout {
 			
 			options.inJustDecodeBounds = false;
 			options.inSampleSize = scale;
-			Bitmap sourceBitmap = sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
+			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();

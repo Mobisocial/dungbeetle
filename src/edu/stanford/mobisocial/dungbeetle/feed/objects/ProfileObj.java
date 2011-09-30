@@ -13,7 +13,7 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
-public class ProfileObj implements DbEntryHandler {
+public class ProfileObj extends DbEntryHandler {
 	public static final String TAG = "ProfileObj";
 
     public static final String TYPE = "profile";

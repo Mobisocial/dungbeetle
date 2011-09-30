@@ -14,9 +14,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioRecord;
-import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.os.Environment;
 import android.util.Base64;
@@ -37,7 +35,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
  * A short audio clip. "Version 0" uses a sample rate of 8000, mono channel, and
  * 16bit pcm recording.
  */
-public class VoiceObj implements DbEntryHandler, FeedRenderer, Activator, OutgoingMessageHandler {
+public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator, OutgoingMessageHandler {
 	public static final String TAG = "VoiceObj";
 
     public static final String TYPE = "voice";

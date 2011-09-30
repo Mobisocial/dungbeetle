@@ -15,7 +15,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class PhoneStateObj implements DbEntryHandler, FeedRenderer {
+public class PhoneStateObj extends DbEntryHandler implements FeedRenderer {
 
     public static final String EXTRA_STATE_UNKNOWN = "UNKNOWN";
     public static final String TYPE = "phone";

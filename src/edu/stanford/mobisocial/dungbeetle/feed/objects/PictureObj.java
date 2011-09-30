@@ -20,7 +20,6 @@ import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -29,17 +28,17 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+public class PictureObj extends DbEntryHandler
+        implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
     public static final String DATA = "data";
 
+    public static final String MIME_TYPE = "mimeType";
     public static final String LOCAL_URI = "localUri";
     // TODO: This is a hack, with many ways to fix. For example,
     // it can be used with its timestamp and an instance variable to
@@ -129,6 +128,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
                     // TODO: Security breach hack?
                     base.put(LOCAL_IP, localIp);
                     base.put(LOCAL_URI, imageUri.toString());
+                    base.put(MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }

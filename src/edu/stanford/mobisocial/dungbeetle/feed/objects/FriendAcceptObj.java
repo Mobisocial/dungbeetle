@@ -12,7 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 
-public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandler {
+public class FriendAcceptObj extends DbEntryHandler implements UnprocessedMessageHandler {
     public static final String TYPE = "friend_accept";
     public static final String URI = "uri";
 

@@ -19,7 +19,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 /**
  * Metadata marking the beginning of a feed.
  */
-public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
+public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler {
     private static final String TAG = "musubi";
     public static final String TYPE = "feed-anchor";
     public static final String PARENT_FEED_NAME = "parent";

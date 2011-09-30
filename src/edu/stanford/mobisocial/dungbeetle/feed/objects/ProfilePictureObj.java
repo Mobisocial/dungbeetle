@@ -24,7 +24,7 @@ import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProfilePictureObj implements DbEntryHandler, NoNotify {
+public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 	public static final String TAG = "ProfilePictureObj";
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";

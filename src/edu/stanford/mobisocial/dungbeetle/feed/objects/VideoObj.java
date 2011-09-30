@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -31,12 +32,14 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
-public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+public class VideoObj extends DbEntryHandler
+        implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "VideoObj";
 
     public static final String TYPE = "video";
     public static final String DATA = "data";
 
+    public static final String MIME_TYPE = "mimeType";
     public static final String LOCAL_URI = "localUri";
     // TODO: This is a hack, with many ways to fix. For example,
     // it can be used with its timestamp and an instance variable to
@@ -72,22 +75,28 @@ public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, Unproc
         ContentResolver cr = context.getContentResolver();
         BitmapFactory.Options options=new BitmapFactory.Options();
         options.inSampleSize = 1;
-        // TODO: This is the wrong thumbnail.
         long videoId = Long.parseLong(videoUri.getLastPathSegment());
         Bitmap curThumb = MediaStore.Video.Thumbnails.getThumbnail(
-                cr, videoId, MediaStore.Video.Thumbnails.MICRO_KIND, options);
-
+                cr, videoId, MediaStore.Video.Thumbnails.MINI_KIND, options);
+        int targetSize = 200;
+        int width = curThumb.getWidth();
+        int height = curThumb.getHeight();
+        int cropSize = Math.min(width, height);
+        float scaleSize = ((float) targetSize) / cropSize;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleSize, scaleSize);
+        curThumb = Bitmap.createBitmap(
+                curThumb, 0, 0,width, height, matrix, true);
         JSONObject base = new JSONObject();
-        if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-            String localIp = ContentCorral.getLocalIpAddress();
-            if (localIp != null) {
-                try {
-                    // TODO: Security breach hack?
-                    base.put(LOCAL_IP, localIp);
-                    base.put(LOCAL_URI, videoUri.toString());
-                } catch (JSONException e) {
-                    Log.e(TAG, "impossible json error possible!");
-                }
+        String localIp = ContentCorral.getLocalIpAddress();
+        if (localIp != null) {
+            try {
+                // TODO: Security breach hack?
+                base.put(LOCAL_IP, localIp);
+                base.put(LOCAL_URI, videoUri.toString());
+                base.put(MIME_TYPE, cr.getType(videoUri));
+            } catch (JSONException e) {
+                Log.e(TAG, "impossible json error possible!");
             }
         }
 

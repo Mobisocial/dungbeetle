@@ -35,7 +35,6 @@ import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
@@ -247,21 +246,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                 }
                             });
 
-                        final ActionItem join_activity = new ActionItem();
-                        join_activity.setTitle("Join Activity");
-                        join_activity.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    ActivityPullObj.activityForContact(ContactsActivity.this, c);
-                                }
-                            });
-                    
                         QuickAction qa = new QuickAction(v);
-
                         //qa.addActionItem(send_im);
                         //qa.addActionItem(start_app);
                         qa.addActionItem(manage_groups);
-                        //qa.addActionItem(join_activity);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();

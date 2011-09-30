@@ -8,7 +8,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class SubscribeReqObj implements DbEntryHandler {
+public class SubscribeReqObj extends DbEntryHandler {
 
     public static final String TYPE = "subscribe_req";
     public static final String SUBSCRIBE_TO_FEED = "subscribeToFeed";

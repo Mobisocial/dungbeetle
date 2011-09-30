@@ -43,7 +43,8 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * A pointer to an application instance feed.
  * {@see LaunchApplicationAction}
  */
-public class AppReferenceObj implements DbEntryHandler, FeedRenderer, Activator, FeedMessageHandler {
+public class AppReferenceObj extends DbEntryHandler
+        implements FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "AppReferenceObj";
 	private static final boolean DBG = true;
 

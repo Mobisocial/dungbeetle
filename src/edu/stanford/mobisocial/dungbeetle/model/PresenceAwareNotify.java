@@ -32,7 +32,7 @@ public class PresenceAwareNotify {
     	Log.w(TAG, "notify me");
     	boolean doVibrate = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
-            doVibrate = false;
+            return;
         }
                 
         if (Push2TalkPresence.getInstance().isOnCall()) {
