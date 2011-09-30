@@ -109,7 +109,6 @@ public class MessagingManagerThread extends Thread {
 					p.println(e.getMessage());
 					e.printStackTrace(p);
 				}
-				
                 Log.e(TAG, "Connection Status: " + msg + "\n" + err.toString());
 			}
 		});
@@ -195,7 +194,7 @@ public class MessagingManagerThread extends Thread {
                         DbObjects.forType(type), obj, raw);
 
                 // Per-object handlers:
-                if (objHandler != null && objHandler instanceof FeedMessageHandler) {
+                if (objHandler instanceof FeedMessageHandler) {
                     ((FeedMessageHandler) objHandler).handleFeedMessage(
                             mContext, feedUri, contactId, sequenceID, type, obj);
                 }
