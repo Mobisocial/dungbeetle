@@ -147,7 +147,7 @@ public class Util {
 
     public static String encryptAES(String plainText, byte[] key){
         try{
-            return Base64.encodeToString(encryptAES(plainText.getBytes("UTF8"), key), false);
+            return FastBase64.encodeToString(encryptAES(plainText.getBytes("UTF8"), key));
         }
         catch(UnsupportedEncodingException e){
             throw new RuntimeException(e);
@@ -156,7 +156,7 @@ public class Util {
 
     public static String decryptAES(String b64CipherText, byte[] key){
         try{
-            return new String(decryptAES(Base64.decode(b64CipherText), key), "UTF8");
+            return new String(decryptAES(FastBase64.decode(b64CipherText), key), "UTF8");
         }
         catch(UnsupportedEncodingException e){
             throw new RuntimeException(e);

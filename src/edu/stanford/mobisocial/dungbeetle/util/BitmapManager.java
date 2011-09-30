@@ -135,7 +135,7 @@ public class BitmapManager{
 			return bm;
 		}
 		else{
-            byte[] bytes = Base64.decode(b64Bytes);
+            byte[] bytes = FastBase64.decode(b64Bytes);
             Bitmap newBm = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             if(newBm != null){
                 cache.put(id, newBm);

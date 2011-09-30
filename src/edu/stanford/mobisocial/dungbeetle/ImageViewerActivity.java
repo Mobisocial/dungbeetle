@@ -30,6 +30,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 public class ImageViewerActivity extends Activity {
@@ -72,7 +73,7 @@ public class ImageViewerActivity extends Activity {
         } else if (mIntent.hasExtra("obj")) {
             try {
                 final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
-                byte[] bytes = Base64.decode(content.optString(PictureObj.DATA));
+                byte[] bytes = FastBase64.decode(content.optString(PictureObj.DATA));
                 ((App)getApplication()).objectImages.lazyLoadImage(
                         bytes.hashCode(), bytes, im);
                 bitmap = mgr.getBitmap(bytes.hashCode(), bytes);
@@ -178,7 +179,7 @@ public class ImageViewerActivity extends Activity {
             case SET_PROFILE: {
                 if(mIntent.hasExtra("b64Bytes")) {
                     String b64Bytes = mIntent.getStringExtra("b64Bytes");
-                    byte[] data = Base64.decode(b64Bytes);
+                    byte[] data = FastBase64.decode(b64Bytes);
                     Helpers.updatePicture(ImageViewerActivity.this, data);
                     Toast.makeText(ImageViewerActivity.this,
                             "Set profile picture.", Toast.LENGTH_LONG).show(); 

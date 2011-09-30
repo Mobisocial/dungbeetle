@@ -31,6 +31,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
 public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
@@ -63,7 +64,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     }
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		byte[] raw = Base64.decode(json.optString(DATA));
+		byte[] raw = FastBase64.decode(json.optString(DATA));
 		json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, raw);
 	}
@@ -142,7 +143,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     }
 
     public static JSONObject json(JSONObject base, byte[] data){
-        String encoded = Base64.encodeToString(data, false);
+        String encoded = FastBase64.encodeToString(data);
         try{
             base.put("data", encoded);
         }catch(JSONException e){}
@@ -166,7 +167,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
-        byte[] bytes = Base64.decode(msg.optString(DATA));
+        byte[] bytes = FastBase64.decode(msg.optString(DATA));
         msg.remove(DATA);
 		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}
@@ -187,7 +188,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
 			if(raw != null)
-				objData = objData.put(DATA, Base64.encodeToString(raw, false));
+				objData = objData.put(DATA, FastBase64.encodeToString(raw));
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -217,7 +218,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
 	public Pair<JSONObject, byte[]> handleOutgoing(JSONObject json) {
-        byte[] bytes = Base64.decode(json.optString(DATA));
+        byte[] bytes = FastBase64.decode(json.optString(DATA));
         json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, bytes);
 	}

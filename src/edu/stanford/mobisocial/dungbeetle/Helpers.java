@@ -21,6 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -274,7 +275,7 @@ public class Helpers {
         try {
             JSONObject profileJson = new JSONObject(ident.userProfile());
             updateProfile(c, profileJson.optString("name"), "");
-            updatePicture(c, Base64.decode(profileJson.optString("picture")));
+            updatePicture(c, FastBase64.decode(profileJson.optString("picture")));
             Log.w(TAG, "resending profile");
         }
         catch (Exception e) {

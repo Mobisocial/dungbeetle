@@ -23,7 +23,6 @@ import org.json.JSONObject;
 import android.content.Context;
 
 import android.net.Uri;
-import android.util.Base64;
 import android.util.Pair;
 
 public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {

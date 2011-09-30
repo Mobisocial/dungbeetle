@@ -25,6 +25,7 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
 /**
@@ -68,7 +69,7 @@ public class EditPhotoAction extends ObjAction {
             byte[] raw;
             if (mRaw == null) {
                 String b64Bytes = mJson.optString(PictureObj.DATA);
-                raw = Base64.decode(b64Bytes);
+                raw = FastBase64.decode(b64Bytes);
             } else {
                 raw = mRaw;
             }

@@ -16,6 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class SharedSecretObj implements DbEntryHandler {
 
@@ -48,7 +49,7 @@ public class SharedSecretObj implements DbEntryHandler {
     public static JSONObject json(byte[] shared_secret){
         JSONObject obj = new JSONObject();
         try{
-            obj.put(RAW, Base64.encodeToString(shared_secret, false));
+            obj.put(RAW, FastBase64.encodeToString(shared_secret));
         }catch(JSONException e){}
         return obj;
     }
@@ -66,7 +67,7 @@ public class SharedSecretObj implements DbEntryHandler {
 			e.printStackTrace();
 			return;
 		}
-        byte[] ss = Base64.decode(raw_b64);
+        byte[] ss = FastBase64.decode(raw_b64);
         if(from.secret != null && new BigInteger(from.secret).compareTo(new BigInteger(ss)) > 0) {
         	//ignore the new key according to a time independent metric...
         	return;
