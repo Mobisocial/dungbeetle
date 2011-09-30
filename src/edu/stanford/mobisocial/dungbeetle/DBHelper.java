@@ -634,7 +634,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return db.insertWithOnConflict(Subscriber.TABLE, null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+            return db.insert(Subscriber.TABLE, null, cv);
         }
         catch(Exception e){
             Log.e(TAG, e.getMessage(), e);
