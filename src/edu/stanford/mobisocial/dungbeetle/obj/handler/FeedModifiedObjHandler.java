@@ -26,15 +26,18 @@ public class FeedModifiedObjHandler extends DatabaseObjHandler {
         long timestamp = new Date().getTime();
 
         Uri visibleFeed = App.instance().getCurrentFeed();
+        String unread = "0";
         if (!feedUri.equals(visibleFeed)) {
-            getDBHelper().getWritableDatabase().execSQL(
-                    "UPDATE " + Group.TABLE +
-                    " SET " + Group.NUM_UNREAD + " = " + Group.NUM_UNREAD + " + 1" +
-                    " , " + Group.LAST_OBJECT_ID + " = " + objId +
-                    " , " + Group.LAST_UPDATED + " = " + String.valueOf(timestamp) +
-                    " WHERE " + Group.FEED_NAME + " = '" + feedName + "'");
-            Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
-            context.getContentResolver().notifyChange(feedlistUri, null);
+            unread = Group.NUM_UNREAD + " + 1";
         }
+
+        getDBHelper().getWritableDatabase().execSQL(
+                "UPDATE " + Group.TABLE +
+                " SET " + Group.NUM_UNREAD + " = " + unread +
+                " , " + Group.LAST_OBJECT_ID + " = " + objId +
+                " , " + Group.LAST_UPDATED + " = " + String.valueOf(timestamp) +
+                " WHERE " + Group.FEED_NAME + " = '" + feedName + "'");
+        Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+        context.getContentResolver().notifyChange(feedlistUri, null);
     }
 }
