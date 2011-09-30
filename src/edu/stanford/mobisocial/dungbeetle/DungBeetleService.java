@@ -34,7 +34,7 @@ public class DungBeetleService extends Service {
         // mPresenceThread.start();
 
         // TODO: content corral should manage it's own ip ups and downs.
-        if (ContentCorral.ENABLE_CONTENT_CORRAL) {
+        if (ContentCorral.CONTENT_CORRAL_ENABLED) {
             mContentCorral = new ContentCorral(this);
             mContentCorral.start();
         }

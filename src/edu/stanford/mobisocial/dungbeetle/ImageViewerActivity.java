@@ -83,18 +83,18 @@ public class ImageViewerActivity extends Activity {
         if (mIntent.hasExtra("obj")) {
             try {
                 final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
-                if (ContentCorral.ENABLE_CONTENT_CORRAL) {
+                if (ContentCorral.CONTENT_CORRAL_ENABLED) {
                     if (content.has(PictureObj.LOCAL_IP)) {
                         // TODO: this is a proof-of-concept.
                         new Thread() {
                             public void run() {
                                 try {
-                                    if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, content, "jpg")) {
+                                    if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, content)) {
                                         toast("Trying to go HD...");
                                     }
                                     Log.d(TAG, "Trying to go HD...");
-                                    final Uri fileUri = ContentCorral.fetchContent(
-                                            ImageViewerActivity.this, content, "jpg");
+                                    final Uri fileUri = ContentCorral
+                                            .fetchContent(ImageViewerActivity.this, content);
                                     Log.d(TAG, "Opening HD file " + fileUri);
 
                                     InputStream is = getContentResolver().openInputStream(fileUri);

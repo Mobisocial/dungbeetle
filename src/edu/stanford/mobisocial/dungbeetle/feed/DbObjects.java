@@ -23,6 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
@@ -57,6 +58,7 @@ public final class DbObjects {
         objs.add(new LocationObj());
         objs.add(new ProfilePictureObj());
         objs.add(new PictureObj());
+        objs.add(new VideoObj());
         objs.add(new VoiceObj());
         objs.add(new ActivityPullObj());
         objs.add(new FeedRefObj());

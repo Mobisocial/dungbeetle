@@ -13,8 +13,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Pair;
 import android.view.ViewGroup;
@@ -29,15 +29,12 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
-import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
-	public static final String TAG = "PictureObj";
+public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+	public static final String TAG = "VideoObj";
 
-    public static final String TYPE = "picture";
+    public static final String TYPE = "video";
     public static final String DATA = "data";
 
     public static final String LOCAL_URI = "localUri";
@@ -56,70 +53,29 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
      * This does NOT do any SCALING!
      */
     public static DbObject from(byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(data));
+        return new DbObject(TYPE, VideoObj.json(data));
     }
 
     public static DbObject from(JSONObject base, byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(base, data));
+        return new DbObject(TYPE, VideoObj.json(base, data));
     }
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		byte[] raw = FastBase64.decode(json.optString(DATA));
+		byte[] raw = Base64.decode(json.optString(DATA));
 		json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, raw);
 	}
 
-    public static DbObject from(Context context, Uri imageUri) throws IOException {
+    public static DbObject from(Context context, Uri videoUri) throws IOException {
         // Query gallery for camera picture via
         // Android ContentResolver interface
         ContentResolver cr = context.getContentResolver();
-        
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		options.inJustDecodeBounds = true;
-		BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
-		
-		
-		int targetSize = 200;
-		int xScale = (options.outWidth  + targetSize - 1) / targetSize;
-		int yScale = (options.outHeight + targetSize - 1) / targetSize;
-		
-		int scale = xScale < yScale ? xScale : yScale;
-		//uncomment this to get faster power of two scaling
-		//for(int i = 0; i < 32; ++i) {
-		//	int mushed = scale & ~(1 << i);
-		//	if(mushed != 0)
-		//		scale = mushed;
-		//}
-		
-		options.inJustDecodeBounds = false;
-		options.inSampleSize = scale;
-		
-		Bitmap sourceBitmap = BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
-
-        int width = sourceBitmap.getWidth();
-        int height = sourceBitmap.getHeight();
-        int cropSize = Math.min(width, height);
-
-        float scaleSize = ((float) targetSize) / cropSize;
-
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleSize, scaleSize);
-        float rotation = PhotoTaker.rotationForImage(context, imageUri);
-        if (rotation != 0f) {
-            matrix.preRotate(rotation);
-        }
-
-        Bitmap resizedBitmap = Bitmap.createBitmap(
-                sourceBitmap, 0, 0, width, height, matrix, true);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
-        byte[] data = baos.toByteArray();
-        sourceBitmap.recycle();
-        sourceBitmap = null;
-        resizedBitmap.recycle();
-        resizedBitmap = null;
-        System.gc(); // TODO: gross.
+        BitmapFactory.Options options=new BitmapFactory.Options();
+        options.inSampleSize = 1;
+        // TODO: This is the wrong thumbnail.
+        long videoId = Long.parseLong(videoUri.getLastPathSegment());
+        Bitmap curThumb = MediaStore.Video.Thumbnails.getThumbnail(
+                cr, videoId, MediaStore.Video.Thumbnails.MICRO_KIND, options);
 
         JSONObject base = new JSONObject();
         if (ContentCorral.CONTENT_CORRAL_ENABLED) {
@@ -128,12 +84,16 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
                 try {
                     // TODO: Security breach hack?
                     base.put(LOCAL_IP, localIp);
-                    base.put(LOCAL_URI, imageUri.toString());
+                    base.put(LOCAL_URI, videoUri.toString());
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }
             }
         }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        curThumb.compress(Bitmap.CompressFormat.JPEG, 90, baos);
+        byte[] data = baos.toByteArray();
         return from(base, data);
     }
 
@@ -143,7 +103,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     }
 
     public static JSONObject json(JSONObject base, byte[] data){
-        String encoded = FastBase64.encodeToString(data);
+        String encoded = Base64.encodeToString(data, false);
         try{
             base.put("data", encoded);
         }catch(JSONException e){}
@@ -167,28 +127,48 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
-        byte[] bytes = FastBase64.decode(msg.optString(DATA));
+        byte[] bytes = Base64.decode(msg.optString(DATA));
         msg.remove(DATA);
 		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
-	    Intent intent = new Intent(context, ImageViewerActivity.class);
-	    intent.putExtra("obj", content.toString());
-	    if (raw != null) {
-	        intent.putExtra("bytes", raw);
+    public void activate(final Context context, final JSONObject content, byte[] raw) {
+	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
+	        Log.d(TAG, "Corraling video");
+	        if (ContentCorral.fileAvailableLocally(context, content)) {
+	            Intent i = new Intent(Intent.ACTION_VIEW);
+	            if (!(context instanceof Activity)) {
+	                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	            }
+	            try {
+                    i.setDataAndType(ContentCorral.fetchContent(context, content), "video/*");
+                } catch (IOException e) {
+                    Toast.makeText(context, "Error playing video.", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "The corral tricked me", e);
+                }
+	            context.startActivity(i);
+	        } else {
+	            Toast.makeText(context, "Trying to pull video...", Toast.LENGTH_SHORT).show();
+	            Log.e(TAG, "trying to pull video");
+	            new Thread() {
+	                @Override
+	                public void run() {
+	                    try {
+                            ContentCorral.fetchContent(context, content);
+                        } catch (IOException e) {
+                            Log.e(TAG, "Failed to corral", e);
+                        }
+	                }
+	            }.start();
+	        }
 	    }
-	    if (!(context instanceof Activity)) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        }
-	    context.startActivity(intent);
     }
 
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
 			if(raw != null)
-				objData = objData.put(DATA, FastBase64.encodeToString(raw));
+				objData = objData.put(DATA, Base64.encodeToString(raw, false));
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -218,7 +198,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
 	public Pair<JSONObject, byte[]> handleOutgoing(JSONObject json) {
-        byte[] bytes = FastBase64.decode(json.optString(DATA));
+        byte[] bytes = Base64.decode(json.optString(DATA));
         json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, bytes);
 	}
