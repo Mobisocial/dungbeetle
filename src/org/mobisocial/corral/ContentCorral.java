@@ -14,7 +14,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
@@ -25,10 +24,8 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
@@ -37,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
 public class ContentCorral {
+    public static final String OBJ_MIME_TYPE = "mimeType";
 	private static final int SERVER_PORT = 8224;
 	private static final String TAG = "ContentCorral";
 	private static final boolean DBG = true;
@@ -468,6 +466,14 @@ public class ContentCorral {
 	}
 
 	private static String suffixFor(JSONObject obj) {
+	    if (obj.has(OBJ_MIME_TYPE)) {
+	        String suffix = suffixForType(obj.optString(OBJ_MIME_TYPE));
+	        if (suffix != null) {
+	            return suffix;
+	        }
+	    }
+
+	    // TODO: safe to remove.
         if (PictureObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
             return "jpg";
         } else if (VideoObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
@@ -475,6 +481,19 @@ public class ContentCorral {
         }
         return "tmp";
     }
+
+	private static String suffixForType(String type) {
+	    if (type == null) {
+	        return null;
+	    }
+	    if (type.equals("image/jpeg")) {
+	        return "jpg";
+	    }
+	    if (type.equals("video/3gpp")) {
+	        return "3gp";
+	    }
+	    return null;
+	}
     public static boolean fileAvailableLocally(Context context, JSONObject obj) {
 	    try {
     	    String localIp = getLocalIpAddress();

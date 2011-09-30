@@ -40,6 +40,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     public static final String TYPE = "picture";
     public static final String DATA = "data";
 
+    public static final String MIME_TYPE = "mimeType";
     public static final String LOCAL_URI = "localUri";
     // TODO: This is a hack, with many ways to fix. For example,
     // it can be used with its timestamp and an instance variable to
@@ -129,6 +130,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
                     // TODO: Security breach hack?
                     base.put(LOCAL_IP, localIp);
                     base.put(LOCAL_URI, imageUri.toString());
+                    base.put(MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }
