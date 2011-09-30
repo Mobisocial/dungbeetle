@@ -24,7 +24,7 @@ import android.widget.TextView;
 
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 
-public class JoinNotificationObj implements DbEntryHandler, UnprocessedMessageHandler, FeedRenderer {
+public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMessageHandler, FeedRenderer {
     private static final String TAG = "dbJoin";
     private static boolean DBG = false;
     public static final String TYPE = "join_notification";

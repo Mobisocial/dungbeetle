@@ -20,7 +20,6 @@ import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -29,12 +28,11 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+public class PictureObj extends DbEntryHandler
+        implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";

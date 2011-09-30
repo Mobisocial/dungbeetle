@@ -1,17 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
-import android.content.Context;
-import android.net.Uri;
-import android.util.Pair;
-
 import org.json.JSONObject;
+
+import android.content.Context;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 /**
  * Base interface for DungBeetle objects.
  */
-public interface DbEntryHandler {
-    String getType();
-    void handleDirectMessage(Context context, Contact from, JSONObject msg);
-	JSONObject mergeRaw(JSONObject objData, byte[] raw);
-	Pair<JSONObject, byte[]> splitRaw(JSONObject json);
+public abstract class DbEntryHandler {
+    public abstract String getType();
+    public abstract void handleDirectMessage(Context context, Contact from, JSONObject msg);
+	public abstract JSONObject mergeRaw(JSONObject objData, byte[] raw);
+	public abstract Pair<JSONObject, byte[]> splitRaw(JSONObject json);
 }

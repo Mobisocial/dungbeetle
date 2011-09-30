@@ -18,7 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
-public class SharedSecretObj implements DbEntryHandler {
+public class SharedSecretObj extends DbEntryHandler {
 
     public static final String TYPE = "shared_secret";
     public static final String RAW = "raw";

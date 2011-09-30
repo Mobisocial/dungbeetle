@@ -23,7 +23,7 @@ import android.content.Intent;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
+public class StatusObj extends DbEntryHandler implements FeedRenderer, Activator {
 
     public static final String TYPE = "status";
     public static final String TEXT = "text";

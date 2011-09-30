@@ -19,7 +19,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
 
-public class InviteToGroupObj implements DbEntryHandler, FeedRenderer, Activator {
+public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "InviteToGroupObj";
     public static final String TYPE = "invite_group";
     public static final String GROUP_NAME = "groupName";

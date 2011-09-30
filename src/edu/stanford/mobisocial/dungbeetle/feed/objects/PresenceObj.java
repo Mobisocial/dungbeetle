@@ -12,7 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 
-public class PresenceObj implements DbEntryHandler {
+public class PresenceObj extends DbEntryHandler {
 
     public static final String TYPE = "presence";
     public static final String PRESENCE = "presence";

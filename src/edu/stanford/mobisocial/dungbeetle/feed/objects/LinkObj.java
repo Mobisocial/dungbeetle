@@ -27,7 +27,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
-public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
+public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
     private static final String TAG = "dungbeetle";
 
     public static final String TYPE = "send_file";

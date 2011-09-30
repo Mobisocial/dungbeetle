@@ -32,7 +32,8 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
-public class VideoObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+public class VideoObj extends DbEntryHandler
+        implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "VideoObj";
 
     public static final String TYPE = "video";

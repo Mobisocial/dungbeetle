@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle.feed;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
@@ -60,7 +59,6 @@ public final class DbObjects {
         objs.add(new PictureObj());
         objs.add(new VideoObj());
         objs.add(new VoiceObj());
-        objs.add(new ActivityPullObj());
         objs.add(new FeedRefObj());
         objs.add(new JoinNotificationObj());
         objs.add(new FriendAcceptObj());

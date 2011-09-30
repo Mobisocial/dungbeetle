@@ -23,7 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
-public class InviteToSharedAppFeedObj implements DbEntryHandler {
+public class InviteToSharedAppFeedObj extends DbEntryHandler {
 	private static final String TAG = "InviteToSharedAppFeedHandler";
 
     public static final String TYPE = "invite_app_feed";

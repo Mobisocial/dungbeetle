@@ -18,7 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 
-public class IMObj implements DbEntryHandler, FeedRenderer {
+public class IMObj extends DbEntryHandler implements FeedRenderer {
     public static final String TYPE = "instant_message";
     public static final String TEXT = "text";
 

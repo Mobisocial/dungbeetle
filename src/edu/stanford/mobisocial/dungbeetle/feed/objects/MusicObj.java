@@ -18,7 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
+public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator {
 
     public static final String TYPE = "music";
     public static final String ARTIST = "a";
