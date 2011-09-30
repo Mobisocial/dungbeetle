@@ -30,6 +30,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
@@ -635,8 +636,11 @@ public class DBHelper extends SQLiteOpenHelper {
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
             return db.insert(Subscriber.TABLE, null, cv);
-        }
-        catch(Exception e){
+        } catch (SQLiteConstraintException e) {
+        	//this inserts dupes, so hide this spam in a way 
+        	//that doesn't require api level 8
+        	return -1;
+        } catch(Exception e){
             Log.e(TAG, e.getMessage(), e);
             return -1;
         }

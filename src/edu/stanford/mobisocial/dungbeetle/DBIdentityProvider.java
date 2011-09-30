@@ -21,6 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
+import edu.stanford.mobisocial.dungbeetle.util.JSON;
 
 public class DBIdentityProvider implements IdentityProvider {
 
@@ -80,9 +81,8 @@ public class DBIdentityProvider implements IdentityProvider {
 		JSONObject obj = new JSONObject();
         try {
             obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
-            obj.put("picture", FastBase64.encodeToString(c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE))));
-            
         } catch(JSONException e) { }
+        JSON.fastAddBase64(obj.toString(), "picture", c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)));        
         c.close();
         return obj.toString(); 
     }

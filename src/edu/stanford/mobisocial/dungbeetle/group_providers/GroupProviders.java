@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -167,7 +168,6 @@ public class GroupProviders {
 	                final String feedName = uriIn.getQueryParameter("session");
 	                
 	   
-	                sb = new StringBuffer();
 	                client = new DefaultHttpClient();
 	                httpPost = new HttpPost(uri.toString());
 	
@@ -181,13 +181,11 @@ public class GroupProviders {
 	                try {
 	                    HttpResponse execute = client.execute(httpPost);
 	                    InputStream content = execute.getEntity().getContent();
-	                    BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-	                    String s = "";
-	                    while ((s = buffer.readLine()) != null) {
-	                        sb.append(s);
-	                    }
+	                    sb = new StringBuffer(IOUtils.toString(content));
+	                    Log.e("WHOHO", sb.length() + " group size");
 	                }
 	                catch (Exception e) {
+		                sb = new StringBuffer();
 	                    e.printStackTrace();
 	                }
 	
