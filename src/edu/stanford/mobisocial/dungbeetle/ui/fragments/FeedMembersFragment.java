@@ -1,4 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
+import java.util.Collection;
 import java.util.Collections;
 
 import android.app.Activity;
@@ -39,7 +40,6 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -92,11 +92,15 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
                 try {
                     // group exists already, load view
                     final Group g = mg.get();
+                    Collection<Contact> existingContacts = g.contactCollection(mHelper);
                     g.forceUpdate(context);
+                    Collection<Contact> newContacts = g.contactCollection(mHelper);
+                    newContacts.removeAll(existingContacts);
+
+                    Helpers.resendProfile(context, existingContacts);
                 }
                 catch(Maybe.NoValError e) { }
                 ident.close();
-                Helpers.resendProfile(context);
             };
         }.start();
     }

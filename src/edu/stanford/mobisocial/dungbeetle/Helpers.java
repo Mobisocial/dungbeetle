@@ -268,14 +268,17 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void resendProfile(final Context c) {
+    public static void resendProfile(final Context c, final Collection<Contact> contacts) {
         DBHelper helper = DBHelper.getGlobal(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         Log.w(TAG, "attempting to resend");
         try {
             JSONObject profileJson = new JSONObject(ident.userProfile());
-            updateProfile(c, profileJson.optString("name"), "");
-            updatePicture(c, FastBase64.decode(profileJson.optString("picture")));
+            //updateProfile(c, profileJson.optString("name"), "");
+            //updatePicture(c, FastBase64.decode(profileJson.optString("picture")));
+            sendMessage(c, contacts, new DbObject(ProfileObj.TYPE, ProfileObj.json(profileJson.optString("name"), "")));
+            sendMessage(c, contacts, new DbObject(ProfilePictureObj.TYPE, ProfilePictureObj.json(FastBase64.decode(profileJson.optString("picture")))));
+            
             Log.w(TAG, "resending profile");
         }
         catch (Exception e) {

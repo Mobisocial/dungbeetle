@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import java.util.Collection;
+
 import android.content.Context;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
@@ -65,7 +67,7 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
         String feedName = obj.optString("feedName");
         final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
         final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
-        DBHelper helper = DBHelper.getGlobal(context);
+        final DBHelper helper = DBHelper.getGlobal(context);
         final IdentityProvider ident = new DBIdentityProvider(helper);
         Maybe<Group> mg = helper.groupByFeedName(feedName);
         try {
@@ -74,13 +76,19 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
 
             new Thread(){
                 public void run(){
+                	Collection<Contact> existingContacts = g.contactCollection(helper);
+                	
                     h.handle(g.id, uri, context, g.version, false);
+                    
+	                Collection<Contact> newContacts = g.contactCollection(helper);
+	                newContacts.removeAll(existingContacts);
+                    Helpers.resendProfile(context, newContacts);
                 }
             }.start();
         }
         catch(Maybe.NoValError e) { }
         ident.close();
-        Helpers.resendProfile(context);
+        
         helper.close();
         return null;
     }
