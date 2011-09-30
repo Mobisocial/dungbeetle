@@ -268,7 +268,10 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void resendProfile(final Context c, final Collection<Contact> contacts) {
+    public static void resendProfile(final Context c, final Collection<Contact> contacts, final boolean reply) {
+    	if (contacts.isEmpty()) {
+    		return;
+    	}
         DBHelper helper = DBHelper.getGlobal(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         Log.w(TAG, "attempting to resend");
@@ -277,7 +280,8 @@ public class Helpers {
             //updateProfile(c, profileJson.optString("name"), "");
             //updatePicture(c, FastBase64.decode(profileJson.optString("picture")));
             sendMessage(c, contacts, new DbObject(ProfileObj.TYPE, ProfileObj.json(profileJson.optString("name"), "")));
-            sendMessage(c, contacts, new DbObject(ProfilePictureObj.TYPE, ProfilePictureObj.json(FastBase64.decode(profileJson.optString("picture")))));
+            Log.w(TAG, "string: " + profileJson.optString("picture"));
+            sendMessage(c, contacts, new DbObject(ProfilePictureObj.TYPE, ProfilePictureObj.json(FastBase64.decode(profileJson.optString("picture")), reply)));
             
             Log.w(TAG, "resending profile");
         }
@@ -303,7 +307,7 @@ public class Helpers {
     		return;
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
-        JSONObject obj = ProfilePictureObj.json(data);
+        JSONObject obj = ProfilePictureObj.json(data, false);
         values.put(DbObject.JSON, obj.toString());
         values.put(DbObject.TYPE, ProfilePictureObj.TYPE);
         c.getContentResolver().insert(url, values); 

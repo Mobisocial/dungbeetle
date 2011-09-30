@@ -97,7 +97,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
                     Collection<Contact> newContacts = g.contactCollection(mHelper);
                     newContacts.removeAll(existingContacts);
 
-                    Helpers.resendProfile(context, existingContacts);
+                    Helpers.resendProfile(context, newContacts, true);
                 }
                 catch(Maybe.NoValError e) { }
                 ident.close();

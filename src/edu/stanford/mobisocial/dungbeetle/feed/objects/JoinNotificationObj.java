@@ -82,7 +82,7 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
                     
 	                Collection<Contact> newContacts = g.contactCollection(helper);
 	                newContacts.removeAll(existingContacts);
-                    Helpers.resendProfile(context, newContacts);
+                    Helpers.resendProfile(context, newContacts, true);
                 }
             }.start();
         }

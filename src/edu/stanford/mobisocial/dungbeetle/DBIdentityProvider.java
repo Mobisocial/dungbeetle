@@ -82,9 +82,9 @@ public class DBIdentityProvider implements IdentityProvider {
         try {
             obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
         } catch(JSONException e) { }
-        JSON.fastAddBase64(obj.toString(), "picture", c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)));        
+        String result = JSON.fastAddBase64(obj.toString(), "picture", c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)));        
         c.close();
-        return obj.toString(); 
+        return result; 
     }
 
     public String userPublicKeyString() {

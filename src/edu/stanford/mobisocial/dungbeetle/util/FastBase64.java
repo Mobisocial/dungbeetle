@@ -10,6 +10,9 @@ public class FastBase64 {
 		return edu.stanford.mobisocial.dungbeetle.util.Base64.encodeToByte(data, false);
 	}
 	public static String encodeToString(byte[] data) {
+		if (data == null) {
+			return "";
+		}
 		if(Build.VERSION.SDK_INT >= 8)
 			return Base64.encodeToString(data, Base64.DEFAULT);
 		return edu.stanford.mobisocial.dungbeetle.util.Base64.encodeToString(data, false);
