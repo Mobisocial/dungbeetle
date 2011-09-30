@@ -65,8 +65,8 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 	}
 
 	@Override
-	public boolean storeOutboundObj() {
-	    return false;
+	public boolean discardOutboundObj() {
+		return true;
 	};
 
 	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
