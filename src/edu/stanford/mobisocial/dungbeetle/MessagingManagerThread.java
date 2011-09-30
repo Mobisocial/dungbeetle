@@ -109,7 +109,6 @@ public class MessagingManagerThread extends Thread {
 					p.println(e.getMessage());
 					e.printStackTrace(p);
 				}
-				
                 Log.e(TAG, "Connection Status: " + msg + "\n" + err.toString());
 			}
 		});
@@ -168,6 +167,7 @@ public class MessagingManagerThread extends Thread {
                 }
 
 				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
+				objHandler.afterDatabaseInsertion(mContext, obj);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -195,7 +195,7 @@ public class MessagingManagerThread extends Thread {
                         DbObjects.forType(type), obj, raw);
 
                 // Per-object handlers:
-                if (objHandler != null && objHandler instanceof FeedMessageHandler) {
+                if (objHandler instanceof FeedMessageHandler) {
                     ((FeedMessageHandler) objHandler).handleFeedMessage(
                             mContext, feedUri, contactId, sequenceID, type, obj);
                 }
@@ -366,7 +366,7 @@ public class MessagingManagerThread extends Thread {
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
             DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
-            mDeleteOnCommit = objHandler.storeOutboundObj();
+            mDeleteOnCommit = objHandler.discardOutboundObj();
         }
 		@Override
 		public long getLocalUniqueId() {

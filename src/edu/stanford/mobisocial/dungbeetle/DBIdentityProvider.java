@@ -76,15 +76,17 @@ public class DBIdentityProvider implements IdentityProvider {
 
     public String userProfile() {
 		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
-		c.moveToFirst();
 
-		JSONObject obj = new JSONObject();
-        try {
-            obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
-        } catch(JSONException e) { }
-        String result = JSON.fastAddBase64(obj.toString(), "picture", c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)));        
-        c.close();
-        return result; 
+		try {
+			c.moveToFirst();
+			JSONObject obj = new JSONObject();
+	        try {
+	            obj.put("name", c.getString(c.getColumnIndexOrThrow(MyInfo.NAME)));
+	        } catch(JSONException e) { }
+	        return JSON.fastAddBase64(obj.toString(), "picture", c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)));
+		} finally {
+	        c.close();
+		}
     }
 
     public String userPublicKeyString() {

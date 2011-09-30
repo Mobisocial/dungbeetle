@@ -3,6 +3,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.util.Pair;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
@@ -15,9 +16,11 @@ public abstract class DbEntryHandler {
 	public abstract JSONObject mergeRaw(JSONObject objData, byte[] raw);
 	public abstract Pair<JSONObject, byte[]> splitRaw(JSONObject json);
 
-	public void afterDatabaseInsertion(JSONObject json) {
+	public void afterDatabaseInsertion(Context context, JSONObject json) {
 	    if (json.has(DbObjects.TARGET_HASH)) {
-	        // TODO
+	        DBHelper helper = new DBHelper(context);
+	        //helper.addObjRelation(json);
+	        helper.close();
 	    }
 	}
 
@@ -31,7 +34,7 @@ public abstract class DbEntryHandler {
 	/**
 	 * Return false to allow deletions of an obj after it has been sent.
 	 */
-	public boolean storeOutboundObj() {
+	public boolean discardOutboundObj() {
 	    return true;
 	}
 }
