@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Log;
 import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -48,7 +49,7 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 		return null;
 	}
 
-	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
+	public boolean handleObjFromNetwork(Context context, Contact from, JSONObject obj) {
 		byte[] data = FastBase64.decode(obj.optString(DATA));
 		String id = Long.toString(from.id);
 		ContentValues values = new ContentValues();
@@ -57,7 +58,14 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             values, "_id=?", new String[] { id });
         App.instance().contactImages.invalidate(from.id);
+
+        return false;
 	}
+
+	@Override
+	public boolean storeOutboundObj() {
+	    return false;
+	};
 
 	/*public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 	    TextView textView = new TextView(context);
@@ -83,4 +91,9 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		return objData;
 	}
+
+    @Override
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
+
+    }
 }
