@@ -8,7 +8,7 @@ public class JSON {
 		sb.append(",\"");
 		sb.append(key);
 		sb.append("\":\"");
-		sb.append(data);
+		sb.append(encoded);
 		sb.append("\"}");
 		return sb.toString();
 	}

@@ -366,7 +366,7 @@ public class MessagingManagerThread extends Thread {
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
             DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
-            mDeleteOnCommit = objHandler.storeOutboundObj();
+            mDeleteOnCommit = objHandler.discardOutboundObj();
         }
 		@Override
 		public long getLocalUniqueId() {

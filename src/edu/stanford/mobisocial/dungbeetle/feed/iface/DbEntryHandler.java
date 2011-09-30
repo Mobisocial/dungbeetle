@@ -34,7 +34,7 @@ public abstract class DbEntryHandler {
 	/**
 	 * Return false to allow deletions of an obj after it has been sent.
 	 */
-	public boolean storeOutboundObj() {
+	public boolean discardOutboundObj() {
 	    return true;
 	}
 }
