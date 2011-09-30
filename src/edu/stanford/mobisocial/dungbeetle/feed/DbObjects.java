@@ -22,6 +22,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -39,8 +40,10 @@ public final class DbObjects {
     public static final String TIMESTAMP = "timestamp";
     public static final String APP_ID = "appId";
 
-    private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
+    public static final String TARGET_HASH = "target_hash";
 
+    private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
+    private static UnknownObj mUnknownObjHandler = new UnknownObj();
     static {
         objs.add(new AppStateObj());
         objs.add(new AppReferenceObj());
@@ -87,7 +90,7 @@ public final class DbObjects {
         return null;
 	}
 
-	public static DbEntryHandler getMessageHandler(JSONObject json) {
+	public static DbEntryHandler getObjHandler(JSONObject json) {
 	    String type = json.optString("type");
 	    return forType(type);
 	}
@@ -103,12 +106,15 @@ public final class DbObjects {
 	}
 
 	public static DbEntryHandler forType(String requestedType) {
+	    if (requestedType == null) {
+	        return null;
+	    }
         for (DbEntryHandler type : objs) {
             if (type.getType().equals(requestedType)) {
                 return type;
             }
         }
-        return null;
+        return mUnknownObjHandler;
     };
 
     public static String getFeedObjectClause() {

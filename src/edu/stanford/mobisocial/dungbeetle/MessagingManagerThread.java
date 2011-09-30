@@ -13,7 +13,6 @@ import java.util.regex.Matcher;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.MDRecord;
 
 import android.content.Context;
 import android.database.ContentObserver;
@@ -40,8 +39,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
-import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence.MessageDropHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
@@ -147,10 +144,10 @@ public class MessagingManagerThread extends Thread {
             }
 
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
-            DbEntryHandler h = DbObjects.getMessageHandler(in_obj);
+            final DbEntryHandler objHandler = DbObjects.getObjHandler(in_obj);
             byte[] extracted_data = null;
-            if (h != null && h instanceof UnprocessedMessageHandler) {
-            	Pair<JSONObject, byte[]> r =((UnprocessedMessageHandler)h).handleUnprocessed(mContext, in_obj);
+            if (objHandler instanceof UnprocessedMessageHandler) {
+            	Pair<JSONObject, byte[]> r =((UnprocessedMessageHandler)objHandler).handleUnprocessed(mContext, in_obj);
             	if(r != null) {
             		in_obj = r.first;
             		extracted_data = r.second;
@@ -165,53 +162,44 @@ public class MessagingManagerThread extends Thread {
                 long contactId = realContact.id;
                 if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
                 // Insert into the database. (TODO: Handler, both android.os and musubi.core)
-                
-                if (obj.optString(DbObject.TYPE).equals(ProfilePictureObj.TYPE)) {
-                	final DbEntryHandler handler = DbObjects.getMessageHandler(obj);
-                    if (handler != null) {
-                        handler.handleDirectMessage(mContext, realContact, obj);
-                    }
+
+                if (!objHandler.handleObjFromNetwork(mContext, realContact, obj)) {
+                    return;
+                }
+
+				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
+				Uri feedUri;
+                if (feedName.equals("friend")) {
+                   feedUri = Feed.uriForName("friend/" + contactId);
+                } else {
+                    feedUri = Feed.uriForName(feedName);
+                }
+                mContext.getContentResolver().notifyChange(feedUri, null);
+                if (feedName.equals("direct") || feedName.equals("friend")) {
+                    // TODO: Is this threading necessary?
+                    mMainThreadHandler.post(new Runnable() {
+                        public void run() {
+                            long time = obj.optLong(DbObject.TIMESTAMP);
+                            Helpers.updateLastPresence(mContext, realContact, time);
+                            objHandler.handleDirectMessage(mContext, realContact, obj);
+                        }
+                    });
+                }
+
+                /**
+                 * Run handlers over all received objects:
+                 */
+
+                // TODO: framework code.
+                getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
+                        DbObjects.forType(type), obj, raw);
+
+                // Per-object handlers:
+                if (objHandler != null && objHandler instanceof FeedMessageHandler) {
+                    ((FeedMessageHandler) objHandler).handleFeedMessage(
+                            mContext, feedUri, contactId, sequenceID, type, obj);
                 }
                 
-                else {
-                
-					sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
-					Uri feedUri;
-	                if (feedName.equals("friend")) {
-	                   feedUri = Feed.uriForName("friend/" + contactId);
-	                } else {
-	                    feedUri = Feed.uriForName(feedName);
-	                }
-	                mContext.getContentResolver().notifyChange(feedUri, null);
-	                if (feedName.equals("direct") || feedName.equals("friend")) {
-	                    // TODO: Is this threading necessary?
-	                    mMainThreadHandler.post(new Runnable() {
-	                        public void run() {
-	                            long time = obj.optLong(DbObject.TIMESTAMP);
-	                            Helpers.updateLastPresence(mContext, realContact, time);
-	
-	                            final DbEntryHandler h = DbObjects.getMessageHandler(obj);
-	                            if (h != null) {
-	                                h.handleDirectMessage(mContext, realContact, obj);
-	                            }
-	                        }
-	                    });
-	                }
-	
-	                /**
-	                 * Run handlers over all received objects:
-	                 */
-	
-	                // TODO: framework code.
-	                getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
-	                        DbObjects.forType(type), obj, raw);
-	
-	                // Per-object handlers:
-	                if (h != null && h instanceof FeedMessageHandler) {
-	                    ((FeedMessageHandler) h).handleFeedMessage(
-	                            mContext, feedUri, contactId, sequenceID, type, obj);
-	                }
-                }
             } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
             }
@@ -322,7 +310,7 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
-                        DbEntryHandler h = DbObjects.getMessageHandler(json);
+                        DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
                             ((FeedMessageHandler) h).handleFeedMessage(
                                     mContext, feedUri, Contact.MY_ID, -1, type, json);
@@ -377,8 +365,8 @@ public class MessagingManagerThread extends Thread {
         protected boolean mDeleteOnCommit;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
-            //todo: hack
-            mDeleteOnCommit = objs.getString(2).equals(ProfilePictureObj.TYPE);
+            DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
+            mDeleteOnCommit = objHandler.storeOutboundObj();
         }
 		@Override
 		public long getLocalUniqueId() {
@@ -420,7 +408,7 @@ public class MessagingManagerThread extends Thread {
 			return cached;
 		}
 		void processRawData() {
-            DbEntryHandler h = DbObjects.getMessageHandler(mJson);
+            DbEntryHandler h = DbObjects.getObjHandler(mJson);
             if (h != null && h instanceof OutgoingMessageHandler) {
             	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
             	if(r != null) {
