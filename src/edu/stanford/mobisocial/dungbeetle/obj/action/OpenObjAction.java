@@ -23,7 +23,7 @@ public class OpenObjAction extends ObjAction {
     }
 
     @Override
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         return (objType instanceof Activator);
     }
 

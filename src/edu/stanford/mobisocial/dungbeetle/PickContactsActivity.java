@@ -66,6 +66,8 @@ public class PickContactsActivity extends TabActivity {
     public static final String INTENT_EXTRA_NFC_SHARE = "mobisocial.dungbeetle.NFC_SHARE";
     public static final String INTENT_EXTRA_PARENT_FEED = "feed";
     public static final String INTENT_EXTRA_MEMBERS_MAX = "max";
+    public static final String EXTRA_FEEDS = "feeds";
+    protected static final String EXTRA_CONTACTS = "contacts";
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -177,7 +179,7 @@ public class PickContactsActivity extends TabActivity {
             c.moveToFirst();
             Contact contact = new Contact(c);
             Intent result = new Intent();
-            result.putExtra("contacts", new long[] { contact.id });
+            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
             c.close();
 
             setResult(RESULT_OK, result);
@@ -198,7 +200,7 @@ public class PickContactsActivity extends TabActivity {
                     checkBox.setChecked(false);
                     mResultContacts.remove(position);
                 } else {
-                    if (max > 0 && mResultContacts.size() < max) {
+                    if (max == -1 || mResultContacts.size() < max) {
                         checkBox.setChecked(true);
                         mResultContacts.put(position, c);
                     } else {
@@ -304,7 +306,27 @@ public class PickContactsActivity extends TabActivity {
                 ids[i] = c.id;
                 i++;
             }
-            mIntent.putExtra("contacts", ids);
+            mIntent.putExtra(EXTRA_CONTACTS, ids);
+        } else if (mIntent.getAction().equals(Intent.ACTION_PICK)) {
+            long[] ids = new long[mResultContacts.size()];
+            Iterator<Contact> it = mResultContacts.values().iterator();
+            int i = 0;
+            while(it.hasNext()){
+                Contact c = it.next();
+                ids[i] = c.id;
+                i++;
+            }
+            mIntent.putExtra(EXTRA_CONTACTS, ids);
+
+            Uri[] feedUris = new Uri[mResultGroups.size()];
+            Iterator<Group> groupIter = mResultGroups.values().iterator();
+            int groupI = 0;
+            while(groupIter.hasNext()){
+                Group g = groupIter.next();
+                feedUris[groupI] = Feed.uriForName(g.feedName);
+                groupI++;
+            }
+            mIntent.putExtra(EXTRA_FEEDS, feedUris);
         }
 
         setResult(RESULT_OK, mIntent);

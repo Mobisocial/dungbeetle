@@ -207,8 +207,24 @@ public class Helpers {
      * TODO: This should be made much more efficient if it proves useful.
      */
     public static void sendToFeeds(Context c, DbObject obj, Collection<Uri> feeds) {
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.getJson().toString());
+        values.put(DbObject.TYPE, obj.getType());
         for (Uri feed : feeds) {
-            sendToFeed(c, obj, feed);
+            c.getContentResolver().insert(feed, values); 
+        }
+    }
+
+    /**
+     * A convenience method for sending an object to multiple feeds.
+     * TODO: This should be made much more efficient if it proves useful.
+     */
+    public static void sendToFeeds(Context c, String type, JSONObject obj, Uri[] feeds) {
+        ContentValues values = new ContentValues();
+        values.put(DbObject.JSON, obj.toString());
+        values.put(DbObject.TYPE, type);
+        for (Uri feed : feeds) {
+            c.getContentResolver().insert(feed, values); 
         }
     }
 

@@ -338,7 +338,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             final DbEntryHandler dbType = DbObjects.forType(mType);
             final List<ObjAction> actions = new ArrayList<ObjAction>();
             for (ObjAction action : ObjActions.getObjActions()) {
-                if (action.isActive(dbType, mObj)) {
+                if (action.isActive(getActivity(), dbType, mObj)) {
                     actions.add(action);
                 }
             }
@@ -351,6 +351,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            Log.d(TAG, "getting for " + getActivity());
                             actions.get(which).actOn(getActivity(), mFeedUri,dbType, mObj, mRaw);
                         }
                     }).create();
