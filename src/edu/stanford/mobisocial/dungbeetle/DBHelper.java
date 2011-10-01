@@ -121,8 +121,6 @@ public class DBHelper extends SQLiteOpenHelper {
             // Access the copied database so SQLiteHelper will cache it and mark
             // it as created.
             getWritableDatabase().close();
-            checkEncodedExists(getReadableDatabase());
-                
             Intent DBServiceIntent = new Intent(mContext, DungBeetleService.class);
             mContext.stopService(DBServiceIntent);
             mContext.startService(DBServiceIntent);
@@ -130,26 +128,12 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         return false;
     }
-	
-    void checkEncodedExists(SQLiteDatabase db) {
-        	Cursor c = db.rawQuery("SELECT * FROM " + DbObject.TABLE, null);
-        	try {
-            	c.getColumnIndexOrThrow(DbObject.ENCODED);
-        	}
-        	catch(Exception e) {
-            Log.w(TAG, "Adding column 'E' to object table.", e);
-            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
-            createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
-        	}
-        	c.close();
-    }
 
 	@Override
 	public void onOpen(SQLiteDatabase db) {
         // enable locking so we can safely share 
         // this instance around
         db.setLockingEnabled(true);
-        checkEncodedExists(db);
         Log.w(TAG, "dbhelper onopen");
     }
 

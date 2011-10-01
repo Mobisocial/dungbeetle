@@ -443,7 +443,6 @@ public class SettingsActivity extends Activity {
 				// Access the copied database so SQLiteHelper will cache it and
 				// mark it as created.
 				helper_.getWritableDatabase().close();
-				helper_.checkEncodedExists(helper_.getReadableDatabase());
 				helper_.close();
 
 				//kill because the old toggle code really never worked for me
