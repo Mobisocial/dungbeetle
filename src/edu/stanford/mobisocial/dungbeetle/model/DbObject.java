@@ -344,7 +344,7 @@ public class DbObject {
         final DbEntryHandler dbType = DbObjects.forType(type);
         final List<ObjAction> actions = new ArrayList<ObjAction>();
         for (ObjAction action : ObjActions.getObjActions()) {
-            if (action.isActive(dbType, json)) {
+            if (action.isActive(context, dbType, json)) {
                 actions.add(action);
             }
         }
