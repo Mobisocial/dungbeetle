@@ -16,11 +16,11 @@ public class LikeObj extends DbEntryHandler {
 
     public static final String TYPE = "lol_ref";
 
-    public DbObject lolFor(String targetHash) {
+    public static DbObject forObj(Long targetHash) {
         return new DbObject(TYPE, json(targetHash));
     }
 
-    private static JSONObject json(String targetHash) {
+    private static JSONObject json(Long targetHash) {
         JSONObject json = new JSONObject();
         try {
             json.put(DbObjects.TARGET_HASH, targetHash);
