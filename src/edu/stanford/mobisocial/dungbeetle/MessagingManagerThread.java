@@ -167,7 +167,6 @@ public class MessagingManagerThread extends Thread {
                 }
 
 				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
-				objHandler.afterDatabaseInsertion(mContext, obj);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);

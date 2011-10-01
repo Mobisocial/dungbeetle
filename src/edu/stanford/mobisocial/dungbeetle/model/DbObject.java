@@ -12,14 +12,19 @@ import android.net.Uri;
 import android.support.v4.content.CursorLoader;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -100,14 +105,16 @@ public class DbObject {
      */
     public static void bindView(View v, Context context, Cursor c, ContactCache contactCache, boolean allowInteractions) {
     	//there is probably a utility or should be one that does this
+        long objId = c.getLong(0);
     	Cursor cursor = context.getContentResolver().query(OBJ_URI,
             	new String[] { 
             		DbObject.JSON,
             		DbObject.RAW,
             		DbObject.CONTACT_ID,
-            		DbObject.TIMESTAMP
+            		DbObject.TIMESTAMP,
+            		DbObject.HASH
             	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
+            	DbObject._ID + " = ?", new String[] {String.valueOf(objId)}, null);
     	if(cursor == null) {
     		Log.wtf("Dbbject", "cursor was null for bund view of db object");
     		return;
@@ -119,6 +126,7 @@ public class DbObject {
         byte[] raw = cursor.getBlob(1);
         Long contactId = cursor.getLong(2);
         Long timestamp = cursor.getLong(3);
+        Long hash = cursor.getLong(4);
         Date date = new Date(timestamp);
         cursor.close();
        	///////
@@ -153,6 +161,22 @@ public class DbObject {
         		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
         		if(renderer != null)
         			renderer.render(context, frame, content, raw, allowInteractions);
+
+                if (!allowInteractions) {
+                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                } else {
+                    /*
+                     * Set the number of current likes 
+                     * TODO: Optimize
+                     */
+                    DBHelper helper = new DBHelper(context);
+                    Cursor likes = helper.queryRelatedObjs(objId, LikeObj.TYPE);
+                    Button button = (Button)v.findViewById(R.id.obj_attachments);
+                    button.setText("Likes: " + likes.getCount());
+                    helper.close();
+                    button.setTag(hash);
+                    button.setOnClickListener(mLikeListener);
+                }
             } catch (JSONException e) {
                 Log.e("db", "error opening json");
             }
@@ -173,4 +197,12 @@ public class DbObject {
             mmContext = c;
         }
     }
+
+    private static OnClickListener mLikeListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Long hash = (Long)v.getTag();
+            Log.d("musubi", "LIKED " + hash);
+        }
+    };
 }
