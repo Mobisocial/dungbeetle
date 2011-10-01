@@ -63,6 +63,8 @@ public class PickContactsActivity extends TabActivity {
     public static final String INTENT_ACTION_PICK_CONTACTS = 
         "edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS";
 
+    public static final String TYPE_RECIPIENT = "vnd.mobisocial.org/recipient";
+
     public static final String INTENT_EXTRA_NFC_SHARE = "mobisocial.dungbeetle.NFC_SHARE";
     public static final String INTENT_EXTRA_PARENT_FEED = "feed";
     public static final String INTENT_EXTRA_MEMBERS_MAX = "max";
@@ -73,7 +75,8 @@ public class PickContactsActivity extends TabActivity {
 		mIntent = getIntent();
 		mNfc = new Nfc(this);
 
-		if (INTENT_ACTION_PICK_CONTACTS.equals(mIntent.getAction())) {
+		if (INTENT_ACTION_PICK_CONTACTS.equals(mIntent.getAction())
+		        || Contact.MIME_TYPE.equals(mIntent.getType())) {
 		    Uri feedUri = mIntent.getParcelableExtra(INTENT_EXTRA_PARENT_FEED);
 		    int max = mIntent.getIntExtra(INTENT_EXTRA_MEMBERS_MAX, -1);
 		    selectFeedMembersUi(feedUri, max);
