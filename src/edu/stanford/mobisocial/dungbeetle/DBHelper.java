@@ -1162,11 +1162,12 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded, String json, byte[] raw) {
+	public void markEncoded(long id, byte[] encoded, String json, byte[] raw, long hash) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.ENCODED, encoded);
         cv.put(DbObject.JSON, json);
         cv.put(DbObject.RAW, raw);
+        cv.put(DbObject.HASH, hash);
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
