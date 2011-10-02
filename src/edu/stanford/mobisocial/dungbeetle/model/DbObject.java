@@ -196,6 +196,7 @@ public class DbObject {
                 } else {
                     if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                        v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                     } else {
                         v.findViewById(R.id.obj_attachments).setVisibility(View.VISIBLE);
                         /*
