@@ -784,6 +784,8 @@ public class DBHelper extends SQLiteOpenHelper {
             String[] selectionArgs, String sortOrder) {
 
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        select = andClauses(select, DbObject._ID + " NOT IN (SELECT " +
+                    DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + ")");
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }

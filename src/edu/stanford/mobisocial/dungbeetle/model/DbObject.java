@@ -16,6 +16,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -27,6 +28,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -198,23 +200,24 @@ public class DbObject {
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
                         v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                     } else {
-                        Button sumButton = (Button)v.findViewById(R.id.obj_attachments);
+                        Button attachmentCountButton = (Button)v.findViewById(R.id.obj_attachments);
                         Button likeButton = (Button)v.findViewById(R.id.obj_like);
 
-                        sumButton.setVisibility(View.VISIBLE);
+                        attachmentCountButton.setVisibility(View.VISIBLE);
                         likeButton.setVisibility(View.VISIBLE);
 
                         if (hash == 0) {
-                            sumButton.setVisibility(View.GONE);
+                            attachmentCountButton.setVisibility(View.GONE);
                             likeButton.setVisibility(View.GONE);
                         } else {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
                             Cursor attachments = helper.queryRelatedObjs(objId);
-                            sumButton.setText(" " + attachments.getCount());
+                            attachmentCountButton.setText(" " + attachments.getCount());
                             helper.close();
-                            sumButton.setBackgroundColor(color);
-    
+                            attachmentCountButton.setBackgroundColor(color);
+                            attachmentCountButton.setOnClickListener(CommentsListener.getInstance(context));
+
                             likeButton.setTag(R.id.object_entry, hash);
                             likeButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
                             likeButton.setBackgroundColor(color);
@@ -284,6 +287,29 @@ public class DbObject {
             DbObject obj = LikeObj.forObj(hash);
             Log.d(TAG, "Sending " + obj);
             Helpers.sendToFeed(mmContext, obj, feed);
+        }
+    };
+
+    private static class CommentsListener implements OnClickListener {
+        private Context mmContext;
+        private static CommentsListener mmListener;
+        public static CommentsListener getInstance(Context context) {
+            if (mmListener == null || mmListener.mmContext != context) {
+                mmListener = new CommentsListener(context);
+            }
+            Log.d(TAG, "returning " + mmListener);
+            return mmListener;
+        }
+
+        private CommentsListener(Context context) {
+            mmContext = context;
+        }
+
+        @Override
+        public void onClick(View v) {
+            /*Intent viewComments = new Intent(Intent.ACTION_VIEW);
+            mmContext.startActivity(viewComments);*/
+            Toast.makeText(mmContext, "TODO: View comments.", Toast.LENGTH_SHORT).show();
         }
     };
 
