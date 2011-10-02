@@ -67,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 44;
+	public static final int VERSION = 45;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
 
@@ -121,8 +121,6 @@ public class DBHelper extends SQLiteOpenHelper {
             // Access the copied database so SQLiteHelper will cache it and mark
             // it as created.
             getWritableDatabase().close();
-            checkEncodedExists(getReadableDatabase());
-                
             Intent DBServiceIntent = new Intent(mContext, DungBeetleService.class);
             mContext.stopService(DBServiceIntent);
             mContext.startService(DBServiceIntent);
@@ -130,26 +128,12 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         return false;
     }
-	
-    void checkEncodedExists(SQLiteDatabase db) {
-        	Cursor c = db.rawQuery("SELECT * FROM " + DbObject.TABLE, null);
-        	try {
-            	c.getColumnIndexOrThrow(DbObject.ENCODED);
-        	}
-        	catch(Exception e) {
-            Log.w(TAG, "Adding column 'E' to object table.", e);
-            db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.ENCODED + " BLOB");
-            createIndex(db, "INDEX", "objects_by_encoded", DbObject.TABLE, DbObject.ENCODED);
-        	}
-        	c.close();
-    }
 
 	@Override
 	public void onOpen(SQLiteDatabase db) {
         // enable locking so we can safely share 
         // this instance around
         db.setLockingEnabled(true);
-        checkEncodedExists(db);
         Log.w(TAG, "dbhelper onopen");
     }
 
@@ -317,7 +301,9 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
         }
 
-        if (oldVersion <= 43) {
+        if (oldVersion <= 44) {
+            // oops.
+            db.execSQL("DROP TABLE IF EXISTS " + DbRelation.TABLE);
             createRelationBaseTable(db);
         }
         db.setVersion(VERSION);
@@ -330,6 +316,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + Subscriber.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + Group.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + GroupMember.TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + DbRelation.TABLE);
     }
 
     private void createTable(SQLiteDatabase db, String tableName, String[] uniqueCols, String... cols){
@@ -416,28 +403,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         Subscriber.FEED_NAME, "TEXT");
             createIndex(db, "INDEX", "subscribers_by_contact_id", Subscriber.TABLE, Subscriber.CONTACT_ID);
 
-            createTable(db, Group.TABLE, null,
-            			Group._ID, "INTEGER PRIMARY KEY",
-            			Group.NAME, "TEXT",
-                    Group.FEED_NAME, "TEXT",
-                    Group.DYN_UPDATE_URI, "TEXT",
-                    Group.VERSION, "INTEGER DEFAULT -1",
-                    Group.LAST_UPDATED, "INTEGER",
-                    Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
-                    Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
-                    Group.NUM_UNREAD, "INTEGER DEFAULT 0"
-                        );
-            
-            createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
-            
-            createTable(db, GroupMember.TABLE, null,
-            			GroupMember._ID, "INTEGER PRIMARY KEY",
-            			GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
-            			GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
-                        GroupMember.GLOBAL_CONTACT_ID, "TEXT");
-            createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
-                        GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
-
+            createGroupBaseTable(db);
+            createGroupMemberBaseTable(db);
             createRelationBaseTable(db);
 
             generateAndStorePersonalInfo(db);
@@ -449,11 +416,36 @@ public class DBHelper extends SQLiteOpenHelper {
         //}
 	}
 
+	private final void createGroupBaseTable(SQLiteDatabase db) {
+	    createTable(db, Group.TABLE, null,
+                Group._ID, "INTEGER PRIMARY KEY",
+                Group.NAME, "TEXT",
+            Group.FEED_NAME, "TEXT",
+            Group.DYN_UPDATE_URI, "TEXT",
+            Group.VERSION, "INTEGER DEFAULT -1",
+            Group.LAST_UPDATED, "INTEGER",
+            Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
+            Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
+            Group.NUM_UNREAD, "INTEGER DEFAULT 0"
+                );
+	    createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
+	}
+
+	private final void createGroupMemberBaseTable(SQLiteDatabase db) {
+	    createTable(db, GroupMember.TABLE, null,
+                GroupMember._ID, "INTEGER PRIMARY KEY",
+                GroupMember.GROUP_ID, "INTEGER REFERENCES " + Group.TABLE + "(" + Group._ID + ") ON DELETE CASCADE",
+                GroupMember.CONTACT_ID, "INTEGER REFERENCES " + Contact.TABLE + "(" + Contact._ID + ") ON DELETE CASCADE",
+                GroupMember.GLOBAL_CONTACT_ID, "TEXT");
+	    createIndex(db, "UNIQUE INDEX", "group_members_by_group_id", GroupMember.TABLE, 
+                GroupMember.GROUP_ID + "," + GroupMember.CONTACT_ID);
+	}
+
 	private final void createRelationBaseTable(SQLiteDatabase db) {
 	    createTable(db, DbRelation.TABLE, null,
                 DbRelation._ID, "INTEGER PRIMARY KEY",
-                DbRelation.OBJECT_HASH_A, "INTEGER",
-                DbRelation.OBJECT_HASH_B, "INTEGER"
+                DbRelation.OBJECT_ID_A, "INTEGER",
+                DbRelation.OBJECT_ID_B, "INTEGER"
                 );
 	}
 
@@ -562,10 +554,20 @@ public class DBHelper extends SQLiteOpenHelper {
             	throw new RuntimeException("Messasge size is too large for sending");
             Long objId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
+            if (json.has(DbObjects.TARGET_HASH)) {
+                long hashA = json.optLong(DbObjects.TARGET_HASH);
+                long idA = objIdForHash(hashA);
+                if (idA == -1) {
+                    Log.e(TAG, "No objId found for hash " + hashA);
+                } else {
+                    addObjRelation(idA, objId);
+                }
+            }
+
             DbEntryHandler typeInfo = DbObjects.getObjHandler(json);
             FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
             mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), typeInfo, json, objId);
-            
+
             return nextSeqId;
         }
         catch(Exception e) {
@@ -594,18 +596,31 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
             cv.put(DbObject.RAW, raw);
+
+            // TODO: Deprecated!!
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
             if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
             	throw new RuntimeException("Messasge size is too large for sending");
-            getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
+            long newObjId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
             ContentResolver resolver = mContext.getContentResolver();
             Cursor c = getFeedDependencies(feedName);
             while (c.moveToNext()) {
                 resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
             }
+
+            if (json.has(DbObjects.TARGET_HASH)) {
+                long hashA = json.optLong(DbObjects.TARGET_HASH);
+                long idA = objIdForHash(hashA);
+                if (idA == -1) {
+                    Log.e(TAG, "No objId found for hash " + hashA);
+                } else {
+                    addObjRelation(idA, newObjId);
+                }
+            }
+
             c.close();
             return seqId;
         }
@@ -619,17 +634,26 @@ public class DBHelper extends SQLiteOpenHelper {
      * Adds a parent/child relation to the database given a child obj.
      * The obj must have a {@link DbObjects#TARGET_HASH} field.
      */
-    public void addObjRelation(JSONObject obj) {
-        if (obj == null) {
-            throw new NullPointerException();
-        }
-        if (!obj.has(DbObjects.TARGET_HASH)) {
-            throw new IllegalArgumentException("Requires an obj with a target_hash field.");
-        }
-
+    public void addObjRelation(long idA, long idB) {
         ContentValues cv = new ContentValues();
-        cv.put(DbRelation.OBJECT_HASH_A, obj.optString(DbObjects.TARGET_HASH));
+        cv.put(DbRelation.OBJECT_ID_A, idA);
+        cv.put(DbRelation.OBJECT_ID_B, idB);
         getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
+    }
+
+    private long objIdForHash(long hash) {
+        Cursor c = getReadableDatabase().query(
+                DbObject.TABLE,
+                new String[]{ DbObject._ID },
+                DbObject.HASH + "= ?",
+                new String[] { String.valueOf(hash) },
+                null,
+                null,
+                null);
+        if (c.moveToFirst()) {
+            return c.getLong(0);
+        }
+        return -1;
     }
 
     long insertContact(ContentValues cv) {
@@ -1138,11 +1162,12 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded, String json, byte[] raw) {
+	public void markEncoded(long id, byte[] encoded, String json, byte[] raw, long hash) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.ENCODED, encoded);
         cv.put(DbObject.JSON, json);
         cv.put(DbObject.RAW, raw);
+        cv.put(DbObject.HASH, hash);
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
@@ -1297,5 +1322,27 @@ public class DBHelper extends SQLiteOpenHelper {
 		cv.putNull(DbObject.ENCODED);
 		getWritableDatabase().update(DbObject.TABLE, cv, DbObject._ID + " = ?", new String[] {String.valueOf(id)});
 	}
+
+	public Cursor queryRelatedObjs(long objId) {
+	    return queryRelatedObjs(objId, null);
+	}
+
+    public Cursor queryRelatedObjs(long objId, String type) {
+        StringBuilder sql = new StringBuilder();
+        sql.append(" SELECT objB.* FROM ")
+            .append(DbObject.TABLE + " objA " + ", " + DbObject.TABLE + " objB, ")
+            .append(DbRelation.TABLE + " rel ")
+            .append(" WHERE objA." + DbObject._ID + " = ? ")
+            .append(" AND objA." + DbObject._ID + " = rel." + DbRelation.OBJECT_ID_A)
+            .append(" AND objB." + DbObject._ID + " = rel." + DbRelation.OBJECT_ID_B);
+        String[] args;
+        if (type != null) {
+            args = new String[] { String.valueOf(objId), type };
+            sql.append(" AND objB." + DbObject.TYPE + " = ?");
+        } else {
+            args = new String[] { String.valueOf(objId) };
+        }
+        return getReadableDatabase().rawQuery(sql.toString(), args);
+    }
 
  }

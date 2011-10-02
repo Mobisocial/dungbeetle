@@ -18,7 +18,7 @@ public abstract class ObjAction {
         onAct(context, feedUri, objType, objDat, raw);
     }
 
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         return true;
     }
 }

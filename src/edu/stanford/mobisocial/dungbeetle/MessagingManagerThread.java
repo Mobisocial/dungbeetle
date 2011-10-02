@@ -167,7 +167,6 @@ public class MessagingManagerThread extends Thread {
                 }
 
 				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
-				objHandler.afterDatabaseInsertion(mContext, obj);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -390,9 +389,9 @@ public class MessagingManagerThread extends Thread {
         }
 
 		@Override
-		public void onEncoded(byte[] encoded) {
+		public void onEncoded(byte[] encoded, long hash) {
 			mEncoded = new SoftReference<byte[]>(encoded);
-			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
+			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw, hash);
 			mJson = null;
 			mRaw = null;
 			mBody = null;

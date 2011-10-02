@@ -41,6 +41,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -66,7 +67,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 /**
  * Shows a series of posts from a feed.
  */
-public class FeedViewFragment extends ListFragment implements OnItemClickListener, OnScrollListener,
+public class FeedViewFragment extends ListFragment implements OnScrollListener,
         OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
@@ -109,10 +110,11 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         mSendObjectButton = (ImageView)view.findViewById(R.id.more);
         mSendObjectButton.setOnClickListener(mSendObject);
 
-        getListView().setOnItemClickListener(this);
-        getListView().setFastScrollEnabled(true);
-        getListView().setOnItemLongClickListener(mLongClickListener);
-        getListView().setOnScrollListener(this);
+        ListView lv = getListView();
+        lv.setFastScrollEnabled(true);
+        lv.setOnItemLongClickListener(mLongClickListener);
+        lv.setOnScrollListener(this);
+        lv.setItemsCanFocus(true);
 
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
@@ -126,36 +128,6 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        cursor.close();
-
-        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-        try{
-            JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = DbObjects.getActivator(obj);
-            if(activator != null){
-                activator.activate(getActivity(), obj, raw);
-            }
-        }
-        catch(JSONException e){
-            Log.e(TAG, "Couldn't parse obj.", e);
-        }
-    }
-
 
     @Override
     public void onDestroyView() {
@@ -338,7 +310,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             final DbEntryHandler dbType = DbObjects.forType(mType);
             final List<ObjAction> actions = new ArrayList<ObjAction>();
             for (ObjAction action : ObjActions.getObjActions()) {
-                if (action.isActive(dbType, mObj)) {
+                if (action.isActive(getActivity(), dbType, mObj)) {
                     actions.add(action);
                 }
             }
@@ -351,6 +323,7 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            Log.d(TAG, "getting for " + getActivity());
                             actions.get(which).actOn(getActivity(), mFeedUri,dbType, mObj, mRaw);
                         }
                     }).create();

@@ -23,7 +23,7 @@ public class ViewFeedObjAction extends ObjAction {
     }
 
     @Override
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         return false; //objData.has(DbObject.CHILD_FEED_NAME);
     }
 
