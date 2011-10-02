@@ -70,6 +70,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final int VERSION = 45;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
+    private long mNextId = -1;
 
 	public DBHelper(Context context) {
 		super(
@@ -97,6 +98,19 @@ public class DBHelper extends SQLiteOpenHelper {
 			cpc.release();
 		}
 	}
+    public synchronized long getNextId() {
+    	if(mNextId == -1) {
+    		Cursor c = getReadableDatabase().query(DbObject.TABLE, new String[] {"MAX(" + DbObject._ID + ")"}, null, null, null, null, null);
+    		try {
+    			if(c.moveToFirst()) {
+    				mNextId = c.getLong(0) + 1;
+    			}
+    		} finally {
+    			c.close();
+    		}
+    	}
+		return mNextId++;
+    }
 	private int mRefs = 1;
 	public synchronized void addRef() {
 		++mRefs;
@@ -501,6 +515,7 @@ public class DBHelper extends SQLiteOpenHelper {
             long timestamp = new Date().getTime();
             prepareForSending(json, type, timestamp, appId);
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, "friend");
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
@@ -540,6 +555,7 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put(DbObjects.APP_ID, appId);
 
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
@@ -586,6 +602,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String type = json.getString(DbObjects.TYPE);
             String appId = json.getString(DbObjects.APP_ID);
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
             cv.put(DbObject.CONTACT_ID, contactId);
