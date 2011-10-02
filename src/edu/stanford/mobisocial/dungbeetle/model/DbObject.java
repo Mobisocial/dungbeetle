@@ -198,23 +198,23 @@ public class DbObject {
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
                         v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                     } else {
-                        v.findViewById(R.id.obj_attachments).setVisibility(View.VISIBLE);
-                        /*
-                         * Set the number of current likes 
-                         * TODO: Optimize
-                         */
-                        Button button = (Button)v.findViewById(R.id.obj_attachments);
+                        Button sumButton = (Button)v.findViewById(R.id.obj_attachments);
+                        Button likeButton = (Button)v.findViewById(R.id.obj_like);
+
+                        sumButton.setVisibility(View.VISIBLE);
+                        likeButton.setVisibility(View.VISIBLE);
+
                         if (hash == 0) {
-                            button.setVisibility(View.GONE);
+                            sumButton.setVisibility(View.GONE);
+                            likeButton.setVisibility(View.GONE);
                         } else {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
                             Cursor attachments = helper.queryRelatedObjs(objId);
-                            button.setText(" " + attachments.getCount());
+                            sumButton.setText(" " + attachments.getCount());
                             helper.close();
-                            button.setBackgroundColor(color);
+                            sumButton.setBackgroundColor(color);
     
-                            Button likeButton = (Button)v.findViewById(R.id.obj_like);
                             likeButton.setTag(R.id.object_entry, hash);
                             likeButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
                             likeButton.setBackgroundColor(color);
