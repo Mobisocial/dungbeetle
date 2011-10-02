@@ -3,6 +3,8 @@ package edu.stanford.mobisocial.dungbeetle.obj;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
+import edu.stanford.mobisocial.dungbeetle.obj.action.DeleteAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.PassItOnAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
@@ -22,6 +24,7 @@ public class ObjActions {
         sActions.add(new PlayAllAudioAction());
         sActions.add(new EditPhotoAction());
         sActions.add(new ExportPhotoAction());
+        sActions.add(new DeleteAction());
     }
 
     public static List<ObjAction> getObjActions() {

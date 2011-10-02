@@ -131,14 +131,12 @@ public class FeedHomeActivity extends MusubiBaseActivity
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
-        App.instance().setCurrentFeed(mFeedUri);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
-        App.instance().setCurrentFeed(null);
     }
 
     @Override

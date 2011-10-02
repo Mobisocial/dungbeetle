@@ -15,7 +15,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class SetProfileObjAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
     	if(raw == null) {
 	        String b64Bytes = objData.optString(PictureObj.DATA);
 	        raw = FastBase64.decode(b64Bytes);
@@ -25,7 +25,7 @@ public class SetProfileObjAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Set as Profile";
     }
 

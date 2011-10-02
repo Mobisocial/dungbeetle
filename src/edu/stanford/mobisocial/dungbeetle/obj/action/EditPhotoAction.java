@@ -34,13 +34,13 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  */
 public class EditPhotoAction extends ObjAction {
     public void onAct(Context context, Uri feedUri,
-            DbEntryHandler objType, JSONObject objData, byte[] raw) {
+            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         ((InstrumentedActivity)context).doActivityForResult(
                 new EditCallout(context, feedUri, objData, raw));
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Edit";
     }
 

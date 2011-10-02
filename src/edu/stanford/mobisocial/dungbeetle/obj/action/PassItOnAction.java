@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.obj.action;
 
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -22,7 +23,7 @@ public class PassItOnAction extends ObjAction {
     private static DbEntryHandler mType;
     private Context mContext;
 
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         mContext = context;
     	objData = objType.mergeRaw(objData, raw);
         holdObj(context, objType, objData);
@@ -30,7 +31,7 @@ public class PassItOnAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Pass it On";
     }
 
@@ -53,6 +54,9 @@ public class PassItOnAction extends ObjAction {
     private ActivityCallout mTargetSelected = new ActivityCallout() {
         @Override
         public void handleResult(int resultCode, Intent data) {
+            if (resultCode != Activity.RESULT_OK) {
+                return;
+            }
             Parcelable[] feedParc = (Parcelable[])data.getParcelableArrayExtra(PickContactsActivity.EXTRA_FEEDS);
             Uri[] uris = new Uri[feedParc.length];
             int i = 0;

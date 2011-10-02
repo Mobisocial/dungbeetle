@@ -27,7 +27,9 @@ import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
+import edu.stanford.mobisocial.bumblebee.CryptoException;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
+import edu.stanford.mobisocial.bumblebee.MessageFormat;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
 import edu.stanford.mobisocial.bumblebee.MessengerService;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
@@ -389,8 +391,12 @@ public class MessagingManagerThread extends Thread {
         }
 
 		@Override
-		public void onEncoded(byte[] encoded, long hash) {
+		public void onEncoded(byte[] encoded) {
 			mEncoded = new SoftReference<byte[]>(encoded);
+			long hash = -1;
+			try {
+				hash = MessageFormat.extractHash(encoded);
+			} catch(CryptoException e) {}
 			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw, hash);
 			mJson = null;
 			mRaw = null;

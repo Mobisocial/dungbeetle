@@ -5,12 +5,10 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.MFRecord;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -38,13 +36,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
@@ -52,14 +49,11 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
@@ -134,10 +128,17 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         super.onDestroyView();
         mContactCache.close();
     }
-    
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        App.instance().setCurrentFeed(mFeedUri);
+    }
+
     @Override
     public void onPause() {
     	super.onPause();
+    	App.instance().setCurrentFeed(null);
     }
     
     @Override
@@ -245,6 +246,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             		DbObject.JSON,
             		DbObject.RAW,
             		DbObject.TYPE,
+            		DbObject.HASH
             	},
             	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
         if(!cursor.moveToFirst())
@@ -253,6 +255,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         final String type = cursor.getString(2);
         final String jsonSrc = cursor.getString(0);
         final byte[] raw = cursor.getBlob(1);
+        final long hash = cursor.getLong(3);
         cursor.close();
 
         final JSONObject json;
@@ -271,7 +274,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         ft.addToBackStack(null);
 
         // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(mFeedUri, type, json, raw);
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(mFeedUri, type, hash, json, raw);
         newFragment.show(ft, "dialog");
     }
 
@@ -280,9 +283,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         JSONObject mObj;
 		byte[] mRaw;
 		Uri mFeedUri;
+		long mHash;
 
-        public static ObjMenuDialogFragment newInstance(Uri feedUri, String type, JSONObject obj, byte[] raw) {
-            return new ObjMenuDialogFragment(feedUri, type, obj, raw);
+        public static ObjMenuDialogFragment newInstance(Uri feedUri, String type, long hash, JSONObject obj, byte[] raw) {
+            return new ObjMenuDialogFragment(feedUri, type, hash, obj, raw);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -290,11 +294,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             
         }
 
-        private ObjMenuDialogFragment(Uri feedUri, String type, JSONObject obj, byte[] raw) {
+        private ObjMenuDialogFragment(Uri feedUri, String type, long hash, JSONObject obj, byte[] raw) {
             mFeedUri = feedUri;
             mType = type;
             mObj = obj;
             mRaw = raw;
+            mHash = hash;
         }
 
         @Override
@@ -317,14 +322,14 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             final String[] actionLabels = new String[actions.size()];
             int i = 0;
             for (ObjAction action : actions) {
-                actionLabels[i++] = action.getLabel();
+                actionLabels[i++] = action.getLabel(getActivity());
             }
             return new AlertDialog.Builder(getActivity()).setTitle("Handle...")
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Log.d(TAG, "getting for " + getActivity());
-                            actions.get(which).actOn(getActivity(), mFeedUri,dbType, mObj, mRaw);
+                            actions.get(which).actOn(getActivity(), mFeedUri,dbType, mHash, mObj, mRaw);
                         }
                     }).create();
         }

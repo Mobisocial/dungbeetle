@@ -31,7 +31,7 @@ import android.util.Log;
  *
  */
 public class ExportPhotoAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         String b64Bytes = objData.optString(PictureObj.DATA);
         if (raw == null) {
         	raw = FastBase64.decode(b64Bytes);
@@ -64,7 +64,7 @@ public class ExportPhotoAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Export";
     }
 

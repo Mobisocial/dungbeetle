@@ -125,7 +125,7 @@ ORDER BY _id ASC
             
         }
 	
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, final JSONObject objData, byte[] raw) {
         DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
         
@@ -260,7 +260,7 @@ ORDER BY _id ASC
 
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Replay Conversation";
     }
 

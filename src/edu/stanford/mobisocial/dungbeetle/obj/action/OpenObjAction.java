@@ -16,7 +16,7 @@ import android.net.Uri;
 public class OpenObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         if (objType instanceof Activator) {
             ((Activator) objType).activate(context, objData, raw);
         }
@@ -28,7 +28,7 @@ public class OpenObjAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Open";
     }
 }
