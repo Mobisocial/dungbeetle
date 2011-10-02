@@ -22,7 +22,7 @@ public class PassItOnAction extends ObjAction {
     private static DbEntryHandler mType;
     private Context mContext;
 
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         mContext = context;
     	objData = objType.mergeRaw(objData, raw);
         holdObj(context, objType, objData);
@@ -30,7 +30,7 @@ public class PassItOnAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Pass it On";
     }
 

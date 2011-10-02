@@ -356,7 +356,8 @@ public class DbObject {
                         DbObject.JSON,
                         DbObject.RAW,
                         DbObject.TYPE,
-                        DbObject.FEED_NAME
+                        DbObject.FEED_NAME,
+                        DbObject.HASH
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
             if(!cursor.moveToFirst()) {
@@ -366,13 +367,14 @@ public class DbObject {
             final String jsonSrc = cursor.getString(0);
             final byte[] raw = cursor.getBlob(1);
             String type = cursor.getString(2);
+            long hash = cursor.getLong(4);
             Uri feedUri = Feed.uriForName(cursor.getString(3));
             cursor.close();
 
             if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
             try {
                 JSONObject obj = new JSONObject(jsonSrc);
-                createActionDialog(mContext, feedUri, type, obj, raw);
+                createActionDialog(mContext, feedUri, type, hash, obj, raw);
             } catch(JSONException e){
                 Log.e(TAG, "Couldn't parse obj.", e);
             }
@@ -381,7 +383,7 @@ public class DbObject {
     };
 
     public static Dialog createActionDialog(final Context context, final Uri feedUri,
-            final String type, final JSONObject json, final byte[] raw) {
+            final String type, final long hash, final JSONObject json, final byte[] raw) {
 
         final DbEntryHandler dbType = DbObjects.forType(type);
         final List<ObjAction> actions = new ArrayList<ObjAction>();
@@ -393,13 +395,13 @@ public class DbObject {
         final String[] actionLabels = new String[actions.size()];
         int i = 0;
         for (ObjAction action : actions) {
-            actionLabels[i++] = action.getLabel();
+            actionLabels[i++] = action.getLabel(context);
         }
         return new AlertDialog.Builder(context).setTitle("Handle...")
                 .setItems(actionLabels, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        actions.get(which).actOn(context, feedUri, dbType, json, raw);
+                        actions.get(which).actOn(context, feedUri, dbType, hash, json, raw);
                     }
                 }).create();
     }

@@ -246,6 +246,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             		DbObject.JSON,
             		DbObject.RAW,
             		DbObject.TYPE,
+            		DbObject.HASH
             	},
             	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
         if(!cursor.moveToFirst())
@@ -254,6 +255,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         final String type = cursor.getString(2);
         final String jsonSrc = cursor.getString(0);
         final byte[] raw = cursor.getBlob(1);
+        final long hash = cursor.getLong(3);
         cursor.close();
 
         final JSONObject json;
@@ -272,7 +274,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         ft.addToBackStack(null);
 
         // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(mFeedUri, type, json, raw);
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(mFeedUri, type, hash, json, raw);
         newFragment.show(ft, "dialog");
     }
 
@@ -281,9 +283,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         JSONObject mObj;
 		byte[] mRaw;
 		Uri mFeedUri;
+		long mHash;
 
-        public static ObjMenuDialogFragment newInstance(Uri feedUri, String type, JSONObject obj, byte[] raw) {
-            return new ObjMenuDialogFragment(feedUri, type, obj, raw);
+        public static ObjMenuDialogFragment newInstance(Uri feedUri, String type, long hash, JSONObject obj, byte[] raw) {
+            return new ObjMenuDialogFragment(feedUri, type, hash, obj, raw);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -291,11 +294,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             
         }
 
-        private ObjMenuDialogFragment(Uri feedUri, String type, JSONObject obj, byte[] raw) {
+        private ObjMenuDialogFragment(Uri feedUri, String type, long hash, JSONObject obj, byte[] raw) {
             mFeedUri = feedUri;
             mType = type;
             mObj = obj;
             mRaw = raw;
+            mHash = hash;
         }
 
         @Override
@@ -318,14 +322,14 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             final String[] actionLabels = new String[actions.size()];
             int i = 0;
             for (ObjAction action : actions) {
-                actionLabels[i++] = action.getLabel();
+                actionLabels[i++] = action.getLabel(getActivity());
             }
             return new AlertDialog.Builder(getActivity()).setTitle("Handle...")
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Log.d(TAG, "getting for " + getActivity());
-                            actions.get(which).actOn(getActivity(), mFeedUri,dbType, mObj, mRaw);
+                            actions.get(which).actOn(getActivity(), mFeedUri,dbType, mHash, mObj, mRaw);
                         }
                     }).create();
         }

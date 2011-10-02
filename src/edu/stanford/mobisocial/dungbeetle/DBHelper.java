@@ -1344,5 +1344,17 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         return getReadableDatabase().rawQuery(sql.toString(), args);
     }
+	public void deleteObjByHash(long hash) {
+		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+		
+	}
+	public void deleteObjByHash(long id, long hash) {
+		//TODO: limit by contact and add indexes
+		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
+	public void deleteObjByHash(String feed_name, long hash) {
+		//TODO: limit by feed and add indexes
+		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
 
  }
