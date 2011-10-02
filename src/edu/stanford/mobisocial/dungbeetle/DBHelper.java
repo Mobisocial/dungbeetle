@@ -813,7 +813,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
-Log.d(TAG, "RUNNING THE QUERY YOU BUILT   " + select);
+
         Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
         Log.d(TAG, "got " + c.getCount() + " items");

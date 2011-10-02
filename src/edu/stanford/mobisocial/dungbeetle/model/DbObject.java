@@ -1,7 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -28,7 +25,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -285,8 +281,8 @@ public class DbObject {
         public void onClick(View v) {
             Long hash = (Long)v.getTag(R.id.object_entry);
             Uri feed = (Uri)v.getTag(R.id.feed_label);
-            DbObject obj = LikeObj.forObj(hash);
-            Log.d(TAG, "Sending " + obj);
+            String label = ((Button)v).getText().toString();
+            DbObject obj = LikeObj.forObj(hash, label);
             Helpers.sendToFeed(mmContext, obj, feed);
         }
     };

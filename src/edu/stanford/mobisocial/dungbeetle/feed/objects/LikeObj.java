@@ -19,16 +19,31 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 public class LikeObj extends DbEntryHandler implements FeedRenderer {
     private static final String TAG = "musubi";
 
+    public static final String LABEL = "label";
     public static final String TYPE = "like_ref";
 
     public static DbObject forObj(Long targetHash) {
         return new DbObject(TYPE, json(targetHash));
     }
 
+    public static DbObject forObj(Long targetHash, String badge) {
+        return new DbObject(TYPE, json(targetHash, badge));
+    }
+
     private static JSONObject json(Long targetHash) {
         JSONObject json = new JSONObject();
         try {
             json.put(DbObjects.TARGET_HASH, targetHash);
+        } catch (JSONException e) {
+        }
+        return json;
+    }
+
+    private static JSONObject json(Long targetHash, String label) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put(DbObjects.TARGET_HASH, targetHash);
+            json.put(LABEL, label);
         } catch (JSONException e) {
         }
         return json;
@@ -58,27 +73,17 @@ public class LikeObj extends DbEntryHandler implements FeedRenderer {
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw,
             boolean allowInteractions) {
         TextView valueTV = new TextView(context);
-        String label = getLabel(content.optLong(DbObject.TIMESTAMP));
+        String label;
+        if (content.has(LikeObj.LABEL)) {
+            label = content.optString(LikeObj.LABEL);
+        } else {
+            label = "~";
+        }
         valueTV.setText(label);
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
-    }
-
-    private static final String[] PHRASES = new String[] {
-        "Nice",
-        "Word",
-        "Sweet",
-        "Ok",
-        "Yea",
-        "Yo",
-        "Fo Sho",
-        "Rick Roll"
-    };
-
-    private String getLabel(Long id) {
-        return PHRASES[(int)(id % PHRASES.length)];
     }
 }
