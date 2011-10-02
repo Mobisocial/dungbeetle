@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.obj.action;
 
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -53,6 +54,9 @@ public class PassItOnAction extends ObjAction {
     private ActivityCallout mTargetSelected = new ActivityCallout() {
         @Override
         public void handleResult(int resultCode, Intent data) {
+            if (resultCode != Activity.RESULT_OK) {
+                return;
+            }
             Parcelable[] feedParc = (Parcelable[])data.getParcelableArrayExtra(PickContactsActivity.EXTRA_FEEDS);
             Uri[] uris = new Uri[feedParc.length];
             int i = 0;
