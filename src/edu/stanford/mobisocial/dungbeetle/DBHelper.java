@@ -1322,6 +1322,11 @@ public class DBHelper extends SQLiteOpenHelper {
 		cv.putNull(DbObject.ENCODED);
 		getWritableDatabase().update(DbObject.TABLE, cv, DbObject._ID + " = ?", new String[] {String.valueOf(id)});
 	}
+
+	public Cursor queryRelatedObjs(long objId) {
+	    return queryRelatedObjs(objId, null);
+	}
+
     public Cursor queryRelatedObjs(long objId, String type) {
         StringBuilder sql = new StringBuilder();
         sql.append(" SELECT objB.* FROM ")

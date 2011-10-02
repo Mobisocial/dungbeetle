@@ -14,7 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 public class LikeObj extends DbEntryHandler {
     private static final String TAG = "musubi";
 
-    public static final String TYPE = "lol_ref";
+    public static final String TYPE = "like_ref";
 
     public static DbObject forObj(Long targetHash) {
         return new DbObject(TYPE, json(targetHash));

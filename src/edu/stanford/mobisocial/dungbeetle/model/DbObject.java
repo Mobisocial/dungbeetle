@@ -1,5 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +17,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,6 +40,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
@@ -133,8 +139,9 @@ public class DbObject {
     		Log.wtf("Dbbject", "cursor was null for bund view of db object");
     		return;
     	}
-        if(!cursor.moveToFirst())
+        if(!cursor.moveToFirst()) {
         	return;
+        }
         
         String jsonSrc = cursor.getString(0);
         byte[] raw = cursor.getBlob(1);
@@ -179,31 +186,65 @@ public class DbObject {
                 frame.setTag(R.id.object_entry, c.getPosition());
                 
         		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-        		if(renderer != null)
+        		if(renderer != null) {
         			renderer.render(context, frame, content, raw, allowInteractions);
+        		}
 
                 if (!allowInteractions) {
                     v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                    v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                 } else {
-                    /*
-                     * Set the number of current likes 
-                     * TODO: Optimize
-                     */
-                    DBHelper helper = new DBHelper(context);
-                    Cursor likes = helper.queryRelatedObjs(objId, LikeObj.TYPE);
-                    Button button = (Button)v.findViewById(R.id.obj_attachments);
-                    button.setText("Likes: " + likes.getCount());
-                    helper.close();
-                    button.setTag(R.id.object_entry, hash);
-                    button.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                    button.setOnClickListener(LikeListener.getInstance(context));
-                    // button.setBackgroundColor(Feed.colorFor(feedName)); // TODO: per-obj coloring.
+                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
+                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                    } else {
+                        v.findViewById(R.id.obj_attachments).setVisibility(View.VISIBLE);
+                        /*
+                         * Set the number of current likes 
+                         * TODO: Optimize
+                         */
+                        Button button = (Button)v.findViewById(R.id.obj_attachments);
+                        if (hash == 0) {
+                            button.setVisibility(View.GONE);
+                        } else {
+                            int color = DbObject.colorFor(hash);
+                            DBHelper helper = new DBHelper(context);
+                            Cursor attachments = helper.queryRelatedObjs(objId);
+                            button.setText(" " + attachments.getCount());
+                            helper.close();
+                            button.setBackgroundColor(color);
+    
+                            Button likeButton = (Button)v.findViewById(R.id.obj_like);
+                            likeButton.setTag(R.id.object_entry, hash);
+                            likeButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
+                            likeButton.setBackgroundColor(color);
+                            likeButton.setOnClickListener(LikeListener.getInstance(context));
+                        }
+                    }
                 }
             } catch (JSONException e) {
                 Log.e("db", "error opening json", e);
             }
         }
         catch(Maybe.NoValError e){}
+    }
+
+    private static int colorFor(Long hash) {
+        float[] baseHues = Feed.getBaseHues();
+        ByteBuffer bos = ByteBuffer.allocate(8);
+        bos.putLong(hash);
+        byte[] hashBytes = new byte[8];
+        bos.position(0);
+        bos.get(hashBytes);
+        SecureRandom r = new SecureRandom(hashBytes);
+        float hsv[] = new float[] {
+                baseHues[r.nextInt(baseHues.length)],
+                r.nextFloat(),
+                r.nextFloat()
+        };
+        hsv[0] = hsv[0] + 20 * r.nextFloat() - 10; 
+        hsv[1] = hsv[1] * 0.2f + 0.8f;
+        hsv[2] = hsv[2] * 0.2f + 0.8f;
+        return Color.HSVToColor(hsv);
     }
 
     public static class OnClickViewProfile implements View.OnClickListener {
