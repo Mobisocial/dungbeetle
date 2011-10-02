@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	      android:layout_width="fill_parent"
 	      android:layout_height="wrap_content"
-	      android:padding="6dip"
-	      android:orientation="horizontal"
 	      android:gravity="top"
 	      android:id="@+id/contact_frame"
+	      android:paddingBottom="10dip"
 	      >
 
   <LinearLayout android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:orientation="horizontal">
+		android:orientation="horizontal"
+		android:padding="6dip">
     <ImageView
 	android:id="@+id/icon"
 	android:layout_width="50dip"
@@ -52,14 +52,25 @@
 		    android:gravity="left|top"
 		    >
       </LinearLayout>
-<Button 
-    android:layout_marginTop="10dip"
-  	android:layout_width="fill_parent"
-	android:layout_height="wrap_content"
-	android:text="Love me"
-	android:id="@+id/obj_attachments"
-	android:visibility="gone" />
-
     </LinearLayout>
   </LinearLayout>
-</LinearLayout>
+  
+  <Button 
+  	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:id="@+id/obj_attachments"
+	android:layout_alignParentRight="true"
+	android:layout_alignParentTop="true"
+	android:layout_marginTop="6dip"
+    />
+
+  <Button 
+  	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:id="@+id/obj_like"
+	android:layout_toLeftOf="@id/obj_attachments"
+	android:text="&lt;3"
+	android:layout_marginTop="6dip"
+	android:layout_marginRight="2dip"
+    />
+</RelativeLayout>

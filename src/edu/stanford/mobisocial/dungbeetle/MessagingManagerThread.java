@@ -389,9 +389,9 @@ public class MessagingManagerThread extends Thread {
         }
 
 		@Override
-		public void onEncoded(byte[] encoded) {
+		public void onEncoded(byte[] encoded, long hash) {
 			mEncoded = new SoftReference<byte[]>(encoded);
-			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
+			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw, hash);
 			mJson = null;
 			mRaw = null;
 			mBody = null;

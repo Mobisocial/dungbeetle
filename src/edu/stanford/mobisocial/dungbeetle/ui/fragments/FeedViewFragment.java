@@ -5,12 +5,10 @@ import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.MFRecord;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -38,12 +36,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
@@ -51,14 +49,11 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
@@ -66,7 +61,7 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 /**
  * Shows a series of posts from a feed.
  */
-public class FeedViewFragment extends ListFragment implements OnItemClickListener, OnScrollListener,
+public class FeedViewFragment extends ListFragment implements OnScrollListener,
         OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
@@ -109,10 +104,11 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         mSendObjectButton = (ImageView)view.findViewById(R.id.more);
         mSendObjectButton.setOnClickListener(mSendObject);
 
-        getListView().setOnItemClickListener(this);
-        getListView().setFastScrollEnabled(true);
-        getListView().setOnItemLongClickListener(mLongClickListener);
-        getListView().setOnScrollListener(this);
+        ListView lv = getListView();
+        lv.setFastScrollEnabled(true);
+        lv.setOnItemLongClickListener(mLongClickListener);
+        lv.setOnScrollListener(this);
+        lv.setItemsCanFocus(true);
 
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
@@ -128,44 +124,21 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        cursor.close();
-
-        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-        try{
-            JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = DbObjects.getActivator(obj);
-            if(activator != null){
-                activator.activate(getActivity(), obj, raw);
-            }
-        }
-        catch(JSONException e){
-            Log.e(TAG, "Couldn't parse obj.", e);
-        }
-    }
-
-
-    @Override
     public void onDestroyView() {
         super.onDestroyView();
         mContactCache.close();
     }
-    
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        App.instance().setCurrentFeed(mFeedUri);
+    }
+
     @Override
     public void onPause() {
     	super.onPause();
+    	App.instance().setCurrentFeed(null);
     }
     
     @Override
