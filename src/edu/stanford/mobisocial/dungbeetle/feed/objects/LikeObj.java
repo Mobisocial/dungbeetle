@@ -58,11 +58,27 @@ public class LikeObj extends DbEntryHandler implements FeedRenderer {
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw,
             boolean allowInteractions) {
         TextView valueTV = new TextView(context);
-        valueTV.setText("Re: " + content.optString(DbObjects.TARGET_HASH) + ", Yea.");
+        String label = getLabel(content.optLong(DbObject.TIMESTAMP));
+        valueTV.setText(label);
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
+    }
+
+    private static final String[] PHRASES = new String[] {
+        "Nice",
+        "Word",
+        "Sweet",
+        "Ok",
+        "Yea",
+        "Yo",
+        "Fo Sho",
+        "Rick Roll"
+    };
+
+    private String getLabel(Long id) {
+        return PHRASES[(int)(id % PHRASES.length)];
     }
 }

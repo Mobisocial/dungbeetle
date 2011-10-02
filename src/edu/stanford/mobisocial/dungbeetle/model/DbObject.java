@@ -215,6 +215,8 @@ public class DbObject {
                             Cursor attachments = helper.queryRelatedObjs(objId);
                             attachmentCountButton.setText(" " + attachments.getCount());
                             helper.close();
+                            attachmentCountButton.setTag(R.id.object_entry, hash);
+                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
                             attachmentCountButton.setBackgroundColor(color);
                             attachmentCountButton.setOnClickListener(CommentsListener.getInstance(context));
 
@@ -272,7 +274,6 @@ public class DbObject {
             if (mmListener == null || mmListener.mmContext != context) {
                 mmListener = new LikeListener(context);
             }
-            Log.d(TAG, "returning " + mmListener);
             return mmListener;
         }
 
@@ -297,7 +298,6 @@ public class DbObject {
             if (mmListener == null || mmListener.mmContext != context) {
                 mmListener = new CommentsListener(context);
             }
-            Log.d(TAG, "returning " + mmListener);
             return mmListener;
         }
 
@@ -307,9 +307,17 @@ public class DbObject {
 
         @Override
         public void onClick(View v) {
+            // TODO:
             /*Intent viewComments = new Intent(Intent.ACTION_VIEW);
+            viewComments.setDataAndType(objUri, DbObject.MIME_TYPE);
             mmContext.startActivity(viewComments);*/
-            Toast.makeText(mmContext, "TODO: View comments.", Toast.LENGTH_SHORT).show();
+            Long hash = (Long)v.getTag(R.id.object_entry);
+            Uri feed = (Uri)v.getTag(R.id.feed_label);
+            Uri objUri = feed.buildUpon().encodedPath(feed.getPath() + ":" + hash).build();
+
+            Intent objViewActivity = new Intent(Intent.ACTION_VIEW);
+            objViewActivity.setDataAndType(objUri, Feed.MIME_TYPE);
+            mmContext.startActivity(objViewActivity);
         }
     };
 
