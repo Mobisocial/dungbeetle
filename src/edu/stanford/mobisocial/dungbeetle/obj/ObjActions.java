@@ -22,14 +22,11 @@ public class ObjActions {
         sActions.add(new OpenObjAction());
         sActions.add(new EditPhotoAction());
         sActions.add(new ExportPhotoAction());
-<<<<<<< HEAD
         sActions.add(new DeleteAction());
-=======
         sActions.add(new ViewFeedObjAction());
         sActions.add(new SetProfileObjAction());
         sActions.add(new PlayAllAudioAction());
         sActions.add(new RelatedObjAction());
->>>>>>> relateObj
     }
 
     public static List<ObjAction> getObjActions() {
