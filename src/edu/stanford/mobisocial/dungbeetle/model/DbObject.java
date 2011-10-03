@@ -1,7 +1,5 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -11,6 +9,8 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.rabbitmq.client.GetResponse;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -18,8 +18,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -63,7 +63,6 @@ public class DbObject {
 	public static final String CHILD_FEED_NAME = "child_feed";
 	public static final String HASH = "hash";
 
-    public static final String EXTRA_FEED_URI = "feed_uri";
 	public static final String RAW = "raw";
 
     private final Cursor mCursor;
@@ -192,33 +191,25 @@ public class DbObject {
 
                 if (!allowInteractions) {
                     v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                    v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                 } else {
                     if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                        v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                     } else {
-                        Button sumButton = (Button)v.findViewById(R.id.obj_attachments);
-                        Button likeButton = (Button)v.findViewById(R.id.obj_like);
-
-                        sumButton.setVisibility(View.VISIBLE);
-                        likeButton.setVisibility(View.VISIBLE);
+                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
+                        attachmentCountButton.setVisibility(View.VISIBLE);
 
                         if (hash == 0) {
-                            sumButton.setVisibility(View.GONE);
-                            likeButton.setVisibility(View.GONE);
+                            attachmentCountButton.setVisibility(View.GONE);
                         } else {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
                             Cursor attachments = helper.queryRelatedObjs(objId);
-                            sumButton.setText(" " + attachments.getCount());
+                            attachmentCountButton.setText(" " + attachments.getCount());
                             helper.close();
-                            sumButton.setBackgroundColor(color);
-    
-                            likeButton.setTag(R.id.object_entry, hash);
-                            likeButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            likeButton.setBackgroundColor(color);
-                            likeButton.setOnClickListener(LikeListener.getInstance(context));
+                            attachmentCountButton.setBackgroundColor(color);
+                            attachmentCountButton.setTag(R.id.object_entry, hash);
+                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
+                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
                         }
                     }
                 }
@@ -269,7 +260,6 @@ public class DbObject {
             if (mmListener == null || mmListener.mmContext != context) {
                 mmListener = new LikeListener(context);
             }
-            Log.d(TAG, "returning " + mmListener);
             return mmListener;
         }
 
@@ -281,8 +271,8 @@ public class DbObject {
         public void onClick(View v) {
             Long hash = (Long)v.getTag(R.id.object_entry);
             Uri feed = (Uri)v.getTag(R.id.feed_label);
-            DbObject obj = LikeObj.forObj(hash);
-            Log.d(TAG, "Sending " + obj);
+            String label = ((TextView)v).getText().toString();
+            DbObject obj = LikeObj.forObj(hash, label);
             Helpers.sendToFeed(mmContext, obj, feed);
         }
     };

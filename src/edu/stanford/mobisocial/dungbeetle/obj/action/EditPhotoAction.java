@@ -6,7 +6,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.musubi.Musubi;
+
 import org.json.JSONObject;
+import org.mobisocial.corral.ContentCorral;
 
 import android.app.Activity;
 import android.content.Context;
@@ -23,7 +26,6 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -35,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 public class EditPhotoAction extends ObjAction {
     public void onAct(Context context, Uri feedUri,
             DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+
         ((InstrumentedActivity)context).doActivityForResult(
                 new EditCallout(context, feedUri, objData, raw));
     }
@@ -57,44 +60,60 @@ public class EditPhotoAction extends ObjAction {
         final byte[] mRaw;
         final Context mContext;
         final Uri mFeedUri;
+        final Uri mHdUri;
 
         public EditCallout(Context context, Uri feedUri, JSONObject json, byte[] raw) {
             mJson = json;
             mRaw = raw;
             mContext = context;
             mFeedUri = feedUri;
+            Uri hd = null;
+            if (ContentCorral.fileAvailableLocally(context, json)) {
+                try {
+                    hd = ContentCorral.fetchContent(context, json);
+                } catch (IOException e) {}
+            }
+            mHdUri = hd;
         }
         @Override
         public Intent getStartIntent() {
-            byte[] raw;
-            if (mRaw == null) {
-                String b64Bytes = mJson.optString(PictureObj.DATA);
-                raw = FastBase64.decode(b64Bytes);
-            } else {
-                raw = mRaw;
-            }
-            OutputStream outStream = null;
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");
-            try {
-                outStream = new FileOutputStream(file);
-                
-                BitmapManager mgr = new BitmapManager(1);
-                Bitmap bitmap = mgr.getBitmap(raw.hashCode(), raw);
-                
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-                outStream.flush();
-                outStream.close();
+            Uri contentUri;
 
-                bitmap.recycle();
-                bitmap = null;
-                System.gc();
-                Intent intent = new Intent(Intent.ACTION_EDIT);  
-                intent.setDataAndType(Uri.fromFile(file), "image/png");
-                return Intent.createChooser(intent, "Edit with");
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
+            if (mHdUri != null) {
+                contentUri = mHdUri;
+            } else {
+                byte[] raw;
+                if (mRaw == null) {
+                    String b64Bytes = mJson.optString(PictureObj.DATA);
+                    raw = FastBase64.decode(b64Bytes);
+                } else {
+                    raw = mRaw;
+                }
+                OutputStream outStream = null;
+                File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");
+                try {
+                    outStream = new FileOutputStream(file);
+                    
+                    BitmapManager mgr = new BitmapManager(1);
+                    Bitmap bitmap = mgr.getBitmap(raw.hashCode(), raw);
+                    
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+                    outStream.flush();
+                    outStream.close();
+    
+                    bitmap.recycle();
+                    bitmap = null;
+                    System.gc();
+                    contentUri = Uri.fromFile(file);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
+            Intent intent = new Intent(Intent.ACTION_EDIT);  
+            intent.setDataAndType(contentUri, "image/png");
+            intent.putExtra(Musubi.EXTRA_FEED_URI, mFeedUri);
+            return Intent.createChooser(intent, "Edit with");
         }
 
         @Override
