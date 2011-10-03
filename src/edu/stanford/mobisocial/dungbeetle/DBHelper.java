@@ -711,7 +711,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return db.insert(Subscriber.TABLE, null, cv);
+            return db.insertOrThrow(Subscriber.TABLE, null, cv);
         } catch (SQLiteConstraintException e) {
         	//this inserts dupes, so hide this spam in a way 
         	//that doesn't require api level 8
