@@ -67,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 45;
+	public static final int VERSION = 46;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -320,6 +320,11 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + DbRelation.TABLE);
             createRelationBaseTable(db);
         }
+        if (oldVersion <= 45) {
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_OBJECT_ID + " INTEGER");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_UPDATED + " INTEGER");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.NUM_UNREAD + " INTEGER DEFAULT 0");
+        }
         db.setVersion(VERSION);
     }
 
@@ -405,6 +410,9 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact.EMAIL, "TEXT",
                         Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
                         Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
+                        Contact.LAST_OBJECT_ID, "INTEGER",
+                        Contact.LAST_UPDATED, "INTEGER",
+                        Contact.NUM_UNREAD, "INTEGER DEFAULT 0",
                         Contact.NEARBY, "INTEGER DEFAULT 0",
                         Contact.STATUS, "TEXT",
                         Contact.PICTURE, "BLOB");
@@ -948,6 +956,15 @@ public class DBHelper extends SQLiteOpenHelper {
         		Group.TABLE, 
             cv,
             Group.FEED_NAME+"='"+feedName+"'",
+            null);
+    }
+    public void markContactAsRead(long contact_id) {
+        ContentValues cv = new ContentValues();
+        cv.put(Contact.NUM_UNREAD, 0);
+        getWritableDatabase().update(
+        		Contact.TABLE, 
+            cv,
+            Contact._ID+"='"+contact_id+"'",
             null);
     }
     

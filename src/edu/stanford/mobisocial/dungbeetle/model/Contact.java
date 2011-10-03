@@ -31,6 +31,9 @@ public class Contact implements Serializable{
     public static final String MIME_TYPE = "vnd.mobisocial.db/contact";
 	public static final String NEARBY = "nearby";
 	public static final String SHARED_SECRET = "secret";
+	public static final String LAST_OBJECT_ID = "last_object_id";
+	public static final String LAST_UPDATED = "last_updated";
+	public static final String NUM_UNREAD = "num_unread";
 
     public final String name;
     public final String email;
@@ -42,6 +45,9 @@ public class Contact implements Serializable{
     public final byte[] secret;
     public final String status;
     public byte[] picture;
+    public Long lastObjectId;
+	private Long lastUpdated;
+	private long numUnread;
 
 
     public Contact(Cursor c){
@@ -55,9 +61,14 @@ public class Contact implements Serializable{
         secret = c.getBlob(c.getColumnIndexOrThrow(SHARED_SECRET));
         status = c.getString(c.getColumnIndexOrThrow(STATUS));
         picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
+        if(!c.isNull(c.getColumnIndexOrThrow(LAST_OBJECT_ID)))
+        	lastObjectId = c.getLong(c.getColumnIndexOrThrow(LAST_OBJECT_ID));
+        if(!c.isNull(c.getColumnIndexOrThrow(LAST_UPDATED)))
+        	lastUpdated = c.getLong(c.getColumnIndexOrThrow(LAST_UPDATED));
+        numUnread = c.getLong(c.getColumnIndexOrThrow(NUM_UNREAD));
     }
 
-    public Contact(Long id, String personId, String name, String email, int presence, long lastPresenceTime, boolean nearby, byte[] secret, String status){
+    public Contact(Long id, String personId, String name, String email, int presence, long lastPresenceTime, boolean nearby, byte[] secret, String status, Long last_object_id, Long last_updated, long num_unread){
         this.id = id;
         this.name = name;
         this.email = email;
@@ -68,10 +79,13 @@ public class Contact implements Serializable{
         this.secret = secret;
         this.status = status;
         this.picture = null;
+        this.lastObjectId = last_object_id;
+        this.lastUpdated = last_updated;
+        this.numUnread = num_unread;
     }
 
     public static Contact NA(){
-        return new Contact(-1L, "NA", "NA", "NA", 1, 0, false, null, "NA");
+        return new Contact(-1L, "NA", "NA", "NA", 1, 0, false, null, "NA", null, null, 0);
     }
 
     public static Maybe<Contact> forId(Context context, long id) {

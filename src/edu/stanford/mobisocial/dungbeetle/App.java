@@ -11,7 +11,9 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ImageCache;
 
@@ -100,15 +102,34 @@ public class App extends Application {
 
     private void resetUnreadMessages(Uri feedUri) {
         try {
-            String feedName = feedUri.getLastPathSegment();
-            ContentValues cv = new ContentValues();
-            cv.put(Group.NUM_UNREAD, 0);
-
-            getContentResolver().update(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv,
-                    Group.FEED_NAME + "='" + feedName + "'", null);
-            getContentResolver().notifyChange(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
+            switch(Feed.typeOf(feedUri)) {
+	            case Feed.FEED_GROUP: {
+	                String feedName = feedUri.getLastPathSegment();
+	                ContentValues cv = new ContentValues();
+	                cv.put(Group.NUM_UNREAD, 0);
+	
+	                getContentResolver().update(
+	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv,
+	                        Group.FEED_NAME + "='" + feedName + "'", null);
+	                getContentResolver().notifyChange(
+	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
+	
+	            	break;
+	            }
+	            case Feed.FEED_FRIEND: {
+	            	long contact_id = Long.valueOf(feedUri.getLastPathSegment());
+	                ContentValues cv = new ContentValues();
+	                cv.put(Contact.NUM_UNREAD, 0);
+	                getContentResolver().update(
+	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Contact.TABLE), cv,
+	                        Contact._ID + "='" + contact_id + "'", null);
+	            	break;
+	            } 
+	            case Feed.FEED_RELATED: {
+	            	//TODO: hmm?
+	            	break;
+	            }
+        	}
         } catch (Exception e) {
             Log.e(TAG, "Error clearing unread messages", e);
         }
