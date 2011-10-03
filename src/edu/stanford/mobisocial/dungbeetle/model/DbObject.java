@@ -63,7 +63,6 @@ public class DbObject {
 	public static final String CHILD_FEED_NAME = "child_feed";
 	public static final String HASH = "hash";
 
-    public static final String EXTRA_FEED_URI = "feed_uri";
 	public static final String RAW = "raw";
 
     private final Cursor mCursor;

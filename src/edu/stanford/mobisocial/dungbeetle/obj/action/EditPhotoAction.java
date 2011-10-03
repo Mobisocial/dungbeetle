@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.musubi.Musubi;
+
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
 
@@ -110,6 +112,7 @@ public class EditPhotoAction extends ObjAction {
             }
             Intent intent = new Intent(Intent.ACTION_EDIT);  
             intent.setDataAndType(contentUri, "image/png");
+            intent.putExtra(Musubi.EXTRA_FEED_URI, mFeedUri);
             return Intent.createChooser(intent, "Edit with");
         }
 
