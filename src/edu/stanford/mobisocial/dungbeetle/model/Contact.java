@@ -46,8 +46,8 @@ public class Contact implements Serializable{
     public final String status;
     public byte[] picture;
     public Long lastObjectId;
-	private Long lastUpdated;
-	private long numUnread;
+	public Long lastUpdated;
+	public long numUnread;
 
 
     public Contact(Cursor c){
