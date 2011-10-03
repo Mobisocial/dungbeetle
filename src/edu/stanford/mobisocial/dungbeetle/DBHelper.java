@@ -807,14 +807,42 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
+        Log.d(TAG, "Querying feed: " + feedName);
+        String objId = null;
+        if (feedName.contains(":")) {
+            String[] contentParts = feedName.split(":");
+            if (contentParts.length != 2) {
+                Log.e(TAG, "Error parsing feed::: " + feedName);
+            } else {
+                feedName = contentParts[0];
+                objId = contentParts[1];
+            }
+        }
 
+        final String ID = DbObject._ID;
+        final String OBJECTS = DbObject.TABLE;
+        final String HASH = DbObject.HASH;
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        if (objId != null) {
+            String objIdSearch =
+                    "(SELECT " + ID +
+                    " FROM " + OBJECTS +
+                    " WHERE " + HASH + " = " + Long.parseLong(objId) + ")";
+            select = andClauses(select, DbObject._ID + " IN (SELECT " +
+                    DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + " WHERE " +
+                    DbRelation.OBJECT_ID_A + " = " + objIdSearch + " )");
+        } else {
+            select = andClauses(select, DbObject._ID + " NOT IN (SELECT " +
+                        DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + ")");
+        }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
 
-        return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
+        Log.d(TAG, "got " + c.getCount() + " items");
+        return c;
     }
 
     public Cursor queryFriend(String realAppId, Long contactId, String[] projection, String selection,
