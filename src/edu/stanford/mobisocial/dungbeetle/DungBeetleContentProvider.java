@@ -15,6 +15,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Binder;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -137,14 +138,22 @@ public class DungBeetleContentProvider extends ContentProvider {
         } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
             try {
-            	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-
+                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+                String objHash = null;
+                if (feedName.contains(":")) {
+                    String[] parts = feedName.split(":");
+                    feedName = parts[0];
+                    objHash = parts[1];
+                }
+                if (objHash != null) {
+                    json.put(DbObjects.TARGET_HASH, Long.parseLong(objHash));
+                }
 
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
                         json);
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
-                return Uri.parse(uri.toString()); // TODO: is there a reason for this?
+                return uri;
             }
             catch(JSONException e) {
                 return null;

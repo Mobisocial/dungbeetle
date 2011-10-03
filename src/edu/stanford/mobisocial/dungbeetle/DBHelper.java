@@ -67,9 +67,10 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 45;
+	public static final int VERSION = 46;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
+    private long mNextId = -1;
 
 	public DBHelper(Context context) {
 		super(
@@ -97,6 +98,19 @@ public class DBHelper extends SQLiteOpenHelper {
 			cpc.release();
 		}
 	}
+    public synchronized long getNextId() {
+    	if(mNextId == -1) {
+    		Cursor c = getReadableDatabase().query(DbObject.TABLE, new String[] {"MAX(" + DbObject._ID + ")"}, null, null, null, null, null);
+    		try {
+    			if(c.moveToFirst()) {
+    				mNextId = c.getLong(0) + 1;
+    			}
+    		} finally {
+    			c.close();
+    		}
+    	}
+		return mNextId++;
+    }
 	private int mRefs = 1;
 	public synchronized void addRef() {
 		++mRefs;
@@ -306,6 +320,11 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + DbRelation.TABLE);
             createRelationBaseTable(db);
         }
+        if (oldVersion <= 45) {
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_OBJECT_ID + " INTEGER");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_UPDATED + " INTEGER");
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.NUM_UNREAD + " INTEGER DEFAULT 0");
+        }
         db.setVersion(VERSION);
     }
 
@@ -391,6 +410,9 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact.EMAIL, "TEXT",
                         Contact.PRESENCE, "INTEGER DEFAULT " + Presence.AVAILABLE,
                         Contact.LAST_PRESENCE_TIME, "INTEGER DEFAULT 0",
+                        Contact.LAST_OBJECT_ID, "INTEGER",
+                        Contact.LAST_UPDATED, "INTEGER",
+                        Contact.NUM_UNREAD, "INTEGER DEFAULT 0",
                         Contact.NEARBY, "INTEGER DEFAULT 0",
                         Contact.STATUS, "TEXT",
                         Contact.PICTURE, "BLOB");
@@ -501,6 +523,7 @@ public class DBHelper extends SQLiteOpenHelper {
             long timestamp = new Date().getTime();
             prepareForSending(json, type, timestamp, appId);
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, "friend");
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
@@ -540,6 +563,7 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put(DbObjects.APP_ID, appId);
 
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
             cv.put(DbObject.CONTACT_ID, Contact.MY_ID);
@@ -586,6 +610,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String type = json.getString(DbObjects.TYPE);
             String appId = json.getString(DbObjects.APP_ID);
             ContentValues cv = new ContentValues();
+            cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
             cv.put(DbObject.CONTACT_ID, contactId);
@@ -782,14 +807,42 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
+        Log.d(TAG, "Querying feed: " + feedName);
+        String objId = null;
+        if (feedName.contains(":")) {
+            String[] contentParts = feedName.split(":");
+            if (contentParts.length != 2) {
+                Log.e(TAG, "Error parsing feed::: " + feedName);
+            } else {
+                feedName = contentParts[0];
+                objId = contentParts[1];
+            }
+        }
 
+        final String ID = DbObject._ID;
+        final String OBJECTS = DbObject.TABLE;
+        final String HASH = DbObject.HASH;
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        if (objId != null) {
+            String objIdSearch =
+                    "(SELECT " + ID +
+                    " FROM " + OBJECTS +
+                    " WHERE " + HASH + " = " + Long.parseLong(objId) + ")";
+            select = andClauses(select, DbObject._ID + " IN (SELECT " +
+                    DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + " WHERE " +
+                    DbRelation.OBJECT_ID_A + " = " + objIdSearch + " )");
+        } else {
+            select = andClauses(select, DbObject._ID + " NOT IN (SELECT " +
+                        DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + ")");
+        }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
 
-        return getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
+        Log.d(TAG, "got " + c.getCount() + " items");
+        return c;
     }
 
     public Cursor queryFriend(String realAppId, Long contactId, String[] projection, String selection,
@@ -931,6 +984,15 @@ public class DBHelper extends SQLiteOpenHelper {
         		Group.TABLE, 
             cv,
             Group.FEED_NAME+"='"+feedName+"'",
+            null);
+    }
+    public void markContactAsRead(long contact_id) {
+        ContentValues cv = new ContentValues();
+        cv.put(Contact.NUM_UNREAD, 0);
+        getWritableDatabase().update(
+        		Contact.TABLE, 
+            cv,
+            Contact._ID+"='"+contact_id+"'",
             null);
     }
     

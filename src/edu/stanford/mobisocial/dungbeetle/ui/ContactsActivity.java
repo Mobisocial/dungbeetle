@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -36,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -194,6 +196,12 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             TextView statusText = (TextView) v.findViewById(R.id.status_text);
             statusText.setText(c.status);
             
+            TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
+            unreadCount.setTextColor(Color.RED);
+            unreadCount.setText(c.numUnread + " unread");
+            unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
+            
+            
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             ((App)getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
 
@@ -202,7 +210,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
             final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
-
+        	
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {

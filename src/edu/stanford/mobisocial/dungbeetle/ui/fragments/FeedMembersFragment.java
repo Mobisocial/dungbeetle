@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -160,6 +161,11 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
             final Contact c = new Contact(cursor);
+
+            TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
+            unreadCount.setTextColor(Color.RED);
+            unreadCount.setText(c.numUnread + " unread");
+            unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
 
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(c.name);

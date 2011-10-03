@@ -177,14 +177,9 @@ public class MessagingManagerThread extends Thread {
                 }
                 mContext.getContentResolver().notifyChange(feedUri, null);
                 if (feedName.equals("direct") || feedName.equals("friend")) {
-                    // TODO: Is this threading necessary?
-                    mMainThreadHandler.post(new Runnable() {
-                        public void run() {
-                            long time = obj.optLong(DbObject.TIMESTAMP);
-                            Helpers.updateLastPresence(mContext, realContact, time);
-                            objHandler.handleDirectMessage(mContext, realContact, obj);
-                        }
-                    });
+                    long time = obj.optLong(DbObject.TIMESTAMP);
+                    Helpers.updateLastPresence(mContext, realContact, time);
+                    objHandler.handleDirectMessage(mContext, realContact, obj);
                 }
 
                 /**
