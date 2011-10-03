@@ -12,6 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedListActivity;
@@ -39,30 +40,38 @@ public class NotificationObjHandler extends ObjHandler {
         if (typeInfo instanceof NoNotify) {
             return;
         }
-
-        String feedName = feedUri.getLastPathSegment();
-        if ("friend".equals(feedName)) {
-            Intent launch = contact.intentForViewing(context);
-            PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
-                    launch, PendingIntent.FLAG_CANCEL_CURRENT);
-            (new PresenceAwareNotify(context)).notify("New Musubi message",
-                    "New Musubi message", "From " + contact.name,
-                    contentIntent);
-        } else {
-            Maybe<Group> group = mHelper.groupForFeedName(feedName);
-            Intent launch = new Intent(Intent.ACTION_VIEW);
-            launch.setClass(context, FeedListActivity.class);
-            launch.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
-                    launch, PendingIntent.FLAG_CANCEL_CURRENT);
-    
-            try {
+        
+        switch(Feed.typeOf(feedUri)) {
+        	case Feed.FEED_FRIEND: {
+                Intent launch = contact.intentForViewing(context);
+                PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+                        launch, PendingIntent.FLAG_CANCEL_CURRENT);
                 (new PresenceAwareNotify(context)).notify("New Musubi message",
-                        "New Musubi message", "In " + ((Group) group.get()).name,
+                        "New Musubi message", "From " + contact.name,
                         contentIntent);
-            } catch (NoValError e) {
-                Log.e(TAG, "No group while notifying for " + feedName);
-            }
+        		break;
+        	}
+        	case Feed.FEED_GROUP: {
+                String feedName = feedUri.getLastPathSegment();
+                Maybe<Group> group = mHelper.groupForFeedName(feedName);
+                Intent launch = new Intent(Intent.ACTION_VIEW);
+                launch.setClass(context, FeedListActivity.class);
+                launch.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+                        launch, PendingIntent.FLAG_CANCEL_CURRENT);
+        
+                try {
+                    (new PresenceAwareNotify(context)).notify("New Musubi message",
+                            "New Musubi message", "In " + ((Group) group.get()).name,
+                            contentIntent);
+                } catch (NoValError e) {
+                    Log.e(TAG, "No group while notifying for " + feedName);
+                }
+        		break;
+        	}
+        	case Feed.FEED_RELATED: {
+        		throw new RuntimeException("never should get a related feed from the network");
+        	}
         }
     }
 }
