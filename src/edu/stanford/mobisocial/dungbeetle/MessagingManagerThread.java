@@ -276,7 +276,6 @@ public class MessagingManagerThread extends Thread {
         long max_sent = -1;
         while (!interrupted()) {
             mOco.waitForChange();
-            if (DBG) Log.i(TAG, "Noticed change...");
             mOco.clearChanged();
             Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {

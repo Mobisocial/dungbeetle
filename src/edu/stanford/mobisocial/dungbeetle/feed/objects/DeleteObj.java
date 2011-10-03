@@ -65,7 +65,12 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		long hash = obj.optLong(HASH);
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
-			dbh.deleteObjByHash(from.id, hash);
+			if (dbh.getObjSenderId(hash) == -666) {
+				dbh.markObjectAsDeleted(hash);
+			}
+			else {
+				dbh.deleteObjByHash(from.id, hash);
+			}
 		} finally {
 			dbh.close();
 		}
@@ -76,7 +81,12 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		long hash = obj.optLong(HASH);
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
-			dbh.deleteObjByHash(feedUri.toString(),  hash);
+			if (dbh.getObjSenderId(hash) == -666) {
+				dbh.markObjectAsDeleted(hash);
+			}
+			else {
+				dbh.deleteObjByHash(feedUri.toString(),  hash);
+			}
 		} finally {
 			dbh.close();
 		}

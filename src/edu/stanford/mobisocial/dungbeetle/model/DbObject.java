@@ -62,6 +62,7 @@ public class DbObject {
 	public static final String ENCODED = "encoded";
 	public static final String CHILD_FEED_NAME = "child_feed";
 	public static final String HASH = "hash";
+	public static final String DELETED = "deleted";
 
 	public static final String RAW = "raw";
 
@@ -131,6 +132,7 @@ public class DbObject {
             		DbObject.CONTACT_ID,
             		DbObject.TIMESTAMP,
             		DbObject.HASH,
+            		DbObject.DELETED,
             		DbObject.FEED_NAME
             	},
             	DbObject._ID + " = ?", new String[] {String.valueOf(objId)}, null);

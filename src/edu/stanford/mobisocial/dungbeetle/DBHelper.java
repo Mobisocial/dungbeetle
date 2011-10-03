@@ -67,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 46;
+	public static final int VERSION = 47;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -325,6 +325,9 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_UPDATED + " INTEGER");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.NUM_UNREAD + " INTEGER DEFAULT 0");
         }
+        if (oldVersion <= 46) {
+        	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.DELETED + " INTEGER DEFAULT 0");
+        }
         db.setVersion(VERSION);
     }
 
@@ -390,6 +393,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
+                        DbObject.DELETED, "INTEGER DEFAULT 0",
                         DbObject.HASH, "INTEGER",
                         DbObject.ENCODED, "BLOB",
                         DbObject.CHILD_FEED_NAME, "TEXT",
@@ -1412,11 +1416,31 @@ public class DBHelper extends SQLiteOpenHelper {
 	}
 	public void deleteObjByHash(long id, long hash) {
 		//TODO: limit by contact and add indexes
-		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
 	}
 	public void deleteObjByHash(String feed_name, long hash) {
 		//TODO: limit by feed and add indexes
-		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
+	
+	public void markObjectAsDeleted(long hash) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.DELETED, 1);
+		getWritableDatabase().update(DbObject.TABLE, cv, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
+	
+	public long getObjSenderId(long hash) {
+		Cursor c = getReadableDatabase().rawQuery("SELECT " + DbObject.CONTACT_ID + " FROM " +
+        		DbObject.TABLE + " WHERE " + DbObject.HASH + " = '" + hash + "'", 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return -1;
+        }
+    	long id = c.getLong(0);
+        c.close();
+    	return id;
 	}
 
  }
