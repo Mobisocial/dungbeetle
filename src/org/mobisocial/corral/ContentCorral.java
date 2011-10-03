@@ -41,7 +41,7 @@ public class ContentCorral {
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
-	public static final boolean CONTENT_CORRAL_ENABLED = false;
+	public static final boolean CONTENT_CORRAL_ENABLED = true;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
