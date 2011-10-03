@@ -43,13 +43,12 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * A pointer to an application instance feed.
  * {@see LaunchApplicationAction}
  */
-@Deprecated
-public class AppReferenceObj extends DbEntryHandler
+public class AppObj extends DbEntryHandler
         implements FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "AppReferenceObj";
 	private static final boolean DBG = true;
 
-    public static final String TYPE = "invite_app_session";
+    public static final String TYPE = "app";
     public static final String ARG = "arg";
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";

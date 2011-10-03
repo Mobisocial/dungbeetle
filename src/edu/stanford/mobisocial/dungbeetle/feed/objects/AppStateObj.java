@@ -37,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
+@Deprecated
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = true;
