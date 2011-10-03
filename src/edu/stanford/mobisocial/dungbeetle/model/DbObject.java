@@ -9,14 +9,16 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.rabbitmq.client.GetResponse;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.View;
@@ -190,36 +192,25 @@ public class DbObject {
 
                 if (!allowInteractions) {
                     v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                    v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                 } else {
                     if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                        v.findViewById(R.id.obj_like).setVisibility(View.GONE);
                     } else {
-                        Button attachmentCountButton = (Button)v.findViewById(R.id.obj_attachments);
-                        Button likeButton = (Button)v.findViewById(R.id.obj_like);
-
+                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
                         attachmentCountButton.setVisibility(View.VISIBLE);
-                        likeButton.setVisibility(View.VISIBLE);
 
                         if (hash == 0) {
                             attachmentCountButton.setVisibility(View.GONE);
-                            likeButton.setVisibility(View.GONE);
                         } else {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
                             Cursor attachments = helper.queryRelatedObjs(objId);
                             attachmentCountButton.setText(" " + attachments.getCount());
                             helper.close();
+                            attachmentCountButton.setBackgroundColor(color);
                             attachmentCountButton.setTag(R.id.object_entry, hash);
                             attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            attachmentCountButton.setBackgroundColor(color);
-                            attachmentCountButton.setOnClickListener(CommentsListener.getInstance(context));
-
-                            likeButton.setTag(R.id.object_entry, hash);
-                            likeButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            likeButton.setBackgroundColor(color);
-                            likeButton.setOnClickListener(LikeListener.getInstance(context));
+                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
                         }
                     }
                 }
@@ -281,39 +272,9 @@ public class DbObject {
         public void onClick(View v) {
             Long hash = (Long)v.getTag(R.id.object_entry);
             Uri feed = (Uri)v.getTag(R.id.feed_label);
-            String label = ((Button)v).getText().toString();
+            String label = ((TextView)v).getText().toString();
             DbObject obj = LikeObj.forObj(hash, label);
             Helpers.sendToFeed(mmContext, obj, feed);
-        }
-    };
-
-    private static class CommentsListener implements OnClickListener {
-        private Context mmContext;
-        private static CommentsListener mmListener;
-        public static CommentsListener getInstance(Context context) {
-            if (mmListener == null || mmListener.mmContext != context) {
-                mmListener = new CommentsListener(context);
-            }
-            return mmListener;
-        }
-
-        private CommentsListener(Context context) {
-            mmContext = context;
-        }
-
-        @Override
-        public void onClick(View v) {
-            // TODO:
-            /*Intent viewComments = new Intent(Intent.ACTION_VIEW);
-            viewComments.setDataAndType(objUri, DbObject.MIME_TYPE);
-            mmContext.startActivity(viewComments);*/
-            Long hash = (Long)v.getTag(R.id.object_entry);
-            Uri feed = (Uri)v.getTag(R.id.feed_label);
-            Uri objUri = feed.buildUpon().encodedPath(feed.getPath() + ":" + hash).build();
-
-            Intent objViewActivity = new Intent(Intent.ACTION_VIEW);
-            objViewActivity.setDataAndType(objUri, Feed.MIME_TYPE);
-            mmContext.startActivity(objViewActivity);
         }
     };
 

@@ -5,18 +5,12 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.util.Pair;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class LikeObj extends DbEntryHandler implements FeedRenderer {
+public class LikeObj extends DbEntryHandler {
     private static final String TAG = "musubi";
 
     public static final String LABEL = "label";
@@ -67,23 +61,5 @@ public class LikeObj extends DbEntryHandler implements FeedRenderer {
     @Override
     public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
         return null;
-    }
-
-    @Override
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw,
-            boolean allowInteractions) {
-        TextView valueTV = new TextView(context);
-        String label;
-        if (content.has(LikeObj.LABEL)) {
-            label = content.optString(LikeObj.LABEL);
-        } else {
-            label = "~";
-        }
-        valueTV.setText(label);
-        valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT));
-        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-        frame.addView(valueTV);
     }
 }

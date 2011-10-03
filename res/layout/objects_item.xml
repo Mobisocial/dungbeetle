@@ -21,16 +21,7 @@
     <LinearLayout android:layout_width="fill_parent"
 		  android:layout_height="wrap_content"
 		  android:orientation="vertical">
-
-    <LinearLayout android:id="@+id/object_content"
-            android:orientation="vertical"
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:layout_marginLeft="8dip"
-		    android:layout_marginTop="4dip"
-		    android:gravity="left|top"
-		    />
-
+    
 	<TextView
 	  android:id="@+id/name_text"
 	  android:text="..."
@@ -52,27 +43,38 @@
 	  android:layout_marginLeft="6dip"
 	  />
 	  
-      
+      <LinearLayout android:id="@+id/object_content"
+            android:orientation="vertical"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:layout_marginLeft="8dip"
+		    android:layout_marginTop="4dip"
+		    android:gravity="left|top"
+		    />
+
     </LinearLayout>
   </LinearLayout>
   
-  <Button 
-  	android:layout_width="wrap_content"
-	android:layout_height="wrap_content"
-	android:id="@+id/obj_attachments"
-	android:layout_alignParentRight="true"
-	android:layout_alignParentBottom="true"
-	android:layout_marginBottom="6dip"
+  <RelativeLayout android:id="@+id/pendants" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_alignParentRight="true"
+	android:layout_alignParentTop="true"
+	android:layout_marginTop="6dip">
+  <!-- Arrgh.
+  <ImageView 
+  android:layout_width="30dip" android:layout_height="wrap_content"
+  android:layout_alignParentTop="true"
+  android:layout_alignParentRight="true"
+  android:src="@drawable/heart"
+  android:id="@+id/icon"
+  /> -->
+  <TextView 
+  	android:id="@+id/obj_attachments"
+  	android:layout_width="wrap_content" android:layout_height="wrap_content"
+	android:layout_alignParentTop="true"
+    android:layout_alignParentRight="true"
+    android:textAppearance="?android:attr/textAppearanceLarge"
+    android:padding="5dip"
     />
-
-  <Button 
-  	android:layout_width="wrap_content"
-	android:layout_height="wrap_content"
-	android:id="@+id/obj_like"
-	android:layout_toLeftOf="@id/obj_attachments"
-	android:layout_alignParentBottom="true"
-	android:text="&lt;3"
-	android:layout_marginBottom="6dip"
-	android:layout_marginRight="2dip"
-    />
+    </RelativeLayout>
 </RelativeLayout>
+
