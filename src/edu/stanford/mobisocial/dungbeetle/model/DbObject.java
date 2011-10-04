@@ -214,7 +214,7 @@ public class DbObject {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
                             Cursor attachments = helper.queryRelatedObjs(objId);
-                            attachmentCountButton.setText(" " + attachments.getCount());
+                            attachmentCountButton.setText("" + attachments.getCount());
                             helper.close();
                             attachmentCountButton.setBackgroundColor(color);
                             attachmentCountButton.setTag(R.id.object_entry, hash);

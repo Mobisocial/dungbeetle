@@ -67,7 +67,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 47;
+	public static final int VERSION = 48;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -328,6 +328,9 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 46) {
         	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.DELETED + " INTEGER DEFAULT 0");
         }
+        if (oldVersion <= 47) {
+            addRelationIndexes(db);
+        }
         db.setVersion(VERSION);
     }
 
@@ -432,7 +435,7 @@ public class DBHelper extends SQLiteOpenHelper {
             createGroupBaseTable(db);
             createGroupMemberBaseTable(db);
             createRelationBaseTable(db);
-
+            addRelationIndexes(db);
             generateAndStorePersonalInfo(db);
 
             db.setVersion(VERSION);
@@ -473,6 +476,11 @@ public class DBHelper extends SQLiteOpenHelper {
                 DbRelation.OBJECT_ID_A, "INTEGER",
                 DbRelation.OBJECT_ID_B, "INTEGER"
                 );
+	}
+
+	private final void addRelationIndexes(SQLiteDatabase db) {
+	    createIndex(db, "INDEX", "relation_obj_a", DbRelation.TABLE, DbRelation.OBJECT_ID_A);
+	    createIndex(db, "INDEX", "relation_obj_b", DbRelation.TABLE, DbRelation.OBJECT_ID_B);
 	}
 
     private void generateAndStorePersonalInfo(SQLiteDatabase db){
