@@ -46,6 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -331,6 +332,10 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 47) {
             addRelationIndexes(db);
         }
+        if (oldVersion <= 48) {
+            createUserAttributesTable(db);
+        }
+
         db.setVersion(VERSION);
     }
 
@@ -436,6 +441,7 @@ public class DBHelper extends SQLiteOpenHelper {
             createGroupMemberBaseTable(db);
             createRelationBaseTable(db);
             addRelationIndexes(db);
+            createUserAttributesTable(db);
             generateAndStorePersonalInfo(db);
 
             db.setVersion(VERSION);
@@ -476,6 +482,20 @@ public class DBHelper extends SQLiteOpenHelper {
                 DbRelation.OBJECT_ID_A, "INTEGER",
                 DbRelation.OBJECT_ID_B, "INTEGER"
                 );
+	}
+
+	private final void createUserAttributesTable(SQLiteDatabase db) {
+	    // contact_attributes: _id, contact_id, attr_name, attr_value
+	    // TODO: genericize; createDbTable(DbTable table) { ... }
+	    String[] colNames = DbContactAttributes.getColumnNames();
+	    String[] colTypes = DbContactAttributes.getTypeDefs();
+	    String[] colDefs = new String[colNames.length * 2];
+	    for (int i = 0; i < colNames.length; i++) {
+	        colDefs[i] = colNames[i];
+	        colDefs[i+1] = colTypes[i];
+	    }
+	    createTable(db, DbContactAttributes.TABLE, null, colDefs);
+        createIndex(db, "UNIQUE INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
 	}
 
 	private final void addRelationIndexes(SQLiteDatabase db) {
