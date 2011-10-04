@@ -46,6 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SharedSecretObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -67,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 46;
+	public static final int VERSION = 48;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -325,6 +326,16 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.LAST_UPDATED + " INTEGER");
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.NUM_UNREAD + " INTEGER DEFAULT 0");
         }
+        if (oldVersion <= 46) {
+        	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.DELETED + " INTEGER DEFAULT 0");
+        }
+        if (oldVersion <= 47) {
+            addRelationIndexes(db);
+        }
+        if (oldVersion <= 48) {
+            createUserAttributesTable(db);
+        }
+
         db.setVersion(VERSION);
     }
 
@@ -390,6 +401,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
+                        DbObject.DELETED, "INTEGER DEFAULT 0",
                         DbObject.HASH, "INTEGER",
                         DbObject.ENCODED, "BLOB",
                         DbObject.CHILD_FEED_NAME, "TEXT",
@@ -428,7 +440,8 @@ public class DBHelper extends SQLiteOpenHelper {
             createGroupBaseTable(db);
             createGroupMemberBaseTable(db);
             createRelationBaseTable(db);
-
+            addRelationIndexes(db);
+            createUserAttributesTable(db);
             generateAndStorePersonalInfo(db);
 
             db.setVersion(VERSION);
@@ -469,6 +482,26 @@ public class DBHelper extends SQLiteOpenHelper {
                 DbRelation.OBJECT_ID_A, "INTEGER",
                 DbRelation.OBJECT_ID_B, "INTEGER"
                 );
+	}
+
+	private final void createUserAttributesTable(SQLiteDatabase db) {
+	    // contact_attributes: _id, contact_id, attr_name, attr_value
+	    // TODO: genericize; createDbTable(DbTable table) { ... }
+	    String[] colNames = DbContactAttributes.getColumnNames();
+	    String[] colTypes = DbContactAttributes.getTypeDefs();
+	    String[] colDefs = new String[colNames.length * 2];
+	    int j = 0;
+	    for (int i = 0; i < colNames.length; i += 1) {
+	        colDefs[j++] = colNames[i];
+	        colDefs[j++] = colTypes[i];
+	    }
+	    createTable(db, DbContactAttributes.TABLE, null, colDefs);
+        createIndex(db, "UNIQUE INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
+	}
+
+	private final void addRelationIndexes(SQLiteDatabase db) {
+	    createIndex(db, "INDEX", "relation_obj_a", DbRelation.TABLE, DbRelation.OBJECT_ID_A);
+	    createIndex(db, "INDEX", "relation_obj_b", DbRelation.TABLE, DbRelation.OBJECT_ID_B);
 	}
 
     private void generateAndStorePersonalInfo(SQLiteDatabase db){
@@ -711,7 +744,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             String feedName = cv.getAsString(Subscriber.FEED_NAME);
             validate(feedName);
-            return db.insert(Subscriber.TABLE, null, cv);
+            return db.insertOrThrow(Subscriber.TABLE, null, cv);
         } catch (SQLiteConstraintException e) {
         	//this inserts dupes, so hide this spam in a way 
         	//that doesn't require api level 8
@@ -1412,11 +1445,31 @@ public class DBHelper extends SQLiteOpenHelper {
 	}
 	public void deleteObjByHash(long id, long hash) {
 		//TODO: limit by contact and add indexes
-		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
 	}
 	public void deleteObjByHash(String feed_name, long hash) {
 		//TODO: limit by feed and add indexes
-		getWritableDatabase().delete(DbObject.TABLE, DbObject. HASH + " = ?", new String[] {String.valueOf(hash)});
+		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
+	
+	public void markObjectAsDeleted(long hash) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.DELETED, 1);
+		getWritableDatabase().update(DbObject.TABLE, cv, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+	}
+	
+	public long getObjSenderId(long hash) {
+		Cursor c = getReadableDatabase().rawQuery("SELECT " + DbObject.CONTACT_ID + " FROM " +
+        		DbObject.TABLE + " WHERE " + DbObject.HASH + " = '" + hash + "'", 
+        		null);
+        c.moveToFirst();
+        if(!c.moveToFirst()) {
+        	// no such person
+        	return -1;
+        }
+    	long id = c.getLong(0);
+        c.close();
+    	return id;
 	}
 
  }

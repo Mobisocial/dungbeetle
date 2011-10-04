@@ -67,6 +67,7 @@ public class StatusObj extends DbEntryHandler implements FeedRenderer, Activator
             if(!allowInteractions)
             	valueTV.setMovementMethod(null);
         }
+
         frame.addView(valueTV);
     }
 

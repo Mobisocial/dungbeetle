@@ -30,6 +30,7 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
@@ -419,20 +420,20 @@ public class ContentCorral {
 	// Look up content based on user attributes (wifi, bt, proxy) and
 	// obj properties (uri, capability, signature).
 	public static Uri fetchContent(Context context, JSONObject obj) throws IOException {
-	    if (!(obj.has(PictureObj.LOCAL_IP) && obj.has(PictureObj.LOCAL_URI))) {
+	    if (!(obj.has(Contact.ATTR_LAN_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
 	    }
 
 	    try {
 	        String localIp = getLocalIpAddress();
-	        String ip = obj.getString(PictureObj.LOCAL_IP);
+	        String ip = obj.getString(Contact.ATTR_LAN_IP);
 	        if (localIp != null && localIp.equals(ip)) {
 	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
 	        }
 
 	        // Remote
 	        Uri remoteUri = uriForContent(
-	                obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
+	                obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
             if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
@@ -497,14 +498,14 @@ public class ContentCorral {
     public static boolean fileAvailableLocally(Context context, JSONObject obj) {
 	    try {
     	    String localIp = getLocalIpAddress();
-            String ip = obj.getString(PictureObj.LOCAL_IP);
+            String ip = obj.getString(Contact.ATTR_LAN_IP);
             if (localIp != null && localIp.equals(ip)) {
                 return true;
             }
     
             // Remote
             Uri remoteUri = uriForContent(
-                    obj.getString(PictureObj.LOCAL_IP), obj.getString(PictureObj.LOCAL_URI));
+                    obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
 
             // Local
             String suffix = suffixFor(obj);

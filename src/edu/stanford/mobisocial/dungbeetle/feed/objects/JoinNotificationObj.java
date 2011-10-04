@@ -14,6 +14,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.GroupProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import android.net.Uri;
@@ -74,7 +75,7 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
             // group exists already, load view
             final Group g = mg.get();
 
-            new Thread(){
+            GroupProviders.runBackgroundGroupTask(g.id, new Runnable(){
                 public void run(){
                 	Collection<Contact> existingContacts = g.contactCollection(helper);
                 	
@@ -84,7 +85,7 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
 	                newContacts.removeAll(existingContacts);
                     Helpers.resendProfile(context, newContacts, true);
                 }
-            }.start();
+            });
         }
         catch(Maybe.NoValError e) { }
         ident.close();

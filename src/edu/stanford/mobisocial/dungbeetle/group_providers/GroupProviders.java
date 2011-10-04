@@ -3,7 +3,11 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -25,7 +29,6 @@ import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.GroupManagerThread.GroupRefreshHandler;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
@@ -43,6 +46,54 @@ public class GroupProviders {
 
     public static final String TAG = "GroupProviders";
     static final boolean DBG = MusubiBaseActivity.DBG;
+    
+    //we need to limit the group tasks to a single thread because otherwise
+    //we might launch too many and consume too much memory/CPU
+    static class TaskEntry {
+    	public TaskEntry(long k, Runnable r) {
+    		key = k;
+    		runnable = r;
+		}
+    	long key;
+    	Runnable runnable;
+    }
+    private static LinkedBlockingDeque<TaskEntry> g_group_tasks = new LinkedBlockingDeque<TaskEntry>();
+    private static Thread g_group_thread = null;
+    public static void runBackgroundGroupTask(long key, Runnable task) {
+    	synchronized(g_group_tasks) {
+    		for (Iterator<TaskEntry> i = g_group_tasks.iterator(); i.hasNext();) {
+				TaskEntry t = i.next();
+				if(t.key == key) {
+					i.remove();
+				}
+			}
+    		g_group_tasks.add(new TaskEntry(key, task));
+    		if(g_group_thread == null) {
+    			g_group_thread = new Thread("Group Worker Thread") {
+	    			@Override
+	    			public void run() {
+	    				for(;;) {
+	    					TaskEntry entry;
+	    					synchronized (g_group_tasks) {
+	    						if(g_group_tasks.size() == 0) {
+	    							//we're done so we need a new thread for the next task
+	    							g_group_thread = null;
+	    							break;
+	    						}
+	    						 entry = g_group_tasks.remove();
+	    					}
+	    					try {
+	    						entry.runnable.run();
+	    					} catch(Throwable t) {
+	    						Log.wtf(TAG, "uncaught exception in group task", t);
+	    					}
+	    				}
+	    			}
+	    	    };
+    			g_group_thread.start();
+    		}
+    	}
+    }
 
     private static List<GroupProvider> mHandlers = 
         new ArrayList<GroupProvider>();
@@ -70,29 +121,29 @@ public class GroupProviders {
         abstract public Uri newSessionUri(IdentityProvider ident, String groupName, String feedName);
         public void forceUpdate(final long groupId, final Uri uriIn, 
                                 final Context context, final int version, final boolean broadcastPresence){
-            (new Thread(){
-                    public void run(){
-                    	
-                        GroupProvider.this.handle(groupId, uriIn, context, version, true);
-                        
-                        DBHelper helper = DBHelper.getGlobal(context);
-                        Maybe<Group> mg = helper.groupForGroupId(groupId);
-                        try{
-                            // group exists already, load view
-                            Group g = mg.get();
-                            Uri feedUri = Feed.uriForName(g.feedName);
-                            if (broadcastPresence) {
-                            	Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), feedUri);
-                            }
+        	GroupProviders.runBackgroundGroupTask(groupId, new Runnable(){
+                public void run(){
+                	
+                    GroupProvider.this.handle(groupId, uriIn, context, version, true);
+                    
+                    DBHelper helper = DBHelper.getGlobal(context);
+                    Maybe<Group> mg = helper.groupForGroupId(groupId);
+                    try{
+                        // group exists already, load view
+                        Group g = mg.get();
+                        Uri feedUri = Feed.uriForName(g.feedName);
+                        if (broadcastPresence) {
+                        	Helpers.sendToFeed(context, JoinNotificationObj.from(uriIn.toString()), feedUri);
                         }
-                        catch(Maybe.NoValError e){
-                            // group does not exist yet, time to prompt for join
-
-                        }
-                        
-                        helper.close();
                     }
-                }).start();
+                    catch(Maybe.NoValError e){
+                        // group does not exist yet, time to prompt for join
+
+                    }
+                    
+                    helper.close();
+                }
+            });
         }
     }
 

@@ -75,14 +75,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
     private void groupUpdateHack() {
         final Context context = getActivity();
-        if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
-            for (int i = 0; i < 29; i++) {
-                // If you are reading me, consider fixing
-                // the real problem rather than removing this spew.
-                Log.d("MUSUBI", "THIS IS A HORRIBLE HACK.");
-            }
-        }
-
+       
         new Thread() {
             public void run() {
                 final IdentityProvider ident = new DBIdentityProvider(mHelper);
