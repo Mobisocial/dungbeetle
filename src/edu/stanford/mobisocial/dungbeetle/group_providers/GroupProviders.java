@@ -226,14 +226,15 @@ public class GroupProviders {
 	                nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
 	                nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
 	                
-	                nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
+	                //nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
+	                nameValuePairs.add(new BasicNameValuePair("version", Integer.toString(version)));
 	                nameValuePairs.add(new BasicNameValuePair("session", feedName));
 	                httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 	                try {
 	                    HttpResponse execute = client.execute(httpPost);
 	                    InputStream content = execute.getEntity().getContent();
 	                    sb = new StringBuffer(IOUtils.toString(content));
-	                    Log.e("WHOHO", sb.length() + " group size");
+	                    Log.e("WHOHO", "version: " + version + ", " + sb.length() + " group size");
 	                }
 	                catch (Exception e) {
 		                sb = new StringBuffer();
