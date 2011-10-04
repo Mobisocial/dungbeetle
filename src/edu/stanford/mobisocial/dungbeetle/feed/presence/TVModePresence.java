@@ -47,7 +47,7 @@ public class TVModePresence extends FeedPresence implements IObjHandler {
         if (mInterrupt && getFeedsWithPresence().contains(feedUri)) {
             if (typeInfo instanceof Activator) {
                 if (DBG) Log.d(TAG, "activating via tv mode");
-                ((Activator) typeInfo).activate(context, json, raw);
+                ((Activator) typeInfo).activate(context, contact.id, json, raw);
             }
         }
     }

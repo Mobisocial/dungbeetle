@@ -40,6 +40,7 @@ public class DbContactAttributes /* extends DbTable */ {
             String orderBy = null;
             Cursor c = db.query(TABLE, columns, selection, selectionArgs, groupBy, having, orderBy);
             if (c.moveToFirst()) {
+                c.close();
                 db.update(TABLE, values, selection, selectionArgs);
             } else {
                 db.insert(TABLE, null, values);
@@ -50,5 +51,28 @@ public class DbContactAttributes /* extends DbTable */ {
         }
         db.close();
         helper.close();
+    }
+
+    public static String getAttribute(Context context, long contactId, String attr) {
+        DBHelper helper = new DBHelper(context);
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        String[] columns = { ATTR_VALUE };
+        String selection = CONTACT_ID + " = ? AND " + ATTR_NAME + " = ?";
+        String[] selectionArgs = new String[] { Long.toString(contactId), attr };
+        String groupBy = null;
+        String having = null;
+        String orderBy = null;
+        Cursor c = db.query(TABLE, columns, selection, selectionArgs, groupBy, having, orderBy);
+        try {
+            if (c.moveToFirst()) {
+                return c.getString(0);
+            }
+            return null;
+        } finally {
+            c.close();
+            db.close();
+            helper.close();
+        }
     }
 }

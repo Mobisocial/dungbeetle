@@ -1,37 +1,31 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Environment;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
-
-import android.graphics.Bitmap;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.os.Environment;
-import android.content.Intent;
-
-
-import java.io.File;
-import java.io.OutputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import android.net.Uri;
-import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 /**
  * Sends a picture object using the standard Android "SEND" intent.
  *
  */
 public class ExportPhotoAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, long contactId,
+            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         String b64Bytes = objData.optString(PictureObj.DATA);
         if (raw == null) {
         	raw = FastBase64.decode(b64Bytes);

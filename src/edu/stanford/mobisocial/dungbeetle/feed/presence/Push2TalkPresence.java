@@ -50,7 +50,7 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
         }
 
         if (DBG) Log.d(TAG, "Playing audio via push2talk on " + feedUri);
-        ((VoiceObj) typeInfo).activate(context, json, raw);
+        ((VoiceObj) typeInfo).activate(context, contact.id, json, raw);
     }
 
     public boolean isOnCall() {

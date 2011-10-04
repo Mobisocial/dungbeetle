@@ -16,9 +16,10 @@ import android.net.Uri;
 public class OpenObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, long contactId,
+            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         if (objType instanceof Activator) {
-            ((Activator) objType).activate(context, objData, raw);
+            ((Activator) objType).activate(context, contactId, objData, raw);
         }
     }
 

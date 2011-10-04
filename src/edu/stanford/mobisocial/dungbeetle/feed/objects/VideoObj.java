@@ -41,11 +41,6 @@ public class VideoObj extends DbEntryHandler
 
     public static final String MIME_TYPE = "mimeType";
     public static final String LOCAL_URI = "localUri";
-    // TODO: This is a hack, with many ways to fix. For example,
-    // it can be used with its timestamp and an instance variable to
-    // track a users' latest ip address.
-    // Security should also be considered.
-    public static final String LOCAL_IP = "localIp";
 
     @Override
     public String getType() {
@@ -92,7 +87,7 @@ public class VideoObj extends DbEntryHandler
         if (localIp != null) {
             try {
                 // TODO: Security breach hack?
-                base.put(LOCAL_IP, localIp);
+                base.put(Contact.ATTR_LAN_IP, localIp);
                 base.put(LOCAL_URI, videoUri.toString());
                 base.put(MIME_TYPE, cr.getType(videoUri));
             } catch (JSONException e) {
@@ -142,12 +137,12 @@ public class VideoObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(final Context context, final JSONObject content, byte[] raw) {
+    public void activate(final Context context, final long contactId, final JSONObject content, byte[] raw) {
 	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
 	        Log.d(TAG, "Corraling video");
-	        if (ContentCorral.fileAvailableLocally(context, content)) {
+	        if (ContentCorral.fileAvailableLocally(context, contactId, content)) {
 	            try {
-	                Uri contentUri = ContentCorral.fetchContent(context, content);
+	                Uri contentUri = ContentCorral.fetchContent(context, contactId, content);
 	                startViewer(context, contentUri);
                 } catch (IOException e) {
                     Log.e(TAG, "The corral tricked me", e);
@@ -158,7 +153,7 @@ public class VideoObj extends DbEntryHandler
 	                @Override
 	                public void run() {
 	                    try {
-                            Uri contentUri = ContentCorral.fetchContent(context, content);
+                            Uri contentUri = ContentCorral.fetchContent(context, contactId, content);
                             startViewer(context, contentUri);
                         } catch (IOException e) {
                             Log.e(TAG, "Failed to corral", e);

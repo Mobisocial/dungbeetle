@@ -98,7 +98,7 @@ public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator,
     }
 	
 	@Override
-    public void activate(final Context context, final JSONObject content, final byte[] raw) {
+    public void activate(final Context context, long contactId, final JSONObject content, final byte[] raw) {
 	    Runnable r = new Runnable() {
 	        @Override
 	        public void run() {

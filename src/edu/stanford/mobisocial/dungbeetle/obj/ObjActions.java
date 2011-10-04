@@ -5,7 +5,7 @@ import java.util.List;
 
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.obj.action.DeleteAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.PassItOnAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ForwardObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.RelatedObjAction;
@@ -18,7 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 public class ObjActions {
     private static final List<ObjAction> sActions = new ArrayList<ObjAction>();
     static {
-        sActions.add(new PassItOnAction());
+        sActions.add(new ForwardObjAction());
         sActions.add(new OpenObjAction());
         sActions.add(new EditPhotoAction());
         sActions.add(new ExportPhotoAction());
