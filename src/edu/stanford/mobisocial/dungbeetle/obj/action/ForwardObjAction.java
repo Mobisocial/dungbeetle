@@ -33,7 +33,7 @@ public class ForwardObjAction extends ObjAction {
 
     @Override
     public String getLabel(Context context) {
-        return "Forward";
+        return "Share";
     }
 
     //Helpers.sendToFeed(context, new DbObject(mType, mJson), feedUri);

@@ -160,7 +160,7 @@ public class ContentCorral {
         }
 
         public void run() {
-            //Log.d(TAG, "BEGIN mConnectedThread");
+            Log.d(TAG, "BEGIN mConnectedThread");
             byte[] buffer = new byte[BUFFER_LENGTH];
             int bytes;
             
@@ -169,6 +169,7 @@ public class ContentCorral {
             // Read header information, determine connection type
             try {
             	bytes = mmInStream.read(buffer);
+            	Log.d(TAG, "read " + bytes + " header bytes");
             	String header = new String(buffer, 0, bytes);
             	
             	// determine request type
