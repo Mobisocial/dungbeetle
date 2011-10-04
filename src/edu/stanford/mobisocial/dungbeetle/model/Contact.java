@@ -2,6 +2,8 @@ package edu.stanford.mobisocial.dungbeetle.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import android.app.Activity;
 import android.content.Context;
@@ -49,6 +51,16 @@ public class Contact implements Serializable{
 	public Long lastUpdated;
 	public long numUnread;
 
+    // TODO: Move to SocialKit.
+    public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+	private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
+    static {
+        sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
+    }
+
+    public static boolean isWellKnownAttribute(String attr) {
+        return sWellKnownAttrs.contains(attr);
+    }
 
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -142,5 +154,9 @@ public class Contact implements Serializable{
 
     public Uri getFeedUri() {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
+    }
+
+    public static Uri uriFor(long id) {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts/" + id);
     }
 }

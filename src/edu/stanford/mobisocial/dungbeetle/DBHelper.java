@@ -490,9 +490,10 @@ public class DBHelper extends SQLiteOpenHelper {
 	    String[] colNames = DbContactAttributes.getColumnNames();
 	    String[] colTypes = DbContactAttributes.getTypeDefs();
 	    String[] colDefs = new String[colNames.length * 2];
-	    for (int i = 0; i < colNames.length; i++) {
-	        colDefs[i] = colNames[i];
-	        colDefs[i+1] = colTypes[i];
+	    int j = 0;
+	    for (int i = 0; i < colNames.length; i += 1) {
+	        colDefs[j++] = colNames[i];
+	        colDefs[j++] = colTypes[i];
 	    }
 	    createTable(db, DbContactAttributes.TABLE, null, colDefs);
         createIndex(db, "UNIQUE INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);

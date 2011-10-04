@@ -52,6 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.ProfileScanningObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -214,6 +215,7 @@ public class MessagingManagerThread extends Thread {
             mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
             mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
             mFromNetworkHandlers.addHandler(mFeedModifiedObjHandler);
+            mFromNetworkHandlers.addHandler(new ProfileScanningObjHandler());
         }
         return mFromNetworkHandlers;
     }
