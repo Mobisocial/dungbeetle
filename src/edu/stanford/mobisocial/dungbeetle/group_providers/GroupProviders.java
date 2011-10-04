@@ -241,6 +241,7 @@ public class GroupProviders {
 	                }
 	
 	                String response = sb.toString();
+	                if (DBG) Log.d(TAG, "response from group server: " + response);
 	                JSONObject group = new JSONObject(response);
 	                version = Integer.parseInt(group.getString("version"));
 	                Helpers.updateGroupVersion(context, groupId, version);

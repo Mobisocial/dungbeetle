@@ -31,6 +31,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
@@ -42,7 +43,7 @@ public class ContentCorral {
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
-	public static final boolean CONTENT_CORRAL_ENABLED = true;
+	public static final boolean CONTENT_CORRAL_ENABLED = false;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
@@ -408,20 +409,26 @@ public class ContentCorral {
 
 	public static Uri fetchContent(Context context, long contactId, JSONObject obj)
 	        throws IOException {
-	    if (!(obj.has(Contact.ATTR_LAN_IP) && obj.has(PictureObj.LOCAL_URI))) {
+	    if (!obj.has(PictureObj.LOCAL_URI)) {
+	        return null;
+	    }
+	    if (contactId == Contact.MY_ID) {
+	        try {
+	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
+	        } catch (JSONException e) {
+	            Log.e(TAG, "json exception getting local uri", e);
+	            return null;
+	        }
+	    }
+
+	    String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
+	    if (ip == null) {
 	        return null;
 	    }
 
 	    try {
-	        String localIp = getLocalIpAddress();
-	        String ip = obj.getString(Contact.ATTR_LAN_IP);
-	        if (localIp != null && localIp.equals(ip)) {
-	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
-	        }
-
 	        // Remote
-	        Uri remoteUri = uriForContent(
-	                obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
+	        Uri remoteUri = uriForContent(ip, obj.getString(PictureObj.LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
             if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
