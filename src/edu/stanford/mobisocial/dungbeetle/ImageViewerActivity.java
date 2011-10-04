@@ -28,7 +28,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
@@ -83,18 +83,19 @@ public class ImageViewerActivity extends Activity {
         if (mIntent.hasExtra("obj")) {
             try {
                 final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
+                final long contactId = mIntent.getLongExtra("contactId", -1);
                 if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-                    if (content.has(PictureObj.LOCAL_IP)) {
+                    if (content.has(Contact.ATTR_LAN_IP)) {
                         // TODO: this is a proof-of-concept.
                         new Thread() {
                             public void run() {
                                 try {
-                                    if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, content)) {
+                                    if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, contactId, content)) {
                                         toast("Trying to go HD...");
                                     }
                                     Log.d(TAG, "Trying to go HD...");
                                     final Uri fileUri = ContentCorral
-                                            .fetchContent(ImageViewerActivity.this, content);
+                                            .fetchContent(ImageViewerActivity.this, contactId, content);
                                     Log.d(TAG, "Opening HD file " + fileUri);
 
                                     InputStream is = getContentResolver().openInputStream(fileUri);

@@ -49,6 +49,8 @@ public class Feed extends DbObject {
     	return Color.HSVToColor(hsv);
     }
     public static int colorFor(String name, int alpha) {
+    	if(name == null)
+    		return Color.BLACK;
         int c = colorFor(name);
         return Color.argb(alpha, Color.red(c), Color.green(c), Color.blue(c));
     }

@@ -35,11 +35,11 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  *
  */
 public class EditPhotoAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri,
+    public void onAct(Context context, Uri feedUri, long contactId,
             DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
 
         ((InstrumentedActivity)context).doActivityForResult(
-                new EditCallout(context, feedUri, objData, raw));
+                new EditCallout(context, feedUri, contactId, objData, raw));
     }
 
     @Override
@@ -62,15 +62,15 @@ public class EditPhotoAction extends ObjAction {
         final Uri mFeedUri;
         final Uri mHdUri;
 
-        public EditCallout(Context context, Uri feedUri, JSONObject json, byte[] raw) {
+        public EditCallout(Context context, Uri feedUri, long contactId, JSONObject json, byte[] raw) {
             mJson = json;
             mRaw = raw;
             mContext = context;
             mFeedUri = feedUri;
             Uri hd = null;
-            if (ContentCorral.fileAvailableLocally(context, json)) {
+            if (ContentCorral.fileAvailableLocally(context, contactId, json)) {
                 try {
-                    hd = ContentCorral.fetchContent(context, json);
+                    hd = ContentCorral.fetchContent(context, contactId, json);
                 } catch (IOException e) {}
             }
             mHdUri = hd;

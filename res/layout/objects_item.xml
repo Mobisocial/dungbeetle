@@ -58,7 +58,8 @@
   <RelativeLayout android:id="@+id/pendants" android:layout_width="wrap_content" android:layout_height="wrap_content"
     android:layout_alignParentRight="true"
 	android:layout_alignParentTop="true"
-	android:layout_marginTop="6dip">
+	android:layout_marginTop="6dip"
+	android:layout_marginRight="3dip">
   <!-- Arrgh.
   <ImageView 
   android:layout_width="30dip" android:layout_height="wrap_content"
@@ -73,7 +74,10 @@
 	android:layout_alignParentTop="true"
     android:layout_alignParentRight="true"
     android:textAppearance="?android:attr/textAppearanceLarge"
-    android:padding="5dip"
+    android:paddingTop="5dip"
+    android:paddingBottom="5dip"
+	android:paddingLeft="10dip"
+	android:paddingRight="10dip"
     />
     </RelativeLayout>
 </RelativeLayout>

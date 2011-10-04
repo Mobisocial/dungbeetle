@@ -144,7 +144,8 @@ public class HomeActivity extends MusubiBaseActivity {
         mNfc.addNdefHandler(new NdefHandler() {
                 public int handleNdef(final NdefMessage[] messages){
                     HomeActivity.this.runOnUiThread(new Runnable(){
-                            public void run(){
+                            public void run() {
+                                Log.d(TAG, "Handling ndef uri: " + uriFromNdef(messages));
                                 doHandleInput(uriFromNdef(messages));
                             }
                         });
@@ -206,13 +207,18 @@ public class HomeActivity extends MusubiBaseActivity {
     }
 
     protected void doHandleInput(Uri uri) {
+        if (DBG) Log.d(TAG, "Handling input uri " + uri);
         if (uri == null) {
             return;
+        }
+
+        if (uri.getScheme() == null) {
+            Log.w(TAG, "Null uri scheme for " + uri);
         }
         
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
-            Intent intent = new Intent(getIntent());
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             intent.setClass(this, HandleNfcContact.class);
             startActivity(intent);
         } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
@@ -263,23 +269,13 @@ public class HomeActivity extends MusubiBaseActivity {
     }
 
     public void pushGroupInfoViaNfc(Uri uri) {
-        NdefRecord urlRecord = new NdefRecord(
-            NdefRecord.TNF_ABSOLUTE_URI, 
-            NdefRecord.RTD_URI, new byte[] {},
-            uri.toString().getBytes());
-        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
-        mNfc.share(ndef);
+        mNfc.share(NdefFactory.fromUri(uri));
     }
 
     public void pushContactInfoViaNfc() {
     	Uri uri = FriendRequest.getInvitationUri(this);
-    	Log.w(TAG, "pushing " + uri.toString());
-        NdefRecord urlRecord = new NdefRecord(
-            NdefRecord.TNF_ABSOLUTE_URI, 
-            NdefRecord.RTD_URI, new byte[] {},
-            uri.toString().getBytes());
-        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
-        mNfc.share(ndef);
+    	if (DBG) Log.w(TAG, "pushing " + uri.toString());
+        mNfc.share(NdefFactory.fromUri(uri));
     }
 
     public boolean acceptInboundContactInfo() {

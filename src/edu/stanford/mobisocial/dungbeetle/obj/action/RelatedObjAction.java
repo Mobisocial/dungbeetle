@@ -20,7 +20,8 @@ import android.net.Uri;
 public class RelatedObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, long contactId,
+            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         // TODO:
         /*Intent viewComments = new Intent(Intent.ACTION_VIEW);
         viewComments.setDataAndType(objUri, DbObject.MIME_TYPE);

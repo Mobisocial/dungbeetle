@@ -172,7 +172,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content, byte[] raw) {
+	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    String arg = content.optString(ARG);

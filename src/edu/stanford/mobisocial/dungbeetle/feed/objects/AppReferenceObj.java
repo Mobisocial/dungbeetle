@@ -168,7 +168,7 @@ public class AppReferenceObj extends DbEntryHandler
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content, byte[] raw) {
+	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
@@ -211,7 +211,7 @@ public class AppReferenceObj extends DbEntryHandler
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
-            mAppStateObj.activate(context, appContent, raw);
+            mAppStateObj.activate(context, Contact.MY_ID, appContent, raw);
 	    }
 	}
 

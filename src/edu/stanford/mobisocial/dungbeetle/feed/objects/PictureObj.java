@@ -44,7 +44,6 @@ public class PictureObj extends DbEntryHandler
     // it can be used with its timestamp and an instance variable to
     // track a users' latest ip address.
     // Security should also be considered.
-    public static final String LOCAL_IP = "localIp";
 
     @Override
     public String getType() {
@@ -125,8 +124,9 @@ public class PictureObj extends DbEntryHandler
             String localIp = ContentCorral.getLocalIpAddress();
             if (localIp != null) {
                 try {
-                    // TODO: Security breach hack?
-                    base.put(LOCAL_IP, localIp);
+                    // TODO: Security breach.
+                    // Send to trusted users only.
+                    base.put(Contact.ATTR_LAN_IP, localIp);
                     base.put(LOCAL_URI, imageUri.toString());
                     base.put(MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
@@ -173,9 +173,11 @@ public class PictureObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
+    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageViewerActivity.class);
 	    intent.putExtra("obj", content.toString());
+	    intent.putExtra("contactId", contactId);
 	    if (raw != null) {
 	        intent.putExtra("bytes", raw);
 	    }

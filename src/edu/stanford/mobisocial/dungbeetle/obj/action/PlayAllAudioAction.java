@@ -125,7 +125,8 @@ ORDER BY _id ASC
             
         }
 	
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, final JSONObject objData, byte[] raw) {
+        public void onAct(Context context, Uri feedUri, long contactId,
+                DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
         

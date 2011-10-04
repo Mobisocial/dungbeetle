@@ -67,12 +67,13 @@ public class StatusObj extends DbEntryHandler implements FeedRenderer, Activator
             if(!allowInteractions)
             	valueTV.setMovementMethod(null);
         }
+
         frame.addView(valueTV);
     }
 
 	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
+    public void activate(Context context, long contactId, JSONObject content, byte[] raw){
     	//linkify should have picked it up already but if we are in TV mode we
     	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);

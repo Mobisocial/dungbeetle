@@ -93,7 +93,7 @@ public class Group{
         DBHelper helper = DBHelper.getGlobal(context);
         IdentityProvider ident = new DBIdentityProvider(helper);
         GroupProviders.GroupProvider gp = GroupProviders.forUri(Uri.parse(dynUpdateUri));
-        int version = -1;
+        //int version = -1;
         gp.forceUpdate(id, Uri.parse(dynUpdateUri), context, version, false);
         ident.close();
 

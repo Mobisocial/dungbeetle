@@ -169,7 +169,7 @@ public class LaunchApplicationAction implements FeedAction {
         mIdent.close();
         mHelper.close();
 
-        new AppReferenceObj().activate(context, obj.getJson(), null);
+        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 
     private void launchAppWithMembership(Context context, Uri feedUri, String pkg, String[] membership) {
@@ -184,7 +184,7 @@ public class LaunchApplicationAction implements FeedAction {
         Helpers.sendToFeed(context, obj, feedUri);
 
         // Kick it off locally:
-        new AppReferenceObj().activate(context, obj.getJson(), null);
+        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
     
 
