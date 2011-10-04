@@ -76,7 +76,7 @@ public class LocationObj extends DbEntryHandler implements FeedRenderer, Activat
     }
 
     @Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
+    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
         String loc = "geo:" + content.optDouble(COORD_LAT) + "," +
                 content.optDouble(COORD_LONG) + "?z=17";
         Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));

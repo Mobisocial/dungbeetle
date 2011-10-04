@@ -401,25 +401,13 @@ public class ContentCorral {
 	    return null;
 	}
 
-	/**
-	 * Returns a Uri that can be used remotely to
-	 * retrieve content from this device.
-	 */
-	public static Uri uriForContent(String localContent) {
-	    String ip = getLocalIpAddress();
-	    if (ip == null) return null;
-	    return uriForContent(ip, localContent);
-	}
-
-	public static Uri uriForContent(String host, String localContent) {
+	private static Uri uriForContent(String host, String localContent) {
         Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
 	}
 
-	// TODO: fetchTempFile(Context context, User user, JSONObject obj);
-	// Look up content based on user attributes (wifi, bt, proxy) and
-	// obj properties (uri, capability, signature).
-	public static Uri fetchContent(Context context, JSONObject obj) throws IOException {
+	public static Uri fetchContent(Context context, long contactId, JSONObject obj)
+	        throws IOException {
 	    if (!(obj.has(Contact.ATTR_LAN_IP) && obj.has(PictureObj.LOCAL_URI))) {
 	        return null;
 	    }
@@ -495,7 +483,8 @@ public class ContentCorral {
 	    }
 	    return null;
 	}
-    public static boolean fileAvailableLocally(Context context, JSONObject obj) {
+
+    public static boolean fileAvailableLocally(Context context, long contactId, JSONObject obj) {
 	    try {
     	    String localIp = getLocalIpAddress();
             String ip = obj.getString(Contact.ATTR_LAN_IP);

@@ -70,7 +70,7 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
+	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
 	    Feed feedRef = new Feed(content);
 	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {

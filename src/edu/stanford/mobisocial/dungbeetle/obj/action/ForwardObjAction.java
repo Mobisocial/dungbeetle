@@ -17,13 +17,14 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
-public class PassItOnAction extends ObjAction {
+public class ForwardObjAction extends ObjAction {
     private static final String TAG = "passItOn";
     private static JSONObject mJson;
     private static DbEntryHandler mType;
     private Context mContext;
 
-    public void onAct(Context context, Uri feedUri, DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, Uri feedUri, long contactId,
+            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
         mContext = context;
     	objData = objType.mergeRaw(objData, raw);
         holdObj(context, objType, objData);
@@ -32,7 +33,7 @@ public class PassItOnAction extends ObjAction {
 
     @Override
     public String getLabel(Context context) {
-        return "Pass it On";
+        return "Forward";
     }
 
     //Helpers.sendToFeed(context, new DbObject(mType, mJson), feedUri);

@@ -110,7 +110,7 @@ public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator 
     }
 
     @Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
+    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
         if (content.has(URL)) {
             Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));

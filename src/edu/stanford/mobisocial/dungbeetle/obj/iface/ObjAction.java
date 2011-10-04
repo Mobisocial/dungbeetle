@@ -10,12 +10,12 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 public abstract class ObjAction {
     public abstract String getLabel(Context context);
 
-    public abstract void onAct(Context context, Uri feedUri,
+    public abstract void onAct(Context context, Uri feedUri, long contactId,
             DbEntryHandler objType, long hash, JSONObject objData, byte[] raw);
 
-    public final void actOn(Context context, Uri feedUri,
+    public final void actOn(Context context, Uri feedUri, long contactId,
             DbEntryHandler objType, long hash, JSONObject objDat, byte[] raw) {
-        onAct(context, feedUri, objType, hash, objDat, raw);
+        onAct(context, feedUri, contactId, objType, hash, objDat, raw);
     }
 
     public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {

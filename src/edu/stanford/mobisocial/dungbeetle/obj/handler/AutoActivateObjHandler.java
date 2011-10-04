@@ -19,7 +19,7 @@ public class AutoActivateObjHandler extends ObjHandler {
             return;
         }
         if (handler instanceof Activator) {
-            ((Activator)handler).activate(context, json, raw);
+            ((Activator)handler).activate(context, contact.id, json, raw);
         }
     }
 }
