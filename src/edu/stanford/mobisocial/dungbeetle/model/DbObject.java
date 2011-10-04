@@ -71,6 +71,7 @@ public class DbObject {
     protected JSONObject mJson;
     private Long mTimestamp;
     private static OnClickViewProfile sViewProfileAction;
+    private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
     public DbObject(String type, JSONObject json) {
         mCursor = null;
@@ -149,7 +150,8 @@ public class DbObject {
         Long contactId = cursor.getLong(2);
         Long timestamp = cursor.getLong(3);
         Long hash = cursor.getLong(4);
-        String feedName = cursor.getString(5);
+        short deleted = cursor.getShort(5);
+        String feedName = cursor.getString(6);
         Date date = new Date(timestamp);
         cursor.close();
        	///////
@@ -175,6 +177,12 @@ public class DbObject {
             }
             // TODO: this is horrible
             ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+
+            if (deleted == 1) {
+                v.setBackgroundColor(sDeletedColor);
+            } else {
+                v.setBackgroundColor(Color.TRANSPARENT);
+            }
 
             try {
                 JSONObject content = new JSONObject(jsonSrc);

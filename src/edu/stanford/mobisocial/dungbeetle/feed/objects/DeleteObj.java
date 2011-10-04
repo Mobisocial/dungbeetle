@@ -1,34 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
-import android.app.PendingIntent;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
-import android.text.method.BaseMovementMethod;
-import android.text.util.Linkify;
-import android.util.Log;
 import android.util.Pair;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
-import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
     private static final String TAG = "dungbeetle";
@@ -65,7 +46,7 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		long hash = obj.optLong(HASH);
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
-			if (dbh.getObjSenderId(hash) == -666) {
+			if (dbh.getObjSenderId(hash) == Contact.MY_ID) {
 				dbh.markObjectAsDeleted(hash);
 			}
 			else {
@@ -81,7 +62,7 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		long hash = obj.optLong(HASH);
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
-			if (dbh.getObjSenderId(hash) == -666) {
+			if (dbh.getObjSenderId(hash) == Contact.MY_ID) {
 				dbh.markObjectAsDeleted(hash);
 			}
 			else {
