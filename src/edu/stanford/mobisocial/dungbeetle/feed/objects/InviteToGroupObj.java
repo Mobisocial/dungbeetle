@@ -90,7 +90,7 @@ public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Ac
         frame.addView(valueTV);
 	}
 	@Override
-	public void activate(Context context, JSONObject content, byte[] raw) {
+	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
 		// TODO Auto-generated method stub
 		String groupName = content.optString(GROUP_NAME);
 		Uri dynUpdateUri = Uri.parse(content.optString(DYN_UPDATE_URI));

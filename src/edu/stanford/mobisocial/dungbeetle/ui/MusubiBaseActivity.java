@@ -53,7 +53,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
     private static MusubiBaseActivity sInstance;
-    public static final boolean DBG = false;
+    public static final boolean DBG = true;
 
 
     /**

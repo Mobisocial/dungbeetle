@@ -31,6 +31,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
@@ -159,7 +160,7 @@ public class ContentCorral {
         }
 
         public void run() {
-            //Log.d(TAG, "BEGIN mConnectedThread");
+            Log.d(TAG, "BEGIN mConnectedThread");
             byte[] buffer = new byte[BUFFER_LENGTH];
             int bytes;
             
@@ -168,6 +169,7 @@ public class ContentCorral {
             // Read header information, determine connection type
             try {
             	bytes = mmInStream.read(buffer);
+            	Log.d(TAG, "read " + bytes + " header bytes");
             	String header = new String(buffer, 0, bytes);
             	
             	// determine request type
@@ -401,39 +403,33 @@ public class ContentCorral {
 	    return null;
 	}
 
-	/**
-	 * Returns a Uri that can be used remotely to
-	 * retrieve content from this device.
-	 */
-	public static Uri uriForContent(String localContent) {
-	    String ip = getLocalIpAddress();
-	    if (ip == null) return null;
-	    return uriForContent(ip, localContent);
-	}
-
-	public static Uri uriForContent(String host, String localContent) {
+	private static Uri uriForContent(String host, String localContent) {
         Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
 	}
 
-	// TODO: fetchTempFile(Context context, User user, JSONObject obj);
-	// Look up content based on user attributes (wifi, bt, proxy) and
-	// obj properties (uri, capability, signature).
-	public static Uri fetchContent(Context context, JSONObject obj) throws IOException {
-	    if (!(obj.has(Contact.ATTR_LAN_IP) && obj.has(PictureObj.LOCAL_URI))) {
+	public static Uri fetchContent(Context context, long contactId, JSONObject obj)
+	        throws IOException {
+	    if (!obj.has(PictureObj.LOCAL_URI)) {
+	        return null;
+	    }
+	    if (contactId == Contact.MY_ID) {
+	        try {
+	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
+	        } catch (JSONException e) {
+	            Log.e(TAG, "json exception getting local uri", e);
+	            return null;
+	        }
+	    }
+
+	    String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
+	    if (ip == null) {
 	        return null;
 	    }
 
 	    try {
-	        String localIp = getLocalIpAddress();
-	        String ip = obj.getString(Contact.ATTR_LAN_IP);
-	        if (localIp != null && localIp.equals(ip)) {
-	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
-	        }
-
 	        // Remote
-	        Uri remoteUri = uriForContent(
-	                obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
+	        Uri remoteUri = uriForContent(ip, obj.getString(PictureObj.LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
             if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
@@ -495,7 +491,8 @@ public class ContentCorral {
 	    }
 	    return null;
 	}
-    public static boolean fileAvailableLocally(Context context, JSONObject obj) {
+
+    public static boolean fileAvailableLocally(Context context, long contactId, JSONObject obj) {
 	    try {
     	    String localIp = getLocalIpAddress();
             String ip = obj.getString(Contact.ATTR_LAN_IP);

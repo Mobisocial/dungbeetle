@@ -9,8 +9,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.rabbitmq.client.GetResponse;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -18,13 +16,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -309,6 +305,7 @@ public class DbObject {
                     new String[] { 
                         DbObject.JSON,
                         DbObject.RAW,
+                        DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
             if(!cursor.moveToFirst()) {
@@ -317,6 +314,7 @@ public class DbObject {
             
             final String jsonSrc = cursor.getString(0);
             final byte[] raw = cursor.getBlob(1);
+            final long contactId = cursor.getLong(2);
             cursor.close();
 
             if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
@@ -324,7 +322,7 @@ public class DbObject {
                 JSONObject obj = new JSONObject(jsonSrc);
                 Activator activator = DbObjects.getActivator(obj);
                 if(activator != null){
-                    activator.activate(mContext, obj, raw);
+                    activator.activate(mContext, contactId, obj, raw);
                 }
             }
             catch(JSONException e){
@@ -357,7 +355,8 @@ public class DbObject {
                         DbObject.RAW,
                         DbObject.TYPE,
                         DbObject.FEED_NAME,
-                        DbObject.HASH
+                        DbObject.HASH,
+                        DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
             if(!cursor.moveToFirst()) {
@@ -368,13 +367,14 @@ public class DbObject {
             final byte[] raw = cursor.getBlob(1);
             String type = cursor.getString(2);
             long hash = cursor.getLong(4);
+            long contactId = cursor.getLong(5);
             Uri feedUri = Feed.uriForName(cursor.getString(3));
             cursor.close();
 
             if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
             try {
                 JSONObject obj = new JSONObject(jsonSrc);
-                createActionDialog(mContext, feedUri, type, hash, obj, raw);
+                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
             } catch(JSONException e){
                 Log.e(TAG, "Couldn't parse obj.", e);
             }
@@ -383,7 +383,8 @@ public class DbObject {
     };
 
     public static Dialog createActionDialog(final Context context, final Uri feedUri,
-            final String type, final long hash, final JSONObject json, final byte[] raw) {
+            final long contactId, final String type, final long hash, final JSONObject json,
+            final byte[] raw) {
 
         final DbEntryHandler dbType = DbObjects.forType(type);
         final List<ObjAction> actions = new ArrayList<ObjAction>();
@@ -401,7 +402,7 @@ public class DbObject {
                 .setItems(actionLabels, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        actions.get(which).actOn(context, feedUri, dbType, hash, json, raw);
+                        actions.get(which).actOn(context, feedUri, contactId, dbType, hash, json, raw);
                     }
                 }).create();
     }

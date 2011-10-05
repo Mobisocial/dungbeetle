@@ -173,9 +173,11 @@ public class PictureObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
+    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageViewerActivity.class);
 	    intent.putExtra("obj", content.toString());
+	    intent.putExtra("contactId", contactId);
 	    if (raw != null) {
 	        intent.putExtra("bytes", raw);
 	    }
