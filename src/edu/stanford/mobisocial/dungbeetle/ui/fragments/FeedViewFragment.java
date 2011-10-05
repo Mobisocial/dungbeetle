@@ -240,13 +240,8 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     }
 
     void showMenuForObj(int position) {
+    	//this first cursor is the internal one
         Cursor cursor = (Cursor)mObjects.getItem(position);
-        long id = -1;
-        try {
-        	id = cursor.getLong(0);
-        } finally {
-        	cursor.close();
-        }
     	cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
             	new String[] { 
             		DbObject.JSON,
@@ -255,7 +250,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             		DbObject.HASH,
             		DbObject.CONTACT_ID
             	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(id)}, null);
+            	DbObject._ID + " = ?", new String[] {String.valueOf(cursor.getLong(0))}, null);
     	try {
 	        if(!cursor.moveToFirst())
 	        	return;
