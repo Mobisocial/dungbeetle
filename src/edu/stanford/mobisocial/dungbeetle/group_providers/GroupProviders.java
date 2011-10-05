@@ -2,8 +2,8 @@ package edu.stanford.mobisocial.dungbeetle.group_providers;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -52,7 +52,7 @@ public class GroupProviders {
     	long key;
     	Runnable runnable;
     }
-    private static ConcurrentLinkedQueue<TaskEntry> g_group_tasks = new ConcurrentLinkedQueue<TaskEntry>();
+    private static LinkedList<TaskEntry> g_group_tasks = new LinkedList<TaskEntry>();
     private static Thread g_group_thread = null;
     public static void runBackgroundGroupTask(long key, Runnable task) {
     	synchronized(g_group_tasks) {
