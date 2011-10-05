@@ -3,7 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 import java.util.ArrayList;
 import java.util.List;
 
-import mobisocial.socialkit.musubi.Musubi.Multiplayer;
+import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -180,7 +180,7 @@ public class LaunchApplicationAction implements FeedAction {
         Helpers.sendToFeed(context, anchor, appFeedUri);
 
         // App reference in parent feed:
-        DbObject obj = AppReferenceObj.forFixedMembership(pkg, membership, g.feedName, g.dynUpdateUri, 0);
+        DbObject obj = AppReferenceObj.forFixedMembership(pkg, membership, g.feedName, g.dynUpdateUri);
         Helpers.sendToFeed(context, obj, feedUri);
 
         // Kick it off locally:

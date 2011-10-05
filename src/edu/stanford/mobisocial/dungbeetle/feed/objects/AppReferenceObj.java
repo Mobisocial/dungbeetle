@@ -1,7 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
-import mobisocial.socialkit.musubi.Musubi.Multiplayer;
+import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,9 +24,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -54,9 +52,6 @@ public class AppReferenceObj extends DbEntryHandler
     public static final String GROUP_URI = "groupuri";
     public static final String CREATOR_ID = "creator_id";
 
-    public static final String MEMBERSHIP = "membership";
-    public static final String MEMBER_CURSOR = "member_cursor";
-
     private final AppStateObj mAppStateObj = new AppStateObj();
 
     @Override
@@ -79,7 +74,7 @@ public class AppReferenceObj extends DbEntryHandler
 
 	// TODO: Bundle <=> Json
 	public static DbObject forFixedMembership(String packageName, String[] membership,
-	        String feedName, String groupUri, int memberCursor) {
+	        String feedName, String groupUri) {
 
 	    JSONObject json = new JSONObject();
 	    try {
@@ -89,10 +84,9 @@ public class AppReferenceObj extends DbEntryHandler
 	        }
 
 	        json.put(PACKAGE_NAME, packageName);
-	        json.put(MEMBERSHIP, mship);
+	        json.put(Multiplayer.OBJ_MEMBERSHIP, mship);
 	        json.put(DbObject.CHILD_FEED_NAME, feedName);
 	        json.put(GROUP_URI, groupUri);
-	        json.put(MEMBER_CURSOR, memberCursor);
         } catch(JSONException e){}
         return new DbObject(TYPE, json);
     }
@@ -184,25 +178,8 @@ public class AppReferenceObj extends DbEntryHandler
 	        String state = null;
 
 	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
-	        if (content.has(MEMBERSHIP)) {
-    	        JSONArray membermess = content.optJSONArray(MEMBERSHIP);	        
-    	        String[] members = new String[membermess.length()];
-    	        int localMemberIndex = -1;
-    	        String localMember = App.instance().getLocalPersonId();
-    	        for (int i = 0; i < membermess.length(); i++) {
-    	            members[i] = membermess.optString(i);
-    	            if (members[i].equals(localMember)) {
-    	                localMemberIndex = i;
-    	            }
-    	        }
-
-    	        launch.putExtra(Multiplayer.EXTRA_MEMBERS, members);
-                launch.putExtra(Multiplayer.EXTRA_LOCAL_MEMBER_INDEX, localMemberIndex);
-                launch.putExtra(Multiplayer.EXTRA_GLOBAL_MEMBER_CURSOR, content.optInt(MEMBER_CURSOR));
-	        }
-
-	        // TODO: probably safe to remove
-	        launch.putExtra("creator_id", content.optLong("creator_id"));
+	        // TODO: temporary.
+	        launch.putExtra("obj", content.toString());
 	        if (!(context instanceof Activity)) {
 	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	        }
