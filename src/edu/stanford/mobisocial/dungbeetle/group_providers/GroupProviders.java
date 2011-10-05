@@ -1,13 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.group_providers;
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeMap;
-import java.util.Map.Entry;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -25,7 +21,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -57,7 +52,7 @@ public class GroupProviders {
     	long key;
     	Runnable runnable;
     }
-    private static LinkedBlockingDeque<TaskEntry> g_group_tasks = new LinkedBlockingDeque<TaskEntry>();
+    private static ConcurrentLinkedQueue<TaskEntry> g_group_tasks = new ConcurrentLinkedQueue<TaskEntry>();
     private static Thread g_group_thread = null;
     public static void runBackgroundGroupTask(long key, Runnable task) {
     	synchronized(g_group_tasks) {
