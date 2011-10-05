@@ -25,9 +25,6 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
     public static DbObject from(long hash) {
         return new DbObject(TYPE, json(hash));
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(long hash) {
     	//TODO: obj should mention feed
@@ -37,10 +34,6 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		long hash = obj.optLong(HASH);

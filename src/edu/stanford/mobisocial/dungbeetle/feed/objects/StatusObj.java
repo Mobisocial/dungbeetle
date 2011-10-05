@@ -48,13 +48,6 @@ public class StatusObj extends DbEntryHandler implements FeedRenderer, Activator
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);

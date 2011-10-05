@@ -60,14 +60,6 @@ public class AppReferenceObj extends DbEntryHandler
         return TYPE;
     }
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
-
 	public static DbObject from(String packageName, String arg,
 	        String feedName, String groupUri, long creatorId) {
         return new DbObject(TYPE, json(packageName, arg, feedName, groupUri, creatorId));

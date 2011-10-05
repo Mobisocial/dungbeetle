@@ -34,9 +34,6 @@ public class IMObj extends DbEntryHandler implements FeedRenderer {
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		Intent launch = new Intent();
@@ -51,10 +48,6 @@ public class IMObj extends DbEntryHandler implements FeedRenderer {
 		(new PresenceAwareNotify(context)).notify(
             "IM from " + from.name,
             "IM from " + from.name, "\"" + msg + "\"", contentIntent);
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions){

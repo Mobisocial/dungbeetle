@@ -24,15 +24,4 @@ public class UnknownObj extends DbEntryHandler {
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {   
         Log.w("musubi", "Received unknown obj: " + msg);
     }
-
-    @Override
-    public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-        return null;
-    }
-
-    @Override
-    public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-        return null;
-    }
-
 }

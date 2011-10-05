@@ -38,13 +38,6 @@ public class SharedSecretObj extends DbEntryHandler {
         Helpers.sendMessage(context, other, new DbObject(TYPE, json(ss)));
         return ss;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public static JSONObject json(byte[] shared_secret){
         JSONObject obj = new JSONObject();

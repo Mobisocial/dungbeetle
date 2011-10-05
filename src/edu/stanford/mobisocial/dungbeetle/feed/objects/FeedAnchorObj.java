@@ -33,9 +33,6 @@ public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler 
         return new DbObject(TYPE, json(parentFeedName));
     }
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
         try {
@@ -43,10 +40,6 @@ public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler 
         } catch (JSONException e) {}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
             String type, JSONObject obj) {
