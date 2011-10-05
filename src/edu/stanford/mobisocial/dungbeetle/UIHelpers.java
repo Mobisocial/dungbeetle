@@ -65,7 +65,7 @@ public class UIHelpers {
                 null, null, null);
             try {
 	            groupMemberships = new HashSet<Long>();
-	            if(c.moveToFirst()){
+	            if(c.moveToFirst()) do {
 	                groupMemberships.add(
 	                    c.getLong(c.getColumnIndexOrThrow(GroupMember.GROUP_ID)));
 	            } while(c.moveToNext());

@@ -1178,7 +1178,7 @@ public class DBHelper extends SQLiteOpenHelper {
             null,null,null,null);
         try {
 	        ArrayList<Contact> result = new ArrayList<Contact>();
-	        if(c.moveToFirst()){
+	        if(c.moveToFirst()) do {
 	            result.add(new Contact(c));
 	        } while(c.moveToNext());
 	        return result;
@@ -1304,7 +1304,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] {Contact._ID, Contact.PUBLIC_KEY},
                 null, null,null,null,null);
         try {
-	        if(c.moveToFirst()) {
+	        if(c.moveToFirst()) do {
 	        	byte[] pk = c.getBlob(1);
 	        	key_ss.add(pk);
 	        } while(c.moveToNext());
@@ -1321,7 +1321,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] {Contact._ID, Contact.PUBLIC_KEY, Contact.SHARED_SECRET},
                 null, null,null,null,null);
         try {
-	        if(c.moveToFirst()){
+	        if(c.moveToFirst()) do {
 	        	byte[] pk = c.getBlob(1);
 	        	byte[] ss = c.getBlob(2);
 	        	if(ss == null) {
