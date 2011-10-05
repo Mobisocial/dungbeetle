@@ -61,16 +61,19 @@ public class PresenceAwareNotify {
                 Log.e(TAG, "Error querying feeds/me/head");
                 return;
             }
-            c.moveToFirst();
-            if(!c.isAfterLast()) {
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    int myPresence = Integer.parseInt(obj.optString("presence"));
-                    if(myPresence == Presence.BUSY) {
-                        notification.vibrate = null;
-                    }
-                }catch(JSONException e){}
+            try {
+            	if(c.moveToFirst()) {
+	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                try{
+	                    JSONObject obj = new JSONObject(jsonSrc);
+	                    int myPresence = Integer.parseInt(obj.optString("presence"));
+	                    if(myPresence == Presence.BUSY) {
+	                        notification.vibrate = null;
+	                    }
+	                }catch(JSONException e){}
+	            }
+            } finally {
+            	c.close();
             }
     	}
         else {

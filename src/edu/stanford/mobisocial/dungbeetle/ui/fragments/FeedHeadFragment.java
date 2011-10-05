@@ -72,9 +72,13 @@ public class FeedHeadFragment extends Fragment {
     private void bindCurrentView() {
         Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getFeedObjectClause(),
                 null, DbObject._ID + " DESC");
-        if (c.moveToFirst()) {
-            View v = getActivity().findViewById(R.id.feed_view);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+        try {
+	        if (c.moveToFirst()) {
+	            View v = getActivity().findViewById(R.id.feed_view);
+	            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+	        }
+        } finally {
+        	c.close();
         }
     }
 }

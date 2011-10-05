@@ -78,12 +78,16 @@ public class PhotosPresence extends FeedPresence {
                 android.provider.MediaStore.Images.Media.query(mmContext.getContentResolver(),
                         Images.Media.EXTERNAL_CONTENT_URI,
                         new String[] { ImageColumns._ID }, selection, selectionArgs, sort );
-
-            int idx = c.getColumnIndex(ImageColumns._ID);
-            if (c.moveToFirst()) {
-                return Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI, c.getString(idx));
+            try {
+	
+	            int idx = c.getColumnIndex(ImageColumns._ID);
+	            if (c.moveToFirst()) {
+	                return Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI, c.getString(idx));
+	            }
+	            return null;
+            } finally {
+            	c.close();
             }
-            return null;
         }
     };
 }

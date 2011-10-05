@@ -63,60 +63,65 @@ public class UIHelpers {
                           "/groups_membership/" + contact.id), 
                 new String[]{GroupMember._ID, GroupMember.GROUP_ID}, 
                 null, null, null);
-            groupMemberships = new HashSet<Long>();
-            c.moveToFirst();
-            while(!c.isAfterLast()){
-                groupMemberships.add(
-                    c.getLong(c.getColumnIndexOrThrow(GroupMember.GROUP_ID)));
-                c.moveToNext();
+            try {
+	            groupMemberships = new HashSet<Long>();
+	            if(c.moveToFirst()){
+	                groupMemberships.add(
+	                    c.getLong(c.getColumnIndexOrThrow(GroupMember.GROUP_ID)));
+	            } while(c.moveToNext());
+            } finally {
+            	c.close();
             }
         }
         c = context.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), 
             null, null, null, null);
-        final long[] groupIds = new long[c.getCount()];
-        final Uri[] feedUris = new Uri[c.getCount()];
-        final CharSequence[] groupNames = new CharSequence[c.getCount()];
-        final boolean[] tempSelected = new boolean[c.getCount()];
-        c.moveToFirst();
-        int i = 0;
-        while(!c.isAfterLast()){
-            groupNames[i] = c.getString(c.getColumnIndexOrThrow(Group.NAME));
-            feedUris[i] = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + c.getString(c.getColumnIndexOrThrow(Group.FEED_NAME)));
-            groupIds[i] = c.getLong(c.getColumnIndexOrThrow(Group._ID));
-            if(contact != null && groupMemberships != null && groupMemberships.contains(
-                   c.getLong(c.getColumnIndexOrThrow(Group._ID)))){
-                tempSelected[i] = true;
-            }
-            c.moveToNext();
-            i++;
+        try { 
+	        final long[] groupIds = new long[c.getCount()];
+	        final Uri[] feedUris = new Uri[c.getCount()];
+	        final CharSequence[] groupNames = new CharSequence[c.getCount()];
+	        final boolean[] tempSelected = new boolean[c.getCount()];
+	        
+	        int i = 0;
+	        if(c.moveToFirst()) do {
+	            groupNames[i] = c.getString(c.getColumnIndexOrThrow(Group.NAME));
+	            feedUris[i] = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + c.getString(c.getColumnIndexOrThrow(Group.FEED_NAME)));
+	            groupIds[i] = c.getLong(c.getColumnIndexOrThrow(Group._ID));
+	            if(contact != null && groupMemberships != null && groupMemberships.contains(
+	                   c.getLong(c.getColumnIndexOrThrow(Group._ID)))){
+	                tempSelected[i] = true;
+	            }
+	            i++;
+	        } while(c.moveToNext());
+	
+	        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+	        if(contact != null) {
+	            builder.setTitle("Member of");
+	        }
+	        else {
+	            builder.setTitle("Choose groups");
+	        }
+	        builder.setMultiChoiceItems(
+	            groupNames, tempSelected, 
+	            new DialogInterface.OnMultiChoiceClickListener() {
+	                public void onClick(DialogInterface dialog, int item, boolean isChecked) {
+	                }
+	            });
+	
+	        builder.setPositiveButton("Close",
+	        new DialogInterface.OnClickListener() {
+	            public void onClick(DialogInterface dialog, int whichButton) {
+	                if(intent != null) {
+	                    handleGroupsIntent(context, intent, feedUris, tempSelected);
+	//                    context.startActivity(intent);
+	                }
+	            }
+	        });
+	        AlertDialog alert = builder.create();
+	        alert.show();
+        } finally {
+        	c.close();
         }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        if(contact != null) {
-            builder.setTitle("Member of");
-        }
-        else {
-            builder.setTitle("Choose groups");
-        }
-        builder.setMultiChoiceItems(
-            groupNames, tempSelected, 
-            new DialogInterface.OnMultiChoiceClickListener() {
-                public void onClick(DialogInterface dialog, int item, boolean isChecked) {
-                }
-            });
-
-        builder.setPositiveButton("Close",
-        new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                if(intent != null) {
-                    handleGroupsIntent(context, intent, feedUris, tempSelected);
-//                    context.startActivity(intent);
-                }
-            }
-        });
-        AlertDialog alert = builder.create();
-        alert.show();
     }
 
     private static void handleGroupsIntent(

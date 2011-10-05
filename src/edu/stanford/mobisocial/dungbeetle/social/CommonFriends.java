@@ -21,40 +21,40 @@ public class CommonFriends {
             null, 
             null, 
             null);
-
-        cursor.moveToFirst();
-        while(!cursor.isAfterLast()){
-            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
-            friendsFilter.add(publicKey);
-            cursor.moveToNext();
+        try {
+        	if(cursor.moveToFirst()) do {
+	            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
+	            friendsFilter.add(publicKey);
+	        } while(cursor.moveToNext());
+        } finally {
+        	cursor.close();
         }
-
         return friendsFilter;    
     }
 
     public static Contact[] checkFriends(final Context c, BloomFilter friendsFilter) {
+        ArrayList<Contact> friends = new ArrayList<Contact>();
         Cursor cursor = c.getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
             null, 
             null, 
             null, 
             null);
-
-        cursor.moveToFirst();
-
-        ArrayList<Contact> friends = new ArrayList<Contact>();
-        while(!cursor.isAfterLast()){
-            Contact contact = new Contact(cursor);
-            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
-            String name = cursor.getString(cursor.getColumnIndexOrThrow(Contact.NAME));
-            if(friendsFilter.contains(publicKey)) {
-                Log.w("bloomfilter", name + " is a friend");
-                friends.add(contact);
-            }
-            else {
-                Log.w("bloomfilter", name + " is not a friend");
-            }
-            cursor.moveToNext();
+        try {
+        	if(cursor.moveToFirst()) do {
+	            Contact contact = new Contact(cursor);
+	            String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(Contact.PUBLIC_KEY));
+	            String name = cursor.getString(cursor.getColumnIndexOrThrow(Contact.NAME));
+	            if(friendsFilter.contains(publicKey)) {
+	                Log.w("bloomfilter", name + " is a friend");
+	                friends.add(contact);
+	            }
+	            else {
+	                Log.w("bloomfilter", name + " is not a friend");
+	            }
+        	} while(cursor.moveToNext());
+        } finally {
+        	cursor.close();
         }
 
         Contact[] friendsArray = new Contact[friends.size()];
