@@ -33,11 +33,13 @@ public abstract class DatabaseObjHandler extends ObjHandler {
         String[] selectionArgs = new String[] {feedName, String.valueOf(contactID), String.valueOf(sequenceID)};
         
         Cursor objC = mHelper.getReadableDatabase().query(table, projection, selection, selectionArgs, null, null, DbObject.CONTACT_ID + " DESC", "1");
-        
-        if (objC.moveToFirst()) {
-            objId = objC.getLong(0);
+        try {
+	        if (objC.moveToFirst()) {
+	            objId = objC.getLong(0);
+	        }
+        } finally {
+        	objC.close();
         }
-        objC.close();
         return objId;
     }
 

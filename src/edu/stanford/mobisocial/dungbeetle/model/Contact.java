@@ -53,6 +53,7 @@ public class Contact implements Serializable{
 
     // TODO: Move to SocialKit.
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+
 	private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
     static {
         sWellKnownAttrs.add(Contact.ATTR_LAN_IP);

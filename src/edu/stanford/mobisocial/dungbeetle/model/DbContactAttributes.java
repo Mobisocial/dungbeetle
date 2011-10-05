@@ -43,6 +43,7 @@ public class DbContactAttributes /* extends DbTable */ {
                 c.close();
                 db.update(TABLE, values, selection, selectionArgs);
             } else {
+                c.close();
                 db.insert(TABLE, null, values);
             }
             db.setTransactionSuccessful();

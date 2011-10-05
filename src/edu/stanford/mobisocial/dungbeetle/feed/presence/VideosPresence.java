@@ -84,11 +84,15 @@ public class VideosPresence extends FeedPresence {
                         Video.Media.EXTERNAL_CONTENT_URI,
                         new String[] { VideoColumns._ID });
 
-            int idx = c.getColumnIndex(VideoColumns._ID);
-            if (c.moveToLast()) {
-                return Uri.withAppendedPath(Video.Media.EXTERNAL_CONTENT_URI, c.getString(idx));
+            try {
+	            int idx = c.getColumnIndex(VideoColumns._ID);
+	            if (c.moveToLast()) {
+	                return Uri.withAppendedPath(Video.Media.EXTERNAL_CONTENT_URI, c.getString(idx));
+	            }
+	            return null;
+            } finally {
+            	c.close();
             }
-            return null;
         }
     };
 }

@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.view.View;
@@ -61,7 +62,10 @@ public class NearbyGroupsActivity extends ListActivity {
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity (intent);
     }
 

@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -56,7 +57,10 @@ public class NotificationObjHandler extends ObjHandler {
                 Maybe<Group> group = mHelper.groupForFeedName(feedName);
                 Intent launch = new Intent(Intent.ACTION_VIEW);
                 launch.setClass(context, FeedListActivity.class);
-                launch.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                if(Build.VERSION.SDK_INT < 11)
+                	launch.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            	else 
+            		launch.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
                         launch, PendingIntent.FLAG_CANCEL_CURRENT);
         

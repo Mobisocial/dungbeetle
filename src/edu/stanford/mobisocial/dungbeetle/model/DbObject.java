@@ -137,93 +137,94 @@ public class DbObject {
     		Log.wtf("Dbbject", "cursor was null for bund view of db object");
     		return;
     	}
-        if(!cursor.moveToFirst()) {
-        	return;
-        }
-        
-        String jsonSrc = cursor.getString(0);
-        byte[] raw = cursor.getBlob(1);
-        Long contactId = cursor.getLong(2);
-        Long timestamp = cursor.getLong(3);
-        Long hash = cursor.getLong(4);
-        short deleted = cursor.getShort(5);
-        String feedName = cursor.getString(6);
-        Date date = new Date(timestamp);
-        cursor.close();
-       	///////
-        
-        try{
-            Contact contact = contactCache.getContact(contactId).get();
+    	try {
+	        if(!cursor.moveToFirst()) {
+	        	return;
+	        }
+	        
+	        String jsonSrc = cursor.getString(0);
+	        byte[] raw = cursor.getBlob(1);
+	        Long contactId = cursor.getLong(2);
+	        Long timestamp = cursor.getLong(3);
+	        Long hash = cursor.getLong(4);
+	        short deleted = cursor.getShort(5);
+	        String feedName = cursor.getString(6);
+	        Date date = new Date(timestamp);
+	        try {
+	            Contact contact = contactCache.getContact(contactId).get();
+	            TextView nameText = (TextView) v.findViewById(R.id.name_text);
+	            nameText.setText(contact.name);
+	
+	            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+	            if (sViewProfileAction == null) {
+	                sViewProfileAction = new OnClickViewProfile((Activity)context);
+	            }
+	            icon.setTag(contactId);
+	            if (allowInteractions) {
+	                icon.setOnClickListener(sViewProfileAction);
+	                v.setTag(objId);
+	                v.setClickable(true);
+	                v.setFocusable(true);
+	                v.setOnClickListener(ItemClickListener.getInstance(context));
+	                v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
+	            }
+	            // TODO: this is horrible
+	            ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+	
+	            if (deleted == 1) {
+	                v.setBackgroundColor(sDeletedColor);
+	            } else {
+	                v.setBackgroundColor(Color.TRANSPARENT);
+	            }
+	
+	            try {
+	                JSONObject content = new JSONObject(jsonSrc);
+	
+	                TextView timeText = (TextView)v.findViewById(R.id.time_text);
+	                timeText.setText(RelativeDate.getRelativeDate(date));
+	
+	                ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+	                frame.removeAllViews();
+	                frame.setTag(R.id.object_entry, c.getPosition());
+	                
+	        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
+	        		if(renderer != null) {
+	        			renderer.render(context, frame, content, raw, allowInteractions);
+	        		}
+	
+	                if (!allowInteractions) {
+	                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+	                } else {
+	                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
+	                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+	                    } else {
+	                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
+	                        attachmentCountButton.setVisibility(View.VISIBLE);
+	
+	                        if (hash == 0) {
+	                            attachmentCountButton.setVisibility(View.GONE);
+	                        } else {
+	                            int color = DbObject.colorFor(hash);
+	                            DBHelper helper = new DBHelper(context);
+	                            Cursor attachments = helper.queryRelatedObjs(objId);
+	                            attachmentCountButton.setText("" + attachments.getCount());
+	                            helper.close();
+	                            attachmentCountButton.setBackgroundColor(color);
+	                            attachmentCountButton.setTag(R.id.object_entry, hash);
+	                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
+	                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
+	                        }
+	                    }
+	                }
+	            } catch (JSONException e) {
+	                Log.e("db", "error opening json", e);
+	            }
+	        }
+	        catch(Maybe.NoValError e){}
+       	} finally {
+    		cursor.close();
+    	}
 
-            TextView nameText = (TextView) v.findViewById(R.id.name_text);
-            nameText.setText(contact.name);
-
-            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            if (sViewProfileAction == null) {
-                sViewProfileAction = new OnClickViewProfile((Activity)context);
-            }
-            icon.setTag(contactId);
-            if (allowInteractions) {
-                icon.setOnClickListener(sViewProfileAction);
-                v.setTag(objId);
-                v.setClickable(true);
-                v.setFocusable(true);
-                v.setOnClickListener(ItemClickListener.getInstance(context));
-                v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
-            }
-            // TODO: this is horrible
-            ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
-
-            if (deleted == 1) {
-                v.setBackgroundColor(sDeletedColor);
-            } else {
-                v.setBackgroundColor(Color.TRANSPARENT);
-            }
-
-            try {
-                JSONObject content = new JSONObject(jsonSrc);
-
-                TextView timeText = (TextView)v.findViewById(R.id.time_text);
-                timeText.setText(RelativeDate.getRelativeDate(date));
-
-                ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
-                frame.removeAllViews();
-                frame.setTag(R.id.object_entry, c.getPosition());
-                
-        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-        		if(renderer != null) {
-        			renderer.render(context, frame, content, raw, allowInteractions);
-        		}
-
-                if (!allowInteractions) {
-                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                } else {
-                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
-                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                    } else {
-                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
-                        attachmentCountButton.setVisibility(View.VISIBLE);
-
-                        if (hash == 0) {
-                            attachmentCountButton.setVisibility(View.GONE);
-                        } else {
-                            int color = DbObject.colorFor(hash);
-                            DBHelper helper = new DBHelper(context);
-                            Cursor attachments = helper.queryRelatedObjs(objId);
-                            attachmentCountButton.setText("" + attachments.getCount());
-                            helper.close();
-                            attachmentCountButton.setBackgroundColor(color);
-                            attachmentCountButton.setTag(R.id.object_entry, hash);
-                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                Log.e("db", "error opening json", e);
-            }
-        }
-        catch(Maybe.NoValError e){}
     }
 
     private static int colorFor(Long hash) {
@@ -308,25 +309,28 @@ public class DbObject {
                         DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            if(!cursor.moveToFirst()) {
-                return;
-            }
-            
-            final String jsonSrc = cursor.getString(0);
-            final byte[] raw = cursor.getBlob(1);
-            final long contactId = cursor.getLong(2);
-            cursor.close();
-
-            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-            try{
-                JSONObject obj = new JSONObject(jsonSrc);
-                Activator activator = DbObjects.getActivator(obj);
-                if(activator != null){
-                    activator.activate(mContext, contactId, obj, raw);
-                }
-            }
-            catch(JSONException e){
-                Log.e(TAG, "Couldn't parse obj.", e);
+            try {
+	            if(!cursor.moveToFirst()) {
+	                return;
+	            }
+	            
+	            final String jsonSrc = cursor.getString(0);
+	            final byte[] raw = cursor.getBlob(1);
+	            final long contactId = cursor.getLong(2);
+	            
+	            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
+	            try{
+	                JSONObject obj = new JSONObject(jsonSrc);
+	                Activator activator = DbObjects.getActivator(obj);
+	                if(activator != null){
+	                    activator.activate(mContext, contactId, obj, raw);
+	                }
+	            }
+	            catch(JSONException e){
+	                Log.e(TAG, "Couldn't parse obj.", e);
+	            }
+            } finally {
+            	cursor.close();
             }
         }
     };
@@ -359,26 +363,30 @@ public class DbObject {
                         DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            if(!cursor.moveToFirst()) {
-                return false;
-            }
-            
-            final String jsonSrc = cursor.getString(0);
-            final byte[] raw = cursor.getBlob(1);
-            String type = cursor.getString(2);
-            long hash = cursor.getLong(4);
-            long contactId = cursor.getLong(5);
-            Uri feedUri = Feed.uriForName(cursor.getString(3));
-            cursor.close();
-
-            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
             try {
-                JSONObject obj = new JSONObject(jsonSrc);
-                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
-            } catch(JSONException e){
-                Log.e(TAG, "Couldn't parse obj.", e);
+	            if(!cursor.moveToFirst()) {
+	                return false;
+	            }
+	            
+	            final String jsonSrc = cursor.getString(0);
+	            final byte[] raw = cursor.getBlob(1);
+	            String type = cursor.getString(2);
+	            long hash = cursor.getLong(4);
+	            long contactId = cursor.getLong(5);
+	            Uri feedUri = Feed.uriForName(cursor.getString(3));
+	
+	            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
+	            try {
+	                JSONObject obj = new JSONObject(jsonSrc);
+	                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
+	            } catch(JSONException e){
+	                Log.e(TAG, "Couldn't parse obj.", e);
+	            }
+	            return false;
+            } finally {
+            	cursor.close();
             }
-            return false;
+	            
         }
     };
 

@@ -111,7 +111,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
             int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+            DbObject.bindView(v, context, c, mContactCache, false);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
                 Group g = new Group(c);

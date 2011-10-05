@@ -73,19 +73,23 @@ public class FeedSlideshowFragment extends Fragment {
     private void startSlideshow() {
         Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getFeedObjectClause(),
                 null, DbObject._ID + " ASC");
-        if (!c.moveToFirst()) {
-            Log.d(TAG, "No items to display.");
-            return;
-        }
-
-        while (!c.isLast()) {
-            View v = getActivity().findViewById(R.id.feed_view);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
-
-            // TODO: background thread that wakes up and updates foreground activity.
-            try {
-                Thread.sleep(3000); // TODO: diff timestamps; beware of sync death!
-            } catch (InterruptedException e) { }
+        try {
+	        if (!c.moveToFirst()) {
+	            Log.d(TAG, "No items to display.");
+	            return;
+	        }
+	
+	        while (!c.isLast()) {
+	            View v = getActivity().findViewById(R.id.feed_view);
+	            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+	
+	            // TODO: background thread that wakes up and updates foreground activity.
+	            try {
+	                Thread.sleep(3000); // TODO: diff timestamps; beware of sync death!
+	            } catch (InterruptedException e) { }
+	        }
+        } finally {
+        	c.close();
         }
     }
 }

@@ -87,6 +87,8 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
                     // group exists already, load view
                     final Group g = mg.get();
                     Collection<Contact> existingContacts = g.contactCollection(mHelper);
+                    //TODO: XXXXX these two won't do a thing because g.forceUpdate happens
+                    //in the background.....
                     g.forceUpdate(context);
                     Collection<Contact> newContacts = g.contactCollection(mHelper);
                     newContacts.removeAll(existingContacts);

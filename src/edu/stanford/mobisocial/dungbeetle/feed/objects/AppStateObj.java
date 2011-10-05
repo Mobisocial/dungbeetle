@@ -186,6 +186,9 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    }
 	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
 	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+
+	    // TODO: Temporary, while transitioning to AppObj
+        launch.putExtra("obj", content.toString());
 	    if (!(context instanceof Activity)) {
 	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    }
