@@ -1178,7 +1178,7 @@ public class DBHelper extends SQLiteOpenHelper {
             null,null,null,null);
         try {
 	        ArrayList<Contact> result = new ArrayList<Contact>();
-	        while(c.moveToFirst()){
+	        if(c.moveToFirst()){
 	            result.add(new Contact(c));
 	        } while(c.moveToNext());
 	        return result;
