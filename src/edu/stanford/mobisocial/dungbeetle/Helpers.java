@@ -11,6 +11,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
@@ -283,6 +284,15 @@ public class Helpers {
                             "/group_invitations");
         c.getContentResolver().insert(url, values);
     }
+
+    public static void sendGroupInvite(final Context c, Uri feed,
+            final String group_name, Uri updateUri) {
+
+        ContentValues cv = new ContentValues();
+        cv.put(DbObject.JSON, InviteToGroupObj.json(group_name, updateUri).toString());
+        cv.put(DbObject.TYPE, InviteToGroupObj.TYPE);
+        c.getContentResolver().insert(feed, cv); 
+	}
 
     public static void resendProfile(final Context c, final Collection<Contact> contacts, final boolean reply) {
     	if (contacts.isEmpty()) {

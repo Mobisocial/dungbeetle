@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import mobisocial.nfc.Nfc;
@@ -34,6 +35,8 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 /**
  * Pick contacts and/or groups for various purposes.
@@ -171,25 +174,27 @@ public class PickContactsActivity extends TabActivity {
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                     null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
         }
-
-        if (c.getCount() == 0) {
-            setResult(RESULT_CANCELED);
-            finish();
-            return;
+        try {
+	        if (c.getCount() == 0) {
+	            setResult(RESULT_CANCELED);
+	            finish();
+	            return;
+	        }
+	
+	        if (c.getCount() == 1) {
+	            c.moveToFirst();
+	            Contact contact = new Contact(c);
+	            Intent result = new Intent();
+	            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
+	
+	            setResult(RESULT_OK, result);
+	            finish();
+	            return;
+	        }
+        } finally {
+	        c.close();
         }
-
-        if (c.getCount() == 1) {
-            c.moveToFirst();
-            Contact contact = new Contact(c);
-            Intent result = new Intent();
-            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
-            c.close();
-
-            setResult(RESULT_OK, result);
-            finish();
-            return;
-        }
-
+        
         setContentView(R.layout.pick_contacts);
         mContacts = new ContactListCursorAdapter(this, c);
         ListView contactsV = (ListView) findViewById(R.id.contacts_list);
@@ -233,6 +238,18 @@ public class PickContactsActivity extends TabActivity {
     }
 
 
+	void toastList() {
+        if (mResultGroups.size() == 0) {
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
+                    Toast.LENGTH_SHORT).show();
+        } else if (mResultContacts.size() == 0) {
+            Toast.makeText(this, "Sending to " + mResultGroups.size() + " feeds...",
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts and " +
+                    mResultGroups.size() + " groups...", Toast.LENGTH_SHORT).show();
+        }
+	}
     private void handleOk() {
         Uri data = mIntent.getData();
         String txt = mIntent.getStringExtra(Intent.EXTRA_TEXT);
@@ -243,16 +260,7 @@ public class PickContactsActivity extends TabActivity {
                 Toast.makeText(this, "No contacts chosen for sharing.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (mResultGroups.size() == 0) {
-                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
-                        Toast.LENGTH_SHORT).show();
-            } else if (mResultContacts.size() == 0) {
-                Toast.makeText(this, "Sending to " + mResultGroups.size() + " feeds...",
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts and " +
-                        mResultGroups.size() + " groups...", Toast.LENGTH_SHORT).show();
-            }
+            toastList();
 
             DbObject outboundObj = null;
             if (mIntent.getType().startsWith("image/") && mIntent.hasExtra(Intent.EXTRA_STREAM)) {
@@ -297,9 +305,19 @@ public class PickContactsActivity extends TabActivity {
                     mIntent.getStringExtra("packageName"));
         } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
             Uri threadUri = mIntent.getParcelableExtra("uri");
-            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
-                    Toast.LENGTH_SHORT).show();
-            Helpers.sendThreadInvite(this, mResultContacts.values(), threadUri);
+            toastList();
+            HashMap<Long, Contact> people = new HashMap<Long, Contact>();
+            for(Group g : mResultGroups.values()) {
+                Maybe<Group> group = Group.forFeed(this, threadUri);
+                try {
+                	Helpers.sendGroupInvite(this, Feed.uriForName(g.feedName), group.get().name, Uri.parse(group.get().dynUpdateUri));
+                } catch (NoValError e) {
+                    Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
+                }
+            }
+            if (mResultContacts.size() > 0) {
+            	Helpers.sendThreadInvite(this, mResultContacts.values(), threadUri);
+            }
         } else if (mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)) {
             long[] ids = new long[mResultContacts.size()];
             Iterator<Contact> it = mResultContacts.values().iterator();
