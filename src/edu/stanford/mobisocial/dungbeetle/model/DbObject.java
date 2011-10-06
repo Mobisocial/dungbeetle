@@ -206,9 +206,16 @@ public class DbObject {
 	                        } else {
 	                            int color = DbObject.colorFor(hash);
 	                            DBHelper helper = new DBHelper(context);
-	                            Cursor attachments = helper.queryRelatedObjs(objId);
-	                            attachmentCountButton.setText("" + attachments.getCount());
-	                            helper.close();
+	                            try {
+		                            Cursor attachments = helper.queryRelatedObjs(objId);
+		                            try {
+			                            attachmentCountButton.setText("" + attachments.getCount());
+		                            } finally {
+		                            	attachments.close();
+		                            }
+	                            } finally {
+		                            helper.close();
+	                            }
 	                            attachmentCountButton.setBackgroundColor(color);
 	                            attachmentCountButton.setTag(R.id.object_entry, hash);
 	                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
