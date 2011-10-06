@@ -56,13 +56,13 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     	return mTotal;
     }
 
-    public static CursorLoader queryObjects(Context context, Uri feedUri) {
+    public static CursorLoader queryObjects(Context context, Uri feedUri, String[] types) {
         return new CursorLoader(context, feedUri, 
         	new String[] { 
         		DbObject._ID,
         		DbObject.FEED_NAME
         	},
-        	DbObjects.getFeedObjectClause(), null, DbObject._ID + 
+        	DbObjects.getFeedObjectClause(types), null, DbObject._ID + 
         	" DESC LIMIT " + BATCH_SIZE);
     }
     private static int getBestBatchSize() {
@@ -84,14 +84,14 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 		return 15;
 	}
 
-	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
+	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total, String[] types) {
     	mTotal = total + BATCH_SIZE;
     	CursorLoader cl = new CursorLoader(context, feedUri, 
             	new String[] { 
             		DbObject._ID,
             		DbObject.FEED_NAME
             	},
-            	DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + mTotal);
+            	DbObjects.getFeedObjectClause(types), null, DbObject._ID + " DESC LIMIT " + mTotal);
 		Cursor newCursor = cl.loadInBackground(); 
 		
     	if (originalCursor == null) {

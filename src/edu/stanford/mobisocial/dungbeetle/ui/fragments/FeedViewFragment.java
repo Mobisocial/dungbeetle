@@ -54,6 +54,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
+import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
@@ -76,6 +77,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
+	private boolean adapterSet = false;
+	
+	private String[] filterTypes = null;
 
     @Override
     public void onAttach(Activity activity) {
@@ -133,6 +137,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onResume() {
         super.onResume();
         App.instance().setCurrentFeed(mFeedUri);
+
+        getLoaderManager().restartLoader(0, null, this);
+    	
+
     }
 
     @Override
@@ -220,7 +228,24 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+    	
+    	FeedHomeActivity context = (FeedHomeActivity) getActivity();
+    	List<String> filterTypes = new ArrayList<String>();
+    	for(int x = 0; x < context.filterTypes.length; x++) {
+    		if (context.checked[x]) {
+    			Log.w(TAG, "adding " + context.filterTypes[x]);
+    			filterTypes.add(context.filterTypes[x]);
+    		}
+    	}
+
+    	//if (adapterSet) {
+		//	mLoader.cancelLoad();
+			Log.w(TAG, "changeFilter reached in feedview");
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
+	        //mLoader.loadInBackground();
+    	//}
+    	
+        //mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
         mLoader.loadInBackground();
         return mLoader;
     }
@@ -231,7 +256,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     	synchronized (this) {
             mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
 		}
+    	Log.w(TAG, "setting adapter");
         setListAdapter(mObjects);
+        adapterSet = true;
     }
 
     @Override
@@ -434,9 +461,16 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     	if (loadMore) {
     		mLoader.cancelLoad();
-    		Activity activity = getActivity();
-    		if(activity != null) {
-        		mLoader = mObjects.queryLaterObjects(activity, mFeedUri, totalCount);
+    		FeedHomeActivity context = (FeedHomeActivity) getActivity();
+    		if(context != null) {
+    			List<String> filterTypes = new ArrayList<String>();
+    	    	for(int x = 0; x < context.filterTypes.length; x++) {
+    	    		if (context.checked[x]) {
+    	    			Log.w(TAG, "adding " + context.filterTypes[x]);
+    	    			filterTypes.add(context.filterTypes[x]);
+    	    		}
+    	    	}
+        		mLoader = mObjects.queryLaterObjects(context, mFeedUri, totalCount, filterTypes.toArray(new String[filterTypes.size()]));
     		}
     	}
 	}
@@ -446,4 +480,5 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 		// TODO Auto-generated method stub
 		
 	}
+	
 }

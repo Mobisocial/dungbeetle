@@ -39,6 +39,7 @@ public class FeedViews {
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
         feedViews.add(new PresenceView());
+        feedViews.add(new FilterView());
         return feedViews;
     }
 

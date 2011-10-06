@@ -1,4 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.feed;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONObject;
+
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -7,14 +13,14 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToWebSessionObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.MusicObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
@@ -28,10 +34,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONObject;
 
 public final class DbObjects {
 
@@ -121,12 +123,15 @@ public final class DbObjects {
         return mUnknownObjHandler;
     };
 
-    public static String getFeedObjectClause() {
-        String[] types = DbObjects.getRenderableTypes();
+    public static String getFeedObjectClause(String[] types) {
+    	if(types == null) {
+    		types = DbObjects.getRenderableTypes();
+    	}
         StringBuffer allowed = new StringBuffer();
         for (String type : types) {
             allowed.append(",'").append(type).append("'");
         }
+        Log.w("DbObjects", DbObject.TYPE + " in (" + allowed.substring(1) + ")");
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
     }
 }

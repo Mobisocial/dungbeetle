@@ -40,7 +40,7 @@ public class ObjCommentsFragment {
     public static View getViewForObjComments(Activity activity, Uri feedUri, JSONObject obj) {
 
         Cursor c = activity.getContentResolver().query(feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 2");
+                DbObjects.getFeedObjectClause(null), null, DbObject._ID + " DESC LIMIT 2");
         SpinnerAdapter adapter = new ObjectListCursorAdapter(activity, c);
 
         Gallery gallery = new Gallery(activity);
