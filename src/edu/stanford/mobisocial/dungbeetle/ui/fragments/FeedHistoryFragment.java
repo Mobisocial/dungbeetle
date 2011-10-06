@@ -81,7 +81,7 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
 
     private SpinnerAdapter getListAdapter(Context context, Uri feedUri) {
         Cursor c = context.getContentResolver().query(feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+                DbObjects.getFeedObjectClause(null), null, DbObject._ID + " DESC");
         return new ObjectListCursorAdapter(context, c);
     }
 

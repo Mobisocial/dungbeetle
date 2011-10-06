@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.json.JSONObject;
 
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -127,12 +128,15 @@ public final class DbObjects {
         return mUnknownObjHandler;
     };
 
-    public static String getFeedObjectClause() {
-        String[] types = DbObjects.getRenderableTypes();
+    public static String getFeedObjectClause(String[] types) {
+    	if(types == null) {
+    		types = DbObjects.getRenderableTypes();
+    	}
         StringBuffer allowed = new StringBuffer();
         for (String type : types) {
             allowed.append(",'").append(type).append("'");
         }
+        Log.w("DbObjects", DbObject.TYPE + " in (" + allowed.substring(1) + ")");
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
     }
 }

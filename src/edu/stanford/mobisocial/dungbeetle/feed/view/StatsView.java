@@ -21,7 +21,7 @@ public class StatsView extends Activity {
         mTextView = ((TextView)findViewById(R.id.stats_text));
 
         Uri feedUri = getIntent().getData();
-        Cursor c = getContentResolver().query(feedUri, null, DbObjects.getFeedObjectClause(),
+        Cursor c = getContentResolver().query(feedUri, null, DbObjects.getFeedObjectClause(null),
                 null, DbObject._ID + " DESC");
         try {
 	        Map<String, Integer> counts = new HashMap<String, Integer>();

@@ -270,7 +270,7 @@ public class ContentCorral {
                 String[] projection = new String[] {
                         DbObject._ID, DbObject.JSON
                 };
-                String selection = DbObjects.getFeedObjectClause();
+                String selection = DbObjects.getFeedObjectClause(null);
                 String[] selectionArgs = null;
                 String sortOrder = DbObject._ID + " ASC";
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
@@ -327,7 +327,7 @@ public class ContentCorral {
                 String[] projection = new String[] {
                         DbObject._ID, DbObject.JSON
                 };
-                String selection = DbObjects.getFeedObjectClause();
+                String selection = DbObjects.getFeedObjectClause(null);
                 String[] selectionArgs = null;
                 String sortOrder = DbObject._ID + " ASC LIMIT 30";
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,

@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -47,6 +48,10 @@ public class FeedHomeActivity extends MusubiBaseActivity
     private List<FeedView> mFeedViews = new ArrayList<FeedView>();
 
     public final String TAG = "GroupsTabActivity";
+    
+
+    public final String[] filterTypes = DbObjects.getRenderableTypes();
+    public boolean[] checked;
 
     public void onClickBroadcast(View v) {
         mActionsFragment.promptForSharing();
@@ -59,6 +64,12 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
+        
+        checked = new boolean[filterTypes.length];
+    	
+        for(int x = 0; x < filterTypes.length; x++) {
+        	checked[x] = true;
+        }
 
         mFeedViews = FeedViews.getDefaultFeedViews();
         Intent intent = getIntent();
@@ -183,6 +194,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
             return mFragments.get(position);
         }
     }
+    
 
     @Override
     public void onPageScrollStateChanged(int state) {
