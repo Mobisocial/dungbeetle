@@ -52,14 +52,4 @@ public class LikeObj extends DbEntryHandler {
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
 
     }
-
-    @Override
-    public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-        return null;
-    }
-
-    @Override
-    public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-        return null;
-    }
 }

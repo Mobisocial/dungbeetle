@@ -37,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
+@Deprecated
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = true;
@@ -54,14 +55,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     public String getType() {
         return TYPE;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static AppState from(String packageName, String arg, String feedName, String groupUri) {
         return new AppState(json(packageName, arg, feedName, groupUri));
     }

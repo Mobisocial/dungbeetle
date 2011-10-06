@@ -24,7 +24,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * A side-scrolling view of a feed's objects.
@@ -33,7 +32,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     private static final String TAG = "dbobjPager";
 
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private SpinnerAdapter mAdapter;
 
     @Override
@@ -45,7 +43,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mContactCache = new ContactCache(getActivity());
     }
 
     @Override
@@ -61,7 +58,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
 
     private class ObjectListCursorAdapter extends CursorAdapter {
@@ -79,7 +75,7 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, context, c, mContactCache, true);
+            DbObject.bindView(v, context, c, true);
         }
     }
 

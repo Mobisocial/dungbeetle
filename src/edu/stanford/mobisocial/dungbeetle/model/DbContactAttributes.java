@@ -43,13 +43,13 @@ public class DbContactAttributes /* extends DbTable */ {
                 c.close();
                 db.update(TABLE, values, selection, selectionArgs);
             } else {
+                c.close();
                 db.insert(TABLE, null, values);
             }
             db.setTransactionSuccessful();
         } finally {
             db.endTransaction();
         }
-        db.close();
         helper.close();
     }
 
@@ -71,7 +71,6 @@ public class DbContactAttributes /* extends DbTable */ {
             return null;
         } finally {
             c.close();
-            db.close();
             helper.close();
         }
     }

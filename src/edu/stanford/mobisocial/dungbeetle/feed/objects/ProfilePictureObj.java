@@ -39,10 +39,6 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public boolean handleObjFromNetwork(Context context, Contact from, JSONObject obj) {
 		byte[] data = FastBase64.decode(obj.optString(DATA));
@@ -88,11 +84,6 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
         intent.putExtra("b64Bytes", bytes);
         context.startActivity(intent); 
     }*/
-
-	@Override
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     @Override
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {

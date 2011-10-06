@@ -36,9 +36,6 @@ public class InviteToSharedAppFeedObj extends DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(Collection<Contact> contacts, 
                                   String feedName,
@@ -59,10 +56,6 @@ public class InviteToSharedAppFeedObj extends DbEntryHandler {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {

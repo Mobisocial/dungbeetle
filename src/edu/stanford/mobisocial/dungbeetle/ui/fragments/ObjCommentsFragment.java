@@ -40,13 +40,18 @@ public class ObjCommentsFragment {
     public static View getViewForObjComments(Activity activity, Uri feedUri, JSONObject obj) {
 
         Cursor c = activity.getContentResolver().query(feedUri, null,
+
                 DbObjects.getFeedObjectClause(null), null, DbObject._ID + " DESC LIMIT 2");
-        SpinnerAdapter adapter = new ObjectListCursorAdapter(activity, c);
-
-        Gallery gallery = new Gallery(activity);
-        gallery.setLayoutParams(CommonLayouts.FULL_SCREEN);
-        gallery.setAdapter(adapter);
-
-        return gallery;
+        try {
+	        SpinnerAdapter adapter = new ObjectListCursorAdapter(activity, c);
+	
+	        Gallery gallery = new Gallery(activity);
+	        gallery.setLayoutParams(CommonLayouts.FULL_SCREEN);
+	        gallery.setAdapter(adapter);
+	
+	        return gallery;
+        } finally {
+        	c.close();
+        }
     }
 }

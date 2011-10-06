@@ -23,25 +23,27 @@ public class StatsView extends Activity {
         Uri feedUri = getIntent().getData();
         Cursor c = getContentResolver().query(feedUri, null, DbObjects.getFeedObjectClause(null),
                 null, DbObject._ID + " DESC");
-
-        Map<String, Integer> counts = new HashMap<String, Integer>();
-        int totalSize = c.getCount();
-        c.moveToFirst();
-        for (int i = 1; i < totalSize; i++) {
-            c.moveToNext();
-            DbObject obj = DbObject.fromCursor(c);
-            String type = obj.getType();
-            if (counts.containsKey(type)) {
-                counts.put(type, counts.get(type) + 1);
-            } else {
-                counts.put(type, 1);
-            }
+        try {
+	        Map<String, Integer> counts = new HashMap<String, Integer>();
+	        int totalSize = c.getCount();
+	        c.moveToFirst();
+	        for (int i = 1; i < totalSize; i++) {
+	            c.moveToNext();
+	            DbObject obj = DbObject.fromCursor(c);
+	            String type = obj.getType();
+	            if (counts.containsKey(type)) {
+	                counts.put(type, counts.get(type) + 1);
+	            } else {
+	                counts.put(type, 1);
+	            }
+	        }
+	        StringBuilder builder = new StringBuilder();
+	        for (String type : counts.keySet()) {
+	            builder.append(type + ": " + counts.get(type)).append("\n");
+	        }
+	        mTextView.setText(builder.toString());
+        } finally {
+        	c.close();
         }
-
-        StringBuilder builder = new StringBuilder();
-        for (String type : counts.keySet()) {
-            builder.append(type + ": " + counts.get(type)).append("\n");
-        }
-        mTextView.setText(builder.toString());
     }
 }

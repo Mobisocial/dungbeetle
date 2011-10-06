@@ -262,19 +262,21 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 	                    DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
 	                            "profile", Long.toString(Contact.MY_ID)
 	                    }, DbObject.TIMESTAMP + " DESC");
-	
-	            if (c.moveToFirst()) {
-	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                try {
-	                    JSONObject obj = new JSONObject(jsonSrc);
-	                    String name = obj.optString("name");
-	                    String about = obj.optString("about");
-	                    mProfileName.setText(name);
-	                    mProfileAbout.setText(about);
-	                } catch (JSONException e) {
-	                }
+	            try {
+		            if (c.moveToFirst()) {
+		                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+		                try {
+		                    JSONObject obj = new JSONObject(jsonSrc);
+		                    String name = obj.optString("name");
+		                    String about = obj.optString("about");
+		                    mProfileName.setText(name);
+		                    mProfileAbout.setText(about);
+		                } catch (JSONException e) {
+		                }
+		            }
+	            } finally {
+	            	c.close();
 	            }
-	
 	            Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
 	            saveButton.setOnClickListener(new OnClickListener() {
 	                public void onClick(View v) {
@@ -355,23 +357,26 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         DbObject.TYPE + "= ? AND " + DbObject.CONTACT_ID + "= ?", new String[] {
                                 "profile", Long.toString(mContactId)
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
-                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        String name = obj.optString("name");
-                        String about = obj.optString("about");
-                        mProfileName.setText(name);
-                        mProfileEmail.setText(mIdent.userEmail());
-                        mProfileAbout.setText(about);
-                    } catch (JSONException e) {
-                    } finally {
-                    	mIdent.close();
-                    	mHelper.close();
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
+	                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        String name = obj.optString("name");
+	                        String about = obj.optString("about");
+	                        mProfileName.setText(name);
+	                        mProfileEmail.setText(mIdent.userEmail());
+	                        mProfileAbout.setText(about);
+	                    } catch (JSONException e) {
+	                    } finally {
+	                    	mIdent.close();
+	                    	mHelper.close();
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
 
                 presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener(getActivity()));
@@ -385,15 +390,18 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         DbObject.TYPE + "=?", new String[] {
                             PresenceObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        int myPresence = Integer.parseInt(obj.optString("presence"));
-                        presence.setSelection(myPresence);
-                    } catch (JSONException e) {
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        int myPresence = Integer.parseInt(obj.optString("presence"));
+	                        presence.setSelection(myPresence);
+	                    } catch (JSONException e) {
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
 
                 Uri profileUri = Uri
@@ -402,17 +410,20 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         new String[] {
                             ProfilePictureObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        String bytes = obj.optString(ProfilePictureObj.DATA);
-                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
-                                bytes.hashCode(), bytes, mIcon);
-                    } catch (JSONException e) {
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        String bytes = obj.optString(ProfilePictureObj.DATA);
+	                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
+	                                bytes.hashCode(), bytes, mIcon);
+	                    } catch (JSONException e) {
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
             } else {
                 presence.setVisibility(View.GONE);
@@ -421,8 +432,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     mProfileName.setText(contact.name);
                     mProfileEmail.setText(contact.email);
                     mProfileAbout.setText(contact.status);
-                    ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(
-                            contact, mIcon, 200);
+                    mIcon.setImageBitmap(contact.picture);
                 } catch (NoValError e) {}
             }
         }

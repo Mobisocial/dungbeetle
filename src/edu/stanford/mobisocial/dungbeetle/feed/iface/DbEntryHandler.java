@@ -11,8 +11,14 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 public abstract class DbEntryHandler {
     public abstract String getType();
     public abstract void handleDirectMessage(Context context, Contact from, JSONObject msg);
-	public abstract JSONObject mergeRaw(JSONObject objData, byte[] raw);
-	public abstract Pair<JSONObject, byte[]> splitRaw(JSONObject json);
+
+    public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
+        return objData;
+    }
+
+    public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
+        return null;
+    }
 
 	/**
 	 * Handles an object, and returns true to insert it in the database.

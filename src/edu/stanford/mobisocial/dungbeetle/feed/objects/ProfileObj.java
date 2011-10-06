@@ -27,13 +27,6 @@ public class ProfileObj extends DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public static JSONObject json(String name, String about){
         JSONObject obj = new JSONObject();

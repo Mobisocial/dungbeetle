@@ -20,6 +20,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -147,6 +148,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 }
                 if (objHash != null) {
                     json.put(DbObjects.TARGET_HASH, Long.parseLong(objHash));
+                    json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
                 }
 
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
@@ -239,25 +241,31 @@ public class DungBeetleContentProvider extends ContentProvider {
                 String[] selectionArgs = new String[] { feedName };
                 Cursor parent = mHelper.getReadableDatabase().query(
                         table, columns, selection, selectionArgs, null, null, null);
-                if (parent.moveToFirst()) {
-                    String parentName = parent.getString(0);
-                    table = Group.TABLE;
-                    columns = new String[] { Group._ID };
-                    selection = Group.FEED_NAME + " = ?";
-                    selectionArgs = new String[] { parentName };
-
-                    Cursor parent2 = mHelper.getReadableDatabase().query(
-                            table, columns, selection, selectionArgs, null, null, null);
-                    if (parent2.moveToFirst()) {
-                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
-                    } else {
-                        Log.e(TAG, "Parent feed found but no id for " + parentName);
-                    }
-                    parent2.close();
-                } else {
-                    Log.w(TAG, "No parent feed for " + feedName);
+                try {
+	                if (parent.moveToFirst()) {
+	                    String parentName = parent.getString(0);
+	                    table = Group.TABLE;
+	                    columns = new String[] { Group._ID };
+	                    selection = Group.FEED_NAME + " = ?";
+	                    selectionArgs = new String[] { parentName };
+	
+	                    Cursor parent2 = mHelper.getReadableDatabase().query(
+	                            table, columns, selection, selectionArgs, null, null, null);
+	                    try {
+		                    if (parent2.moveToFirst()) {
+		                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
+		                    } else {
+		                        Log.e(TAG, "Parent feed found but no id for " + parentName);
+		                    } 
+	                    } finally {
+	                    	parent2.close();
+	                    }
+	                } else {
+	                    Log.w(TAG, "No parent feed for " + feedName);
+	                }
+                } finally {
+                    parent.close();
                 }
-                parent.close();
                 id = mHelper.insertGroup(cv);
                 getContext().getContentResolver().notifyChange(
                         Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
@@ -528,11 +536,14 @@ public class DungBeetleContentProvider extends ContentProvider {
     private void notifyDependencies(ContentResolver resolver, String feedName) {
         resolver.notifyChange(Feed.uriForName(feedName), null);
         Cursor c = mHelper.getFeedDependencies(feedName);
-        while (c.moveToNext()) {
-            Uri uri = Feed.uriForName(c.getString(0));
-            resolver.notifyChange(uri, null);
+        try {
+	        while (c.moveToNext()) {
+	            Uri uri = Feed.uriForName(c.getString(0));
+	            resolver.notifyChange(uri, null);
+	        }
+        } finally {
+	        c.close();
         }
-        c.close();
     }
 
 	public DBHelper getDBHelper() {

@@ -29,7 +29,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
@@ -38,7 +37,6 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class FeedListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "DungBeetle";
     private FeedListCursorAdapter mFeeds;
-    private ContactCache mContactCache;
     private DBHelper mHelper;
     private OnFeedSelectedListener mFeedSelectedListener;
     
@@ -71,14 +69,12 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
         }
 
         mHelper = DBHelper.getGlobal(getActivity());
-        mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        mContactCache.close();
     }
 
     private class FeedListCursorAdapter extends CursorAdapter {
@@ -111,7 +107,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
             int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+            DbObject.bindView(v, context, c, false);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
                 Group g = new Group(c);

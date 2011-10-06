@@ -43,9 +43,6 @@ public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
     public static DbObject from(String uri, String mimeType, String title) {
         return new DbObject(TYPE, json(uri, mimeType, title));
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(String uri, String mimeType, String title) {
         JSONObject obj = new JSONObject();
@@ -56,10 +53,6 @@ public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String mimeType = obj.optString(MIME_TYPE);

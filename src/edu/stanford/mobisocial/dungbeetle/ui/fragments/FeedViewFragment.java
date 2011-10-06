@@ -57,7 +57,6 @@ import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Shows a series of posts from a feed.
@@ -72,7 +71,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private EditText mStatusText;
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
@@ -123,14 +121,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
-        mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
 
     @Override
@@ -267,8 +263,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     }
 
     void showMenuForObj(int position) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
+    	//this first cursor is the internal one
+        Cursor cursor = (Cursor)mObjects.getItem(position);
+    	cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
             	new String[] { 
             		DbObject.JSON,
             		DbObject.RAW,
@@ -276,36 +273,39 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             		DbObject.HASH,
             		DbObject.CONTACT_ID
             	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String type = cursor.getString(2);
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        final long hash = cursor.getLong(3);
-        final long contactId = cursor.getLong(4);
-        cursor.close();
+            	DbObject._ID + " = ?", new String[] {String.valueOf(cursor.getLong(0))}, null);
+    	try {
+	        if(!cursor.moveToFirst())
+	        	return;
+	        
+	        final String type = cursor.getString(2);
+	        final String jsonSrc = cursor.getString(0);
+	        final byte[] raw = cursor.getBlob(1);
+	        final long hash = cursor.getLong(3);
+	        final long contactId = cursor.getLong(4);
 
-        final JSONObject json;
-        try {
-            json = new JSONObject(jsonSrc);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error building dialog", e);
-            return;
-        }
-
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
-        if (prev != null) {
-            ft.remove(prev);
-        }
-        ft.addToBackStack(null);
-
-        // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(
-                mFeedUri, contactId, type, hash, json, raw);
-        newFragment.show(ft, "dialog");
+	        final JSONObject json;
+	        try {
+	            json = new JSONObject(jsonSrc);
+	        } catch (JSONException e) {
+	            Log.e(TAG, "Error building dialog", e);
+	            return;
+	        }
+	    	
+	        FragmentTransaction ft = getFragmentManager().beginTransaction();
+	        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+	        if (prev != null) {
+	            ft.remove(prev);
+	        }
+	        ft.addToBackStack(null);
+	
+	        // Create and show the dialog.
+	        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(
+	                mFeedUri, contactId, type, hash, json, raw);
+	        newFragment.show(ft, "dialog");
+    	} finally {
+    		cursor.close();
+    	}
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {

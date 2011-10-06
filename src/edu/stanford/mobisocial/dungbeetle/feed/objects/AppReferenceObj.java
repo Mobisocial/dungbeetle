@@ -41,6 +41,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * A pointer to an application instance feed.
  * {@see LaunchApplicationAction}
  */
+@Deprecated
 public class AppReferenceObj extends DbEntryHandler
         implements FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "AppReferenceObj";
@@ -58,14 +59,6 @@ public class AppReferenceObj extends DbEntryHandler
     public String getType() {
         return TYPE;
     }
-
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public static DbObject from(String packageName, String arg,
 	        String feedName, String groupUri, long creatorId) {

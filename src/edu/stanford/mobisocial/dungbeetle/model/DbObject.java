@@ -37,7 +37,6 @@ import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
@@ -62,7 +61,6 @@ public class DbObject {
 
 	public static final String RAW = "raw";
 
-    private final Cursor mCursor;
     protected final String mType;
     protected JSONObject mJson;
     private Long mTimestamp;
@@ -70,36 +68,26 @@ public class DbObject {
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
     public DbObject(String type, JSONObject json) {
-        mCursor = null;
         mType = type;
         mJson = json;
     }
 
     private DbObject(Cursor c) {
         mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
-        mCursor = c;
+        String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        try {
+            mJson = new JSONObject(jsonStr);
+        } catch (JSONException e) {
+            Log.wtf("DB", "Bad json from database.");
+        }
+        mTimestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
     }
 
     public String getType() {
         return mType;
     }
     public JSONObject getJson() {
-        if (mJson == null && mCursor != null) {
-            String jsonStr = mCursor.getString(mCursor.getColumnIndexOrThrow(DbObject.JSON));
-            try {
-                mJson = new JSONObject(jsonStr);
-            } catch (JSONException e) {
-                Log.wtf("DB", "Bad json from database.");
-            }
-        }
         return mJson;
-    }
-
-    public Long getTimestamp() {
-        if (mTimestamp == null && mCursor != null) {
-            mTimestamp = mCursor.getLong(mCursor.getColumnIndexOrThrow(DbObject.TIMESTAMP));
-        }
-        return mTimestamp;
     }
 
     public static DbObject fromCursor(Cursor c) {
@@ -118,8 +106,7 @@ public class DbObject {
      * @param contactCache prevents copious lookups of contact information from the sqlite database
      * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
      */
-    public static void bindView(View v, final Context context, Cursor c,
-            ContactCache contactCache, boolean allowInteractions) {
+    public static void bindView(View v, final Context context, Cursor c, boolean allowInteractions) {
     	//there is probably a utility or should be one that does this
         long objId = c.getLong(0);
     	Cursor cursor = context.getContentResolver().query(OBJ_URI,
@@ -137,25 +124,25 @@ public class DbObject {
     		Log.wtf("Dbbject", "cursor was null for bund view of db object");
     		return;
     	}
-        if(!cursor.moveToFirst()) {
-        	return;
-        }
-        
-        String jsonSrc = cursor.getString(0);
-        byte[] raw = cursor.getBlob(1);
-        Long contactId = cursor.getLong(2);
-        Long timestamp = cursor.getLong(3);
-        Long hash = cursor.getLong(4);
-        short deleted = cursor.getShort(5);
-        String feedName = cursor.getString(6);
-        Date date = new Date(timestamp);
-        cursor.close();
-       	///////
-        
-        try{
-            Contact contact = contactCache.getContact(contactId).get();
-
+    	try {
+	        if(!cursor.moveToFirst()) {
+	        	return;
+	        }
+	        
+	        String jsonSrc = cursor.getString(0);
+	        byte[] raw = cursor.getBlob(1);
+	        Long contactId = cursor.getLong(2);
+	        Long timestamp = cursor.getLong(3);
+	        Long hash = cursor.getLong(4);
+	        short deleted = cursor.getShort(5);
+	        String feedName = cursor.getString(6);
+	        Date date = new Date(timestamp);
+        	Contact contact = Helpers.getContact(context, contactId);
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
+        	if(contact == null) {
+        		nameText.setText("Unknown Corrupt Message");
+        		return;
+        	}
             nameText.setText(contact.name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
@@ -171,8 +158,7 @@ public class DbObject {
                 v.setOnClickListener(ItemClickListener.getInstance(context));
                 v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
             }
-            // TODO: this is horrible
-            ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+            icon.setImageBitmap(contact.picture);
 
             if (deleted == 1) {
                 v.setBackgroundColor(sDeletedColor);
@@ -209,9 +195,16 @@ public class DbObject {
                         } else {
                             int color = DbObject.colorFor(hash);
                             DBHelper helper = new DBHelper(context);
-                            Cursor attachments = helper.queryRelatedObjs(objId);
-                            attachmentCountButton.setText("" + attachments.getCount());
-                            helper.close();
+                            try {
+	                            Cursor attachments = helper.queryRelatedObjs(objId);
+	                            try {
+		                            attachmentCountButton.setText("" + attachments.getCount());
+	                            } finally {
+	                            	attachments.close();
+	                            }
+                            } finally {
+	                            helper.close();
+                            }
                             attachmentCountButton.setBackgroundColor(color);
                             attachmentCountButton.setTag(R.id.object_entry, hash);
                             attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
@@ -222,8 +215,10 @@ public class DbObject {
             } catch (JSONException e) {
                 Log.e("db", "error opening json", e);
             }
-        }
-        catch(Maybe.NoValError e){}
+       	} finally {
+    		cursor.close();
+    	}
+
     }
 
     private static int colorFor(Long hash) {
@@ -308,25 +303,28 @@ public class DbObject {
                         DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            if(!cursor.moveToFirst()) {
-                return;
-            }
-            
-            final String jsonSrc = cursor.getString(0);
-            final byte[] raw = cursor.getBlob(1);
-            final long contactId = cursor.getLong(2);
-            cursor.close();
-
-            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-            try{
-                JSONObject obj = new JSONObject(jsonSrc);
-                Activator activator = DbObjects.getActivator(obj);
-                if(activator != null){
-                    activator.activate(mContext, contactId, obj, raw);
-                }
-            }
-            catch(JSONException e){
-                Log.e(TAG, "Couldn't parse obj.", e);
+            try {
+	            if(!cursor.moveToFirst()) {
+	                return;
+	            }
+	            
+	            final String jsonSrc = cursor.getString(0);
+	            final byte[] raw = cursor.getBlob(1);
+	            final long contactId = cursor.getLong(2);
+	            
+	            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
+	            try{
+	                JSONObject obj = new JSONObject(jsonSrc);
+	                Activator activator = DbObjects.getActivator(obj);
+	                if(activator != null){
+	                    activator.activate(mContext, contactId, obj, raw);
+	                }
+	            }
+	            catch(JSONException e){
+	                Log.e(TAG, "Couldn't parse obj.", e);
+	            }
+            } finally {
+            	cursor.close();
             }
         }
     };
@@ -359,26 +357,30 @@ public class DbObject {
                         DbObject.CONTACT_ID
                     },
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            if(!cursor.moveToFirst()) {
-                return false;
-            }
-            
-            final String jsonSrc = cursor.getString(0);
-            final byte[] raw = cursor.getBlob(1);
-            String type = cursor.getString(2);
-            long hash = cursor.getLong(4);
-            long contactId = cursor.getLong(5);
-            Uri feedUri = Feed.uriForName(cursor.getString(3));
-            cursor.close();
-
-            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
             try {
-                JSONObject obj = new JSONObject(jsonSrc);
-                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
-            } catch(JSONException e){
-                Log.e(TAG, "Couldn't parse obj.", e);
+	            if(!cursor.moveToFirst()) {
+	                return false;
+	            }
+	            
+	            final String jsonSrc = cursor.getString(0);
+	            final byte[] raw = cursor.getBlob(1);
+	            String type = cursor.getString(2);
+	            long hash = cursor.getLong(4);
+	            long contactId = cursor.getLong(5);
+	            Uri feedUri = Feed.uriForName(cursor.getString(3));
+	
+	            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
+	            try {
+	                JSONObject obj = new JSONObject(jsonSrc);
+	                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
+	            } catch(JSONException e){
+	                Log.e(TAG, "Couldn't parse obj.", e);
+	            }
+	            return false;
+            } finally {
+            	cursor.close();
             }
-            return false;
+	            
         }
     };
 

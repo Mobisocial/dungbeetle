@@ -39,17 +39,10 @@ public class PhoneStateObj extends DbEntryHandler implements FeedRenderer {
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
