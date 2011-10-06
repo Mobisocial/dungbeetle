@@ -114,8 +114,9 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         // TODO: feed for related objs, not parent feed
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+        // TODO: Remove
+        launch.putExtra("obj", content.toString());
 
-        // TODO: optimize!
         List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
         if (resolved.size() > 0) {
             return launch;
