@@ -62,7 +62,6 @@ public class DbObject {
 
 	public static final String RAW = "raw";
 
-    private final Cursor mCursor;
     protected final String mType;
     protected JSONObject mJson;
     private Long mTimestamp;
@@ -70,36 +69,26 @@ public class DbObject {
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
     public DbObject(String type, JSONObject json) {
-        mCursor = null;
         mType = type;
         mJson = json;
     }
 
     private DbObject(Cursor c) {
         mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
-        mCursor = c;
+        String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        try {
+            mJson = new JSONObject(jsonStr);
+        } catch (JSONException e) {
+            Log.wtf("DB", "Bad json from database.");
+        }
+        mTimestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
     }
 
     public String getType() {
         return mType;
     }
     public JSONObject getJson() {
-        if (mJson == null && mCursor != null) {
-            String jsonStr = mCursor.getString(mCursor.getColumnIndexOrThrow(DbObject.JSON));
-            try {
-                mJson = new JSONObject(jsonStr);
-            } catch (JSONException e) {
-                Log.wtf("DB", "Bad json from database.");
-            }
-        }
         return mJson;
-    }
-
-    public Long getTimestamp() {
-        if (mTimestamp == null && mCursor != null) {
-            mTimestamp = mCursor.getLong(mCursor.getColumnIndexOrThrow(DbObject.TIMESTAMP));
-        }
-        return mTimestamp;
     }
 
     public static DbObject fromCursor(Cursor c) {
@@ -206,9 +195,16 @@ public class DbObject {
 	                        } else {
 	                            int color = DbObject.colorFor(hash);
 	                            DBHelper helper = new DBHelper(context);
-	                            Cursor attachments = helper.queryRelatedObjs(objId);
-	                            attachmentCountButton.setText("" + attachments.getCount());
-	                            helper.close();
+	                            try {
+		                            Cursor attachments = helper.queryRelatedObjs(objId);
+		                            try {
+			                            attachmentCountButton.setText("" + attachments.getCount());
+		                            } finally {
+		                            	attachments.close();
+		                            }
+	                            } finally {
+		                            helper.close();
+	                            }
 	                            attachmentCountButton.setBackgroundColor(color);
 	                            attachmentCountButton.setTag(R.id.object_entry, hash);
 	                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));

@@ -30,6 +30,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.CursorWrapper;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteCursorDriver;
@@ -83,8 +84,24 @@ public class DBHelper extends SQLiteOpenHelper {
                     SQLiteDatabase db,
                     SQLiteCursorDriver masterQuery,
                     String editTable,
-                    SQLiteQuery query) {
-		    		return new SQLiteCursor(db, masterQuery, editTable, query);
+                    SQLiteQuery query) 
+		    	{
+		    		return new CursorWrapper(new SQLiteCursor(db, masterQuery, editTable, query)) {
+		    			Throwable source = new Throwable();
+		    			@Override
+		    			public void close() {
+		    				super.close();
+		    				source = null;
+		    			}
+		    			@Override
+		    			protected void finalize() throws Throwable {
+		    				// TODO Auto-generated method stub
+		    				super.finalize();
+		    				if(source != null) {
+		    					throw new RuntimeException("Cursor not closed @", source);
+		    				}
+		    			}
+		    		};
 		    	}
 		    }, 
 		    VERSION);
@@ -681,27 +698,29 @@ public class DBHelper extends SQLiteOpenHelper {
 
             ContentResolver resolver = mContext.getContentResolver();
             Cursor c = getFeedDependencies(feedName);
-            while (c.moveToNext()) {
-                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+            try {
+	            while (c.moveToNext()) {
+	                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+	            }
+	
+	            if (json.has(DbObjects.TARGET_HASH)) {
+	                long hashA = json.optLong(DbObjects.TARGET_HASH);
+	                long idA = objIdForHash(hashA);
+	                String relation;
+	                if (json.has(DbObjects.TARGET_RELATION)) {
+	                    relation = json.optString(DbObjects.TARGET_RELATION);
+	                } else {
+	                    relation = DbRelation.RELATION_PARENT;
+	                }
+	                if (idA == -1) {
+	                    Log.e(TAG, "No objId found for hash " + hashA);
+	                } else {
+	                    addObjRelation(idA, newObjId, relation);
+	                }
+	            }
+            } finally {
+            	c.close();
             }
-
-            if (json.has(DbObjects.TARGET_HASH)) {
-                long hashA = json.optLong(DbObjects.TARGET_HASH);
-                long idA = objIdForHash(hashA);
-                String relation;
-                if (json.has(DbObjects.TARGET_RELATION)) {
-                    relation = json.optString(DbObjects.TARGET_RELATION);
-                } else {
-                    relation = DbRelation.RELATION_PARENT;
-                }
-                if (idA == -1) {
-                    Log.e(TAG, "No objId found for hash " + hashA);
-                } else {
-                    addObjRelation(idA, newObjId, relation);
-                }
-            }
-
-            c.close();
             return seqId;
         }
         catch(Exception e){

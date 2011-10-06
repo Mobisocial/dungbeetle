@@ -536,11 +536,14 @@ public class DungBeetleContentProvider extends ContentProvider {
     private void notifyDependencies(ContentResolver resolver, String feedName) {
         resolver.notifyChange(Feed.uriForName(feedName), null);
         Cursor c = mHelper.getFeedDependencies(feedName);
-        while (c.moveToNext()) {
-            Uri uri = Feed.uriForName(c.getString(0));
-            resolver.notifyChange(uri, null);
+        try {
+	        while (c.moveToNext()) {
+	            Uri uri = Feed.uriForName(c.getString(0));
+	            resolver.notifyChange(uri, null);
+	        }
+        } finally {
+	        c.close();
         }
-        c.close();
     }
 
 	public DBHelper getDBHelper() {

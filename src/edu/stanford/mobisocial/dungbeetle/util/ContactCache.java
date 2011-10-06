@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Handler;
 
 public class ContactCache extends ContentObserver {
+
     private final Context mContext;
     private final DBHelper mHelper;
     private final DBIdentityProvider mIdent;

@@ -39,9 +39,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     private static final String TAG = "musubi-appObj";
     private static final boolean DBG = true;
 
-    public static final String LABEL = "label";
-    public static final String TYPE = "appObj";
-
+    public static final String TYPE = "app";
     public static final String ANDROID_PACKAGE_NAME = "android_pkg";
     public static final String ANDROID_CLASS_NAME = "android_cls";
     public static final String ANDROID_ACTION = "android_action";
@@ -113,6 +111,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         Intent launch = new Intent(action);
         launch.setClassName(pkgName, className);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
+        // TODO: feed for related objs, not parent feed
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
 
         // TODO: optimize!

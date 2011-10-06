@@ -215,7 +215,6 @@ public class LaunchApplicationAction implements FeedAction {
                 Helpers.sendToFeed(mContext, obj, mFeedUri);
 
                 // Launch locally
-                // TODO: Hack, and will have issues if we send an obj and autolaunch
                 try {
                     obj.getJson().put(DbObject.FEED_NAME, mFeedUri.getLastPathSegment());
                 } catch (JSONException e) {
@@ -223,7 +222,7 @@ public class LaunchApplicationAction implements FeedAction {
                 }
                 DbEntryHandler h = DbObjects.forType(AppObj.TYPE);
                 if (!(h instanceof Activator)) {
-                    Log.e(TAG, "What! " + AppObj.TYPE + " isnt an activator!");
+                    Log.e(TAG, "What! " + AppObj.TYPE + " isn't an activator!");
                     return;
                 }
                 ((Activator)h).activate(mContext, Contact.MY_ID, obj.getJson(), null);
