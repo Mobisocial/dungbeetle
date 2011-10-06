@@ -20,6 +20,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -147,6 +148,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 }
                 if (objHash != null) {
                     json.put(DbObjects.TARGET_HASH, Long.parseLong(objHash));
+                    json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
                 }
 
                 mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),

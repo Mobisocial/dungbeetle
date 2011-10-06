@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 49;
+	public static final int VERSION = 50;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -336,6 +336,13 @@ public class DBHelper extends SQLiteOpenHelper {
             createUserAttributesTable(db);
         }
 
+        if (oldVersion <= 49) {
+            if (oldVersion > 44) {
+                db.execSQL("ALTER TABLE " + DbRelation.TABLE + " ADD COLUMN " + DbRelation.RELATION_TYPE + " TEXT");
+            }
+            db.execSQL("UPDATE " + DbRelation.TABLE + " SET " + DbRelation.RELATION_TYPE + " = 'parent'");
+        }
+
         db.setVersion(VERSION);
     }
 
@@ -480,7 +487,8 @@ public class DBHelper extends SQLiteOpenHelper {
 	    createTable(db, DbRelation.TABLE, null,
                 DbRelation._ID, "INTEGER PRIMARY KEY",
                 DbRelation.OBJECT_ID_A, "INTEGER",
-                DbRelation.OBJECT_ID_B, "INTEGER"
+                DbRelation.OBJECT_ID_B, "INTEGER",
+                DbRelation.RELATION_TYPE, "TEXT"
                 );
 	}
 
@@ -614,10 +622,16 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObjects.TARGET_HASH)) {
                 long hashA = json.optLong(DbObjects.TARGET_HASH);
                 long idA = objIdForHash(hashA);
+                String relation;
+                if (json.has(DbObjects.TARGET_RELATION)) {
+                    relation = json.optString(DbObjects.TARGET_RELATION);
+                } else {
+                    relation = DbRelation.RELATION_PARENT;
+                }
                 if (idA == -1) {
                     Log.e(TAG, "No objId found for hash " + hashA);
                 } else {
-                    addObjRelation(idA, objId);
+                    addObjRelation(idA, objId, relation);
                 }
             }
 
@@ -672,10 +686,16 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObjects.TARGET_HASH)) {
                 long hashA = json.optLong(DbObjects.TARGET_HASH);
                 long idA = objIdForHash(hashA);
+                String relation;
+                if (json.has(DbObjects.TARGET_RELATION)) {
+                    relation = json.optString(DbObjects.TARGET_RELATION);
+                } else {
+                    relation = DbRelation.RELATION_PARENT;
+                }
                 if (idA == -1) {
                     Log.e(TAG, "No objId found for hash " + hashA);
                 } else {
-                    addObjRelation(idA, newObjId);
+                    addObjRelation(idA, newObjId, relation);
                 }
             }
 
@@ -692,14 +712,15 @@ public class DBHelper extends SQLiteOpenHelper {
      * Adds a parent/child relation to the database given a child obj.
      * The obj must have a {@link DbObjects#TARGET_HASH} field.
      */
-    public void addObjRelation(long idA, long idB) {
+    public void addObjRelation(long idA, long idB, String relation) {
         ContentValues cv = new ContentValues();
         cv.put(DbRelation.OBJECT_ID_A, idA);
         cv.put(DbRelation.OBJECT_ID_B, idB);
+        cv.put(DbRelation.RELATION_TYPE, relation);
         getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
     }
 
-    private long objIdForHash(long hash) {
+    public long objIdForHash(long hash) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
                 new String[]{ DbObject._ID },

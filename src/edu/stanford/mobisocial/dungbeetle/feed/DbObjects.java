@@ -28,6 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,11 @@ public final class DbObjects {
     public static final String TIMESTAMP = "timestamp";
     public static final String APP_ID = "appId";
 
+    /**
+     * {@see DbRelation}
+     */
     public static final String TARGET_HASH = "target_hash";
+    public static final String TARGET_RELATION = "target_relation";
 
     private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
     private static UnknownObj mUnknownObjHandler = new UnknownObj();
