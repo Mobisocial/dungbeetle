@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 
 import mobisocial.nfc.Nfc;
@@ -165,6 +164,7 @@ public class PickContactsActivity extends TabActivity {
 	 * Select a subset of members from a feed.
 	 */
 	private void selectFeedMembersUi(final Uri feedUri, final int max) {
+	    Log.d(TAG, "Picking contacts from uri " + feedUri);
         /** Contacts **/
         Cursor c;
         if (feedUri != null) {
@@ -174,25 +174,21 @@ public class PickContactsActivity extends TabActivity {
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                     null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
         }
-        try {
-	        if (c.getCount() == 0) {
-	            setResult(RESULT_CANCELED);
-	            finish();
-	            return;
-	        }
-	
-	        if (c.getCount() == 1) {
-	            c.moveToFirst();
-	            Contact contact = new Contact(c);
-	            Intent result = new Intent();
-	            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
-	
-	            setResult(RESULT_OK, result);
-	            finish();
-	            return;
-	        }
-        } finally {
-	        c.close();
+        if (c.getCount() == 0) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+
+        if (c.getCount() == 1) {
+            c.moveToFirst();
+            Contact contact = new Contact(c);
+            Intent result = new Intent();
+            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
+
+            setResult(RESULT_OK, result);
+            finish();
+            return;
         }
         
         setContentView(R.layout.pick_contacts);

@@ -3,6 +3,8 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONException;
+
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -21,7 +23,11 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -170,22 +176,6 @@ public class LaunchApplicationAction implements FeedAction {
         new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 
-    private void launchAppWithMembership(Context context, Uri feedUri, String pkg, String[] membership) {
-        // Start new application feed:
-        Group g = Group.create(context);
-        Uri appFeedUri = Feed.uriForName(g.feedName);
-        DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
-        Helpers.sendToFeed(context, anchor, appFeedUri);
-
-        // App reference in parent feed:
-        DbObject obj = AppReferenceObj.forFixedMembership(pkg, membership, g.feedName, g.dynUpdateUri);
-        Helpers.sendToFeed(context, obj, feedUri);
-
-        // Kick it off locally:
-        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
-    }
-    
-
     /**
      * Callout used to select members for a new mutliplayer session
      * and then launch the application upon choosing them.
@@ -216,42 +206,27 @@ public class LaunchApplicationAction implements FeedAction {
         @Override
         public void handleResult(int resultCode, Intent data) {
             if (resultCode == Activity.RESULT_OK) {
-                Intent launch = new Intent(mAction);
-                launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                launch.setClassName(mResolveInfo.activityInfo.packageName, mResolveInfo.activityInfo.name);
-                long[] contactIds = data.getLongArrayExtra("contacts");
+                String action = mAction;
+                String pkgName = mResolveInfo.activityInfo.packageName;
+                String className = mResolveInfo.activityInfo.name;
 
-                /**
-                 * TODO:
-                 * 
-                 * Identity Firewall Goes Here.
-                 * Membership details can be randomized in one of many ways.
-                 * The app (scrabble) may see games a set of gamers play together.
-                 * The app may always see random ids
-                 * The app may always see stable ids
-                 * 
-                 * Can also permute the cursor and member order.
-                 */
+                // Create and share new application instance
+                DbObject obj = AppObj.fromPickerResult(mContext, action, pkgName, className, data);
+                Helpers.sendToFeed(mContext, obj, mFeedUri);
 
-                String[] participantIds = new String[contactIds.length + 1];
-                
-                participantIds[0] = App.instance().getLocalPersonId();
+                // Launch locally
+                // TODO: Hack, and will have issues if we send an obj and autolaunch
                 try {
-                    int i = 1;
-                    for (long id : contactIds) {
-                        Maybe<Contact> annoyingContact = Contact.forId(mContext, id);
-                        Contact contact = annoyingContact.get();
-                        participantIds[i++] = contact.personId;
-                    }
-                } catch (NoValError e) {
-                    Log.e(TAG, "please, Please get rid of the maybe.");
-                    Toast.makeText(mContext, "Error getting app membership.",
-                            Toast.LENGTH_SHORT).show();
+                    obj.getJson().put(DbObject.FEED_NAME, mFeedUri.getLastPathSegment());
+                } catch (JSONException e) {
+                    Log.e(TAG, "couldn't do json", e);
+                }
+                DbEntryHandler h = DbObjects.forType(AppObj.TYPE);
+                if (!(h instanceof Activator)) {
+                    Log.e(TAG, "What! " + AppObj.TYPE + " isnt an activator!");
                     return;
                 }
-
-                // Send notice of the new application session, and join:
-                launchAppWithMembership(mContext, mFeedUri, mResolveInfo.activityInfo.packageName, participantIds);
+                ((Activator)h).activate(mContext, Contact.MY_ID, obj.getJson(), null);
             }
         }
     }

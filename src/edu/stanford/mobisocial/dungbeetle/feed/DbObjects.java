@@ -1,20 +1,26 @@
 package edu.stanford.mobisocial.dungbeetle.feed;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONObject;
+
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToWebSessionObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LikeObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.LinkObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.LocationObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.MusicObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PhoneStateObj;
@@ -28,11 +34,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
-
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONObject;
 
 public final class DbObjects {
 
@@ -52,12 +53,12 @@ public final class DbObjects {
     private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
     private static UnknownObj mUnknownObjHandler = new UnknownObj();
     static {
+        objs.add(new AppObj());
         objs.add(new AppStateObj());
         objs.add(new AppReferenceObj());
 		objs.add(new SubscribeReqObj());
 		objs.add(new IMObj());
 		objs.add(new InviteToWebSessionObj());
-		objs.add(new AppReferenceObj());
         objs.add(new InviteToSharedAppFeedObj());
         objs.add(new InviteToGroupObj());
         objs.add(new LinkObj());
