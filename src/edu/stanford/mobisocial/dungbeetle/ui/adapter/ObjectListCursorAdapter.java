@@ -22,16 +22,13 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class ObjectListCursorAdapter extends CursorAdapter {
-    private ContactCache mContactCache;
 	private Cursor originalCursor;
 	private int mTotal = BATCH_SIZE;
 
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
-        mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
     }
 
@@ -46,7 +43,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache, true);
+        DbObject.bindView(v, context, c, true);
         
     }
     

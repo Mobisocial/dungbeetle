@@ -104,7 +104,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(v.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));;
         menu.setHeaderTitle(c.name);
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
@@ -118,7 +118,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         int menuItemIndex = item.getItemId();
 
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(getActivity(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
  
         switch(menuItemIndex) {
@@ -132,7 +132,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-        new Contact(cursor).view(getActivity());
+        Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID))).view(getActivity());
     }
 
     @Override
@@ -162,7 +162,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            final Contact c = new Contact(cursor);
+            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
             TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
             unreadCount.setTextColor(Color.RED);
@@ -176,7 +176,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
             statusText.setText(c.status);
             
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
+            icon.setImageBitmap(c.picture);
 
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());

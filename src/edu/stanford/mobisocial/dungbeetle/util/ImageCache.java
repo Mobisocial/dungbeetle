@@ -33,25 +33,4 @@ public class ImageCache {
     public void invalidate(long id){
         mBitmaps.invalidate(id);
     }
-
-    // TODO: Contact specific helpers -- should factor these into a subclass?
-    public void invalidate(Contact c){
-        invalidate(c.id);
-    }
-	public void lazyLoadContactPortrait(Contact c, ImageView v){
-        lazyLoadContactPortrait(c, v, 80);
-	}
-
-	public void lazyLoadContactPortrait(Contact c, ImageView v, int size){
-        if(c.picture != null) {
-            lazyLoadImage(c.id, c.picture, v);
-        }
-        else{
-            Uri uri = Gravatar.gravatarUri(c.email, size);
-            lazyLoadImage(c.id, uri, v);
-        }        
-	}
-
-
-
 }

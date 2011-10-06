@@ -105,7 +105,7 @@ public class PickContactsActivity extends TabActivity {
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Cursor cursor = (Cursor)mContacts.getItem(position);
-                Contact c = new Contact(cursor);
+                Contact c = Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));;
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
@@ -183,7 +183,7 @@ public class PickContactsActivity extends TabActivity {
 
         if (c.getCount() == 1) {
             c.moveToFirst();
-            Contact contact = new Contact(c);
+            Contact contact = Helpers.getContact(this, c.getLong(c.getColumnIndexOrThrow(Contact._ID)));
             c.close();
             Intent result = new Intent();
             result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
@@ -200,7 +200,7 @@ public class PickContactsActivity extends TabActivity {
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Cursor cursor = (Cursor)mContacts.getItem(position);
-                Contact c = new Contact(cursor);
+                Contact c = Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
@@ -368,14 +368,14 @@ public class PickContactsActivity extends TabActivity {
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            Contact contact = new Contact(c);
+            Contact contact = Helpers.getContact(context, c.getLong(c.getColumnIndexOrThrow(Contact._ID)));
             String name = contact.name;
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+            icon.setImageBitmap(contact.picture);
 
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
             checkBox.setChecked(mResultContacts.containsKey(c.getPosition()));
