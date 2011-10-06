@@ -41,12 +41,16 @@ public class ObjCommentsFragment {
 
         Cursor c = activity.getContentResolver().query(feedUri, null,
                 DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT 2");
-        SpinnerAdapter adapter = new ObjectListCursorAdapter(activity, c);
-
-        Gallery gallery = new Gallery(activity);
-        gallery.setLayoutParams(CommonLayouts.FULL_SCREEN);
-        gallery.setAdapter(adapter);
-
-        return gallery;
+        try {
+	        SpinnerAdapter adapter = new ObjectListCursorAdapter(activity, c);
+	
+	        Gallery gallery = new Gallery(activity);
+	        gallery.setLayoutParams(CommonLayouts.FULL_SCREEN);
+	        gallery.setAdapter(adapter);
+	
+	        return gallery;
+        } finally {
+        	c.close();
+        }
     }
 }

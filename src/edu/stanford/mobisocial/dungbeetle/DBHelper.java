@@ -696,27 +696,29 @@ public class DBHelper extends SQLiteOpenHelper {
 
             ContentResolver resolver = mContext.getContentResolver();
             Cursor c = getFeedDependencies(feedName);
-            while (c.moveToNext()) {
-                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+            try {
+	            while (c.moveToNext()) {
+	                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+	            }
+	
+	            if (json.has(DbObjects.TARGET_HASH)) {
+	                long hashA = json.optLong(DbObjects.TARGET_HASH);
+	                long idA = objIdForHash(hashA);
+	                String relation;
+	                if (json.has(DbObjects.TARGET_RELATION)) {
+	                    relation = json.optString(DbObjects.TARGET_RELATION);
+	                } else {
+	                    relation = DbRelation.RELATION_PARENT;
+	                }
+	                if (idA == -1) {
+	                    Log.e(TAG, "No objId found for hash " + hashA);
+	                } else {
+	                    addObjRelation(idA, newObjId, relation);
+	                }
+	            }
+            } finally {
+            	c.close();
             }
-
-            if (json.has(DbObjects.TARGET_HASH)) {
-                long hashA = json.optLong(DbObjects.TARGET_HASH);
-                long idA = objIdForHash(hashA);
-                String relation;
-                if (json.has(DbObjects.TARGET_RELATION)) {
-                    relation = json.optString(DbObjects.TARGET_RELATION);
-                } else {
-                    relation = DbRelation.RELATION_PARENT;
-                }
-                if (idA == -1) {
-                    Log.e(TAG, "No objId found for hash " + hashA);
-                } else {
-                    addObjRelation(idA, newObjId, relation);
-                }
-            }
-
-            c.close();
             return seqId;
         }
         catch(Exception e){

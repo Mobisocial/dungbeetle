@@ -16,10 +16,13 @@ public class ContactCollection extends AbstractCollection<Contact> {
 
     public ContactCollection(long groupId, DBHelper helper){
         Cursor cursor = helper.queryGroupContacts(groupId);
-        if(cursor.moveToFirst()) do {
-        	contacts_.add(new Contact(cursor));
-        } while(cursor.moveToNext());
-        cursor.close();
+        try {
+	        if(cursor.moveToFirst()) do {
+	        	contacts_.add(new Contact(cursor));
+	        } while(cursor.moveToNext());
+        } finally {
+        	cursor.close();
+        }
     }
 
     @Override
