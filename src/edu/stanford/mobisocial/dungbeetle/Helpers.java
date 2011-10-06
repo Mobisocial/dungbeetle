@@ -1,13 +1,16 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
@@ -371,4 +374,44 @@ public class Helpers {
         }
         return to;
     }
+
+    private static HashMap<Long, SoftReference<Contact>> g_contacts = new HashMap<Long, SoftReference<Contact>>();
+    public static Contact getContact(Context context, long contactId) {
+    	SoftReference<Contact> entry = g_contacts.get(contactId);
+    	if(entry != null) {
+	    	Contact c = entry.get();
+	    	if(c != null)
+	    		return c;
+    	}
+    	Contact c = forcegGetContact(context, contactId);
+    	g_contacts.put(contactId, new SoftReference<Contact>(c));
+    	return c;
+    }
+	public static Contact forcegGetContact(Context context, long contactId) {
+		if(contactId == Contact.MY_ID) {
+			DBHelper dbh = new DBHelper(context);
+			DBIdentityProvider idp = new DBIdentityProvider(dbh);
+			try {
+				return idp.contactForUser();
+			} finally {
+				idp.close();
+				dbh.close();
+			}
+		}
+        Cursor c = context.getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), null,
+                Contact._ID + "=?", new String[] {
+                    String.valueOf(contactId)
+                }, null);
+        try {
+            
+            if (!c.moveToFirst()) {
+                return null;
+            } else {
+                return new Contact(c);
+            }
+        } finally {
+        	c.close();
+        }
+	}
 }

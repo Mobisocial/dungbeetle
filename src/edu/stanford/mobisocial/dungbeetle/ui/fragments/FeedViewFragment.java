@@ -56,7 +56,6 @@ import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Shows a series of posts from a feed.
@@ -71,7 +70,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private EditText mStatusText;
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
@@ -119,14 +117,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
-        mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
 
     @Override

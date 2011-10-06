@@ -15,7 +15,6 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FeedSlideshowFragment extends Fragment {
 
@@ -23,7 +22,6 @@ public class FeedSlideshowFragment extends Fragment {
 
 	public static final String TAG = "ObjectsActivity";
 	private ContentObserver mFeedObserver;
-	private ContactCache mContactCache;
 	private Uri mFeedUri;
 
     @Override
@@ -42,7 +40,6 @@ public class FeedSlideshowFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mContactCache = new ContactCache(getActivity());
         mFeedObserver = new ContentObserver(new Handler(getActivity().getMainLooper())) {
             @Override
             public void onChange(boolean selfChange) {
@@ -81,7 +78,7 @@ public class FeedSlideshowFragment extends Fragment {
 	
 	        while (!c.isLast()) {
 	            View v = getActivity().findViewById(R.id.feed_view);
-	            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+	            DbObject.bindView(v, getActivity(), c, false);
 	
 	            // TODO: background thread that wakes up and updates foreground activity.
 	            try {

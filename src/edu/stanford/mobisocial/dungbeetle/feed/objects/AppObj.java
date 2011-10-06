@@ -25,6 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -92,7 +93,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     @Override
     public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
         // TODO: This should be a parameter
-        Uri feedUri = Feed.uriForName(content.optString(DbObject.FEED_NAME));
+        Uri feedUri = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
         if (DBG) Log.d(TAG, "activating app " + content + " for " + feedUri);
 
         Intent launch = getLaunchIntent(context, content, feedUri);

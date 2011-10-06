@@ -30,7 +30,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.CursorWrapper;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteCursorDriver;
@@ -84,24 +83,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     SQLiteDatabase db,
                     SQLiteCursorDriver masterQuery,
                     String editTable,
-                    SQLiteQuery query) 
-		    	{
-		    		return new CursorWrapper(new SQLiteCursor(db, masterQuery, editTable, query)) {
-		    			Throwable source = new Throwable();
-		    			@Override
-		    			public void close() {
-		    				super.close();
-		    				source = null;
-		    			}
-		    			@Override
-		    			protected void finalize() throws Throwable {
-		    				// TODO Auto-generated method stub
-		    				super.finalize();
-		    				if(source != null) {
-		    					throw new RuntimeException("Cursor not closed @", source);
-		    				}
-		    			}
-		    		};
+                    SQLiteQuery query) {
+		    		return new SQLiteCursor(db, masterQuery, editTable, query);
 		    	}
 		    }, 
 		    VERSION);

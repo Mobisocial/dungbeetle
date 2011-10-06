@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -47,10 +48,10 @@ public class Contact implements Serializable{
     public final boolean nearby;
     public final byte[] secret;
     public final String status;
-    public byte[] picture;
     public Long lastObjectId;
 	public Long lastUpdated;
 	public long numUnread;
+	public android.graphics.Bitmap picture;
 
     // TODO: Move to SocialKit.
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
@@ -63,6 +64,10 @@ public class Contact implements Serializable{
     public static boolean isWellKnownAttribute(String attr) {
         return sWellKnownAttrs.contains(attr);
     }
+    @Override
+    protected void finalize() throws Throwable {
+    	super.finalize();
+    }
 
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -74,12 +79,16 @@ public class Contact implements Serializable{
         nearby = c.getInt(c.getColumnIndexOrThrow(NEARBY)) != 0;
         secret = c.getBlob(c.getColumnIndexOrThrow(SHARED_SECRET));
         status = c.getString(c.getColumnIndexOrThrow(STATUS));
-        picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
         if(!c.isNull(c.getColumnIndexOrThrow(LAST_OBJECT_ID)))
         	lastObjectId = c.getLong(c.getColumnIndexOrThrow(LAST_OBJECT_ID));
         if(!c.isNull(c.getColumnIndexOrThrow(LAST_UPDATED)))
         	lastUpdated = c.getLong(c.getColumnIndexOrThrow(LAST_UPDATED));
         numUnread = c.getLong(c.getColumnIndexOrThrow(NUM_UNREAD));
+        byte[] picdata = c.getBlob(c.getColumnIndexOrThrow(PICTURE)); 
+        if(picdata != null) {
+        	picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);
+        }
+
     }
 
     public Contact(Long id, String personId, String name, String email, int presence, long lastPresenceTime, boolean nearby, byte[] secret, String status, Long last_object_id, Long last_updated, long num_unread){
@@ -92,7 +101,6 @@ public class Contact implements Serializable{
         this.nearby = nearby;
         this.secret = secret;
         this.status = status;
-        this.picture = null;
         this.lastObjectId = last_object_id;
         this.lastUpdated = last_updated;
         this.numUnread = num_unread;
