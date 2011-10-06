@@ -339,6 +339,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 49) {
             if (oldVersion > 44) {
                 db.execSQL("ALTER TABLE " + DbRelation.TABLE + " ADD COLUMN " + DbRelation.RELATION_TYPE + " TEXT");
+                createIndex(db, "INDEX", "relations_by_type", DbRelation.TABLE, DbRelation.RELATION_TYPE);
             }
             db.execSQL("UPDATE " + DbRelation.TABLE + " SET " + DbRelation.RELATION_TYPE + " = 'parent'");
         }
@@ -490,6 +491,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 DbRelation.OBJECT_ID_B, "INTEGER",
                 DbRelation.RELATION_TYPE, "TEXT"
                 );
+	    createIndex(db, "INDEX", "relations_by_type", DbRelation.TABLE, DbRelation.RELATION_TYPE);
 	}
 
 	private final void createUserAttributesTable(SQLiteDatabase db) {
@@ -891,7 +893,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     DbRelation.OBJECT_ID_A + " = " + objIdSearch + " )");
         } else {
             select = andClauses(select, DbObject._ID + " NOT IN (SELECT " +
-                        DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + ")");
+                        DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE +
+                        " WHERE " + DbRelation.RELATION_TYPE + " IN ('parent'))");
         }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");

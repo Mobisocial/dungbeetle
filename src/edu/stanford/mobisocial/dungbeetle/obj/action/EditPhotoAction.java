@@ -8,6 +8,7 @@ import java.io.OutputStream;
 
 import mobisocial.socialkit.musubi.Musubi;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
 
@@ -20,9 +21,11 @@ import android.os.Environment;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
@@ -39,7 +42,7 @@ public class EditPhotoAction extends ObjAction {
             DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
 
         ((InstrumentedActivity)context).doActivityForResult(
-                new EditCallout(context, feedUri, contactId, objData, raw));
+                new EditCallout(context, feedUri, contactId, objData, raw, hash));
     }
 
     @Override
@@ -61,8 +64,11 @@ public class EditPhotoAction extends ObjAction {
         final Context mContext;
         final Uri mFeedUri;
         final Uri mHdUri;
+        final long mHash;
 
-        public EditCallout(Context context, Uri feedUri, long contactId, JSONObject json, byte[] raw) {
+        public EditCallout(Context context, Uri feedUri, long contactId, JSONObject json,
+                byte[] raw, long hash) {
+            mHash = hash;
             mJson = json;
             mRaw = raw;
             mContext = context;
@@ -125,6 +131,10 @@ public class EditPhotoAction extends ObjAction {
                         try {
                             // TODO: mimeType; local_uri = data.toString();
                             DbObject outboundObj = PictureObj.from(mContext, data.getData());
+                            try {
+                                outboundObj.getJson().put(DbObjects.TARGET_HASH, mHash);
+                                outboundObj.getJson().put(DbObjects.TARGET_RELATION, DbRelation.RELATION_EDIT);
+                            } catch (JSONException e) {}
                             Helpers.sendToFeed(mContext, outboundObj, mFeedUri);
                         } catch (IOException e) {
                             Toast.makeText(mContext, "Error reading photo data.", Toast.LENGTH_SHORT).show();
