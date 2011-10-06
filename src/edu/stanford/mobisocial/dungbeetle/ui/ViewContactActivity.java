@@ -432,8 +432,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     mProfileName.setText(contact.name);
                     mProfileEmail.setText(contact.email);
                     mProfileAbout.setText(contact.status);
-                    ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(
-                            contact, mIcon, 200);
+                    mIcon.setImageBitmap(contact.picture);
                 } catch (NoValError e) {}
             }
         }

@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDoneException;
 import android.database.sqlite.SQLiteStatement;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -114,7 +115,10 @@ public class DBIdentityProvider implements IdentityProvider {
 	        String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
 	        String email = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
 	        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, null, "", null, null, 0);
-	        contact.picture = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
+	        byte[] picdata = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
+	        if(picdata != null) {
+	        	contact.picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);
+	        }
 	        return contact;
 		} finally { 
 			c.close();

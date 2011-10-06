@@ -37,7 +37,6 @@ import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
@@ -107,8 +106,7 @@ public class DbObject {
      * @param contactCache prevents copious lookups of contact information from the sqlite database
      * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
      */
-    public static void bindView(View v, final Context context, Cursor c,
-            ContactCache contactCache, boolean allowInteractions) {
+    public static void bindView(View v, final Context context, Cursor c, boolean allowInteractions) {
     	//there is probably a utility or should be one that does this
         long objId = c.getLong(0);
     	Cursor cursor = context.getContentResolver().query(OBJ_URI,
@@ -139,84 +137,84 @@ public class DbObject {
 	        short deleted = cursor.getShort(5);
 	        String feedName = cursor.getString(6);
 	        Date date = new Date(timestamp);
-	        try {
-	            Contact contact = contactCache.getContact(contactId).get();
-	            TextView nameText = (TextView) v.findViewById(R.id.name_text);
-	            nameText.setText(contact.name);
-	
-	            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-	            if (sViewProfileAction == null) {
-	                sViewProfileAction = new OnClickViewProfile((Activity)context);
-	            }
-	            icon.setTag(contactId);
-	            if (allowInteractions) {
-	                icon.setOnClickListener(sViewProfileAction);
-	                v.setTag(objId);
-	                v.setClickable(true);
-	                v.setFocusable(true);
-	                v.setOnClickListener(ItemClickListener.getInstance(context));
-	                v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
-	            }
-	            // TODO: this is horrible
-	            ((App)((Activity)context).getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
-	
-	            if (deleted == 1) {
-	                v.setBackgroundColor(sDeletedColor);
-	            } else {
-	                v.setBackgroundColor(Color.TRANSPARENT);
-	            }
-	
-	            try {
-	                JSONObject content = new JSONObject(jsonSrc);
-	
-	                TextView timeText = (TextView)v.findViewById(R.id.time_text);
-	                timeText.setText(RelativeDate.getRelativeDate(date));
-	
-	                ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
-	                frame.removeAllViews();
-	                frame.setTag(R.id.object_entry, c.getPosition());
-	                
-	        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
-	        		if(renderer != null) {
-	        			renderer.render(context, frame, content, raw, allowInteractions);
-	        		}
-	
-	                if (!allowInteractions) {
-	                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-	                } else {
-	                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
-	                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-	                    } else {
-	                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
-	                        attachmentCountButton.setVisibility(View.VISIBLE);
-	
-	                        if (hash == 0) {
-	                            attachmentCountButton.setVisibility(View.GONE);
-	                        } else {
-	                            int color = DbObject.colorFor(hash);
-	                            DBHelper helper = new DBHelper(context);
+        	Contact contact = Helpers.getContact(context, contactId);
+            TextView nameText = (TextView) v.findViewById(R.id.name_text);
+        	if(contact == null) {
+        		nameText.setText("Unknown Corrupt Message");
+        		return;
+        	}
+            nameText.setText(contact.name);
+
+            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            if (sViewProfileAction == null) {
+                sViewProfileAction = new OnClickViewProfile((Activity)context);
+            }
+            icon.setTag(contactId);
+            if (allowInteractions) {
+                icon.setOnClickListener(sViewProfileAction);
+                v.setTag(objId);
+                v.setClickable(true);
+                v.setFocusable(true);
+                v.setOnClickListener(ItemClickListener.getInstance(context));
+                v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
+            }
+            icon.setImageBitmap(contact.picture);
+
+            if (deleted == 1) {
+                v.setBackgroundColor(sDeletedColor);
+            } else {
+                v.setBackgroundColor(Color.TRANSPARENT);
+            }
+
+            try {
+                JSONObject content = new JSONObject(jsonSrc);
+
+                TextView timeText = (TextView)v.findViewById(R.id.time_text);
+                timeText.setText(RelativeDate.getRelativeDate(date));
+
+                ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+                frame.removeAllViews();
+                frame.setTag(R.id.object_entry, c.getPosition());
+                
+        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
+        		if(renderer != null) {
+        			renderer.render(context, frame, content, raw, allowInteractions);
+        		}
+
+                if (!allowInteractions) {
+                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                } else {
+                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
+                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+                    } else {
+                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
+                        attachmentCountButton.setVisibility(View.VISIBLE);
+
+                        if (hash == 0) {
+                            attachmentCountButton.setVisibility(View.GONE);
+                        } else {
+                            int color = DbObject.colorFor(hash);
+                            DBHelper helper = new DBHelper(context);
+                            try {
+	                            Cursor attachments = helper.queryRelatedObjs(objId);
 	                            try {
-		                            Cursor attachments = helper.queryRelatedObjs(objId);
-		                            try {
-			                            attachmentCountButton.setText("" + attachments.getCount());
-		                            } finally {
-		                            	attachments.close();
-		                            }
+		                            attachmentCountButton.setText("" + attachments.getCount());
 	                            } finally {
-		                            helper.close();
+	                            	attachments.close();
 	                            }
-	                            attachmentCountButton.setBackgroundColor(color);
-	                            attachmentCountButton.setTag(R.id.object_entry, hash);
-	                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-	                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
-	                        }
-	                    }
-	                }
-	            } catch (JSONException e) {
-	                Log.e("db", "error opening json", e);
-	            }
-	        }
-	        catch(Maybe.NoValError e){}
+                            } finally {
+	                            helper.close();
+                            }
+                            attachmentCountButton.setBackgroundColor(color);
+                            attachmentCountButton.setTag(R.id.object_entry, hash);
+                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
+                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                Log.e("db", "error opening json", e);
+            }
        	} finally {
     		cursor.close();
     	}
