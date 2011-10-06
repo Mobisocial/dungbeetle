@@ -50,7 +50,6 @@ public class DbContactAttributes /* extends DbTable */ {
         } finally {
             db.endTransaction();
         }
-        db.close();
         helper.close();
     }
 
@@ -72,7 +71,6 @@ public class DbContactAttributes /* extends DbTable */ {
             return null;
         } finally {
             c.close();
-            db.close();
             helper.close();
         }
     }

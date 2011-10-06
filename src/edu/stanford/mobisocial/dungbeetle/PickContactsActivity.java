@@ -174,25 +174,23 @@ public class PickContactsActivity extends TabActivity {
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                     null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
         }
-        try {
-	        if (c.getCount() == 0) {
-	            setResult(RESULT_CANCELED);
-	            finish();
-	            return;
-	        }
-	
-	        if (c.getCount() == 1) {
-	            c.moveToFirst();
-	            Contact contact = new Contact(c);
-	            Intent result = new Intent();
-	            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
-	
-	            setResult(RESULT_OK, result);
-	            finish();
-	            return;
-	        }
-        } finally {
-	        c.close();
+        if (c.getCount() == 0) {
+            setResult(RESULT_CANCELED);
+            c.close();
+            finish();
+            return;
+        }
+
+        if (c.getCount() == 1) {
+            c.moveToFirst();
+            Contact contact = new Contact(c);
+            c.close();
+            Intent result = new Intent();
+            result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
+
+            setResult(RESULT_OK, result);
+            finish();
+            return;
         }
         
         setContentView(R.layout.pick_contacts);
