@@ -18,7 +18,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -39,9 +38,12 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.view.FilterView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -56,7 +58,7 @@ import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 /**
  * TODO: This should be split into two classes: ViewProfileActivity and ViewContactActivity.
  */
-public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener {
+public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener, Filterable {
     @SuppressWarnings("unused")
     private static final String TAG = "ProfileActivity";
     private long mContactId;
@@ -67,11 +69,21 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
     private final List<Fragment> mFragments = new ArrayList<Fragment>();
     private final List<String> mLabels = new ArrayList<String>();
     ProfileContentObserver mProfileContentObserver;
+    
+
+    private final String[] filterTypes = DbObjects.getRenderableTypes();
+    private boolean[] checked;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
 
+        
+        checked = new boolean[filterTypes.length];
+    	
+        for(int x = 0; x < filterTypes.length; x++) {
+        	checked[x] = true;
+        }
         
         findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
         mContactId = getIntent().getLongExtra("contact_id", -1);
@@ -120,6 +132,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 sharingView.getFragment().setArguments(args);
                 mLabels.add(sharingView.getName());
                 mFragments.add(sharingView.getFragment());
+                
+                FeedView filteringView = new FilterView();
+                filteringView.getFragment().setArguments(args);
+                mLabels.add(filteringView.getName());
+                mFragments.add(filteringView.getFragment());
             }
         }
 
@@ -460,4 +477,19 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             }
         }
     }
+
+    @Override
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	@Override
+	public boolean[] getFilterCheckboxes() {
+		return checked;
+	}
+
+	@Override
+	public void setFilterCheckbox(int position, boolean check) {
+		checked[position] = check;
+	}
 }

@@ -14,9 +14,8 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 
 public class FilterView implements FeedView {
     private final Fragment mFragment;
@@ -53,16 +52,17 @@ public class FilterView implements FeedView {
     static class FilterAdapter extends ArrayAdapter<String> 
             implements OnItemClickListener, OnCheckedChangeListener {
         private final Uri mFeedUri;
-        private final FeedHomeActivity mContext;
+        private final Activity mContext;
 
         public FilterAdapter(Activity context, Uri feedUri) {
             super(context, R.layout.widget_selectable_row, R.id.name_text);
             mFeedUri = feedUri;
-            mContext = (FeedHomeActivity)context;
-            
-	    	
-            for(String filter : mContext.filterTypes) {
-            	add(filter);
+
+            mContext = context;
+            if (mContext instanceof Filterable) {
+	            for(String filter : ((Filterable)mContext).getFilterTypes()) {
+	            	add(filter);
+	            }
             }
         }
 
@@ -79,7 +79,7 @@ public class FilterView implements FeedView {
             String p = getItem(position);
             CheckBox checkbox = (CheckBox)v.findViewById(R.id.checkbox);
             
-            checkbox.setChecked(mContext.checked[position]);
+            checkbox.setChecked(((Filterable)mContext).getFilterCheckboxes()[position]);
             checkbox.setOnCheckedChangeListener(this);
             return v;
         }
@@ -88,7 +88,7 @@ public class FilterView implements FeedView {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             Integer position = (Integer)((View)buttonView.getParent()).getTag();
             //getItem(position).setFeedPresence(mContext, mFeedUri, isChecked);
-            mContext.checked[position] = isChecked;
+            ((Filterable)mContext).setFilterCheckbox(position, isChecked);
             Log.w("filterview", "changed: " + isChecked);
         }
     }
