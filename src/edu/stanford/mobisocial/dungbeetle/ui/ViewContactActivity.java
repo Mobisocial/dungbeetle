@@ -253,6 +253,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
      */
 
     public static class EditProfileFragment extends Fragment {
+        private ImageView mIcon;
         private EditText mProfileName;
         private EditText mProfileAbout;
 
@@ -268,38 +269,22 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             super.onActivityCreated(savedInstanceState);
             
             final DBHelper mHelper = DBHelper.getGlobal(getActivity());
-            final IdentityProvider mIdent = new DBIdentityProvider(mHelper);
+            final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
             try {
 	            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
 	            mProfileAbout = (EditText) getView().findViewById(R.id.edit_profile_about);
 	
 	            mProfileName.setText(mIdent.userName());
-	            Cursor c = getActivity().getContentResolver().query(
-	                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
-	                    DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
-	                            "profile", Long.toString(Contact.MY_ID)
-	                    }, DbObject.TIMESTAMP + " DESC");
-	            try {
-		            if (c.moveToFirst()) {
-		                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-		                try {
-		                    JSONObject obj = new JSONObject(jsonSrc);
-		                    String name = obj.optString("name");
-		                    String about = obj.optString("about");
-		                    mProfileName.setText(name);
-		                    mProfileAbout.setText(about);
-		                } catch (JSONException e) {
-		                }
-		            }
-	            } finally {
-	            	c.close();
-	            }
-	            Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
+	            Contact c = mIdent.contactForUser();
+                mProfileName.setText(c.name);
+                mProfileAbout.setText(c.status);
+                Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
 	            saveButton.setOnClickListener(new OnClickListener() {
 	                public void onClick(View v) {
 	                    String name = mProfileName.getText().toString();
 	                    String about = mProfileAbout.getText().toString();
-	                    MyInfo.setMyName(mHelper, mProfileName.getText().toString());
+	                    MyInfo.setMyName(mHelper, name);
+	                    MyInfo.setMyAbout(mHelper, about);
 	                    Helpers.updateProfile(getActivity(), name, about);
 	                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
 	                }
@@ -335,7 +320,18 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             mContactId = getArguments().getLong("contact_id");
             View v = inflater.inflate(R.layout.view_self_profile, container, false);
             mIcon = (ImageView) v.findViewById(R.id.icon);
+            
+            final DBHelper mHelper = DBHelper.getGlobal(getActivity());
+            final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+            Contact c = null;
+            try {
+            	c = mIdent.contactForUser();
+            } finally {
+            	mHelper.close();
+            	mIdent.close();
+            }
             if (mContactId == Contact.MY_ID) {
+            	mIcon.setImageBitmap(c.picture);
                 mIcon.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                         Toast.makeText(getActivity(), "Loading camera...", Toast.LENGTH_SHORT)
@@ -350,6 +346,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                                 }, 200, false));
                     }
                 });
+            } else {
             }
             mProfileName = (TextView) v.findViewById(R.id.view_profile_name);
             mProfileEmail = (TextView) v.findViewById(R.id.view_profile_email);

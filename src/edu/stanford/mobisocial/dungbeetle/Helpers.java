@@ -347,7 +347,14 @@ public class Helpers {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
             values, null, null);
 
-        App.instance().contactImages.invalidate(Contact.MY_ID);
+    	//todo: should be below content provider... but then all of dbidentityprovider is like this
+		DBHelper dbh = new DBHelper(c);
+		try {
+	    	MyInfo.setMyPicture(dbh, data);
+		} finally {
+			dbh.close();
+		}
+		Helpers.invalidateContacts();
     }
 
     public static void updateLastPresence(final Context c, 
@@ -376,6 +383,9 @@ public class Helpers {
     }
 
     private static HashMap<Long, SoftReference<Contact>> g_contacts = new HashMap<Long, SoftReference<Contact>>();
+    public static void invalidateContacts() {
+    	g_contacts.clear();
+    }
     public static Contact getContact(Context context, long contactId) {
     	SoftReference<Contact> entry = g_contacts.get(contactId);
     	if(entry != null) {

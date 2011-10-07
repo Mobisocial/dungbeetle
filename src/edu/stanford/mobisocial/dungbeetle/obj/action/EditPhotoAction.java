@@ -96,6 +96,8 @@ public class EditPhotoAction extends ObjAction {
                     
                     BitmapManager mgr = new BitmapManager(1);
                     Bitmap bitmap = mgr.getBitmap(raw.hashCode(), raw);
+                    if(bitmap == null)
+                    	return null;
                     
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
                     outStream.flush();
