@@ -332,7 +332,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 47) {
             addRelationIndexes(db);
         }
-        if (oldVersion <= 48) {
+        if (oldVersion <= 44) {
             createUserAttributesTable(db);
         }
 
