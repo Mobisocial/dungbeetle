@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 50;
+	public static final int VERSION = 51;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -240,7 +240,8 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'raw' to object table.");
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
         }
-        if(oldVersion <= 39) {
+        // sadly, we have to do this again because incoming voice obj's were not being split!
+        if(oldVersion <= 50) {
             Log.w(TAG, "Converting voice and picture objs to raw.");
 
           Log.w(TAG, "Converting objs to raw.");

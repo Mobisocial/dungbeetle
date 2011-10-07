@@ -28,14 +28,16 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 /**
  * A short audio clip. "Version 0" uses a sample rate of 8000, mono channel, and
  * 16bit pcm recording.
  */
-public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator, OutgoingMessageHandler {
+public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator, OutgoingMessageHandler, UnprocessedMessageHandler {
 	public static final String TAG = "VoiceObj";
 
     public static final String TYPE = "voice";
@@ -257,6 +259,13 @@ public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator,
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
         // TODO Auto-generated method stub
         
+    }
+    @Override
+    public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
+    		JSONObject msg) {
+        byte[] bytes = FastBase64.decode(msg.optString(DATA));
+        msg.remove(DATA);
+		return new Pair<JSONObject, byte[]>(msg, bytes);
     }
 
 }
