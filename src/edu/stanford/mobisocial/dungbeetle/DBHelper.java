@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 52;
+	public static final int VERSION = 53;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -343,9 +343,13 @@ public class DBHelper extends SQLiteOpenHelper {
             }
             db.execSQL("UPDATE " + DbRelation.TABLE + " SET " + DbRelation.RELATION_TYPE + " = 'parent'");
         }
-        if(oldVersion <= 51) {
+        if(oldVersion <= 52) {
             Log.w(TAG, "Adding column 'about' to my_info table.");
-            db.execSQL("ALTER TABLE " + MyInfo.TABLE + " ADD COLUMN " + MyInfo.ABOUT + " TEXT DEFAULT ''");
+            try {
+            	db.execSQL("ALTER TABLE " + MyInfo.TABLE + " ADD COLUMN " + MyInfo.ABOUT + " TEXT DEFAULT ''");
+            } catch(Exception e) {
+            	// because of bad update, we just ignore the duplicate column error
+            }
         }
 
         db.setVersion(VERSION);
