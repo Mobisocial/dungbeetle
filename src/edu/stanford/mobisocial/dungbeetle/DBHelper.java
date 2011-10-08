@@ -399,7 +399,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         MyInfo.PRIVATE_KEY, "TEXT",
                         MyInfo.NAME, "TEXT",
                         MyInfo.EMAIL, "TEXT",
-                        MyInfo.PICTURE, "BLOB"
+                        MyInfo.PICTURE, "BLOB",
+                        MyInfo.ABOUT, "TEXT DEFAULT ''"
                         );
 
             createTable(db, DbObject.TABLE, null,
