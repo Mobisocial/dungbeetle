@@ -156,7 +156,8 @@ public class DbObject {
                 v.setClickable(true);
                 v.setFocusable(true);
                 v.setOnClickListener(ItemClickListener.getInstance(context));
-                v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
+                // TODO, add tracking code, move out of FeedViewFragment
+                // v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
             }
             icon.setImageBitmap(contact.picture);
 

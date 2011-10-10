@@ -196,7 +196,6 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
         public boolean onTouch(View v, MotionEvent event) {
             int action = event.getAction();
-
             switch (action) {
                 case MotionEvent.ACTION_CANCEL:
                     return true;
