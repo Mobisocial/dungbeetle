@@ -455,6 +455,12 @@ public class DungBeetleContentProvider extends ContentProvider {
             Cursor c = mHelper.queryFeedMembers(feedName, realAppId);
             c.setNotificationUri(resolver, uri);
             return c;
+        } else if(match(uri, "member_details", ".+", ".+")) {
+            String feedName = segs.get(1);
+            String personId = segs.get(2);
+            Cursor c = mHelper.queryMemberDetails(feedName, personId);
+            c.setNotificationUri(resolver, uri);
+            return c;
         } else if(match(uri, "groups")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
             Cursor c = mHelper.queryGroups();

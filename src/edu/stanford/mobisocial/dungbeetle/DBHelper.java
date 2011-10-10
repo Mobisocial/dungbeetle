@@ -1142,6 +1142,18 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] { feedName });
     }
 
+    public Cursor queryMemberDetails(String feedName, String personId) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
+            .append(" FROM " + Contact.TABLE + " C ")
+            .append(" WHERE ")
+            .append("C." + Contact.PERSON_ID + " = ?")
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { personId });
+    }
+
     public Cursor queryGroups() {
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +

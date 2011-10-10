@@ -188,7 +188,7 @@ public class AppReferenceObj extends DbEntryHandler
 	}
 
    private JSONObject getAppState(Context context, JSONObject appReference) {
-        Log.w(TAG, appReference.toString());
+        if (DBG) Log.w(TAG, "returning app state for " + appReference.toString());
         if (appReference.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
             Uri feedUri = Feed.uriForName(feedName);
