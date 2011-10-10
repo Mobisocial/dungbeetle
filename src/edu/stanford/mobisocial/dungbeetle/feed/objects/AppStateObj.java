@@ -167,18 +167,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	@Override
 	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
 	    if (DBG) Log.d(TAG, "activating " + content);
-
-	    String arg = content.optString(ARG);
-	    String state = content.optString(STATE);
-	    String appId = content.optString(DbObjects.APP_ID); // Not DbObject.APP_ID!
-	    if (DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
-	        // TODO: This is temporary, to continue to allow for posts
-	        // from a broadcasted Intent. This should be removed once the dependency
-	        // on Publisher and AppState.formIntent are removed.
-	        appId = content.optString(PACKAGE_NAME);
-	    }
-	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
-	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+	    Intent launch = getLaunchIntent(context, content);
 
 	    // TODO: Temporary, while transitioning to AppObj
         launch.putExtra("obj", content.toString());
@@ -188,12 +177,23 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    context.startActivity(launch);
 	}
 
-	public static Intent getLaunchIntent(Context context, String appId,
-	        String arg, String state, Uri appFeed) {
+	public static Intent getLaunchIntent(Context context, JSONObject content) {
+	    Log.d(TAG, "Getting launch intent for " + content);
+	    Uri  appFeed;
+	    if (content.has(DbObject.CHILD_FEED_NAME)) {
+	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
+	    } else {
+	        appFeed = Feed.uriForName(content.optString(DbObject.FEED_NAME));
+	    }
+	    String arg = content.optString(ARG);
+        String state = content.optString(STATE);
+	    String appId = content.optString(PACKAGE_NAME); // Not DbObject.APP_ID!
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
 	    Intent launch = new Intent(Intent.ACTION_MAIN);
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+        // TODO: hack until this obj is available in 'related' query.
+        launch.putExtra("obj", content.toString());
         if (arg != null) {
             launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
         }

@@ -14,6 +14,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -23,6 +24,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -170,7 +172,7 @@ public class LaunchApplicationAction implements FeedAction {
         new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 
-    private void launchAppWithMembership(Context context, Uri feedUri, String pkg, String[] membership) {
+    private void launchAppWithMembership(Context context, Uri feedUri, Bundle launchArgs, String[] membership) {
         // Start new application feed:
         Group g = Group.create(context);
         Uri appFeedUri = Feed.uriForName(g.feedName);
@@ -178,7 +180,7 @@ public class LaunchApplicationAction implements FeedAction {
         Helpers.sendToFeed(context, anchor, appFeedUri);
 
         // App reference in parent feed:
-        DbObject obj = AppReferenceObj.forFixedMembership(pkg, membership, g.feedName, g.dynUpdateUri);
+        DbObject obj = AppReferenceObj.forFixedMembership(launchArgs, membership, g.feedName, g.dynUpdateUri);
         Helpers.sendToFeed(context, obj, feedUri);
 
         // Kick it off locally:
@@ -216,9 +218,9 @@ public class LaunchApplicationAction implements FeedAction {
         @Override
         public void handleResult(int resultCode, Intent data) {
             if (resultCode == Activity.RESULT_OK) {
-                Intent launch = new Intent(mAction);
-                launch.addCategory(Intent.CATEGORY_LAUNCHER);
-                launch.setClassName(mResolveInfo.activityInfo.packageName, mResolveInfo.activityInfo.name);
+                Bundle launch = new Bundle();
+                launch.putString(AppReferenceObj.PACKAGE_NAME, mResolveInfo.activityInfo.packageName);
+                launch.putString(AppReferenceObj.OBJ_INTENT_ACTION, mAction);
                 long[] contactIds = data.getLongArrayExtra("contacts");
 
                 /**
@@ -251,7 +253,7 @@ public class LaunchApplicationAction implements FeedAction {
                 }
 
                 // Send notice of the new application session, and join:
-                launchAppWithMembership(mContext, mFeedUri, mResolveInfo.activityInfo.packageName, participantIds);
+                launchAppWithMembership(mContext, mFeedUri, launch, participantIds);
             }
         }
     }
