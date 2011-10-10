@@ -189,7 +189,13 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         String state = content.optString(STATE);
 	    String appId = content.optString(PACKAGE_NAME); // Not DbObject.APP_ID!
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
-	    Intent launch = new Intent(Intent.ACTION_MAIN);
+	    
+	    Intent launch = new Intent();
+	    if (content.has(AppReferenceObj.OBJ_INTENT_ACTION)) {
+	        launch.setAction(content.optString(AppReferenceObj.OBJ_INTENT_ACTION));
+	    } else {
+	        launch.setAction(Intent.ACTION_MAIN);
+	    }
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
         // TODO: hack until this obj is available in 'related' query.
