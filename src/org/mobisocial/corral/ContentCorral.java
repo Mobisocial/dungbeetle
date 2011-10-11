@@ -270,19 +270,23 @@ public class ContentCorral {
                 String[] projection = new String[] {
                         DbObject._ID, DbObject.JSON
                 };
-                String selection = DbObjects.getFeedObjectClause();
+                String selection = DbObjects.getFeedObjectClause(null);
                 String[] selectionArgs = null;
                 String sortOrder = DbObject._ID + " ASC";
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
                         selectionArgs, sortOrder);
-
-                if (!cursor.moveToPosition(objIndex)) {
-                    Log.d(TAG, "No obj found for " + uri);
-                    return;
+                try {
+	
+	                if (!cursor.moveToPosition(objIndex)) {
+	                    Log.d(TAG, "No obj found for " + uri);
+	                    return;
+	                }
+	                String jsonStr = cursor.getString(1);
+	                bytes = jsonStr.getBytes();
+	                in = new ByteArrayInputStream(bytes);
+                } finally {
+                	cursor.close();
                 }
-                String jsonStr = cursor.getString(1);
-                bytes = jsonStr.getBytes();
-                in = new ByteArrayInputStream(bytes);
             } catch (Exception e) {
                 Log.d(TAG, "Error opening obj", e);
                 return;
@@ -323,21 +327,25 @@ public class ContentCorral {
                 String[] projection = new String[] {
                         DbObject._ID, DbObject.JSON
                 };
-                String selection = DbObjects.getFeedObjectClause();
+                String selection = DbObjects.getFeedObjectClause(null);
                 String[] selectionArgs = null;
                 String sortOrder = DbObject._ID + " ASC LIMIT 30";
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
                         selectionArgs, sortOrder);
-
-                if (!cursor.moveToFirst()) {
-                    Log.d(TAG, "No objs found for " + uri);
-                    return;
-                }
-                jsonArrayBuilder.append(cursor.getString(1));
-                while (!cursor.isLast()) {
-                    cursor.moveToNext();
-                    String jsonStr = cursor.getString(1);
-                    jsonArrayBuilder.append(",").append(jsonStr);
+                
+                try {
+	                if (!cursor.moveToFirst()) {
+	                    Log.d(TAG, "No objs found for " + uri);
+	                    return;
+	                }
+	                jsonArrayBuilder.append(cursor.getString(1));
+	                while (!cursor.isLast()) {
+	                    cursor.moveToNext();
+	                    String jsonStr = cursor.getString(1);
+	                    jsonArrayBuilder.append(",").append(jsonStr);
+	                }
+                } finally {
+                	cursor.close();
                 }
             } catch (Exception e) {
                 Log.d(TAG, "Error opening obj", e);

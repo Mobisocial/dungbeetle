@@ -42,10 +42,6 @@ public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator 
     public static DbObject from(String artist, String album, String track) {
         return new DbObject(TYPE, json(artist, album, track));
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public static JSONObject json(String artist, String number) {
         JSONObject obj = new JSONObject();
@@ -55,9 +51,6 @@ public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator 
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(String artist, String album, String track) {
         JSONObject obj = new JSONObject();

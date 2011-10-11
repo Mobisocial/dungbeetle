@@ -1,16 +1,20 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
@@ -284,6 +288,15 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
+    public static void sendGroupInvite(final Context c, Uri feed,
+            final String group_name, Uri updateUri) {
+
+        ContentValues cv = new ContentValues();
+        cv.put(DbObject.JSON, InviteToGroupObj.json(group_name, updateUri).toString());
+        cv.put(DbObject.TYPE, InviteToGroupObj.TYPE);
+        c.getContentResolver().insert(feed, cv); 
+	}
+
     public static void resendProfile(final Context c, final Collection<Contact> contacts, final boolean reply) {
     	if (contacts.isEmpty()) {
     		return;
@@ -334,7 +347,14 @@ public class Helpers {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
             values, null, null);
 
-        App.instance().contactImages.invalidate(Contact.MY_ID);
+    	//todo: should be below content provider... but then all of dbidentityprovider is like this
+		DBHelper dbh = new DBHelper(c);
+		try {
+	    	MyInfo.setMyPicture(dbh, data);
+		} finally {
+			dbh.close();
+		}
+		Helpers.invalidateContacts();
     }
 
     public static void updateLastPresence(final Context c, 
@@ -361,4 +381,47 @@ public class Helpers {
         }
         return to;
     }
+
+    private static HashMap<Long, SoftReference<Contact>> g_contacts = new HashMap<Long, SoftReference<Contact>>();
+    public static void invalidateContacts() {
+    	g_contacts.clear();
+    }
+    public static Contact getContact(Context context, long contactId) {
+    	SoftReference<Contact> entry = g_contacts.get(contactId);
+    	if(entry != null) {
+	    	Contact c = entry.get();
+	    	if(c != null)
+	    		return c;
+    	}
+    	Contact c = forcegGetContact(context, contactId);
+    	g_contacts.put(contactId, new SoftReference<Contact>(c));
+    	return c;
+    }
+	public static Contact forcegGetContact(Context context, long contactId) {
+		if(contactId == Contact.MY_ID) {
+			DBHelper dbh = new DBHelper(context);
+			DBIdentityProvider idp = new DBIdentityProvider(dbh);
+			try {
+				return idp.contactForUser();
+			} finally {
+				idp.close();
+				dbh.close();
+			}
+		}
+        Cursor c = context.getContentResolver().query(
+                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), null,
+                Contact._ID + "=?", new String[] {
+                    String.valueOf(contactId)
+                }, null);
+        try {
+            
+            if (!c.moveToFirst()) {
+                return null;
+            } else {
+                return new Contact(c);
+            }
+        } finally {
+        	c.close();
+        }
+	}
 }

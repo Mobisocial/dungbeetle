@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import mobisocial.nfc.Nfc;
@@ -34,6 +35,8 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 /**
  * Pick contacts and/or groups for various purposes.
@@ -102,7 +105,7 @@ public class PickContactsActivity extends TabActivity {
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Cursor cursor = (Cursor)mContacts.getItem(position);
-                Contact c = new Contact(cursor);
+                Contact c = Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));;
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
@@ -171,25 +174,25 @@ public class PickContactsActivity extends TabActivity {
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
                     null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
         }
-
         if (c.getCount() == 0) {
             setResult(RESULT_CANCELED);
+            c.close();
             finish();
             return;
         }
 
         if (c.getCount() == 1) {
             c.moveToFirst();
-            Contact contact = new Contact(c);
+            Contact contact = Helpers.getContact(this, c.getLong(c.getColumnIndexOrThrow(Contact._ID)));
+            c.close();
             Intent result = new Intent();
             result.putExtra(EXTRA_CONTACTS, new long[] { contact.id });
-            c.close();
 
             setResult(RESULT_OK, result);
             finish();
             return;
         }
-
+        
         setContentView(R.layout.pick_contacts);
         mContacts = new ContactListCursorAdapter(this, c);
         ListView contactsV = (ListView) findViewById(R.id.contacts_list);
@@ -197,7 +200,7 @@ public class PickContactsActivity extends TabActivity {
         contactsV.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Cursor cursor = (Cursor)mContacts.getItem(position);
-                Contact c = new Contact(cursor);
+                Contact c = Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
                 final CheckBox checkBox = (CheckBox)view.findViewById(R.id.checkbox);
                 if (checkBox.isChecked()) {
                     checkBox.setChecked(false);
@@ -233,6 +236,18 @@ public class PickContactsActivity extends TabActivity {
     }
 
 
+	void toastList() {
+        if (mResultGroups.size() == 0) {
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
+                    Toast.LENGTH_SHORT).show();
+        } else if (mResultContacts.size() == 0) {
+            Toast.makeText(this, "Sending to " + mResultGroups.size() + " feeds...",
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts and " +
+                    mResultGroups.size() + " groups...", Toast.LENGTH_SHORT).show();
+        }
+	}
     private void handleOk() {
         Uri data = mIntent.getData();
         String txt = mIntent.getStringExtra(Intent.EXTRA_TEXT);
@@ -243,16 +258,7 @@ public class PickContactsActivity extends TabActivity {
                 Toast.makeText(this, "No contacts chosen for sharing.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (mResultGroups.size() == 0) {
-                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
-                        Toast.LENGTH_SHORT).show();
-            } else if (mResultContacts.size() == 0) {
-                Toast.makeText(this, "Sending to " + mResultGroups.size() + " feeds...",
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts and " +
-                        mResultGroups.size() + " groups...", Toast.LENGTH_SHORT).show();
-            }
+            toastList();
 
             DbObject outboundObj = null;
             if (mIntent.getType().startsWith("image/") && mIntent.hasExtra(Intent.EXTRA_STREAM)) {
@@ -297,9 +303,19 @@ public class PickContactsActivity extends TabActivity {
                     mIntent.getStringExtra("packageName"));
         } else if (mIntent.getAction().equals(INTENT_ACTION_INVITE_TO_THREAD)) {
             Uri threadUri = mIntent.getParcelableExtra("uri");
-            Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
-                    Toast.LENGTH_SHORT).show();
-            Helpers.sendThreadInvite(this, mResultContacts.values(), threadUri);
+            toastList();
+            HashMap<Long, Contact> people = new HashMap<Long, Contact>();
+            for(Group g : mResultGroups.values()) {
+                Maybe<Group> group = Group.forFeed(this, threadUri);
+                try {
+                	Helpers.sendGroupInvite(this, Feed.uriForName(g.feedName), group.get().name, Uri.parse(group.get().dynUpdateUri));
+                } catch (NoValError e) {
+                    Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
+                }
+            }
+            if (mResultContacts.size() > 0) {
+            	Helpers.sendThreadInvite(this, mResultContacts.values(), threadUri);
+            }
         } else if (mIntent.getAction().equals(INTENT_ACTION_PICK_CONTACTS)) {
             long[] ids = new long[mResultContacts.size()];
             Iterator<Contact> it = mResultContacts.values().iterator();
@@ -352,14 +368,14 @@ public class PickContactsActivity extends TabActivity {
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            Contact contact = new Contact(c);
+            Contact contact = Helpers.getContact(context, c.getLong(c.getColumnIndexOrThrow(Contact._ID)));
             String name = contact.name;
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(name);
 
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            ((App)getApplication()).contactImages.lazyLoadContactPortrait(contact, icon);
+            icon.setImageBitmap(contact.picture);
 
             final CheckBox checkBox = (CheckBox)v.findViewById(R.id.checkbox);
             checkBox.setChecked(mResultContacts.containsKey(c.getPosition()));

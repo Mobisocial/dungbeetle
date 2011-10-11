@@ -39,10 +39,6 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public boolean handleObjFromNetwork(Context context, Contact from, JSONObject obj) {
 		byte[] data = FastBase64.decode(obj.optString(DATA));
@@ -54,7 +50,7 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 		context.getContentResolver().update(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             values, "_id=?", new String[] { id });
-        App.instance().contactImages.invalidate(from.id);
+		Helpers.invalidateContacts();
 
         if(reply) {
         	LinkedList<Contact> contacts = new LinkedList<Contact>();
@@ -88,11 +84,6 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
         intent.putExtra("b64Bytes", bytes);
         context.startActivity(intent); 
     }*/
-
-	@Override
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     @Override
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {

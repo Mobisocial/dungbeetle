@@ -50,13 +50,13 @@ import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Shows a series of posts from a feed.
@@ -71,11 +71,13 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private EditText mStatusText;
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
+	private boolean adapterSet = false;
+	
+	private String[] filterTypes = null;
 
     @Override
     public void onAttach(Activity activity) {
@@ -119,20 +121,22 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
-        mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         App.instance().setCurrentFeed(mFeedUri);
+
+        getLoaderManager().restartLoader(0, null, this);
+    	
+
     }
 
     @Override
@@ -220,7 +224,24 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+    	
+    	if(getActivity() instanceof Filterable)
+    	{
+    		Filterable context = (Filterable) getActivity();
+	    	List<String> filterTypes = new ArrayList<String>();
+	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    		if (context.getFilterCheckboxes()[x]) {
+	    			filterTypes.add(context.getFilterTypes()[x]);
+	    		}
+	    	}
+	    	Log.w(TAG, "changeFilter reached in feedview");
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
+	        
+    	}
+    	else {
+    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
+    	}
+
         mLoader.loadInBackground();
         return mLoader;
     }
@@ -231,7 +252,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     	synchronized (this) {
             mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
 		}
+    	Log.w(TAG, "setting adapter");
         setListAdapter(mObjects);
+        adapterSet = true;
     }
 
     @Override
@@ -240,8 +263,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     }
 
     void showMenuForObj(int position) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
+    	//this first cursor is the internal one
+        Cursor cursor = (Cursor)mObjects.getItem(position);
+    	cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
             	new String[] { 
             		DbObject.JSON,
             		DbObject.RAW,
@@ -249,36 +273,39 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             		DbObject.HASH,
             		DbObject.CONTACT_ID
             	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String type = cursor.getString(2);
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        final long hash = cursor.getLong(3);
-        final long contactId = cursor.getLong(4);
-        cursor.close();
+            	DbObject._ID + " = ?", new String[] {String.valueOf(cursor.getLong(0))}, null);
+    	try {
+	        if(!cursor.moveToFirst())
+	        	return;
+	        
+	        final String type = cursor.getString(2);
+	        final String jsonSrc = cursor.getString(0);
+	        final byte[] raw = cursor.getBlob(1);
+	        final long hash = cursor.getLong(3);
+	        final long contactId = cursor.getLong(4);
 
-        final JSONObject json;
-        try {
-            json = new JSONObject(jsonSrc);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error building dialog", e);
-            return;
-        }
-
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
-        if (prev != null) {
-            ft.remove(prev);
-        }
-        ft.addToBackStack(null);
-
-        // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(
-                mFeedUri, contactId, type, hash, json, raw);
-        newFragment.show(ft, "dialog");
+	        final JSONObject json;
+	        try {
+	            json = new JSONObject(jsonSrc);
+	        } catch (JSONException e) {
+	            Log.e(TAG, "Error building dialog", e);
+	            return;
+	        }
+	    	
+	        FragmentTransaction ft = getFragmentManager().beginTransaction();
+	        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+	        if (prev != null) {
+	            ft.remove(prev);
+	        }
+	        ft.addToBackStack(null);
+	
+	        // Create and show the dialog.
+	        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(
+	                mFeedUri, contactId, type, hash, json, raw);
+	        newFragment.show(ft, "dialog");
+    	} finally {
+    		cursor.close();
+    	}
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {
@@ -434,10 +461,24 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     	if (loadMore) {
     		mLoader.cancelLoad();
-    		Activity activity = getActivity();
-    		if(activity != null) {
-        		mLoader = mObjects.queryLaterObjects(activity, mFeedUri, totalCount);
-    		}
+
+        	if(getActivity() instanceof Filterable)
+        	{
+	    		Filterable context = (Filterable) getActivity();
+	    		if(context != null) {
+	    			List<String> filterTypes = new ArrayList<String>();
+	    	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    	    		if (context.getFilterCheckboxes()[x]) {
+	    	    			Log.w(TAG, "adding " + context.getFilterTypes()[x]);
+	    	    			filterTypes.add(context.getFilterTypes()[x]);
+	    	    		}
+	    	    	}
+	        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, filterTypes.toArray(new String[filterTypes.size()]));
+	    		}
+        	}
+        	else {
+        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, null);
+        	}
     	}
 	}
 
@@ -446,4 +487,5 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 		// TODO Auto-generated method stub
 		
 	}
+	
 }

@@ -37,14 +37,6 @@ public class FriendAcceptObj extends DbEntryHandler implements UnprocessedMessag
     public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
-
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     /**
      * Inserts a friend into the list of contacts based on a received

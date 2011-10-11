@@ -41,9 +41,6 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
         return Feed.forGroup(g);
     }
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static JSONObject json(Group g){
         JSONObject obj = new JSONObject();
         try{
@@ -53,10 +50,6 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
         }
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
 		TextView view = new TextView(context);

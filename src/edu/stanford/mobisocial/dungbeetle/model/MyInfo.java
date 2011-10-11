@@ -13,6 +13,7 @@ public class MyInfo {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String PICTURE = "picture";
+	public static final String ABOUT = "about";
 
     public final String publicKey;
     public final String privateKey;
@@ -20,6 +21,7 @@ public class MyInfo {
     public final String name;
     public final Long id;
     public final byte[] picture;
+    public final String about;
 
     public MyInfo(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -28,6 +30,7 @@ public class MyInfo {
         publicKey = c.getString(c.getColumnIndexOrThrow(PUBLIC_KEY));
         privateKey = c.getString(c.getColumnIndexOrThrow(PRIVATE_KEY));
         picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
+        about = c.getString(c.getColumnIndexOrThrow(ABOUT));
     }
 
     public Collection<Contact> contactCollection(DBHelper helper){
@@ -43,6 +46,17 @@ public class MyInfo {
     void setMyEmail(DBHelper helper, String email) {
         ContentValues cv = new ContentValues();
         cv.put(MyInfo.EMAIL, email);
+        helper.getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
+    }
+
+    public static void setMyAbout(DBHelper helper, String about) {
+        ContentValues cv = new ContentValues();
+        cv.put(MyInfo.ABOUT, about);
+        helper.getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
+    }
+    public static void setMyPicture(DBHelper helper, byte[] picture) {
+        ContentValues cv = new ContentValues();
+        cv.put(MyInfo.PICTURE, picture);
         helper.getWritableDatabase().update(MyInfo.TABLE, cv, null, null);
     }
 }

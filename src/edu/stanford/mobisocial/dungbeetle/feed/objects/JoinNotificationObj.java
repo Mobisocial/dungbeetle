@@ -50,17 +50,10 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     @Override
     public void handleDirectMessage(final Context context, Contact from, JSONObject obj) {
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     @Override
     public Pair<JSONObject, byte[]> handleUnprocessed(final Context context, JSONObject obj) {

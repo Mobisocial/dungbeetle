@@ -31,9 +31,6 @@ public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Ac
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(String groupName, Uri dynUpdateUri){
         JSONObject obj = new JSONObject();
@@ -44,10 +41,6 @@ public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Ac
         catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {

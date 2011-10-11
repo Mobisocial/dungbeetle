@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -61,7 +62,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity (intent);
     }
 
@@ -141,7 +145,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(v.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
         menu.setHeaderTitle(c.name);
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
@@ -155,7 +159,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         int menuItemIndex = item.getItemId();
 
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(this, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
  
         switch(menuItemIndex) {
@@ -170,7 +174,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-        new Contact(cursor).view(this);
+        Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID))).view(this);
     }
 
     private class ContactListCursorAdapter extends CursorAdapter {
@@ -188,7 +192,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            final Contact c = new Contact(cursor);
+            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(c.name);
@@ -203,8 +207,8 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             
             
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            ((App)getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
-
+            icon.setImageBitmap(c.picture);
+            
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());
 

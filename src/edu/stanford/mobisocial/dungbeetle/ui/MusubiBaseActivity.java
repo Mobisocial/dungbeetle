@@ -200,7 +200,10 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
 
     public void goHome(Context context) {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
@@ -264,7 +267,12 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     public void doActivityForResult(ActivityCallout callout) {
         mCurrentCallout = callout;
         Intent launch = callout.getStartIntent();
-        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        if(launch != null)
+        	startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        else {
+        	Log.wtf(callout.getClass().getCanonicalName(), "I failed to return a valid intent, so something is probably very bad.");
+        	Toast.makeText(this, "Callback for object type failed! " + callout.getClass().getName(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

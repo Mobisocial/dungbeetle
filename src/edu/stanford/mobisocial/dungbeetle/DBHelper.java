@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 49;
+	public static final int VERSION = 53;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -240,7 +240,8 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'raw' to object table.");
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
         }
-        if(oldVersion <= 39) {
+        // sadly, we have to do this again because incoming voice obj's were not being split!
+        if(oldVersion <= 50) {
             Log.w(TAG, "Converting voice and picture objs to raw.");
 
           Log.w(TAG, "Converting objs to raw.");
@@ -332,8 +333,23 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 47) {
             addRelationIndexes(db);
         }
-        if (oldVersion <= 48) {
+        if (oldVersion <= 44) {
             createUserAttributesTable(db);
+        }
+
+        if (oldVersion <= 49) {
+            if (oldVersion > 44) {
+                db.execSQL("ALTER TABLE " + DbRelation.TABLE + " ADD COLUMN " + DbRelation.RELATION_TYPE + " TEXT");
+            }
+            db.execSQL("UPDATE " + DbRelation.TABLE + " SET " + DbRelation.RELATION_TYPE + " = 'parent'");
+        }
+        if(oldVersion <= 52) {
+            Log.w(TAG, "Adding column 'about' to my_info table.");
+            try {
+            	db.execSQL("ALTER TABLE " + MyInfo.TABLE + " ADD COLUMN " + MyInfo.ABOUT + " TEXT DEFAULT ''");
+            } catch(Exception e) {
+            	// because of bad update, we just ignore the duplicate column error
+            }
         }
 
         db.setVersion(VERSION);
@@ -387,7 +403,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         MyInfo.PRIVATE_KEY, "TEXT",
                         MyInfo.NAME, "TEXT",
                         MyInfo.EMAIL, "TEXT",
-                        MyInfo.PICTURE, "BLOB"
+                        MyInfo.PICTURE, "BLOB",
+                        MyInfo.ABOUT, "TEXT DEFAULT ''"
                         );
 
             createTable(db, DbObject.TABLE, null,
@@ -480,7 +497,8 @@ public class DBHelper extends SQLiteOpenHelper {
 	    createTable(db, DbRelation.TABLE, null,
                 DbRelation._ID, "INTEGER PRIMARY KEY",
                 DbRelation.OBJECT_ID_A, "INTEGER",
-                DbRelation.OBJECT_ID_B, "INTEGER"
+                DbRelation.OBJECT_ID_B, "INTEGER",
+                DbRelation.RELATION_TYPE, "TEXT"
                 );
 	}
 
@@ -614,10 +632,16 @@ public class DBHelper extends SQLiteOpenHelper {
             if (json.has(DbObjects.TARGET_HASH)) {
                 long hashA = json.optLong(DbObjects.TARGET_HASH);
                 long idA = objIdForHash(hashA);
+                String relation;
+                if (json.has(DbObjects.TARGET_RELATION)) {
+                    relation = json.optString(DbObjects.TARGET_RELATION);
+                } else {
+                    relation = DbRelation.RELATION_PARENT;
+                }
                 if (idA == -1) {
                     Log.e(TAG, "No objId found for hash " + hashA);
                 } else {
-                    addObjRelation(idA, objId);
+                    addObjRelation(idA, objId, relation);
                 }
             }
 
@@ -665,21 +689,29 @@ public class DBHelper extends SQLiteOpenHelper {
 
             ContentResolver resolver = mContext.getContentResolver();
             Cursor c = getFeedDependencies(feedName);
-            while (c.moveToNext()) {
-                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+            try {
+	            while (c.moveToNext()) {
+	                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
+	            }
+	
+	            if (json.has(DbObjects.TARGET_HASH)) {
+	                long hashA = json.optLong(DbObjects.TARGET_HASH);
+	                long idA = objIdForHash(hashA);
+	                String relation;
+	                if (json.has(DbObjects.TARGET_RELATION)) {
+	                    relation = json.optString(DbObjects.TARGET_RELATION);
+	                } else {
+	                    relation = DbRelation.RELATION_PARENT;
+	                }
+	                if (idA == -1) {
+	                    Log.e(TAG, "No objId found for hash " + hashA);
+	                } else {
+	                    addObjRelation(idA, newObjId, relation);
+	                }
+	            }
+            } finally {
+            	c.close();
             }
-
-            if (json.has(DbObjects.TARGET_HASH)) {
-                long hashA = json.optLong(DbObjects.TARGET_HASH);
-                long idA = objIdForHash(hashA);
-                if (idA == -1) {
-                    Log.e(TAG, "No objId found for hash " + hashA);
-                } else {
-                    addObjRelation(idA, newObjId);
-                }
-            }
-
-            c.close();
             return seqId;
         }
         catch(Exception e){
@@ -692,14 +724,15 @@ public class DBHelper extends SQLiteOpenHelper {
      * Adds a parent/child relation to the database given a child obj.
      * The obj must have a {@link DbObjects#TARGET_HASH} field.
      */
-    public void addObjRelation(long idA, long idB) {
+    public void addObjRelation(long idA, long idB, String relation) {
         ContentValues cv = new ContentValues();
         cv.put(DbRelation.OBJECT_ID_A, idA);
         cv.put(DbRelation.OBJECT_ID_B, idB);
+        cv.put(DbRelation.RELATION_TYPE, relation);
         getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
     }
 
-    private long objIdForHash(long hash) {
+    public long objIdForHash(long hash) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
                 new String[]{ DbObject._ID },
@@ -708,10 +741,14 @@ public class DBHelper extends SQLiteOpenHelper {
                 null,
                 null,
                 null);
-        if (c.moveToFirst()) {
-            return c.getLong(0);
+        try {
+	        if (c.moveToFirst()) {
+	            return c.getLong(0);
+	        }
+	        return -1;
+        } finally {
+        	c.close();
         }
-        return -1;
     }
 
     long insertContact(ContentValues cv) {
@@ -807,10 +844,10 @@ public class DBHelper extends SQLiteOpenHelper {
 	            Log.i(TAG, "Found max seq num: " + max);
 	            return max;
 	        }
+	        return -1;
         } finally {
             c.close();
         }
-        return -1;
     }
 
     public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
@@ -988,8 +1025,7 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             null);
         try {
-	        c.moveToFirst();
-	        if(!c.isAfterLast()) {
+	        if(c.moveToFirst()) {
 	        	return true;
 	        } else {
 	        	return false;
@@ -1106,6 +1142,18 @@ public class DBHelper extends SQLiteOpenHelper {
                 new String[] { feedName });
     }
 
+    public Cursor queryMemberDetails(String feedName, String personId) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
+            .append(" FROM " + Contact.TABLE + " C ")
+            .append(" WHERE ")
+            .append("C." + Contact.PERSON_ID + " = ?")
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { personId });
+    }
+
     public Cursor queryGroups() {
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
@@ -1146,14 +1194,16 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             Contact._ID + " in (" + idList + ")",
             null,null,null,null);
-        c.moveToFirst();
-        ArrayList<Contact> result = new ArrayList<Contact>();
-        while(!c.isAfterLast()){
-            result.add(new Contact(c));
-            c.moveToNext();
+        try {
+	        ;
+	        ArrayList<Contact> result = new ArrayList<Contact>();
+	        if(c.moveToFirst()) do {
+	            result.add(new Contact(c));
+	        } while(c.moveToNext());
+	        return result;
+        } finally {
+        	c.close();
         }
-        c.close();
-        return result;
     }
 
 	public List<Contact> contactsForPersonIds(Collection<String> personIds){
@@ -1171,14 +1221,15 @@ public class DBHelper extends SQLiteOpenHelper {
             null,
             Contact.PERSON_ID + " in (" + idList + ")",
             null,null,null,null);
-        c.moveToFirst();
-        ArrayList<Contact> result = new ArrayList<Contact>();
-        while(!c.isAfterLast()){
-            result.add(new Contact(c));
-            c.moveToNext();
+        try {
+	        ArrayList<Contact> result = new ArrayList<Contact>();
+	        if(c.moveToFirst()) do {
+	            result.add(new Contact(c));
+	        } while(c.moveToNext());
+	        return result;
+        } finally {
+        	c.close();
         }
-        c.close();
-        return result;
     }
 
 	public Maybe<Group> groupForGroupId(long groupId){
@@ -1188,15 +1239,17 @@ public class DBHelper extends SQLiteOpenHelper {
             Group._ID + "=?",
             new String[]{String.valueOf(groupId)},
             null,null,null);
-        c.moveToFirst();
-        Maybe<Group> mg;
-        if (c.isAfterLast()) {
-            mg = Maybe.unknown();
-        } else { 
-            mg = Maybe.definitely(new Group(c));
+        try {
+	        Maybe<Group> mg;
+	        if (!c.moveToFirst()) {
+	            mg = Maybe.unknown();
+	        } else { 
+	            mg = Maybe.definitely(new Group(c));
+	        }
+	        return mg;
+        } finally {
+        	c.close();
         }
-        c.close();
-        return mg;
     }
 
 	public Maybe<Group> groupForFeedName(String feed){
@@ -1207,15 +1260,17 @@ public class DBHelper extends SQLiteOpenHelper {
             Group.FEED_NAME + "=?",
             new String[]{String.valueOf(feed)},
             null,null,null);
-        c.moveToFirst();
-        Maybe<Group> mg;
-        if (c.isAfterLast()) {
-            mg = Maybe.unknown();
-        } else { 
-            mg = Maybe.definitely(new Group(c));
+        try {
+	        Maybe<Group> mg;
+	        if (!c.moveToFirst()) {
+	            mg = Maybe.unknown();
+	        } else { 
+	            mg = Maybe.definitely(new Group(c));
+	        }
+	        return mg;
+        } finally {
+        	c.close();
         }
-        c.close();
-        return mg;
     }
 
 	public Maybe<Group> groupByFeedName(String feedName){
@@ -1226,8 +1281,7 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{feedName},
             null,null,null);
         try {
-	        c.moveToFirst();
-	        if(c.isAfterLast()) return Maybe.unknown();
+	        if(!c.moveToFirst()) return Maybe.unknown();
 	        else return Maybe.definitely(new Group(c));
         } finally {
         	c.close();
@@ -1294,14 +1348,15 @@ public class DBHelper extends SQLiteOpenHelper {
                 Contact.TABLE, 
                 new String[] {Contact._ID, Contact.PUBLIC_KEY},
                 null, null,null,null,null);
-        c.moveToFirst();
-        while(!c.isAfterLast()){
-        	byte[] pk = c.getBlob(1);
-        	key_ss.add(pk);
-            c.moveToNext();
+        try {
+	        if(c.moveToFirst()) do {
+	        	byte[] pk = c.getBlob(1);
+	        	key_ss.add(pk);
+	        } while(c.moveToNext());
+	        return key_ss;	
+        } finally {
+        	c.close();
         }
-        c.close();
-        return key_ss;	
     }
     //gets the shared secret for all contacts.
     public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
@@ -1310,24 +1365,25 @@ public class DBHelper extends SQLiteOpenHelper {
                 Contact.TABLE, 
                 new String[] {Contact._ID, Contact.PUBLIC_KEY, Contact.SHARED_SECRET},
                 null, null,null,null,null);
-        c.moveToFirst();
-        while(!c.isAfterLast()){
-        	byte[] pk = c.getBlob(1);
-        	byte[] ss = c.getBlob(2);
-        	if(ss == null) {
-        		Contact contact;
-				try {
-					contact = contactForContactId(c.getLong(0)).get();
-	        		ss = SharedSecretObj.getOrPushSecret(mContext, contact);
-				} catch (NoValError e) {
-					e.printStackTrace();
-				}
-        	}
-        	key_ss.put(pk, ss);
-            c.moveToNext();
+        try {
+	        if(c.moveToFirst()) do {
+	        	byte[] pk = c.getBlob(1);
+	        	byte[] ss = c.getBlob(2);
+	        	if(ss == null) {
+	        		Contact contact;
+					try {
+						contact = contactForContactId(c.getLong(0)).get();
+		        		ss = SharedSecretObj.getOrPushSecret(mContext, contact);
+					} catch (NoValError e) {
+						e.printStackTrace();
+					}
+	        	}
+	        	key_ss.put(pk, ss);
+	        } while(c.moveToNext());
+	        return key_ss;	
+        } finally {
+        	c.close();
         }
-        c.close();
-        return key_ss;	
     }
 	//gets the shared secret with one specific contact or create a shared secret if there is none... null if the public key is unknown
     public byte[] getSharedSecret(byte[] public_key) {
@@ -1337,24 +1393,27 @@ public class DBHelper extends SQLiteOpenHelper {
         Cursor c = getReadableDatabase().rawQuery("SELECT " + Contact._ID + "," + Contact.SHARED_SECRET + " FROM " +
         		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
         		null);
-        c.moveToFirst();
-        if(!c.moveToFirst()) {
-        	// no such person
-        	return null;
+        try {
+	        if(!c.moveToFirst()) {
+	        	// no such person
+	        	return null;
+	        }
+	        byte[] ss = c.getBlob(1);
+	    	long id = c.getLong(0);
+
+	    	if(ss != null) {
+	        	return ss;	
+	        }
+			Contact contact;
+			try {
+				contact = contactForContactId(id).get();
+	    		return SharedSecretObj.getOrPushSecret(mContext, contact);
+			} catch (NoValError e) {
+				return null;
+			}
+        } finally {
+        	c.close();
         }
-        byte[] ss = c.getBlob(1);
-    	long id = c.getLong(0);
-        c.close();
-        if(ss != null) {
-        	return ss;	
-        }
-		Contact contact;
-		try {
-			contact = contactForContactId(id).get();
-    		return SharedSecretObj.getOrPushSecret(mContext, contact);
-		} catch (NoValError e) {
-			return null;
-		}
     }
 	//gets the contact for a public key
     public Contact getContactForPublicKey(byte[] public_key) {
@@ -1365,7 +1424,6 @@ public class DBHelper extends SQLiteOpenHelper {
         		Contact.TABLE + " WHERE HEX(" + Contact.PUBLIC_KEY + ") = '" + hex + "'", 
         		null);
         try {
-	        c.moveToFirst();
 	        if(!c.moveToFirst()) {
 	        	// no such person
 	        	return null;
@@ -1462,14 +1520,16 @@ public class DBHelper extends SQLiteOpenHelper {
 		Cursor c = getReadableDatabase().rawQuery("SELECT " + DbObject.CONTACT_ID + " FROM " +
         		DbObject.TABLE + " WHERE " + DbObject.HASH + " = '" + hash + "'", 
         		null);
-        c.moveToFirst();
-        if(!c.moveToFirst()) {
-        	// no such person
-        	return -1;
-        }
-    	long id = c.getLong(0);
-        c.close();
-    	return id;
+		try {
+	        if(!c.moveToFirst()) {
+	        	// no such person
+	        	return -1;
+	        }
+	    	long id = c.getLong(0);
+	    	return id;
+		} finally {
+			c.close();
+		}
 	}
 
  }

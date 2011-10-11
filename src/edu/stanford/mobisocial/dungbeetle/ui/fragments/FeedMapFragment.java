@@ -64,24 +64,27 @@ public class FeedMapFragment extends Fragment {
     }
 
     private void onFeedUpdated() {
-        Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getLocationClause(),
-                null, DbObject._ID + " DESC");
-
         StringBuilder pathBuilder = new StringBuilder();
         pathBuilder.append("http://maps.googleapis.com/maps/api/staticmap?size=512x512&sensor=true&path=");
         pathBuilder.append("color:0x0000ff|weight:5");
-        int totalSize = c.getCount();
-        c.moveToFirst();
-        // TODO: This graphs all points in a path.
-        // You probably want unique paths for each user.
-        for (int i = 1; i < totalSize; i++) {
-            c.moveToNext();
-            DbObject obj = DbObject.fromCursor(c);
-            String lat = obj.getJson().optString(LocationObj.COORD_LAT);
-            String lon = obj.getJson().optString(LocationObj.COORD_LONG);
-            pathBuilder.append("|").append(lat).append(",").append(lon);
+
+        Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getLocationClause(),
+                null, DbObject._ID + " DESC");
+        try {
+	        int totalSize = c.getCount();
+	        c.moveToFirst();
+	        // TODO: This graphs all points in a path.
+	        // You probably want unique paths for each user.
+	        for (int i = 1; i < totalSize; i++) {
+	            c.moveToNext();
+	            DbObject obj = DbObject.fromCursor(c);
+	            String lat = obj.getJson().optString(LocationObj.COORD_LAT);
+	            String lon = obj.getJson().optString(LocationObj.COORD_LONG);
+	            pathBuilder.append("|").append(lat).append(",").append(lon);
+	        }
+        } finally {
+        	c.close();
         }
-        c.close();
         Uri data = Uri.parse(pathBuilder.toString());
         ((WebView)getActivity().findViewById(android.R.id.custom)).loadUrl(data.toString());
     }

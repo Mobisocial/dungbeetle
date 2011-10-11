@@ -1,13 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.group_providers;
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeMap;
-import java.util.Map.Entry;
-import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -25,7 +21,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import edu.stanford.mobisocial.bumblebee.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -57,7 +52,7 @@ public class GroupProviders {
     	long key;
     	Runnable runnable;
     }
-    private static LinkedBlockingDeque<TaskEntry> g_group_tasks = new LinkedBlockingDeque<TaskEntry>();
+    private static LinkedList<TaskEntry> g_group_tasks = new LinkedList<TaskEntry>();
     private static Thread g_group_thread = null;
     public static void runBackgroundGroupTask(long key, Runnable task) {
     	synchronized(g_group_tasks) {
@@ -226,14 +221,15 @@ public class GroupProviders {
 	                nameValuePairs.add(new BasicNameValuePair("public_key", encryptedPubKey));
 	                nameValuePairs.add(new BasicNameValuePair("email", Util.encryptAES(ident.userEmail(), key)));
 	                
-	                nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
+	                //nameValuePairs.add(new BasicNameValuePair("profile", Util.encryptAES(ident.userProfile(), key)));
+	                nameValuePairs.add(new BasicNameValuePair("version", Integer.toString(version)));
 	                nameValuePairs.add(new BasicNameValuePair("session", feedName));
 	                httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 	                try {
 	                    HttpResponse execute = client.execute(httpPost);
 	                    InputStream content = execute.getEntity().getContent();
 	                    sb = new StringBuffer(IOUtils.toString(content));
-	                    Log.e("WHOHO", sb.length() + " group size");
+	                    Log.e("WHOHO", "version: " + version + ", " + sb.length() + " group size");
 	                }
 	                catch (Exception e) {
 		                sb = new StringBuffer();

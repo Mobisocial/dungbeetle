@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDoneException;
 import android.database.sqlite.SQLiteStatement;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -49,21 +50,22 @@ public class DBIdentityProvider implements IdentityProvider {
 		helper.addRef();
 		mUnclosedException = new Exception("Finalized without close being called. Created at...");
 		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
-		c.moveToFirst();
-        if (c.isAfterLast()) {
-            c.close();
-            throw new IllegalStateException("Missing my_info entry!");
-        }
-
-        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
-        mPubKey = publicKeyFromString(mPubKeyString);
-        mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
-        mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
-        mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
-        mPubKeyTag = personIdForPublicKey(mPubKey);
-
-        Log.d(TAG, c.getCount() + " public keys");
-        c.close();
+		try {
+			if(!c.moveToFirst()) {
+	            throw new IllegalStateException("Missing my_info entry!");
+	        }
+	
+	        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
+	        mPubKey = publicKeyFromString(mPubKeyString);
+	        mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
+	        mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
+	        mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
+	        mPubKeyTag = personIdForPublicKey(mPubKey);
+	
+	        Log.d(TAG, c.getCount() + " public keys");
+		} finally {
+			c.close();
+		}
     }
 
 	public String userName() {
@@ -107,14 +109,22 @@ public class DBIdentityProvider implements IdentityProvider {
 
 	public Contact contactForUser(){
 		Cursor c = mHelper.getReadableDatabase().rawQuery("SELECT * FROM " + MyInfo.TABLE, new String[] {});
-		c.moveToFirst();
-        long id = Contact.MY_ID;
-        String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
-        String email = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
-        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, null, "", null, null, 0);
-        contact.picture = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
-        c.close();
-        return contact;
+		try {
+			c.moveToFirst();
+	        long id = Contact.MY_ID;
+	        String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
+	        String email = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
+	        String about = c.getString(c.getColumnIndexOrThrow(MyInfo.ABOUT));
+	        //hack, make about info the status field of the contact class
+	        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, null, about, null, null, 0);
+	        byte[] picdata = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
+	        if(picdata != null) {
+	        	contact.picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);
+	        }
+	        return contact;
+		} finally { 
+			c.close();
+		}
     }
 
 	public RSAPublicKey publicKeyForPersonId(String id){
@@ -124,8 +134,7 @@ public class DBIdentityProvider implements IdentityProvider {
         Cursor c = mHelper.getReadableDatabase().query(Contact.TABLE, new String[]{Contact.PUBLIC_KEY},
             Contact.PERSON_ID + " = ?", new String[]{id}, null, null, null);
         try {
-	        c.moveToFirst();
-	        if (c.isAfterLast()) {
+	        if(!c.moveToFirst()) {
 	            return null;
 	        }
 	

@@ -14,7 +14,6 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FeedHeadFragment extends Fragment {
 
@@ -22,7 +21,6 @@ public class FeedHeadFragment extends Fragment {
 
 	public static final String TAG = "ObjectsActivity";
 	private ContentObserver mFeedObserver;
-	private ContactCache mContactCache;
 	private Uri mFeedUri;
 
     @Override
@@ -41,7 +39,6 @@ public class FeedHeadFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mContactCache = new ContactCache(getActivity());
         mFeedObserver = new ContentObserver(new Handler(getActivity().getMainLooper())) {
             @Override
             public void onChange(boolean selfChange) {
@@ -72,9 +69,12 @@ public class FeedHeadFragment extends Fragment {
     private void bindCurrentView() {
         Cursor c = getActivity().getContentResolver().query(mFeedUri, null, getFeedObjectClause(),
                 null, DbObject._ID + " DESC");
-        if (c.moveToFirst()) {
-            View v = getActivity().findViewById(R.id.feed_view);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+        try {
+	        if (c.moveToFirst()) {
+	            View v = getActivity().findViewById(R.id.feed_view);
+	        }
+        } finally {
+        	c.close();
         }
     }
 }
