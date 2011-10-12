@@ -51,6 +51,11 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";
 
+    /**
+     *  Used as part of a workaround for handling click events over a webview.
+     */
+    public static boolean HACK_ATTACK = false;
+
     @Override
     public String getType() {
         return TYPE;
@@ -266,10 +271,11 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                 case MotionEvent.ACTION_CANCEL:
                     return true;
                 case MotionEvent.ACTION_UP:
+                    // Any time you touch a webview, consume the erroneous longpress.
+                    HACK_ATTACK = true;
                     sendClick();
                     return true;
             }
-
             return false;
         }
 
@@ -280,6 +286,9 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                         frame = vg;
                     }
                     vg = (ViewGroup)vg.getParent();
+                    if (vg.performClick()) {
+                        return;
+                    }
                 }
                 lv = (ListView) vg;
             }

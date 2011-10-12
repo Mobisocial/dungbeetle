@@ -40,6 +40,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -51,6 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
@@ -217,7 +219,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
         @Override
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            showMenuForObj(position);
+            if (!AppStateObj.HACK_ATTACK) {
+                showMenuForObj(position);
+            }
+            AppStateObj.HACK_ATTACK = false;
             return true;
         }
     };
@@ -487,5 +492,4 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 		// TODO Auto-generated method stub
 		
 	}
-	
 }
