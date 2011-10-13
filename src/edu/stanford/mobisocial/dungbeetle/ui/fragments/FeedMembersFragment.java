@@ -59,6 +59,8 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
 	public static final String TAG = "ContactsActivity";
 
+    private static final int sDeletedColor = Color.parseColor("#66FF3333");
+
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
     private Uri mFeedUri;
@@ -168,6 +170,12 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
             unreadCount.setTextColor(Color.RED);
             unreadCount.setText(c.numUnread + " unread");
             unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
+            
+            if (c.hidden == 1) {
+                v.setBackgroundColor(sDeletedColor);
+            } else {
+                v.setBackgroundColor(Color.TRANSPARENT);
+            }
 
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(c.name);
@@ -289,7 +297,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         }
         Uri memberlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI +
                 "/group_contacts/" + gid);
-        return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " ASC");
+        return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
     }
 
     @Override
