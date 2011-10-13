@@ -1107,22 +1107,46 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[] { String.valueOf(groupId) });
     }
 
-    public Cursor queryFeedMembers(String feedName, String appId) {
-        // TODO: Check appId against database.
-        String query = new StringBuilder()
-            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
-            .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
-            .append(" FROM " + Contact.TABLE + " C, ")
-            .append(GroupMember.TABLE + " M, ")
+    public Cursor queryFeedMembers(String[] projection, String selection, String[] selectionArgs,
+            String feedName, String appId) {
+        // TODO: Check appId against feed?
+
+        String[] realSelectionArgs = null;
+        String feedInnerQuery = new StringBuilder()
+            .append("SELECT M." + GroupMember.CONTACT_ID)
+            .append(" FROM " + GroupMember.TABLE + " M, ")
             .append(Group.TABLE + " G")
             .append(" WHERE ")
             .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
             .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ? AND " )
-            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
-            .toString();
-        return getReadableDatabase().rawQuery(query,
-                new String[] { feedName });
+            .append("G." + Group.FEED_NAME + " = ?").toString();
+        String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
+
+        if (selection == null) {
+            selection = forFeed;
+            realSelectionArgs = new String[] { feedName };
+        } else {
+            selection = andClauses(selection, forFeed);
+            if (selectionArgs == null) {
+                realSelectionArgs = new String[] { feedName };
+            } else {
+                realSelectionArgs = new String[selectionArgs.length + 1];
+                System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
+                realSelectionArgs[selectionArgs.length] = feedName;
+            }
+        }
+
+        String groupBy = null;
+        String having = null;
+        String orderBy = null;
+        return getReadableDatabase().query(
+                Contact.TABLE,
+                projection,
+                selection,
+                realSelectionArgs,
+                groupBy,
+                having,
+                orderBy);
     }
 
     public Cursor queryFeedMembers(String feedName) {
