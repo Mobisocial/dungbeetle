@@ -393,11 +393,11 @@ public class Helpers {
 	    	if(c != null)
 	    		return c;
     	}
-    	Contact c = forcegGetContact(context, contactId);
+    	Contact c = forceGetContact(context, contactId);
     	g_contacts.put(contactId, new SoftReference<Contact>(c));
     	return c;
     }
-	public static Contact forcegGetContact(Context context, long contactId) {
+	public static Contact forceGetContact(Context context, long contactId) {
 		if(contactId == Contact.MY_ID) {
 			DBHelper dbh = new DBHelper(context);
 			DBIdentityProvider idp = new DBIdentityProvider(dbh);
@@ -413,6 +413,8 @@ public class Helpers {
                 Contact._ID + "=?", new String[] {
                     String.valueOf(contactId)
                 }, null);
+        if(c == null)
+        	return null;
         try {
             
             if (!c.moveToFirst()) {

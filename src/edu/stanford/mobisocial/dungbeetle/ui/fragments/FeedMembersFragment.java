@@ -162,29 +162,35 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
-
             TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
+            TextView nameText = (TextView) v.findViewById(R.id.name_text);
+            TextView statusText = (TextView) v.findViewById(R.id.status_text);
+            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
+            final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
+            final ImageView more = (ImageView)v.findViewById(R.id.more);
+
+            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
+            if(c == null) {
+            	unreadCount.setVisibility(View.INVISIBLE);
+            	nameText.setText("Missing contact data...");
+            	statusText.setText("");
+            	icon.setImageResource(R.drawable.anonymous);
+            	return;
+            }
             unreadCount.setTextColor(Color.RED);
             unreadCount.setText(c.numUnread + " unread");
             unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
 
-            TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(c.name);
 
-            TextView statusText = (TextView) v.findViewById(R.id.status_text);
             statusText.setText(c.status);
             
-            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
             icon.setImageBitmap(c.picture);
 
-            final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());
 
-            final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
-
-            final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {
                     @Override
