@@ -75,7 +75,11 @@ public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
 	}
 
 	private boolean fileAvailable(String mimeType, Uri uri) {
-	    return uri != null && uri.getScheme().startsWith("http");
+	    if (uri != null && uri.getScheme().startsWith("http")) {
+	        return true;
+	    }
+	    Log.d(TAG, "TODO: Content corral for " + uri);
+	    return false;
 	}
 
 	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
