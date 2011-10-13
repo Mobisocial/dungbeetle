@@ -308,10 +308,17 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         private TextView mProfileName;
         private TextView mProfileEmail;
         private TextView mProfileAbout;
+		private Activity mActivity;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+        }
+        @Override
+        public void onAttach(Activity activity) {
+        	//we have to save this because we get a callback
+        	mActivity = activity;
+        	super.onDetach();
         }
 
         @Override
@@ -321,7 +328,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             View v = inflater.inflate(R.layout.view_self_profile, container, false);
             mIcon = (ImageView) v.findViewById(R.id.icon);
             
-            final DBHelper mHelper = DBHelper.getGlobal(getActivity());
+            final DBHelper mHelper = DBHelper.getGlobal(mActivity);
             final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
             Contact c = null;
             try {
@@ -331,16 +338,20 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             	mIdent.close();
             }
             if (mContactId == Contact.MY_ID) {
-            	mIcon.setImageBitmap(c.picture);
+            	if(c.picture == null) {
+            		mIcon.setImageResource(R.drawable.anonymous);        		
+            	} else {
+                	mIcon.setImageBitmap(c.picture);
+            	}
                 mIcon.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
-                        Toast.makeText(getActivity(), "Loading camera...", Toast.LENGTH_SHORT)
+                        Toast.makeText(mActivity, "Loading camera...", Toast.LENGTH_SHORT)
                                 .show();
-                        ((InstrumentedActivity) getActivity()).doActivityForResult(new PhotoTaker(
-                                getActivity(), new PhotoTaker.ResultHandler() {
+                        ((InstrumentedActivity) mActivity).doActivityForResult(new PhotoTaker(
+                        		mActivity, new PhotoTaker.ResultHandler() {
                                     @Override
                                     public void onResult(byte[] data) {
-                                        Helpers.updatePicture(getActivity(), data);
+                                        Helpers.updatePicture(mActivity, data);
                                         // updateProfileToGroups();
                                     }
                                 }, 200, false));
