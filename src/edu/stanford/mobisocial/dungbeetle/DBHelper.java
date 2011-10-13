@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 53;
+	public static final int VERSION = 54;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -351,6 +351,9 @@ public class DBHelper extends SQLiteOpenHelper {
             	// because of bad update, we just ignore the duplicate column error
             }
         }
+        if (oldVersion <= 53) {
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.HIDDEN + " INTEGER DEFAULT 0");
+        }
 
         db.setVersion(VERSION);
     }
@@ -444,7 +447,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact.NUM_UNREAD, "INTEGER DEFAULT 0",
                         Contact.NEARBY, "INTEGER DEFAULT 0",
                         Contact.STATUS, "TEXT",
-                        Contact.PICTURE, "BLOB");
+                        Contact.PICTURE, "BLOB",
+                        Contact.HIDDEN, "INTEGER DEFAULT 0");
             createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 

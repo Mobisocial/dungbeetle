@@ -69,10 +69,16 @@ public class Helpers {
 
     public static void deleteContact(final Context c, 
                                      Long contactId){
-        c.getContentResolver().delete(
+        /*c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             Contact._ID + "=?",
             new String[]{ String.valueOf(contactId)});
+        */
+
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
+        ContentValues values = new ContentValues();
+        values.put(Contact.HIDDEN, 1);
+        c.getContentResolver().update(url, values, Contact._ID + "=" + contactId, null);
     }
 
     public static Uri insertContact(final Context c, String pubKeyStr, 
