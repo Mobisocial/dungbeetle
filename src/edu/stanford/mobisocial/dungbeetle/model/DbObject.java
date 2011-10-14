@@ -175,7 +175,6 @@ public class DbObject {
 
                 frame.setTag(objId); // TODO: error prone! This is database id
                 frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
-                if (DBG) Log.d(TAG, "set tag " + c.getPosition() + " on " + frame);
         		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
         		if(renderer != null) {
         			renderer.render(context, frame, content, raw, allowInteractions);

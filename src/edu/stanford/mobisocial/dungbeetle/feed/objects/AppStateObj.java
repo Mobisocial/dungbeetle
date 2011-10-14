@@ -144,7 +144,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                                         LinearLayout.LayoutParams.WRAP_CONTENT,
                                         LinearLayout.LayoutParams.WRAP_CONTENT));
             Object o = frame.getTag(R.id.object_entry);
-            webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
+            webview.setOnTouchListener(new WebViewClickListener(frame, (Integer)o));
             frame.addView(webview);
         }
 
@@ -253,11 +253,9 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         private ViewGroup vg;
         private ViewGroup frame;
         private ListView lv;
-        private WebView wv;
 
-        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
+        public WebViewClickListener(ViewGroup vg, int position) {
             this.vg = vg;
-            this.wv = wv;
             this.position = position;
         }
 
@@ -276,7 +274,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         }
 
         public void sendClick() {
-            Log.d(TAG, "clicked " + wv);
             if (lv == null) {
                 while (!(vg instanceof ListView)) {
                     if (null != vg.getTag(R.id.object_entry)) {
@@ -289,7 +286,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                 }
                 lv = (ListView) vg;
             }
-
             lv.performItemClick(frame, position, 0);
         }
     }
