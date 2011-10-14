@@ -883,41 +883,46 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor queryFeed(String realAppId, String feedName, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
         Log.d(TAG, "Querying feed: " + feedName);
-        String objId = null;
+        String objHashStr = null;
         if (feedName.contains(":")) {
             String[] contentParts = feedName.split(":");
             if (contentParts.length != 2) {
                 Log.e(TAG, "Error parsing feed::: " + feedName);
             } else {
                 feedName = contentParts[0];
-                objId = contentParts[1];
+                objHashStr = contentParts[1];
             }
         }
 
         final String ID = DbObject._ID;
         final String OBJECTS = DbObject.TABLE;
+        final String RELATIONS = DbRelation.TABLE;
         final String HASH = DbObject.HASH;
-        String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
-        if (objId != null) {
+        final String OBJECT_ID_A = DbRelation.OBJECT_ID_A;
+        final String OBJECT_ID_B = DbRelation.OBJECT_ID_B;
+        String select = andClauses(selection, DbObject.FEED_NAME + " = '" + feedName + "'");
+        if (objHashStr != null) {
+            // sql injection security:
+            Long objHash = Long.parseLong(objHashStr);
             String objIdSearch =
                     "(SELECT " + ID +
                     " FROM " + OBJECTS +
-                    " WHERE " + HASH + " = " + Long.parseLong(objId) + ")";
-            select = andClauses(select, DbObject._ID + " IN (SELECT " +
-                    DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE + " WHERE " +
-                    DbRelation.OBJECT_ID_A + " = " + objIdSearch + " )");
+                    " WHERE " + HASH + " = " + objHash + ")";
+            select = andClauses(select, "(" + ID + " IN (SELECT " +
+                    OBJECT_ID_B + " FROM " + RELATIONS + " WHERE " +
+                    OBJECT_ID_A + " = " + objIdSearch + " ) OR " + HASH + " = " + objHash + ")");
         } else {
-            select = andClauses(select, DbObject._ID + " NOT IN (SELECT " +
+            select = andClauses(select, ID + " NOT IN (SELECT " +
                         DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE +
                         " WHERE " + DbRelation.RELATION_TYPE + " IN ('parent'))");
         }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
-
+        if (DBG) Log.d(TAG, "Running query " + select);
         Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
-        Log.d(TAG, "got " + c.getCount() + " items");
+        if (DBG) Log.d(TAG, "got " + c.getCount() + " items");
         return c;
     }
 
