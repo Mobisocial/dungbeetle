@@ -79,8 +79,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
-	private boolean adapterSet = false;
-	
+
 	private String[] filterTypes = null;
 
     @Override
@@ -246,12 +245,13 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
     	//the mObjects field is accessed by the ui thread as well
-    	synchronized (this) {
+        if (mObjects == null) {
             mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+            setListAdapter(mObjects);
+		} else {
+		    mObjects.changeCursor(cursor);
 		}
     	Log.w(TAG, "setting adapter");
-        setListAdapter(mObjects);
-        adapterSet = true;
     }
 
     @Override
