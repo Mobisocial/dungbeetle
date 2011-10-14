@@ -120,12 +120,18 @@ public class DbObject {
             		DbObject.FEED_NAME
             	},
             	DbObject._ID + " = ?", new String[] {String.valueOf(objId)}, null);
+
+    	TextView nameText = (TextView) v.findViewById(R.id.name_text);
+        ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
+        frame.removeAllViews();
     	if(cursor == null) {
-    		Log.wtf("Dbbject", "cursor was null for bund view of db object");
+    		nameText.setText("Failed to access database.");
+    		Log.wtf("DbObject", "cursor was null for bindView of DbObject");
     		return;
     	}
     	try {
 	        if(!cursor.moveToFirst()) {
+	    		nameText.setText("Object not found?!.");
 	        	return;
 	        }
 	        
@@ -138,9 +144,8 @@ public class DbObject {
 	        String feedName = cursor.getString(6);
 	        Date date = new Date(timestamp);
         	Contact contact = Helpers.getContact(context, contactId);
-            TextView nameText = (TextView) v.findViewById(R.id.name_text);
         	if(contact == null) {
-        		nameText.setText("Unknown Corrupt Message");
+        		nameText.setText("Message from unknown contact.");
         		return;
         	}
             nameText.setText(contact.name);
@@ -173,8 +178,6 @@ public class DbObject {
                 TextView timeText = (TextView)v.findViewById(R.id.time_text);
                 timeText.setText(RelativeDate.getRelativeDate(date));
 
-                ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
-                frame.removeAllViews();
                 frame.setTag(R.id.object_entry, c.getPosition());
                 
         		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
@@ -214,6 +217,7 @@ public class DbObject {
                     }
                 }
             } catch (JSONException e) {
+        		nameText.setText("Failed to process JSON.");
                 Log.e("db", "error opening json", e);
             }
        	} finally {

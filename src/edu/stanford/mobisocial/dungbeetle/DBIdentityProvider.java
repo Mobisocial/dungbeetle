@@ -114,7 +114,9 @@ public class DBIdentityProvider implements IdentityProvider {
 	        long id = Contact.MY_ID;
 	        String name = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
 	        String email = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
-	        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, null, "", null, null, 0);
+	        String about = c.getString(c.getColumnIndexOrThrow(MyInfo.ABOUT));
+	        //hack, make about info the status field of the contact class
+	        Contact contact =  new Contact(id, mPubKeyTag, name, email, 0, 0, false, null, about, null, null, 0);
 	        byte[] picdata = c.getBlob(c.getColumnIndexOrThrow(MyInfo.PICTURE)); 
 	        if(picdata != null) {
 	        	contact.picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);

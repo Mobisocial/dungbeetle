@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -50,6 +51,8 @@ public class AppReferenceObj extends DbEntryHandler
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
     public static final String PACKAGE_NAME = "packageName";
+    public static final String OBJ_INTENT_ACTION = "intentAction";
+    public static final String OBJ_INTENT_CAT = "intentCat";
     public static final String GROUP_URI = "groupuri";
     public static final String CREATOR_ID = "creator_id";
 
@@ -66,7 +69,7 @@ public class AppReferenceObj extends DbEntryHandler
     }
 
 	// TODO: Bundle <=> Json
-	public static DbObject forFixedMembership(String packageName, String[] membership,
+	public static DbObject forFixedMembership(Bundle params, String[] membership,
 	        String feedName, String groupUri) {
 
 	    JSONObject json = new JSONObject();
@@ -76,7 +79,8 @@ public class AppReferenceObj extends DbEntryHandler
 	            mship.put(m);
 	        }
 
-	        json.put(PACKAGE_NAME, packageName);
+	        json.put(PACKAGE_NAME, params.getString(PACKAGE_NAME));
+	        json.put(OBJ_INTENT_ACTION, params.getString(OBJ_INTENT_ACTION)); // todo: pendingIntent? parcelable?
 	        json.put(Multiplayer.OBJ_MEMBERSHIP, mship);
 	        json.put(DbObject.CHILD_FEED_NAME, feedName);
 	        json.put(GROUP_URI, groupUri);
@@ -155,7 +159,7 @@ public class AppReferenceObj extends DbEntryHandler
 
 	@Override
 	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
-	    if (DBG) Log.d(TAG, "activating " + content);
+	    if (DBG) Log.d(TAG, "activating from appReferenceObj: " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
             Log.wtf(TAG, "Bad app reference found.");
@@ -165,14 +169,7 @@ public class AppReferenceObj extends DbEntryHandler
 
 	    JSONObject appContent = getAppState(context, content);
 	    if (appContent == null) {
-	        Uri appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
-	        String appId = content.optString(PACKAGE_NAME);
-	        String arg = content.optString(ARG);
-	        String state = null;
-
-	        Intent launch = AppStateObj.getLaunchIntent(context, appId, arg, state, appFeed);
-	        // TODO: temporary.
-	        launch.putExtra("obj", content.toString());
+	        Intent launch = AppStateObj.getLaunchIntent(context, content);
 	        if (!(context instanceof Activity)) {
 	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	        }
@@ -180,12 +177,18 @@ public class AppReferenceObj extends DbEntryHandler
 	        context.startActivity(launch);
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
+            try {
+                appContent.put(PACKAGE_NAME, content.get(PACKAGE_NAME));
+                appContent.put(OBJ_INTENT_ACTION, content.get(OBJ_INTENT_ACTION));
+                appContent.put(DbObject.CHILD_FEED_NAME, content.get(DbObject.CHILD_FEED_NAME));
+            } catch (JSONException e) {
+            }
             mAppStateObj.activate(context, Contact.MY_ID, appContent, raw);
 	    }
 	}
 
    private JSONObject getAppState(Context context, JSONObject appReference) {
-        Log.w(TAG, appReference.toString());
+        if (DBG) Log.w(TAG, "returning app state for " + appReference.toString());
         if (appReference.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
             Uri feedUri = Feed.uriForName(feedName);

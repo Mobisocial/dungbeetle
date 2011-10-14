@@ -69,10 +69,16 @@ public class Helpers {
 
     public static void deleteContact(final Context c, 
                                      Long contactId){
-        c.getContentResolver().delete(
+        /*c.getContentResolver().delete(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"),
             Contact._ID + "=?",
             new String[]{ String.valueOf(contactId)});
+        */
+
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
+        ContentValues values = new ContentValues();
+        values.put(Contact.HIDDEN, 1);
+        c.getContentResolver().update(url, values, Contact._ID + "=" + contactId, null);
     }
 
     public static Uri insertContact(final Context c, String pubKeyStr, 
@@ -347,7 +353,14 @@ public class Helpers {
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/my_info"),
             values, null, null);
 
-        App.instance().contactImages.invalidate(Contact.MY_ID);
+    	//todo: should be below content provider... but then all of dbidentityprovider is like this
+		DBHelper dbh = new DBHelper(c);
+		try {
+	    	MyInfo.setMyPicture(dbh, data);
+		} finally {
+			dbh.close();
+		}
+		Helpers.invalidateContacts();
     }
 
     public static void updateLastPresence(final Context c, 
@@ -376,6 +389,9 @@ public class Helpers {
     }
 
     private static HashMap<Long, SoftReference<Contact>> g_contacts = new HashMap<Long, SoftReference<Contact>>();
+    public static void invalidateContacts() {
+    	g_contacts.clear();
+    }
     public static Contact getContact(Context context, long contactId) {
     	SoftReference<Contact> entry = g_contacts.get(contactId);
     	if(entry != null) {
@@ -383,11 +399,11 @@ public class Helpers {
 	    	if(c != null)
 	    		return c;
     	}
-    	Contact c = forcegGetContact(context, contactId);
+    	Contact c = forceGetContact(context, contactId);
     	g_contacts.put(contactId, new SoftReference<Contact>(c));
     	return c;
     }
-	public static Contact forcegGetContact(Context context, long contactId) {
+	public static Contact forceGetContact(Context context, long contactId) {
 		if(contactId == Contact.MY_ID) {
 			DBHelper dbh = new DBHelper(context);
 			DBIdentityProvider idp = new DBIdentityProvider(dbh);
@@ -403,6 +419,8 @@ public class Helpers {
                 Contact._ID + "=?", new String[] {
                     String.valueOf(contactId)
                 }, null);
+        if(c == null)
+        	return null;
         try {
             
             if (!c.moveToFirst()) {

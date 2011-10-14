@@ -68,7 +68,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 50;
+	public static final int VERSION = 54;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -240,7 +240,8 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Adding column 'raw' to object table.");
             db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.RAW + " BLOB");
         }
-        if(oldVersion <= 39) {
+        // sadly, we have to do this again because incoming voice obj's were not being split!
+        if(oldVersion <= 50) {
             Log.w(TAG, "Converting voice and picture objs to raw.");
 
           Log.w(TAG, "Converting objs to raw.");
@@ -332,7 +333,7 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 47) {
             addRelationIndexes(db);
         }
-        if (oldVersion <= 48) {
+        if (oldVersion <= 44) {
             createUserAttributesTable(db);
         }
 
@@ -342,6 +343,17 @@ public class DBHelper extends SQLiteOpenHelper {
                 createIndex(db, "INDEX", "relations_by_type", DbRelation.TABLE, DbRelation.RELATION_TYPE);
             }
             db.execSQL("UPDATE " + DbRelation.TABLE + " SET " + DbRelation.RELATION_TYPE + " = 'parent'");
+        }
+        if(oldVersion <= 52) {
+            Log.w(TAG, "Adding column 'about' to my_info table.");
+            try {
+            	db.execSQL("ALTER TABLE " + MyInfo.TABLE + " ADD COLUMN " + MyInfo.ABOUT + " TEXT DEFAULT ''");
+            } catch(Exception e) {
+            	// because of bad update, we just ignore the duplicate column error
+            }
+        }
+        if (oldVersion <= 53) {
+            db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.HIDDEN + " INTEGER DEFAULT 0");
         }
 
         db.setVersion(VERSION);
@@ -395,7 +407,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         MyInfo.PRIVATE_KEY, "TEXT",
                         MyInfo.NAME, "TEXT",
                         MyInfo.EMAIL, "TEXT",
-                        MyInfo.PICTURE, "BLOB"
+                        MyInfo.PICTURE, "BLOB",
+                        MyInfo.ABOUT, "TEXT DEFAULT ''"
                         );
 
             createTable(db, DbObject.TABLE, null,
@@ -435,7 +448,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         Contact.NUM_UNREAD, "INTEGER DEFAULT 0",
                         Contact.NEARBY, "INTEGER DEFAULT 0",
                         Contact.STATUS, "TEXT",
-                        Contact.PICTURE, "BLOB");
+                        Contact.PICTURE, "BLOB",
+                        Contact.HIDDEN, "INTEGER DEFAULT 0");
             createIndex(db, "UNIQUE INDEX", "contacts_by_person_id", Contact.TABLE, Contact.PERSON_ID);
 
 
@@ -1100,22 +1114,46 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[] { String.valueOf(groupId) });
     }
 
-    public Cursor queryFeedMembers(String feedName, String appId) {
-        // TODO: Check appId against database.
-        String query = new StringBuilder()
-            .append("SELECT C." + Contact._ID + ", C." + Contact.NAME + ",")
-            .append("C." + Contact.PICTURE + ", C." + Contact.PUBLIC_KEY)
-            .append(" FROM " + Contact.TABLE + " C, ")
-            .append(GroupMember.TABLE + " M, ")
+    public Cursor queryFeedMembers(String[] projection, String selection, String[] selectionArgs,
+            String feedName, String appId) {
+        // TODO: Check appId against feed?
+
+        String[] realSelectionArgs = null;
+        String feedInnerQuery = new StringBuilder()
+            .append("SELECT M." + GroupMember.CONTACT_ID)
+            .append(" FROM " + GroupMember.TABLE + " M, ")
             .append(Group.TABLE + " G")
             .append(" WHERE ")
             .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
             .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ? AND " )
-            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
-            .toString();
-        return getReadableDatabase().rawQuery(query,
-                new String[] { feedName });
+            .append("G." + Group.FEED_NAME + " = ?").toString();
+        String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
+
+        if (selection == null) {
+            selection = forFeed;
+            realSelectionArgs = new String[] { feedName };
+        } else {
+            selection = andClauses(selection, forFeed);
+            if (selectionArgs == null) {
+                realSelectionArgs = new String[] { feedName };
+            } else {
+                realSelectionArgs = new String[selectionArgs.length + 1];
+                System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
+                realSelectionArgs[selectionArgs.length] = feedName;
+            }
+        }
+
+        String groupBy = null;
+        String having = null;
+        String orderBy = null;
+        return getReadableDatabase().query(
+                Contact.TABLE,
+                projection,
+                selection,
+                realSelectionArgs,
+                groupBy,
+                having,
+                orderBy);
     }
 
     public Cursor queryFeedMembers(String feedName) {
@@ -1133,6 +1171,18 @@ public class DBHelper extends SQLiteOpenHelper {
             .toString();
         return getReadableDatabase().rawQuery(query,
                 new String[] { feedName });
+    }
+
+    public Cursor queryMemberDetails(String feedName, String personId) {
+        // TODO: Check appId against database.
+        String query = new StringBuilder()
+            .append("SELECT C.*")
+            .append(" FROM " + Contact.TABLE + " C ")
+            .append(" WHERE ")
+            .append("C." + Contact.PERSON_ID + " = ?")
+            .toString();
+        return getReadableDatabase().rawQuery(query,
+                new String[] { personId });
     }
 
     public Cursor queryGroups() {

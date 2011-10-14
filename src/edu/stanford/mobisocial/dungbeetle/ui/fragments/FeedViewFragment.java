@@ -40,6 +40,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -50,11 +51,12 @@ import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
 
@@ -217,7 +219,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
         @Override
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            showMenuForObj(position);
+            if (!AppStateObj.HACK_ATTACK) {
+                showMenuForObj(position);
+            }
+            AppStateObj.HACK_ATTACK = false;
             return true;
         }
     };
@@ -225,23 +230,23 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     	
-    	FeedHomeActivity context = (FeedHomeActivity) getActivity();
-    	List<String> filterTypes = new ArrayList<String>();
-    	for(int x = 0; x < context.filterTypes.length; x++) {
-    		if (context.checked[x]) {
-    			Log.w(TAG, "adding " + context.filterTypes[x]);
-    			filterTypes.add(context.filterTypes[x]);
-    		}
+    	if(getActivity() instanceof Filterable)
+    	{
+    		Filterable context = (Filterable) getActivity();
+	    	List<String> filterTypes = new ArrayList<String>();
+	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    		if (context.getFilterCheckboxes()[x]) {
+	    			filterTypes.add(context.getFilterTypes()[x]);
+	    		}
+	    	}
+	    	Log.w(TAG, "changeFilter reached in feedview");
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
+	        
+    	}
+    	else {
+    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
     	}
 
-    	//if (adapterSet) {
-		//	mLoader.cancelLoad();
-			Log.w(TAG, "changeFilter reached in feedview");
-			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
-	        //mLoader.loadInBackground();
-    	//}
-    	
-        //mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
         mLoader.loadInBackground();
         return mLoader;
     }
@@ -461,17 +466,24 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     	if (loadMore) {
     		mLoader.cancelLoad();
-    		FeedHomeActivity context = (FeedHomeActivity) getActivity();
-    		if(context != null) {
-    			List<String> filterTypes = new ArrayList<String>();
-    	    	for(int x = 0; x < context.filterTypes.length; x++) {
-    	    		if (context.checked[x]) {
-    	    			Log.w(TAG, "adding " + context.filterTypes[x]);
-    	    			filterTypes.add(context.filterTypes[x]);
-    	    		}
-    	    	}
-        		mLoader = mObjects.queryLaterObjects(context, mFeedUri, totalCount, filterTypes.toArray(new String[filterTypes.size()]));
-    		}
+
+        	if(getActivity() instanceof Filterable)
+        	{
+	    		Filterable context = (Filterable) getActivity();
+	    		if(context != null) {
+	    			List<String> filterTypes = new ArrayList<String>();
+	    	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    	    		if (context.getFilterCheckboxes()[x]) {
+	    	    			Log.w(TAG, "adding " + context.getFilterTypes()[x]);
+	    	    			filterTypes.add(context.getFilterTypes()[x]);
+	    	    		}
+	    	    	}
+	        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, filterTypes.toArray(new String[filterTypes.size()]));
+	    		}
+        	}
+        	else {
+        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, null);
+        	}
     	}
 	}
 
@@ -480,5 +492,4 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 		// TODO Auto-generated method stub
 		
 	}
-	
 }

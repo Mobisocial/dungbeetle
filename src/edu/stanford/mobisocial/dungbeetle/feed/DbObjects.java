@@ -29,6 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.RemoteIntentObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
@@ -79,6 +80,7 @@ public final class DbObjects {
         objs.add(new FeedAnchorObj());
         objs.add(new DeleteObj());
         objs.add(new LikeObj());
+        objs.add(new RemoteIntentObj());
     }
 
 	public static FeedRenderer getFeedRenderer(JSONObject json) {

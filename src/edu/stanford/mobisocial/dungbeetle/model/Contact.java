@@ -38,6 +38,7 @@ public class Contact implements Serializable{
 	public static final String LAST_OBJECT_ID = "last_object_id";
 	public static final String LAST_UPDATED = "last_updated";
 	public static final String NUM_UNREAD = "num_unread";
+	public static final String HIDDEN = "hidden";
 
     public final String name;
     public final String email;
@@ -51,6 +52,7 @@ public class Contact implements Serializable{
     public Long lastObjectId;
 	public Long lastUpdated;
 	public long numUnread;
+	public int hidden;
 	public android.graphics.Bitmap picture;
 
     // TODO: Move to SocialKit.
@@ -88,6 +90,7 @@ public class Contact implements Serializable{
         if(picdata != null) {
         	picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);
         }
+        hidden = c.getInt(c.getColumnIndexOrThrow(HIDDEN));
 
     }
 

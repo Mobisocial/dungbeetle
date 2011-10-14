@@ -3,16 +3,15 @@ package edu.stanford.mobisocial.dungbeetle.obj;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.obj.action.DeleteAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.ForwardObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ExportPhotoAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.ForwardObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.OpenObjAction;
+import edu.stanford.mobisocial.dungbeetle.obj.action.PlayAllAudioAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.RelatedObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.SetProfileObjAction;
 import edu.stanford.mobisocial.dungbeetle.obj.action.ViewFeedObjAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.PlayAllAudioAction;
-import edu.stanford.mobisocial.dungbeetle.obj.action.ExportPhotoAction;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ObjActions {

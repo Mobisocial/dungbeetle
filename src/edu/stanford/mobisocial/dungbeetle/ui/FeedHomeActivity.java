@@ -19,10 +19,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -36,7 +36,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * Represents a group by showing its feed and members.
  */
 public class FeedHomeActivity extends MusubiBaseActivity
-        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
+        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener, Filterable {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
@@ -50,8 +50,8 @@ public class FeedHomeActivity extends MusubiBaseActivity
     public final String TAG = "GroupsTabActivity";
     
 
-    public final String[] filterTypes = DbObjects.getRenderableTypes();
-    public boolean[] checked;
+    private final String[] filterTypes = DbObjects.getRenderableTypes();
+    private boolean[] checked;
 
     public void onClickBroadcast(View v) {
         mActionsFragment.promptForSharing();
@@ -71,7 +71,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
         	checked[x] = true;
         }
 
-        mFeedViews = FeedViews.getDefaultFeedViews();
+        mFeedViews = FeedViews.getDefaultFeedViews(this);
         Intent intent = getIntent();
         String feed_name = null;
         String dyn_feed_uri = null;
@@ -214,4 +214,19 @@ public class FeedHomeActivity extends MusubiBaseActivity
         }
         mButtons.get(position).setBackgroundColor(mColor);
     }
+
+	@Override
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	@Override
+	public boolean[] getFilterCheckboxes() {
+		return checked;
+	}
+
+	@Override
+	public void setFilterCheckbox(int position, boolean check) {
+		checked[position] = check;
+	}
 }

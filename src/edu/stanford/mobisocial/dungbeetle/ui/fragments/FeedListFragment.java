@@ -115,14 +115,14 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
                 v.setTag(R.id.group_id, g.id);
                 v.setTag(R.id.group_uri, g.dynUpdateUri);
                 if (numUnread > 0) {
-                    labelView.setText(g.name + " (" + numUnread + " unread messages)");
+                    labelView.setText(g.name + " (" + numUnread + " unread)");
                 }
                 else {
                 	labelView.setText(g.name);
                 }
             } else {
             	if (numUnread > 0) {
-            		labelView.setText(feedName + " (" + numUnread + " unread messages)");
+            		labelView.setText(feedName + " (" + numUnread + " unread)");
             	}
             	else {
             		labelView.setText(feedName);

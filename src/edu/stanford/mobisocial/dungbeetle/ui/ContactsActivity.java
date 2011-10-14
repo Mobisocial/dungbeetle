@@ -114,7 +114,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 long gid = mGroup.get().id;
                 Cursor c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
-                    null, null, null, Contact.NAME + " ASC");
+                    null, Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
                 mContacts = new ContactListCursorAdapter(this, c);
             } catch(Maybe.NoValError e) {
                 Log.i(TAG, "group not found!");
@@ -126,7 +126,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
                 null, 
-                null, null, Contact.NAME + " COLLATE NOCASE ASC");
+                Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
 
@@ -134,7 +134,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
         lv.setFastScrollEnabled(true);
-        //registerForContextMenu(lv);
+        registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
 		
