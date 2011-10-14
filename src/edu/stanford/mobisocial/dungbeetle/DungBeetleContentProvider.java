@@ -101,12 +101,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             try {
             	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
 
-                mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
                     json);
-
+                Uri objUri = DbObject.uriForObj(objId);
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
-                return Uri.parse(uri.toString());
+                resolver.notifyChange(objUri, null);
+                return objUri;
             } catch(JSONException e){
                 return null;
             }
@@ -151,11 +152,13 @@ public class DungBeetleContentProvider extends ContentProvider {
                     json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
                 }
 
-                mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
                         json);
+                Uri objUri = DbObject.uriForObj(objId);
+                resolver.notifyChange(objUri, null);
                 notifyDependencies(resolver, feedName);
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
-                return uri;
+                return objUri;
             }
             catch(JSONException e) {
                 return null;
@@ -399,7 +402,13 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "obj")) {
+        if (match(uri, "obj", ".+")) {
+            // objects by database id
+            String objId = uri.getLastPathSegment();
+            selectionArgs = DBHelper.concat(selectionArgs, new String[] { objId });
+            selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
+            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+        } else if(match(uri, "obj")) {
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);

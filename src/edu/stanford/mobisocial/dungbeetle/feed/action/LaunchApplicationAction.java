@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import android.app.Activity;
@@ -15,10 +16,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -36,8 +38,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class LaunchApplicationAction implements FeedAction {
 
@@ -212,21 +212,35 @@ public class LaunchApplicationAction implements FeedAction {
 
                 // Create and share new application instance
                 DbObject obj = AppObj.fromPickerResult(mContext, action, pkgName, className, data);
-                Helpers.sendToFeed(mContext, obj, mFeedUri);
-
-                // Launch locally
-                try {
-                    obj.getJson().put(DbObject.FEED_NAME, mFeedUri.getLastPathSegment());
-                } catch (JSONException e) {
-                    Log.e(TAG, "couldn't do json", e);
-                }
-                DbEntryHandler h = DbObjects.forType(AppObj.TYPE);
-                if (!(h instanceof Activator)) {
-                    Log.e(TAG, "What! " + AppObj.TYPE + " isn't an activator!");
-                    return;
-                }
-                ((Activator)h).activate(mContext, Contact.MY_ID, obj.getJson(), null);
+                Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
+                mContext.getContentResolver().registerContentObserver(objUri, false,
+                        new ObjObserver(mContext, objUri, new Handler(mContext.getMainLooper())));
             }
         }
+    }
+
+    private class ObjObserver extends ContentObserver {
+        private final Uri mUri;
+        private final Context mContext;
+        public ObjObserver(Context context, Uri uri, Handler h) {
+            super(h);
+            mUri = uri;
+            mContext = context;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            Log.d(TAG, "NOTICED THAT WE NOW HAVE AN ENCODING FOR " + mUri);
+            mContext.getContentResolver().unregisterContentObserver(this);
+        }
+    }
+
+    private void launchLocally(DbObject obj, Context context) {
+        DbEntryHandler h = DbObjects.forType(AppObj.TYPE);
+        if (!(h instanceof Activator)) {
+            Log.e(TAG, "What! " + AppObj.TYPE + " isn't an activator!");
+            return;
+        }
+        ((Activator)h).activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 }

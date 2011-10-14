@@ -98,7 +98,13 @@ public class DbObject {
             return null;
         } 
     }
+
     public static final Uri OBJ_URI = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/obj");
+
+    public static Uri uriForObj(long objId) {
+        return OBJ_URI.buildUpon().appendPath("" + objId).build();
+    }
+
     /**
      * @param v the view to bind
      * @param context standard activity context

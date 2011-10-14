@@ -654,8 +654,7 @@ public class DBHelper extends SQLiteOpenHelper {
             DbEntryHandler typeInfo = DbObjects.getObjHandler(json);
             FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
             mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), typeInfo, json, objId);
-
-            return nextSeqId;
+            return objId;
         }
         catch(Exception e) {
             // TODO, too spammy
@@ -1336,6 +1335,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public static String[] concat(String[] A, String[] B) {
+        if (A == null) return B;
+        if (B == null) return A;
         String[] C = new String[A.length + B.length];
         System.arraycopy(A, 0, C, 0, A.length);
         System.arraycopy(B, 0, C, A.length, B.length);
@@ -1353,7 +1354,10 @@ public class DBHelper extends SQLiteOpenHelper {
             cv,
             DbObject._ID + " = " + id,
             null);
+        Uri objUri = DbObject.uriForObj(id);
+        mContext.getContentResolver().notifyChange(objUri, null);
 	}
+
 	public byte[] getEncoded(long id) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
@@ -1363,7 +1367,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 null,
                 null,
                 null);
-        
+
         try {
             if(!c.moveToFirst())
             	return null;
