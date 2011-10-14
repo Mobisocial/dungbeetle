@@ -218,8 +218,12 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        mFeeds = new FeedListCursorAdapter(getActivity(), cursor);
-        setListAdapter(mFeeds);
+        if (mFeeds == null) {
+            mFeeds = new FeedListCursorAdapter(getActivity(), cursor);
+            setListAdapter(mFeeds);
+        } else {
+            mFeeds.changeCursor(cursor);
+        }
     }
 
     @Override
