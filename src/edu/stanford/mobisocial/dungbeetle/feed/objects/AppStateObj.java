@@ -181,14 +181,16 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    Log.d(TAG, "Getting launch intent for " + content);
 	    Uri  appFeed;
 	    if (content.has(DbObject.CHILD_FEED_NAME)) {
+	        Log.d(TAG, "using child feed");
 	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
 	    } else {
-	        appFeed = Feed.uriForName(content.optString(DbObject.FEED_NAME));
+	        Log.d(TAG, "using main feed");
+	        appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
 	    }
 	    String arg = content.optString(ARG);
         String state = content.optString(STATE);
 	    String appId = content.optString(PACKAGE_NAME); // Not DbObject.APP_ID!
-	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
+	    if (DBG) Log.d(TAG, "Preparing launch of " + appId + " on " + appFeed);
 	    
 	    Intent launch = new Intent();
 	    if (content.has(AppReferenceObj.OBJ_INTENT_ACTION)) {
