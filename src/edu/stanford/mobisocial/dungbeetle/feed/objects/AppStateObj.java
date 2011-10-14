@@ -51,11 +51,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";
 
-    /**
-     *  Used as part of a workaround for handling click events over a webview.
-     */
-    public static boolean HACK_ATTACK = false;
-
     @Override
     public String getType() {
         return TYPE;
@@ -258,9 +253,11 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         private ViewGroup vg;
         private ViewGroup frame;
         private ListView lv;
+        private WebView wv;
 
         public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
             this.vg = vg;
+            this.wv = wv;
             this.position = position;
         }
 
@@ -268,11 +265,10 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             int action = event.getAction();
 
             switch (action) {
+                case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_CANCEL:
                     return true;
                 case MotionEvent.ACTION_UP:
-                    // Any time you touch a webview, consume the erroneous longpress.
-                    HACK_ATTACK = true;
                     sendClick();
                     return true;
             }
@@ -280,18 +276,20 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         }
 
         public void sendClick() {
+            Log.d(TAG, "clicked " + wv);
             if (lv == null) {
                 while (!(vg instanceof ListView)) {
                     if (null != vg.getTag(R.id.object_entry)) {
                         frame = vg;
                     }
-                    vg = (ViewGroup)vg.getParent();
+                    vg = (ViewGroup) vg.getParent();
                     if (vg.performClick()) {
                         return;
                     }
                 }
                 lv = (ListView) vg;
             }
+
             lv.performItemClick(frame, position, 0);
         }
     }
