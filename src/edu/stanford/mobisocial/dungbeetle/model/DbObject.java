@@ -42,6 +42,7 @@ import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
 public class DbObject {
     private static final String TAG = "dbObject";
+    private static final boolean DBG = true;
 
     public static final String TABLE = "objects";
     public static final String _ID = "_id";
@@ -63,7 +64,6 @@ public class DbObject {
 
     protected final String mType;
     protected JSONObject mJson;
-    private Long mTimestamp;
     private static OnClickViewProfile sViewProfileAction;
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
@@ -80,7 +80,7 @@ public class DbObject {
         } catch (JSONException e) {
             Log.wtf("DB", "Bad json from database.");
         }
-        mTimestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
+        //mTimestamp = c.getLong(c.getColumnIndexOrThrow(DbObject.TIMESTAMP));
     }
 
     public String getType() {
@@ -164,11 +164,6 @@ public class DbObject {
             if (allowInteractions) {
                 icon.setOnClickListener(sViewProfileAction);
                 v.setTag(objId);
-                v.setClickable(true);
-                v.setFocusable(true);
-                v.setOnClickListener(ItemClickListener.getInstance(context));
-                // TODO, add tracking code, move out of FeedViewFragment
-                // v.setOnLongClickListener(ItemLongClickListener.getInstance(context));
             }
             icon.setImageBitmap(contact.picture);
 
@@ -184,8 +179,8 @@ public class DbObject {
                 TextView timeText = (TextView)v.findViewById(R.id.time_text);
                 timeText.setText(RelativeDate.getRelativeDate(date));
 
-                frame.setTag(R.id.object_entry, c.getPosition());
-                
+                frame.setTag(objId); // TODO: error prone! This is database id
+                frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
         		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
         		if(renderer != null) {
         			renderer.render(context, frame, content, raw, allowInteractions);
@@ -289,7 +284,7 @@ public class DbObject {
         }
     };
 
-    private static class ItemClickListener implements View.OnClickListener {
+    public static class ItemClickListener implements View.OnClickListener {
         private final Context mContext;
         private static ItemClickListener sInstance;
 
@@ -306,7 +301,13 @@ public class DbObject {
        
         @Override
         public void onClick(View v) {
-            long objId = (Long)v.getTag();
+            Object tag = v.getTag();
+            if (tag == null || !(tag instanceof Long)) {
+                Log.d(TAG, "no id for dbobj " + v + "; parent: " + v.getParent());
+                return;
+            }
+            long objId = (Long)tag;
+
             Cursor cursor = mContext.getContentResolver().query(DbObject.OBJ_URI,
                     new String[] { 
                         DbObject.JSON,
@@ -316,6 +317,7 @@ public class DbObject {
                     DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
             try {
 	            if(!cursor.moveToFirst()) {
+	                Log.w(TAG, "clicked unavailable obj");
 	                return;
 	            }
 	            
@@ -340,7 +342,7 @@ public class DbObject {
         }
     };
 
-    private static class ItemLongClickListener implements View.OnLongClickListener {
+    public static class ItemLongClickListener implements View.OnLongClickListener {
         private final Context mContext;
         private static ItemLongClickListener sInstance;
 
@@ -357,6 +359,10 @@ public class DbObject {
        
         @Override
         public boolean onLongClick(View v) {
+            if (v == null || v.getTag() == null) {
+                Log.d(TAG, "missing objId for " + v);
+                return false;
+            }
             long objId = (Long)v.getTag();
             Cursor cursor = mContext.getContentResolver().query(DbObject.OBJ_URI,
                     new String[] { 
@@ -383,7 +389,7 @@ public class DbObject {
 	            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
 	            try {
 	                JSONObject obj = new JSONObject(jsonSrc);
-	                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw);
+	                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw).show();
 	            } catch(JSONException e){
 	                Log.e(TAG, "Couldn't parse obj.", e);
 	            }

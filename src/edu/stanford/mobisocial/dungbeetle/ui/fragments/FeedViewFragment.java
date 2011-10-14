@@ -36,6 +36,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -110,9 +112,10 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
         ListView lv = getListView();
         lv.setFastScrollEnabled(true);
-        lv.setOnItemLongClickListener(mLongClickListener);
+        lv.setOnItemClickListener(mItemClickListener);
+        lv.setOnItemLongClickListener(mItemLongClickListener);
         lv.setOnScrollListener(this);
-        lv.setItemsCanFocus(true);
+        lv.setFocusable(true);
 
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
@@ -213,17 +216,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         public void onClick(View v) {
             QuickAction qa = DbActions.getActions(getActivity(), mFeedUri, v);
             qa.show();
-        }
-    };
-
-    private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
-        @Override
-        public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            if (!AppStateObj.HACK_ATTACK) {
-                showMenuForObj(position);
-            }
-            AppStateObj.HACK_ATTACK = false;
-            return true;
         }
     };
 
@@ -492,4 +484,20 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 		// TODO Auto-generated method stub
 		
 	}
+
+	private OnItemClickListener mItemClickListener = new OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+            DbObject.ItemClickListener.getInstance(getActivity()).onClick(view);
+        }
+	};
+
+	private OnItemLongClickListener mItemLongClickListener = new OnItemLongClickListener() {
+        @Override
+        public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+            DbObject.ItemLongClickListener.getInstance(getActivity()).onLongClick(view);
+            return true;
+        }
+        
+    };
 }

@@ -51,11 +51,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     public static final String PACKAGE_NAME = "packageName";
     public static final String GROUP_URI = "groupuri";
 
-    /**
-     *  Used as part of a workaround for handling click events over a webview.
-     */
-    public static boolean HACK_ATTACK = false;
-
     @Override
     public String getType() {
         return TYPE;
@@ -149,7 +144,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                                         LinearLayout.LayoutParams.WRAP_CONTENT,
                                         LinearLayout.LayoutParams.WRAP_CONTENT));
             Object o = frame.getTag(R.id.object_entry);
-            webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
+            webview.setOnTouchListener(new WebViewClickListener(frame, (Integer)o));
             frame.addView(webview);
         }
 
@@ -259,7 +254,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         private ViewGroup frame;
         private ListView lv;
 
-        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
+        public WebViewClickListener(ViewGroup vg, int position) {
             this.vg = vg;
             this.position = position;
         }
@@ -268,11 +263,10 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             int action = event.getAction();
 
             switch (action) {
+                case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_CANCEL:
                     return true;
                 case MotionEvent.ACTION_UP:
-                    // Any time you touch a webview, consume the erroneous longpress.
-                    HACK_ATTACK = true;
                     sendClick();
                     return true;
             }
@@ -285,7 +279,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
                     if (null != vg.getTag(R.id.object_entry)) {
                         frame = vg;
                     }
-                    vg = (ViewGroup)vg.getParent();
+                    vg = (ViewGroup) vg.getParent();
                     if (vg.performClick()) {
                         return;
                     }
