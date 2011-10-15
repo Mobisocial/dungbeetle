@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -31,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 
 public class VideoObj extends DbEntryHandler
         implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
@@ -120,14 +122,26 @@ public class VideoObj extends DbEntryHandler
 			content = p.first;
 			raw = p.second;
 		}
+
+		LinearLayout inner = new LinearLayout(context);
+		inner.setLayoutParams(CommonLayouts.FULL_WIDTH);
+		inner.setOrientation(LinearLayout.HORIZONTAL);
+		frame.addView(inner);
+
 		ImageView imageView = new ImageView(context);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
         BitmapFactory bf = new BitmapFactory();
         imageView.setImageBitmap(bf.decodeByteArray(raw, 0, raw.length));
-//        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
-        frame.addView(imageView);
+        inner.addView(imageView);
+
+        ImageView iconView = new ImageView(context);
+        iconView.setImageResource(R.drawable.play);
+        iconView.setLayoutParams(new LinearLayout.LayoutParams(
+                                      LinearLayout.LayoutParams.WRAP_CONTENT,
+                                      LinearLayout.LayoutParams.WRAP_CONTENT));
+        inner.addView(iconView);
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
