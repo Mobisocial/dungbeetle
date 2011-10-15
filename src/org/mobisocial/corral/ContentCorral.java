@@ -37,13 +37,15 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
 public class ContentCorral {
     public static final String OBJ_MIME_TYPE = "mimeType";
+    public static final String OBJ_LOCAL_URI = "localUri";
+
 	private static final int SERVER_PORT = 8224;
 	private static final String TAG = "ContentCorral";
 	private static final boolean DBG = true;
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
-	public static final boolean CONTENT_CORRAL_ENABLED = false;
+	public static final boolean CONTENT_CORRAL_ENABLED = true;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
@@ -416,59 +418,72 @@ public class ContentCorral {
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
 	}
 
-	public static Uri fetchContent(Context context, long contactId, JSONObject obj)
-	        throws IOException {
-	    if (!obj.has(PictureObj.LOCAL_URI)) {
-	        return null;
-	    }
-	    if (contactId == Contact.MY_ID) {
-	        try {
-	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
-	        } catch (JSONException e) {
-	            Log.e(TAG, "json exception getting local uri", e);
-	            return null;
-	        }
-	    }
+    /**
+     * Synchronized method that retrieves content by any possible transport, and
+     * returns a uri representing it locally. This method blocks until the file
+     * is available locally, or it has been determined that the file cannot
+     * currently be fetched.
+     */
+    public static Uri fetchContent(Context context, long contactId, JSONObject obj)
+            throws IOException {
+        if (!obj.has(OBJ_LOCAL_URI)) {
+            if (DBG)
+                Log.d(TAG, "no local uri for obj.");
+            return null;
+        }
+        if (contactId == Contact.MY_ID) {
+            try {
+                return Uri.parse(obj.getString(OBJ_LOCAL_URI));
+            } catch (JSONException e) {
+                Log.e(TAG, "json exception getting local uri", e);
+                return null;
+            }
+        }
 
-	    String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
-	    if (ip == null) {
-	        return null;
-	    }
+        File localFile = localFileForContent(context, obj);
+        if (localFile.exists()) {
+            return Uri.fromFile(localFile);
+        }
 
-	    try {
-	        // Remote
-	        Uri remoteUri = uriForContent(ip, obj.getString(PictureObj.LOCAL_URI));
-    	    URL url = new URL(remoteUri.toString());
-            if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
+        // TODO: ipv6 compliance.
+        // TODO: Try multiple ip endpoints; multi-sourced download;
+        // torrent-style sharing
+        // (mobile, distributed CDN)
+        String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
+        if (ip == null) {
+            Log.d(TAG, "No known ip for user.");
+            return null;
+        }
 
-    	    // Local
-            String suffix = suffixFor(obj);
-    	    String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
-    	    File tmp = new File(context.getExternalCacheDir(), fname);
-    	    if (!tmp.exists()) {
-    	        try {
-    	            InputStream is = url.openConnection().getInputStream();
-        	        OutputStream out = new FileOutputStream(tmp);
+        try {
+            // Remote
+            Uri remoteUri = uriForContent(ip, obj.getString(OBJ_LOCAL_URI));
+            URL url = new URL(remoteUri.toString());
+            if (DBG)
+                Log.d(TAG, "Attempting to pull file " + remoteUri);
+
+            if (!localFile.exists()) {
+                try {
+                    InputStream is = url.openConnection().getInputStream();
+                    OutputStream out = new FileOutputStream(localFile);
                     byte[] buf = new byte[1024];
                     int len;
                     while ((len = is.read(buf)) > 0) {
                         out.write(buf, 0, len);
                     }
                     out.close();
-    	        } catch (IOException e) {
-	                if (tmp.exists()) {
-	                    tmp.delete();
-	                }
-    	            throw e;
-    	        }
-    	    }
-    	    return Uri.parse("file://" + tmp.getAbsolutePath());
-	    } catch (JSONException e) {
-	        return null;
-	    } catch (NoSuchAlgorithmException e) {
-	        return null;
-	    }
-	}
+                } catch (IOException e) {
+                    if (localFile.exists()) {
+                        localFile.delete();
+                    }
+                    throw e;
+                }
+            }
+            return Uri.fromFile(localFile);
+        } catch (JSONException e) {
+            return null;
+        }
+    }
 
 	private static String suffixFor(JSONObject obj) {
 	    if (obj.has(OBJ_MIME_TYPE)) {
@@ -487,6 +502,20 @@ public class ContentCorral {
         return "tmp";
     }
 
+	private static File localFileForContent(Context context, JSONObject obj) {
+	    try {
+	    Uri remoteUri = uriForContent(
+                obj.getString(Contact.ATTR_LAN_IP), obj.getString(OBJ_LOCAL_URI));
+
+        String suffix = suffixFor(obj);
+        String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
+        return new File(context.getExternalCacheDir(), fname);
+	    } catch (Exception e) {
+	        Log.e(TAG, "Error looking up file name", e);
+	        return null;
+	    }
+	}
+
 	private static String suffixForType(String type) {
 	    if (type == null) {
 	        return null;
@@ -501,25 +530,16 @@ public class ContentCorral {
 	}
 
     public static boolean fileAvailableLocally(Context context, long contactId, JSONObject obj) {
-	    try {
-    	    String localIp = getLocalIpAddress();
-            String ip = obj.getString(Contact.ATTR_LAN_IP);
-            if (localIp != null && localIp.equals(ip)) {
+        try {
+            if (contactId == Contact.MY_ID) {
                 return true;
             }
-    
-            // Remote
-            Uri remoteUri = uriForContent(
-                    obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
 
             // Local
-            String suffix = suffixFor(obj);
-            String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
-            File tmp = new File(context.getExternalCacheDir(), fname);
-            return tmp.exists();
-	    } catch (Exception e) {
-	        return false;
-	    }
+            return localFileForContent(context, obj).exists();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 	private static class HashUtils {
