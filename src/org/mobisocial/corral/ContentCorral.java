@@ -37,13 +37,15 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 
 public class ContentCorral {
     public static final String OBJ_MIME_TYPE = "mimeType";
+    public static final String OBJ_LOCAL_URI = "localUri";
+
 	private static final int SERVER_PORT = 8224;
 	private static final String TAG = "ContentCorral";
 	private static final boolean DBG = true;
 	private AcceptThread mAcceptThread;
 	private Context mContext;
 
-	public static final boolean CONTENT_CORRAL_ENABLED = false;
+	public static final boolean CONTENT_CORRAL_ENABLED = true;
 
 	public ContentCorral(Context context) {
 	    mContext = context;
@@ -416,28 +418,40 @@ public class ContentCorral {
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
 	}
 
+	/**
+	 * Synchronized method that retrieves content by any possible transport,
+	 * and returns a uri representing it locally. This method blocks until the
+	 * file is available locally, or it has been determined that the file cannot
+	 * currently be fetched.
+	 */
 	public static Uri fetchContent(Context context, long contactId, JSONObject obj)
 	        throws IOException {
-	    if (!obj.has(PictureObj.LOCAL_URI)) {
+	    if (!obj.has(OBJ_LOCAL_URI)) {
+	        if (DBG) Log.d(TAG, "no local uri for obj.");
 	        return null;
 	    }
 	    if (contactId == Contact.MY_ID) {
+	        if (DBG) Log.d(TAG, "its me!");
 	        try {
-	            return Uri.parse(obj.getString(PictureObj.LOCAL_URI));
+	            return Uri.parse(obj.getString(OBJ_LOCAL_URI));
 	        } catch (JSONException e) {
 	            Log.e(TAG, "json exception getting local uri", e);
 	            return null;
 	        }
 	    }
 
+	    // TODO: ipv6 compliance.
+	    // TODO: Try multiple ip endpoints; multi-sourced download; torrent-style sharing
+	    // (mobile, distributed CDN)
 	    String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
 	    if (ip == null) {
+	        Log.d(TAG, "No known ip for user.");
 	        return null;
 	    }
 
 	    try {
 	        // Remote
-	        Uri remoteUri = uriForContent(ip, obj.getString(PictureObj.LOCAL_URI));
+	        Uri remoteUri = uriForContent(ip, obj.getString(OBJ_LOCAL_URI));
     	    URL url = new URL(remoteUri.toString());
             if (DBG) Log.d(TAG, "Attempting to pull file " + remoteUri);
 
@@ -510,7 +524,7 @@ public class ContentCorral {
     
             // Remote
             Uri remoteUri = uriForContent(
-                    obj.getString(Contact.ATTR_LAN_IP), obj.getString(PictureObj.LOCAL_URI));
+                    obj.getString(Contact.ATTR_LAN_IP), obj.getString(OBJ_LOCAL_URI));
 
             // Local
             String suffix = suffixFor(obj);

@@ -85,7 +85,7 @@ public class ImageViewerActivity extends Activity {
                 final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
                 final long contactId = mIntent.getLongExtra("contactId", -1);
                 if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-                    if (content.has(Contact.ATTR_LAN_IP)) {
+                    if (content.has(ContentCorral.OBJ_LOCAL_URI)) {
                         // TODO: this is a proof-of-concept.
                         new Thread() {
                             public void run() {
@@ -96,6 +96,14 @@ public class ImageViewerActivity extends Activity {
                                     Log.d(TAG, "Trying to go HD...");
                                     final Uri fileUri = ContentCorral
                                             .fetchContent(ImageViewerActivity.this, contactId, content);
+                                    if (fileUri == null) {
+                                        try {
+                                            Log.d(TAG, "Failed to go HD for " + content.getString(ContentCorral.OBJ_LOCAL_URI));
+                                        } catch (JSONException e) {
+                                            Log.d(TAG, "Failed to go HD for " + content);
+                                        }
+                                        return;
+                                    }
                                     Log.d(TAG, "Opening HD file " + fileUri);
 
                                     InputStream is = getContentResolver().openInputStream(fileUri);
