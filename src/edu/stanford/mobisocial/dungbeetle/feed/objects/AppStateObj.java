@@ -1,6 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -37,7 +40,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
-@Deprecated
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = true;
@@ -101,7 +103,8 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
@@ -165,7 +168,8 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     }
 
 	@Override
-	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+	public void activate(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
 	    if (DBG) Log.d(TAG, "activating " + content);
 	    Intent launch = getLaunchIntent(context, content);
 
@@ -184,7 +188,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	        Log.d(TAG, "using child feed");
 	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
 	    } else {
-	        Log.d(TAG, "using main feed");
+	        Log.d(TAG, "using obj feed");
 	        appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
 	    }
 	    String arg = content.optString(ARG);

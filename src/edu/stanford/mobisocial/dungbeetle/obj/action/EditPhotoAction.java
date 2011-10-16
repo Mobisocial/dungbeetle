@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 
 import org.json.JSONException;
@@ -38,11 +39,11 @@ import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
  *
  */
 public class EditPhotoAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    @Override
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
 
         ((InstrumentedActivity)context).doActivityForResult(
-                new EditCallout(context, feedUri, contactId, objData, raw, hash));
+                new EditCallout(context, obj));
     }
 
     @Override
@@ -66,17 +67,16 @@ public class EditPhotoAction extends ObjAction {
         final Uri mHdUri;
         final long mHash;
 
-        public EditCallout(Context context, Uri feedUri, long contactId, JSONObject json,
-                byte[] raw, long hash) {
-            mHash = hash;
-            mJson = json;
-            mRaw = raw;
+        public EditCallout(Context context, DbObj obj) {
+            mHash = obj.getHash();
+            mJson = obj.getJson();
+            mRaw = obj.getRaw();
             mContext = context;
-            mFeedUri = feedUri;
+            mFeedUri = obj.getContainingFeed().getUri();
             Uri hd = null;
-            if (ContentCorral.fileAvailableLocally(context, contactId, json)) {
+            if (ContentCorral.fileAvailableLocally(context, obj)) {
                 try {
-                    hd = ContentCorral.fetchContent(context, contactId, json);
+                    hd = ContentCorral.fetchContent(context, obj);
                 } catch (IOException e) {}
             }
             mHdUri = hd;

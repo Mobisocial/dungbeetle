@@ -3,6 +3,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
@@ -148,8 +151,10 @@ public class PictureObj extends DbEntryHandler
         return base;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
-		if(raw == null) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+		if (raw == null) {
 			Pair<JSONObject, byte[]> p = splitRaw(content);
 			content = p.first;
 			raw = p.second;
@@ -171,11 +176,14 @@ public class PictureObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+    public void activate(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
+	    byte[] raw = obj.getRaw();
+	    String senderId = obj.getSender().getId(); 
 	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageViewerActivity.class);
 	    intent.putExtra("obj", content.toString());
-	    intent.putExtra("contactId", contactId);
+	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
 	    if (raw != null) {
 	        intent.putExtra("bytes", raw);
 	    }

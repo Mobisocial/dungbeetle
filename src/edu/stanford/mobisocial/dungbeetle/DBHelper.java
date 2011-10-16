@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,6 +31,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
@@ -38,6 +41,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQuery;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
@@ -49,13 +53,13 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -72,6 +76,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
+    private ObjHandler mModifiedHandler;
 
 	public DBHelper(Context context) {
 		super(
@@ -651,9 +656,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 }
             }
 
-            DbEntryHandler typeInfo = DbObjects.getObjHandler(json);
-            FeedModifiedObjHandler mFeedModifiedObjHandler = new FeedModifiedObjHandler(this);
-            mFeedModifiedObjHandler.handleObj(mContext, Feed.uriForName(feedName), typeInfo, json, objId);
+            Uri objUri = DbObject.uriForObj(objId);
+            mContext.getContentResolver().registerContentObserver(objUri, false, new ModificationObserver(mContext, objId));
             return objId;
         }
         catch(Exception e) {
@@ -666,13 +670,14 @@ public class DBHelper extends SQLiteOpenHelper {
 
     long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw){
         try{
+            long objId = getNextId();
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
             long timestamp = json.getLong(DbObjects.TIMESTAMP);
             String feedName = json.getString(DbObjects.FEED_NAME);
             String type = json.getString(DbObjects.TYPE);
             String appId = json.getString(DbObjects.APP_ID);
             ContentValues cv = new ContentValues();
-            cv.put(DbObject._ID, getNextId());
+            cv.put(DbObject._ID, objId);
             cv.put(DbObject.APP_ID, appId);
             cv.put(DbObject.FEED_NAME, feedName);
             cv.put(DbObject.CONTACT_ID, contactId);
@@ -692,32 +697,28 @@ public class DBHelper extends SQLiteOpenHelper {
             	throw new RuntimeException("Messasge size is too large for sending");
             long newObjId = getWritableDatabase().insertOrThrow(DbObject.TABLE, null, cv);
 
-            ContentResolver resolver = mContext.getContentResolver();
-            Cursor c = getFeedDependencies(feedName);
-            try {
-	            while (c.moveToNext()) {
-	                resolver.notifyChange(Feed.uriForName(c.getString(0)), null);
-	            }
-	
-	            if (json.has(DbObjects.TARGET_HASH)) {
-	                long hashA = json.optLong(DbObjects.TARGET_HASH);
-	                long idA = objIdForHash(hashA);
-	                String relation;
-	                if (json.has(DbObjects.TARGET_RELATION)) {
-	                    relation = json.optString(DbObjects.TARGET_RELATION);
-	                } else {
-	                    relation = DbRelation.RELATION_PARENT;
-	                }
-	                if (idA == -1) {
-	                    Log.e(TAG, "No objId found for hash " + hashA);
-	                } else {
-	                    addObjRelation(idA, newObjId, relation);
-	                }
-	            }
-            } finally {
-            	c.close();
+            String notifyName = feedName;
+            if (json.has(DbObjects.TARGET_HASH)) {
+                long hashA = json.optLong(DbObjects.TARGET_HASH);
+                long idA = objIdForHash(hashA);
+                notifyName = feedName + ":" + hashA;
+                String relation;
+                if (json.has(DbObjects.TARGET_RELATION)) {
+                    relation = json.optString(DbObjects.TARGET_RELATION);
+                } else {
+                    relation = DbRelation.RELATION_PARENT;
+                }
+                if (idA == -1) {
+                    Log.e(TAG, "No objId found for hash " + hashA);
+                } else {
+                    addObjRelation(idA, newObjId, relation);
+                }
             }
-            return seqId;
+
+            ContentResolver resolver = mContext.getContentResolver();
+            DungBeetleContentProvider.notifyDependencies(this, resolver, notifyName);
+            updateObjModification(App.instance().getMusubi().objForId(newObjId));
+            return objId;
         }
         catch(Exception e){
             if (DBG) Log.e(TAG, "Error adding object by json.", e);
@@ -1572,4 +1573,28 @@ public class DBHelper extends SQLiteOpenHelper {
 		}
 	}
 
+	private class ModificationObserver extends ContentObserver {
+	    final long mObjId;
+	    final Context mContext;
+        public ModificationObserver(Context context, long objId) {
+            super(new Handler(context.getMainLooper()));
+            mContext = context;
+            mObjId = objId;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            mContext.getContentResolver().unregisterContentObserver(this);
+            DbObj obj = App.instance().getMusubi().objForId(mObjId);
+            updateObjModification(obj);
+        }
+	}
+
+	void updateObjModification(DbObj obj) {
+	    // Lazy loading
+        if (mModifiedHandler == null) {
+            mModifiedHandler = new FeedModifiedObjHandler(DBHelper.this);
+        }
+        mModifiedHandler.handleObj(mContext, DbObjects.forType(obj.getType()), obj);
+	}
  }

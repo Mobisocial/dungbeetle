@@ -4,7 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 
 public class DbContactAttributes /* extends DbTable */ {
@@ -22,9 +21,9 @@ public class DbContactAttributes /* extends DbTable */ {
         return new String[] { "INTEGER PRIMARY KEY", "INTEGER", "TEXT", "TEXT" };
     }
 
-    public static void update(Context context, Contact contact, String attr, String value) {
+    public static void update(Context context, long contactId, String attr, String value) {
         ContentValues values = new ContentValues();
-        values.put(CONTACT_ID, contact.id);
+        values.put(CONTACT_ID, contactId);
         values.put(ATTR_NAME, attr);
         values.put(ATTR_VALUE, value);
 
@@ -34,7 +33,7 @@ public class DbContactAttributes /* extends DbTable */ {
         try {
             String[] columns = { _ID };
             String selection = CONTACT_ID + " = ? AND " + ATTR_NAME + " = ?";
-            String[] selectionArgs = new String[] { Long.toString(contact.id), attr };
+            String[] selectionArgs = new String[] { Long.toString(contactId), attr };
             String groupBy = null;
             String having = null;
             String orderBy = null;

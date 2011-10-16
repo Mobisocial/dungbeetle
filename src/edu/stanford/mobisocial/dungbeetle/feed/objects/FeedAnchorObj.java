@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -41,9 +43,10 @@ public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler 
         return obj;
     }
 
-    public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
-            String type, JSONObject obj) {
-        String parentFeedName = obj.optString(PARENT_FEED_NAME);
+    @Override
+    public void handleFeedMessage(Context context, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
+        String parentFeedName = obj.getJson().optString(PARENT_FEED_NAME);
         if (parentFeedName == null) {
             Log.e(TAG, "anchor for feed, but no parent given");
             return;

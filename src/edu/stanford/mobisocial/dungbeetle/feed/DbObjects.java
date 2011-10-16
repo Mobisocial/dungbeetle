@@ -93,8 +93,7 @@ public final class DbObjects {
         return null;
 	}
 
-	public static Activator getActivator(JSONObject json) {
-	    String type = json.optString("type");
+	public static Activator getActivator(String type) {
         for (DbEntryHandler obj : objs) {
             if (obj instanceof Activator && obj.getType().equals(type)) {
                 return (Activator)obj;

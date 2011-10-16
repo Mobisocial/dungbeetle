@@ -1,21 +1,20 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.iface;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 
 public abstract class ObjAction {
     public abstract String getLabel(Context context);
 
-    public abstract void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw);
+    public abstract void onAct(Context context, DbEntryHandler objType, DbObj obj);
 
-    public final void actOn(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objDat, byte[] raw) {
-        onAct(context, feedUri, contactId, objType, hash, objDat, raw);
+    public final void actOn(Context context, DbEntryHandler objType, DbObj obj) {
+        onAct(context, objType, obj);
     }
 
     public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {

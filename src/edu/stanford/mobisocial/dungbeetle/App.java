@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import mobisocial.socialkit.musubi.Musubi;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
@@ -10,9 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ImageCache;
@@ -27,6 +26,7 @@ public class App extends Application {
     private static App instance;
     private SecureRandom secureRandom;
     private Uri mFeedUri;
+    private Musubi mMusubi;
 
     private String mLocalPersonId;
 
@@ -52,6 +52,7 @@ public class App extends Application {
         mScreenState = new ScreenState();
         getApplicationContext().registerReceiver(mScreenState, filter);
         secureRandom = new SecureRandom();
+        mMusubi = Musubi.getInstance(getApplicationContext());
 	}
 
 	@Override
@@ -98,6 +99,10 @@ public class App extends Application {
 
     public Uri getCurrentFeed() {
         return mFeedUri;
+    }
+
+    public Musubi getMusubi() {
+        return mMusubi;
     }
 
     private void resetUnreadMessages(Uri feedUri) {

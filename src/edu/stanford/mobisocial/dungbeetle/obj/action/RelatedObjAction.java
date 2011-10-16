@@ -1,17 +1,18 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
-import edu.stanford.mobisocial.dungbeetle.R;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 
 /**
  * Opens the given Obj using its {@link Activator}.
@@ -20,8 +21,9 @@ import android.net.Uri;
 public class RelatedObjAction extends ObjAction {
 
     @Override
-    public void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
+        long hash = obj.getHash();
         // TODO:
         /*Intent viewComments = new Intent(Intent.ACTION_VIEW);
         viewComments.setDataAndType(objUri, DbObject.MIME_TYPE);

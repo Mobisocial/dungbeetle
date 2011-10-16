@@ -1,6 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
-import org.json.JSONObject;
 
+import mobisocial.socialkit.SignedObj;
 import android.content.Context;
 
 /**
@@ -8,6 +8,5 @@ import android.content.Context;
  * on in a feed for deeper interaction.
  */
 public interface Activator {
-	public void activate(Context context, long contactId, JSONObject content,
-	        byte[] raw);
+	public void activate(Context context, SignedObj obj);
 }

@@ -9,6 +9,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
@@ -28,7 +30,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
@@ -80,69 +81,66 @@ public class ImageViewerActivity extends Activity {
             } catch (JSONException e) {}
         }
         
-        if (mIntent.hasExtra("obj")) {
-            try {
-                final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
-                final long contactId = mIntent.getLongExtra("contactId", -1);
-                if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-                    if (content.has(ContentCorral.OBJ_LOCAL_URI)) {
-                        // TODO: this is a proof-of-concept.
-                        new Thread() {
-                            public void run() {
+        if (mIntent.hasExtra("objHash")) {
+            if (!ContentCorral.CONTENT_CORRAL_ENABLED) {
+                return;
+            }
+
+            long objHash = mIntent.getLongExtra("objHash", -1);
+            final DbObj obj = App.instance().getMusubi().objForHash(objHash);
+            final JSONObject json = obj.getJson();
+            if (json.has(ContentCorral.OBJ_LOCAL_URI)) {
+                // TODO: this is a proof-of-concept.
+                new Thread() {
+                    public void run() {
+                        try {
+                            if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, obj)) {
+                                toast("Trying to go HD...");
+                            }
+                            Log.d(TAG, "Trying to go HD...");
+                            final Uri fileUri = ContentCorral
+                                    .fetchContent(ImageViewerActivity.this, obj);
+                            if (fileUri == null) {
                                 try {
-                                    if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, contactId, content)) {
-                                        toast("Trying to go HD...");
-                                    }
-                                    Log.d(TAG, "Trying to go HD...");
-                                    final Uri fileUri = ContentCorral
-                                            .fetchContent(ImageViewerActivity.this, contactId, content);
-                                    if (fileUri == null) {
-                                        try {
-                                            Log.d(TAG, "Failed to go HD for " + content.getString(ContentCorral.OBJ_LOCAL_URI));
-                                        } catch (JSONException e) {
-                                            Log.d(TAG, "Failed to go HD for " + content);
-                                        }
-                                        return;
-                                    }
-                                    Log.d(TAG, "Opening HD file " + fileUri);
-
-                                    InputStream is = getContentResolver().openInputStream(fileUri);
-                                    BitmapFactory.Options options = new BitmapFactory.Options();
-                                    options.inSampleSize = 4;
-
-                                    Matrix matrix = new Matrix();
-                                    float rotation = PhotoTaker.rotationForImage(ImageViewerActivity.this, fileUri);
-                                    if (rotation != 0f) {
-                                        matrix.preRotate(rotation);
-                                    }
-                                    bitmap = BitmapFactory.decodeStream(is, null, options);
-
-                                    int width = bitmap.getWidth();
-                                    int height = bitmap.getHeight();
-                                    bitmap = Bitmap.createBitmap(
-                                            bitmap, 0, 0, width, height, matrix, true);
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            im.setImageBitmap(bitmap);
-                                        }
-                                    });
-                                } catch (IOException e) {
-                                    toast("Failed to go HD");
-                                    Log.e(TAG, "Failed to get hd content", e);
-                                    // continue
+                                    Log.d(TAG, "Failed to go HD for " + json.getString(ContentCorral.OBJ_LOCAL_URI));
+                                } catch (JSONException e) {
+                                    Log.d(TAG, "Failed to go HD for " + json);
                                 }
-                            };
-                        }.start();
-                    }
-                }
-            } catch (JSONException e) {
-                Toast.makeText(this, "Could not load image.", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Error loading image", e);
+                                return;
+                            }
+                            Log.d(TAG, "Opening HD file " + fileUri);
+
+                            InputStream is = getContentResolver().openInputStream(fileUri);
+                            BitmapFactory.Options options = new BitmapFactory.Options();
+                            options.inSampleSize = 4;
+
+                            Matrix matrix = new Matrix();
+                            float rotation = PhotoTaker.rotationForImage(ImageViewerActivity.this, fileUri);
+                            if (rotation != 0f) {
+                                matrix.preRotate(rotation);
+                            }
+                            bitmap = BitmapFactory.decodeStream(is, null, options);
+
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            bitmap = Bitmap.createBitmap(
+                                    bitmap, 0, 0, width, height, matrix, true);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    im.setImageBitmap(bitmap);
+                                }
+                            });
+                        } catch (IOException e) {
+                            toast("Failed to go HD");
+                            Log.e(TAG, "Failed to get hd content", e);
+                            // continue
+                        }
+                    };
+                }.start();
             }
         }
 	}
-
 	
     private final static int SAVE = 0;
     private final static int SET_PROFILE = 1;

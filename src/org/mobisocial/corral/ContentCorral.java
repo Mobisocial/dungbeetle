@@ -18,6 +18,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.DbUser;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,10 +30,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -242,7 +245,6 @@ public class ContentCorral {
                 }
 
                 in = mContext.getContentResolver().openInputStream(requestPath);
-                String filename = "img.jpg";
                 mmOutStream.write(header("HTTP/1.1 200 OK"));
                 mmOutStream.write(header("Content-Type: "
                         + mContext.getContentResolver().getType(requestPath)));
@@ -424,16 +426,18 @@ public class ContentCorral {
      * is available locally, or it has been determined that the file cannot
      * currently be fetched.
      */
-    public static Uri fetchContent(Context context, long contactId, JSONObject obj)
+    public static Uri fetchContent(Context context, SignedObj obj)
             throws IOException {
-        if (!obj.has(OBJ_LOCAL_URI)) {
-            if (DBG)
+        if (!obj.getJson().has(OBJ_LOCAL_URI)) {
+            if (DBG) {
                 Log.d(TAG, "no local uri for obj.");
+            }
             return null;
         }
-        if (contactId == Contact.MY_ID) {
+        String localId = App.instance().getLocalPersonId();
+        if (localId.equals(obj.getSender().getId())) {
             try {
-                return Uri.parse(obj.getString(OBJ_LOCAL_URI));
+                return Uri.parse(obj.getJson().getString(OBJ_LOCAL_URI));
             } catch (JSONException e) {
                 Log.e(TAG, "json exception getting local uri", e);
                 return null;
@@ -449,7 +453,10 @@ public class ContentCorral {
         // TODO: Try multiple ip endpoints; multi-sourced download;
         // torrent-style sharing
         // (mobile, distributed CDN)
-        String ip = DbContactAttributes.getAttribute(context, contactId, Contact.ATTR_LAN_IP);
+        DbUser user = App.instance().getMusubi().userForGlobalId(obj.getContainingFeed().getUri(),
+                obj.getSender().getId());
+        String ip = DbContactAttributes.getAttribute(context, user.getLocalId(),
+                Contact.ATTR_LAN_IP);
         if (ip == null) {
             Log.d(TAG, "No known ip for user.");
             return null;
@@ -457,7 +464,7 @@ public class ContentCorral {
 
         try {
             // Remote
-            Uri remoteUri = uriForContent(ip, obj.getString(OBJ_LOCAL_URI));
+            Uri remoteUri = uriForContent(ip, obj.getJson().getString(OBJ_LOCAL_URI));
             URL url = new URL(remoteUri.toString());
             if (DBG)
                 Log.d(TAG, "Attempting to pull file " + remoteUri);
@@ -485,36 +492,20 @@ public class ContentCorral {
         }
     }
 
-	private static String suffixFor(JSONObject obj) {
-	    if (obj.has(OBJ_MIME_TYPE)) {
-	        String suffix = suffixForType(obj.optString(OBJ_MIME_TYPE));
-	        if (suffix != null) {
-	            return suffix;
-	        }
-	    }
+    private static File localFileForContent(Context context, SignedObj obj) {
+        try {
+            JSONObject json = obj.getJson();
+            Uri remoteUri = uriForContent(json.getString(Contact.ATTR_LAN_IP),
+                    json.getString(OBJ_LOCAL_URI));
 
-	    // TODO: safe to remove.
-        if (PictureObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
-            return "jpg";
-        } else if (VideoObj.TYPE.equals(obj.optString(DbObjects.TYPE))) {
-            return "3gp";
+            String suffix = suffixForType(json.optString(OBJ_MIME_TYPE));
+            String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
+            return new File(context.getExternalCacheDir(), fname);
+        } catch (Exception e) {
+            Log.e(TAG, "Error looking up file name", e);
+            return null;
         }
-        return "tmp";
     }
-
-	private static File localFileForContent(Context context, JSONObject obj) {
-	    try {
-	    Uri remoteUri = uriForContent(
-                obj.getString(Contact.ATTR_LAN_IP), obj.getString(OBJ_LOCAL_URI));
-
-        String suffix = suffixFor(obj);
-        String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
-        return new File(context.getExternalCacheDir(), fname);
-	    } catch (Exception e) {
-	        Log.e(TAG, "Error looking up file name", e);
-	        return null;
-	    }
-	}
 
 	private static String suffixForType(String type) {
 	    if (type == null) {
@@ -529,8 +520,11 @@ public class ContentCorral {
 	    return null;
 	}
 
-    public static boolean fileAvailableLocally(Context context, long contactId, JSONObject obj) {
+    public static boolean fileAvailableLocally(Context context, SignedObj obj) {
         try {
+            DbUser dbUser = App.instance().getMusubi().userForGlobalId(
+                    obj.getContainingFeed().getUri(), obj.getSender().getId());
+            long contactId = dbUser.getLocalId();
             if (contactId == Contact.MY_ID) {
                 return true;
             }

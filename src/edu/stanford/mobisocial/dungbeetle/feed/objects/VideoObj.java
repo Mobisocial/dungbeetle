@@ -3,6 +3,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.User;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
@@ -22,7 +26,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -114,7 +117,10 @@ public class VideoObj extends DbEntryHandler
         return base;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+
 		if(raw == null) {
 			Pair<JSONObject, byte[]> p = splitRaw(content);
 			content = p.first;
@@ -137,12 +143,14 @@ public class VideoObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(final Context context, final long contactId, final JSONObject content, byte[] raw) {
+    public void activate(final Context context, final SignedObj obj) {
+	    JSONObject content = obj.getJson();
 	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
+	        User sender = obj.getSender();
 	        Log.d(TAG, "Corraling video");
-	        if (ContentCorral.fileAvailableLocally(context, contactId, content)) {
+	        if (ContentCorral.fileAvailableLocally(context, obj)) {
 	            try {
-	                Uri contentUri = ContentCorral.fetchContent(context, contactId, content);
+	                Uri contentUri = ContentCorral.fetchContent(context, obj);
 	                startViewer(context, contentUri);
                 } catch (IOException e) {
                     Log.e(TAG, "The corral tricked me", e);
@@ -153,7 +161,7 @@ public class VideoObj extends DbEntryHandler
 	                @Override
 	                public void run() {
 	                    try {
-                            Uri contentUri = ContentCorral.fetchContent(context, contactId, content);
+                            Uri contentUri = ContentCorral.fetchContent(context, obj);
                             startViewer(context, contentUri);
                         } catch (IOException e) {
                             Log.e(TAG, "Failed to corral", e);

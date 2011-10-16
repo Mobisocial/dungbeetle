@@ -7,6 +7,8 @@ import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
+import mobisocial.socialkit.Obj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -89,7 +91,7 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
 
 
     @Override
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
         TextView valueTV = new TextView(context);
         valueTV.setText("I'm here!");
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

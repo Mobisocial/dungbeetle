@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -20,7 +22,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
-import android.net.Uri;
 import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
@@ -125,16 +126,22 @@ ORDER BY _id ASC
             
         }
 	
-        public void onAct(Context context, Uri feedUri, long contactId,
-                DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+        public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
         DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
+        JSONObject objData = obj.getJson();
         
         //TODO: this cursor really need to be closed somewhere!!!  it may be but its sketchy
         //TODO: holy frickin hell its sketch... slutty code, plus it pulls the full body in as well
         //it should maybe load an objid list and then fetch each voice obj individually.
-        
-        c = helper.getReadableDatabase().query(DbObject.TABLE, null, DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject._ID+" >= (SELECT "+DbObject._ID+" FROM "+DbObject.TABLE+" WHERE "+DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject.SEQUENCE_ID+"=? AND "+DbObject.TIMESTAMP+"=?)", new String[]{objData.optString("feedName"), objData.optString("feedName"), objData.optString("sequenceId"), objData.optString("timestamp")}, null, null, DbObject._ID + " ASC");
+
+        String query = DbObject.FEED_NAME + "= ? AND "+DbObject.TYPE+"='voice' AND " + DbObject._ID +
+                " >= (SELECT " + DbObject._ID + " FROM " + DbObject.TABLE + " WHERE " +
+                DbObject.FEED_NAME + "= ? AND " + DbObject.TYPE + "='voice' AND " +
+                DbObject.SEQUENCE_ID + "= ? AND " + DbObject.TIMESTAMP+"= ?)";
+        String[] queryParams = new String[]{objData.optString("feedName"), objData.optString("feedName"), objData.optString("sequenceId"), objData.optString("timestamp")};
+        c = helper.getReadableDatabase().query(DbObject.TABLE, null, query, queryParams,
+                null, null, DbObject._ID + " ASC");
         
         c.moveToFirst();
 

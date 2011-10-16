@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
 import android.content.Context;
 import android.view.ViewGroup;
+import mobisocial.socialkit.Obj;
+
 import org.json.JSONObject;
 
 /**
@@ -8,5 +10,5 @@ import org.json.JSONObject;
  * visible entry in a feed.
  */
 public interface FeedRenderer {
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions);
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions);
 }

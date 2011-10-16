@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -24,10 +26,11 @@ import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
  *
  */
 public class ExportPhotoAction extends ObjAction {
-    public void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
-        String b64Bytes = objData.optString(PictureObj.DATA);
+    @Override
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        byte[] raw = obj.getRaw();
         if (raw == null) {
+            String b64Bytes = obj.getJson().optString(PictureObj.DATA);
         	raw = FastBase64.decode(b64Bytes);
         }
         OutputStream outStream = null;

@@ -16,6 +16,8 @@ public class AppState extends DbObject {
     public static final String EXTRA_APPLICATION_IMG = "mobisocial.db.THUMBNAIL_IMAGE";
     public static final String EXTRA_APPLICATION_TEXT = "mobisocial.db.THUMBNAIL_TEXT";
     public static final String EXTRA_FEED_URI = Musubi.EXTRA_FEED_URI;
+    public static final String EXTRA_OBJ_HASH = "mobisocial.db.OBJ_HASH";
+
     public AppState(JSONObject json) {
         super(AppStateObj.TYPE, json);
     }

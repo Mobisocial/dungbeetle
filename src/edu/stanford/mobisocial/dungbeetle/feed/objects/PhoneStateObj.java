@@ -1,8 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import mobisocial.socialkit.Obj;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.telephony.TelephonyManager;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -11,9 +15,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class PhoneStateObj extends DbEntryHandler implements FeedRenderer {
 
@@ -44,7 +45,8 @@ public class PhoneStateObj extends DbEntryHandler implements FeedRenderer {
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+        JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         valueTV.setText(asText(content));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

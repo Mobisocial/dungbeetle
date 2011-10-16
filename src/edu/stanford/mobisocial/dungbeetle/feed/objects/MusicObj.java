@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,7 +10,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -66,7 +68,8 @@ public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator 
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+        JSONObject content = obj.getJson();
         LinearLayout container = new LinearLayout(context);
         container.setLayoutParams(CommonLayouts.FULL_WIDTH);
         container.setOrientation(LinearLayout.HORIZONTAL);
@@ -103,7 +106,8 @@ public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator 
     }
 
     @Override
-    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+    public void activate(Context context, SignedObj obj) {
+        JSONObject content = obj.getJson();
         if (content.has(URL)) {
             Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));

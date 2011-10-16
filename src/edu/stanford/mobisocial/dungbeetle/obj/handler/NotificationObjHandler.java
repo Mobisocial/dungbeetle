@@ -1,7 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.ui.FeedListActivity;
+import edu.stanford.mobisocial.dungbeetle.ui.ViewContactActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
@@ -28,9 +28,10 @@ public class NotificationObjHandler extends ObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, Contact contact,
-            long sequenceId, DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
-        if (contact.id == Contact.MY_ID) {
+    public void handleObj(Context context, DbEntryHandler typeInfo, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
+        long senderId = obj.getSender().getLocalId();
+        if (senderId == Contact.MY_ID) {
             return;
         }
 
@@ -44,11 +45,12 @@ public class NotificationObjHandler extends ObjHandler {
         
         switch(Feed.typeOf(feedUri)) {
         	case Feed.FEED_FRIEND: {
-                Intent launch = contact.intentForViewing(context);
+        	    Intent launch = new Intent().setClass(context, ViewContactActivity.class);
+                launch.putExtra("contact_id", senderId);
                 PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
                         launch, PendingIntent.FLAG_CANCEL_CURRENT);
                 (new PresenceAwareNotify(context)).notify("New Musubi message",
-                        "New Musubi message", "From " + contact.name,
+                        "New Musubi message", "From " + obj.getSender().getName(),
                         contentIntent);
         		break;
         	}

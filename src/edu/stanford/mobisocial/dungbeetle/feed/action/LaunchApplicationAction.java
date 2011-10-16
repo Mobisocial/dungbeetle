@@ -3,9 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -21,18 +19,16 @@ import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -146,10 +142,6 @@ public class LaunchApplicationAction implements FeedAction {
         }
     }
 
-    public interface OnAppSelected {
-        public void onAppSelected(String pkg, String arg, Intent localLaunch);
-    }
-
     @Override
     public boolean isActive() {
         return true;
@@ -168,12 +160,12 @@ public class LaunchApplicationAction implements FeedAction {
 
         long creatorId = mIdent.userPublicKeyString().hashCode();
         DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
-        Helpers.sendToFeed(context, obj, feedUri);
+        Uri objUri = Helpers.sendToFeed(context, obj, feedUri);
+        context.getContentResolver().registerContentObserver(objUri, false,
+                new ObjObserver(context, new AppReferenceObj(), objUri));
 
         mIdent.close();
         mHelper.close();
-
-        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 
     /**
@@ -214,7 +206,7 @@ public class LaunchApplicationAction implements FeedAction {
                 DbObject obj = AppObj.fromPickerResult(mContext, action, pkgName, className, data);
                 Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
                 mContext.getContentResolver().registerContentObserver(objUri, false,
-                        new ObjObserver(mContext, objUri, new Handler(mContext.getMainLooper())));
+                        new ObjObserver(mContext, new AppObj(), objUri));
             }
         }
     }
@@ -222,25 +214,21 @@ public class LaunchApplicationAction implements FeedAction {
     private class ObjObserver extends ContentObserver {
         private final Uri mUri;
         private final Context mContext;
-        public ObjObserver(Context context, Uri uri, Handler h) {
-            super(h);
+        private final Activator mActivator;
+
+        public ObjObserver(Context context, Activator activator, Uri uri) {
+            super(new Handler(context.getMainLooper()));
             mUri = uri;
             mContext = context;
+            mActivator = activator;
         }
 
         @Override
         public void onChange(boolean selfChange) {
-            Log.d(TAG, "NOTICED THAT WE NOW HAVE AN ENCODING FOR " + mUri);
             mContext.getContentResolver().unregisterContentObserver(this);
+            Long objId = Long.parseLong(mUri.getLastPathSegment());
+            DbObj obj = App.instance().getMusubi().objForId(objId);
+            mActivator.activate(mContext, obj);
         }
-    }
-
-    private void launchLocally(DbObject obj, Context context) {
-        DbEntryHandler h = DbObjects.forType(AppObj.TYPE);
-        if (!(h instanceof Activator)) {
-            Log.e(TAG, "What! " + AppObj.TYPE + " isn't an activator!");
-            return;
-        }
-        ((Activator)h).activate(context, Contact.MY_ID, obj.getJson(), null);
     }
 }

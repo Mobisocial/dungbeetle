@@ -1,10 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
@@ -50,9 +51,9 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		}
 	}
 	@Override
-	public void handleFeedMessage(Context context, Uri feedUri, long contactId,
-			long sequenceId, String type, JSONObject obj) {
-		long hash = obj.optLong(HASH);
+	public void handleFeedMessage(Context context, DbObj obj) {
+	    Uri feedUri = obj.getContainingFeed().getUri();
+		long hash = obj.getJson().optLong(HASH);
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
 			if (dbh.getObjSenderId(hash) == Contact.MY_ID) {

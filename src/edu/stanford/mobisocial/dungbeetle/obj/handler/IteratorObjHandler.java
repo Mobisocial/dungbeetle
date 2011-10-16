@@ -3,12 +3,9 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
-import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 public class IteratorObjHandler extends ObjHandler {
     private final List<IObjHandler> mHandlers = new ArrayList<IObjHandler>();
@@ -18,10 +15,9 @@ public class IteratorObjHandler extends ObjHandler {
     }
 
     @Override
-    public synchronized void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-            DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
+    public void handleObj(Context context, DbEntryHandler handler, DbObj obj) {
         for (IObjHandler h : mHandlers) {
-            h.handleObj(context, feedUri, contact, sequenceId, typeInfo, json, raw);
+            h.handleObj(context, handler, obj);
         }
     }
 }

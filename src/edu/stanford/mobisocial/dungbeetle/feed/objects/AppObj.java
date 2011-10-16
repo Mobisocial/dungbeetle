@@ -2,6 +2,9 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import org.json.JSONArray;
@@ -25,7 +28,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -75,7 +77,6 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
                 Contact contact = annoyingContact.get();
                 participantIds.put(contact.personId);
             } catch (NoValError e) {
-                Log.e(TAG, "its like, maybe maybe maybe ooooh");
                 participantIds.put(Contact.UNKNOWN);
             }
         }
@@ -91,20 +92,23 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     }
 
     @Override
-    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
-        // TODO: This should be a parameter
-        Uri feedUri = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
-        if (DBG) Log.d(TAG, "activating app " + content + " for " + feedUri);
+    public void activate(Context context, SignedObj obj) {
+        if (DBG) {
+            Uri feedUri = obj.getContainingFeed().getUri();
+            JSONObject content = obj.getJson();
+            Log.d(TAG, "activating app " + content + " for " + feedUri);
+        }
 
-        Intent launch = getLaunchIntent(context, content, feedUri);
+        Intent launch = getLaunchIntent(context, obj);
         if (!(context instanceof Activity)) {
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(launch);
     }
 
-    public static Intent getLaunchIntent(Context context, JSONObject content, Uri appFeed) {
-
+    public static Intent getLaunchIntent(Context context, SignedObj obj) {
+        JSONObject content = obj.getJson(); 
+        Uri appFeed = obj.getContainingFeed().getUri();
         String action = content.optString(ANDROID_ACTION);
         String pkgName = content.optString(ANDROID_PACKAGE_NAME);
         String className = content.optString(ANDROID_CLASS_NAME);
@@ -114,6 +118,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         // TODO: feed for related objs, not parent feed
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+        launch.putExtra(AppState.EXTRA_OBJ_HASH, obj.getHash());
         // TODO: Remove
         launch.putExtra("obj", content.toString());
 
@@ -127,9 +132,32 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     }
 
     @Override
-    public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
         boolean rendered = false;
-        AppState ref = new AppState(content);
+
+        if (!(obj instanceof DbObj)) {
+            String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+            if (appName.contains(".")) {
+                appName = appName.substring(appName.lastIndexOf(".") + 1);
+            }
+            String text = "Preparing application " + appName + "...";
+            // TODO: Show Market icon or app icon.
+            TextView valueTV = new TextView(context);
+            valueTV.setText(text);
+            valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+            valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+            frame.addView(valueTV);
+            return;
+        }
+
+        DbObj dbObj = (DbObj) obj;
+        String relatedFeed = dbObj.getContainingFeed().getUri().getLastPathSegment() +
+                ":" + dbObj.getHash();
+        JSONObject latest = App.instance().getMusubi().getFeed(
+                Feed.uriForName(relatedFeed)).getLatestObj();
+        AppState ref = new AppState(latest);
         String thumbnail = ref.getThumbnailImage();
         if (thumbnail != null) {
             rendered = true;
@@ -167,7 +195,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         if (!rendered) {
-            String appName = content.optString(ANDROID_PACKAGE_NAME);
+            String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
             if (appName.contains(".")) {
                 appName = appName.substring(appName.lastIndexOf(".") + 1);
             }

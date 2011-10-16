@@ -1,17 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
-import android.util.Pair;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import org.json.JSONException;
+import mobisocial.socialkit.Obj;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -50,7 +50,8 @@ public class IMObj extends DbEntryHandler implements FeedRenderer {
             "IM from " + from.name, "\"" + msg + "\"", contentIntent);
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions){
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         valueTV.setText("IM:" + content.optString(TEXT));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
