@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 import java.util.ArrayList;
 import java.util.List;
 
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -13,8 +14,9 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.ContentObserver;
 import android.net.Uri;
-import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -22,18 +24,16 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class LaunchApplicationAction implements FeedAction {
 
@@ -142,10 +142,6 @@ public class LaunchApplicationAction implements FeedAction {
         }
     }
 
-    public interface OnAppSelected {
-        public void onAppSelected(String pkg, String arg, Intent localLaunch);
-    }
-
     @Override
     public boolean isActive() {
         return true;
@@ -164,29 +160,13 @@ public class LaunchApplicationAction implements FeedAction {
 
         long creatorId = mIdent.userPublicKeyString().hashCode();
         DbObject obj = AppReferenceObj.from(pkg, arg, g.feedName, g.dynUpdateUri, creatorId);
-        Helpers.sendToFeed(context, obj, feedUri);
+        Uri objUri = Helpers.sendToFeed(context, obj, feedUri);
+        context.getContentResolver().registerContentObserver(objUri, false,
+                new ObjObserver(context, new AppReferenceObj(), objUri));
 
         mIdent.close();
         mHelper.close();
-
-        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
     }
-
-    private void launchAppWithMembership(Context context, Uri feedUri, Bundle launchArgs, String[] membership) {
-        // Start new application feed:
-        Group g = Group.create(context);
-        Uri appFeedUri = Feed.uriForName(g.feedName);
-        DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
-        Helpers.sendToFeed(context, anchor, appFeedUri);
-
-        // App reference in parent feed:
-        DbObject obj = AppReferenceObj.forFixedMembership(launchArgs, membership, g.feedName, g.dynUpdateUri);
-        Helpers.sendToFeed(context, obj, feedUri);
-
-        // Kick it off locally:
-        new AppReferenceObj().activate(context, Contact.MY_ID, obj.getJson(), null);
-    }
-    
 
     /**
      * Callout used to select members for a new mutliplayer session
@@ -218,43 +198,37 @@ public class LaunchApplicationAction implements FeedAction {
         @Override
         public void handleResult(int resultCode, Intent data) {
             if (resultCode == Activity.RESULT_OK) {
-                Bundle launch = new Bundle();
-                launch.putString(AppReferenceObj.PACKAGE_NAME, mResolveInfo.activityInfo.packageName);
-                launch.putString(AppReferenceObj.OBJ_INTENT_ACTION, mAction);
-                long[] contactIds = data.getLongArrayExtra("contacts");
+                String action = mAction;
+                String pkgName = mResolveInfo.activityInfo.packageName;
+                String className = mResolveInfo.activityInfo.name;
 
-                /**
-                 * TODO:
-                 * 
-                 * Identity Firewall Goes Here.
-                 * Membership details can be randomized in one of many ways.
-                 * The app (scrabble) may see games a set of gamers play together.
-                 * The app may always see random ids
-                 * The app may always see stable ids
-                 * 
-                 * Can also permute the cursor and member order.
-                 */
-
-                String[] participantIds = new String[contactIds.length + 1];
-                
-                participantIds[0] = App.instance().getLocalPersonId();
-                try {
-                    int i = 1;
-                    for (long id : contactIds) {
-                        Maybe<Contact> annoyingContact = Contact.forId(mContext, id);
-                        Contact contact = annoyingContact.get();
-                        participantIds[i++] = contact.personId;
-                    }
-                } catch (NoValError e) {
-                    Log.e(TAG, "please, Please get rid of the maybe.");
-                    Toast.makeText(mContext, "Error getting app membership.",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Send notice of the new application session, and join:
-                launchAppWithMembership(mContext, mFeedUri, launch, participantIds);
+                // Create and share new application instance
+                DbObject obj = AppObj.fromPickerResult(mContext, action, pkgName, className, data);
+                Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
+                mContext.getContentResolver().registerContentObserver(objUri, false,
+                        new ObjObserver(mContext, new AppObj(), objUri));
             }
+        }
+    }
+
+    private class ObjObserver extends ContentObserver {
+        private final Uri mUri;
+        private final Context mContext;
+        private final Activator mActivator;
+
+        public ObjObserver(Context context, Activator activator, Uri uri) {
+            super(new Handler(context.getMainLooper()));
+            mUri = uri;
+            mContext = context;
+            mActivator = activator;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            mContext.getContentResolver().unregisterContentObserver(this);
+            Long objId = Long.parseLong(mUri.getLastPathSegment());
+            DbObj obj = App.instance().getMusubi().objForId(objId);
+            mActivator.activate(mContext, obj);
         }
     }
 }

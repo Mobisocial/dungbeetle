@@ -10,7 +10,14 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
  */
 public abstract class DbEntryHandler {
     public abstract String getType();
-    public abstract void handleDirectMessage(Context context, Contact from, JSONObject msg);
+
+    /**
+     * Handle a message that has been received from the network and is
+     * intended for the local user directly.
+     */
+    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
+        
+    }
 
     public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
         return objData;

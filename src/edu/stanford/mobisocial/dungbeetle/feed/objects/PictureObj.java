@@ -3,6 +3,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
@@ -38,8 +41,6 @@ public class PictureObj extends DbEntryHandler
     public static final String TYPE = "picture";
     public static final String DATA = "data";
 
-    public static final String MIME_TYPE = "mimeType";
-    public static final String LOCAL_URI = "localUri";
     // TODO: This is a hack, with many ways to fix. For example,
     // it can be used with its timestamp and an instance variable to
     // track a users' latest ip address.
@@ -127,8 +128,8 @@ public class PictureObj extends DbEntryHandler
                     // TODO: Security breach.
                     // Send to trusted users only.
                     base.put(Contact.ATTR_LAN_IP, localIp);
-                    base.put(LOCAL_URI, imageUri.toString());
-                    base.put(MIME_TYPE, cr.getType(imageUri));
+                    base.put(ContentCorral.OBJ_LOCAL_URI, imageUri.toString());
+                    base.put(ContentCorral.OBJ_MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }
@@ -150,8 +151,10 @@ public class PictureObj extends DbEntryHandler
         return base;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
-		if(raw == null) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+		if (raw == null) {
 			Pair<JSONObject, byte[]> p = splitRaw(content);
 			content = p.first;
 			raw = p.second;
@@ -173,11 +176,14 @@ public class PictureObj extends DbEntryHandler
 	}
 
 	@Override
-    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+    public void activate(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
+	    byte[] raw = obj.getRaw();
+	    String senderId = obj.getSender().getId(); 
 	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageViewerActivity.class);
 	    intent.putExtra("obj", content.toString());
-	    intent.putExtra("contactId", contactId);
+	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
 	    if (raw != null) {
 	        intent.putExtra("bytes", raw);
 	    }

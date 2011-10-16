@@ -3,7 +3,8 @@ package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONException;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -42,7 +43,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -54,7 +54,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
@@ -262,59 +261,32 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     void showMenuForObj(int position) {
     	//this first cursor is the internal one
         Cursor cursor = (Cursor)mObjects.getItem(position);
-    	cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            		DbObject.TYPE,
-            		DbObject.HASH,
-            		DbObject.CONTACT_ID
-            	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(cursor.getLong(0))}, null);
-    	try {
-	        if(!cursor.moveToFirst())
-	        	return;
-	        
-	        final String type = cursor.getString(2);
-	        final String jsonSrc = cursor.getString(0);
-	        final byte[] raw = cursor.getBlob(1);
-	        final long hash = cursor.getLong(3);
-	        final long contactId = cursor.getLong(4);
+        long objId = cursor.getLong(0);
 
-	        final JSONObject json;
-	        try {
-	            json = new JSONObject(jsonSrc);
-	        } catch (JSONException e) {
-	            Log.e(TAG, "Error building dialog", e);
-	            return;
-	        }
-	    	
-	        FragmentTransaction ft = getFragmentManager().beginTransaction();
-	        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
-	        if (prev != null) {
-	            ft.remove(prev);
-	        }
-	        ft.addToBackStack(null);
-	
-	        // Create and show the dialog.
-	        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(
-	                mFeedUri, contactId, type, hash, json, raw);
-	        newFragment.show(ft, "dialog");
-    	} finally {
-    		cursor.close();
-    	}
+        DbObj obj = App.instance().getMusubi().objForId(objId);
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+
+        // Create and show the dialog.
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(obj);
+        newFragment.show(ft, "dialog");
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {
         String mType;
-        JSONObject mObj;
+        private DbObj mObj;
+        private JSONObject mJson;
 		byte[] mRaw;
 		Uri mFeedUri;
 		long mHash;
 		long mContactId;
 
-        public static ObjMenuDialogFragment newInstance(Uri feedUri, long contactId, String type, long hash, JSONObject obj, byte[] raw) {
-            return new ObjMenuDialogFragment(feedUri, contactId, type, hash, obj, raw);
+        public static ObjMenuDialogFragment newInstance(DbObj obj) {
+            return new ObjMenuDialogFragment(obj);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -322,30 +294,21 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
             
         }
 
-        private ObjMenuDialogFragment(Uri feedUri, long contactId, String type, long hash,
-                JSONObject obj, byte[] raw) {
-            mFeedUri = feedUri;
-            mType = type;
-            mObj = obj;
-            mRaw = raw;
-            mHash = hash;
-            mContactId = contactId;
+        private ObjMenuDialogFragment(DbObj obj) {
+            loadFromObj(obj);
         }
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             if (savedInstanceState != null) {
-                mFeedUri = savedInstanceState.getParcelable("feedUri");
-                mType = savedInstanceState.getString("type");
-                try {
-                    mObj = new JSONObject(savedInstanceState.getString("obj"));
-                } catch (JSONException e) {}
+                long objId = savedInstanceState.getLong("objId");
+                loadFromObj(App.instance().getMusubi().objForId(objId));
             }
 
             final DbEntryHandler dbType = DbObjects.forType(mType);
             final List<ObjAction> actions = new ArrayList<ObjAction>();
             for (ObjAction action : ObjActions.getObjActions()) {
-                if (action.isActive(getActivity(), dbType, mObj)) {
+                if (action.isActive(getActivity(), dbType, mJson)) {
                     actions.add(action);
                 }
             }
@@ -359,7 +322,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Log.d(TAG, "getting for " + getActivity());
-                            actions.get(which).actOn(getActivity(), mFeedUri, mContactId, dbType, mHash, mObj, mRaw);
+                            actions.get(which).actOn(getActivity(), dbType, mObj);
                         }
                     }).create();
         }
@@ -367,9 +330,17 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         @Override
         public void onSaveInstanceState(Bundle bundle) {
             super.onSaveInstanceState(bundle);
-            bundle.putString("type", mType);
-            bundle.putString("obj", mObj.toString());
-            bundle.putParcelable("feedUri", mFeedUri);
+            bundle.putLong("objId", mObj.getLocalId());
+        }
+
+        private void loadFromObj(DbObj obj) {
+            mFeedUri = obj.getContainingFeed().getUri();
+            mType = obj.getType();
+            mObj = obj;
+            mJson = obj.getJson();
+            mRaw = obj.getRaw();
+            mHash = obj.getHash();
+            mContactId = obj.getSender().getLocalId();
         }
     }
 

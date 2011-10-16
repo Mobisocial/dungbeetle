@@ -1,6 +1,8 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -23,9 +25,11 @@ public class ForwardObjAction extends ObjAction {
     private static DbEntryHandler mType;
     private Context mContext;
 
-    public void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    @Override
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
         mContext = context;
+        JSONObject objData = obj.getJson();
+        byte[] raw = obj.getRaw();
     	objData = objType.mergeRaw(objData, raw);
         holdObj(context, objType, objData);
         ((InstrumentedActivity)context).doActivityForResult(mTargetSelected);

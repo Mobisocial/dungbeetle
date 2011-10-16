@@ -1,16 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.ObjHandler;
 
@@ -84,8 +81,7 @@ public class DropMessagesPresence extends FeedPresence {
         }
 
         @Override
-        public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-                DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
+        public void handleObj(Context context, DbEntryHandler typeInfo, DbObj obj) {
         }
     }
 }

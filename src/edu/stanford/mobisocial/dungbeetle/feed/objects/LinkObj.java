@@ -2,6 +2,9 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,10 +14,8 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.text.method.BaseMovementMethod;
 import android.text.util.Linkify;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -82,7 +83,8 @@ public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
 	    return false;
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         String title;
         if (content.has(TITLE)) {
@@ -104,7 +106,8 @@ public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
     }
 	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
     @Override
-    public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+    public void activate(Context context, SignedObj obj) {
+        JSONObject content = obj.getJson();
     	//linkify should have picked it up already but if we are in TV mode we
     	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);

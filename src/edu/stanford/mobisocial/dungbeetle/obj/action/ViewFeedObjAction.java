@@ -1,6 +1,8 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -13,8 +15,8 @@ import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ViewFeedObjAction extends ObjAction {
     @Override
-    public void onAct(Context context, Uri feedUri, long contactId,
-            DbEntryHandler objType, long hash, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        JSONObject objData = obj.getJson();
         if (objData.has(DbObject.CHILD_FEED_NAME)) {
             Uri appFeed = Feed.uriForName(objData.optString(DbObject.CHILD_FEED_NAME));
             Intent viewFeed = new Intent(Intent.ACTION_VIEW);

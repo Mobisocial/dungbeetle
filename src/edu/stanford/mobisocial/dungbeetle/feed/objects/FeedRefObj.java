@@ -18,6 +18,9 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
@@ -51,7 +54,10 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
         return obj;
     }
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -63,8 +69,8 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
 	}
 
 	@Override
-	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
-	    Feed feedRef = new Feed(content);
+	public void activate(Context context, SignedObj obj) {
+	    Feed feedRef = new Feed(obj.getJson());
 	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {
 	        Group g = mg.get();

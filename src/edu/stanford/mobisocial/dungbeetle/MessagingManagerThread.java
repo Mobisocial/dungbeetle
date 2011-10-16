@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -65,16 +67,12 @@ public class MessagingManagerThread extends Thread {
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
-    private Handler mMainThreadHandler;
-    private final FeedModifiedObjHandler mFeedModifiedObjHandler;
     private final MessageDropHandler mMessageDropHandler;
 
     public MessagingManagerThread(final Context context){
         mContext = context;
-        mMainThreadHandler = new Handler(context.getMainLooper());
         mHelper = DBHelper.getGlobal(context);
         mIdent = new DBIdentityProvider(mHelper);
-        mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
         mMessageDropHandler = new MessageDropHandler();
 
         ConnectionStatus status = new ConnectionStatus(){
@@ -159,7 +157,7 @@ public class MessagingManagerThread extends Thread {
             final byte[] raw = extracted_data;
 
             if (contact.isKnown()) {
-                long sequenceID;
+                long objId;
                 final Contact realContact = contact.get();
                 long contactId = realContact.id;
                 if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
@@ -169,7 +167,7 @@ public class MessagingManagerThread extends Thread {
                     return;
                 }
 
-				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
+                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -188,13 +186,12 @@ public class MessagingManagerThread extends Thread {
                  */
 
                 // TODO: framework code.
-                getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
-                        DbObjects.forType(type), obj, raw);
+                DbObj signedObj = App.instance().getMusubi().objForId(objId);
+                getFromNetworkHandlers().handleObj(mContext, DbObjects.forType(type), signedObj);
 
                 // Per-object handlers:
                 if (objHandler instanceof FeedMessageHandler) {
-                    ((FeedMessageHandler) objHandler).handleFeedMessage(
-                            mContext, feedUri, contactId, sequenceID, type, obj);
+                    ((FeedMessageHandler) objHandler).handleFeedMessage(mContext, signedObj);
                 }
                 
             } else {
@@ -214,7 +211,6 @@ public class MessagingManagerThread extends Thread {
             mFromNetworkHandlers.addHandler(Push2TalkPresence.getInstance());
             mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
             mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
-            mFromNetworkHandlers.addHandler(mFeedModifiedObjHandler);
             mFromNetworkHandlers.addHandler(new ProfileScanningObjHandler());
         }
         return mFromNetworkHandlers;
@@ -297,8 +293,7 @@ public class MessagingManagerThread extends Thread {
                         Log.e(TAG, "bad json", e);
                     }
                     if (json != null) {
-                        String type = json.optString(DbObjects.TYPE);
-                        /*if you udpate latest feed here then there is a race condition between
+                        /*if you update latest feed here then there is a race condition between
                          * when you put a message into your db,
                          * when you actually have a connection to send the message (which is here)
                          * when other people send you messages
@@ -309,8 +304,8 @@ public class MessagingManagerThread extends Thread {
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
                         DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
-                            ((FeedMessageHandler) h).handleFeedMessage(
-                                    mContext, feedUri, Contact.MY_ID, -1, type, json);
+                            DbObj signedObj = App.instance().getMusubi().objForId(objId);
+                            ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
                         }
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));

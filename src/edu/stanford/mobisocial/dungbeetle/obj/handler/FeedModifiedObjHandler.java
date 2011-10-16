@@ -2,8 +2,8 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import java.util.Date;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -19,16 +19,17 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
  * Updates the database's "last modified" fields.
  *
  */
-public class FeedModifiedObjHandler extends DatabaseObjHandler {
+public class FeedModifiedObjHandler extends ObjHandler {
+    final DBHelper mHelper;
 
     public FeedModifiedObjHandler(DBHelper helper) {
-        super(helper);
+        mHelper = helper;
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, DbEntryHandler typeInfo,
-            JSONObject json, long objId) {
-
+    public void handleObj(Context context, DbEntryHandler typeInfo, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
+        long objId = obj.getLocalId();
         if (!(typeInfo instanceof FeedRenderer)) {
             return;
         }
@@ -44,7 +45,7 @@ public class FeedModifiedObjHandler extends DatabaseObjHandler {
 	                unread = Contact.NUM_UNREAD + " + 1";
 	            }
 
-	            getDBHelper().getWritableDatabase().execSQL(
+	            mHelper.getWritableDatabase().execSQL(
 	                    "UPDATE " + Contact.TABLE +
 	                    " SET " + Contact.NUM_UNREAD + " = " + unread +
 	                    " , " + Contact.LAST_OBJECT_ID + " = " + objId +
@@ -67,7 +68,7 @@ public class FeedModifiedObjHandler extends DatabaseObjHandler {
 	                unread = Group.NUM_UNREAD + " + 1";
 	            }
 
-	            getDBHelper().getWritableDatabase().execSQL(
+	            mHelper.getWritableDatabase().execSQL(
 	                    "UPDATE " + Group.TABLE +
 	                    " SET " + Group.NUM_UNREAD + " = " + unread +
 	                    " , " + Group.LAST_OBJECT_ID + " = " + objId +

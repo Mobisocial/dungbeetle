@@ -1,8 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
@@ -18,6 +16,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CursorAdapter;
 import android.widget.Gallery;
 import android.widget.SpinnerAdapter;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -88,19 +87,12 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mAdapter.getItem(position);
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        long contactId = c.getLong(c.getColumnIndexOrThrow(DbObject.CONTACT_ID));
-        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
-        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-        try{
-            JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = DbObjects.getActivator(obj);
-            if(activator != null){
-                activator.activate(getActivity(), contactId, obj, raw);
-            }
-        }
-        catch(JSONException e){
-            Log.e(TAG, "Couldn't parse obj.", e);
+        DbObj obj = App.instance().getMusubi().objForCursor(c);
+        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getJson());
+
+        Activator activator = DbObjects.getActivator(obj.getType());
+        if(activator != null){
+            activator.activate(getActivity(), obj);
         }
     }
 }

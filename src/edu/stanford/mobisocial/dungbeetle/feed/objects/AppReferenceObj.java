@@ -1,7 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,7 +22,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -134,11 +136,13 @@ public class AppReferenceObj extends DbEntryHandler
             contentIntent);
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+	    byte[] raw = obj.getRaw();
 	    // TODO: hack to show object history in app feeds
-        JSONObject appState = getAppState(context, content);
+        JSONObject appState = getAppStateForChildFeed(context, content);
         if (appState != null) {
-            mAppStateObj.render(context, frame, appState, raw, allowInteractions);
+            mAppStateObj.render(context, frame, obj, allowInteractions);
             return;
         } else {
 	        String appName = content.optString(PACKAGE_NAME);
@@ -158,7 +162,8 @@ public class AppReferenceObj extends DbEntryHandler
     }
 
 	@Override
-	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
+	public void activate(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
 	    if (DBG) Log.d(TAG, "activating from appReferenceObj: " + content);
 
 	    if (!content.has(DbObject.CHILD_FEED_NAME)) {
@@ -167,7 +172,8 @@ public class AppReferenceObj extends DbEntryHandler
             return;
         }
 
-	    JSONObject appContent = getAppState(context, content);
+	    Log.w(TAG, "Using old-school app launch");
+	    JSONObject appContent = getAppStateForChildFeed(context, content);
 	    if (appContent == null) {
 	        Intent launch = AppStateObj.getLaunchIntent(context, content);
 	        if (!(context instanceof Activity)) {
@@ -183,11 +189,11 @@ public class AppReferenceObj extends DbEntryHandler
                 appContent.put(DbObject.CHILD_FEED_NAME, content.get(DbObject.CHILD_FEED_NAME));
             } catch (JSONException e) {
             }
-            mAppStateObj.activate(context, Contact.MY_ID, appContent, raw);
+            mAppStateObj.activate(context, null);
 	    }
 	}
 
-   private JSONObject getAppState(Context context, JSONObject appReference) {
+   private JSONObject getAppStateForChildFeed(Context context, JSONObject appReference) {
         if (DBG) Log.w(TAG, "returning app state for " + appReference.toString());
         if (appReference.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
@@ -218,15 +224,15 @@ public class AppReferenceObj extends DbEntryHandler
      * TODO, work out observers vs. players.
      */
     @Override
-    public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
-            String type, JSONObject obj) {
-        if (obj.has(DbObject.CHILD_FEED_NAME)) {
-            String feedName = obj.optString(DbObject.CHILD_FEED_NAME);
+    public void handleFeedMessage(Context context, DbObj obj) {
+        JSONObject content = obj.getJson();
+        if (content.has(DbObject.CHILD_FEED_NAME)) {
+            String feedName = content.optString(DbObject.CHILD_FEED_NAME);
             DBHelper helper = DBHelper.getGlobal(context);
             Maybe<Group> mg = helper.groupByFeedName(feedName);
             helper.close();
-            if (!mg.isKnown() && obj.has(GROUP_URI)) {
-                Uri gUri = Uri.parse(obj.optString(GROUP_URI));
+            if (!mg.isKnown() && content.has(GROUP_URI)) {
+                Uri gUri = Uri.parse(content.optString(GROUP_URI));
                 Group.join(context, gUri);
             }
         }

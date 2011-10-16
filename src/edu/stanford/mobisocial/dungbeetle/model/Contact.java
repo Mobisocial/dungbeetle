@@ -22,6 +22,7 @@ public class Contact implements Serializable{
 
     public static final String TABLE = "contacts";
     public static final long MY_ID = -666;
+    public static final String UNKNOWN = "UNKNOWN";
     public static final String _ID = "_id";
     public static final String NAME = "name";
     public static final String PUBLIC_KEY = "public_key";
@@ -156,12 +157,6 @@ public class Contact implements Serializable{
 
     public void view(Activity foreground) {
         view(foreground, id);
-    }
-
-    public Intent intentForViewing(Context context) {
-        Intent launch = new Intent().setClass(context, ViewContactActivity.class);
-        launch.putExtra("contact_id", id);
-        return launch;
     }
 
     public Uri getFeedUri() {

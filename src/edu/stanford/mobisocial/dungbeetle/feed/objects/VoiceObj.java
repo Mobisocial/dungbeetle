@@ -8,6 +8,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -82,7 +85,7 @@ public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator,
         return obj;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
 		ImageView imageView = new ImageView(context);
 		imageView.setImageResource(R.drawable.play);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
@@ -100,13 +103,13 @@ public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator,
     }
 	
 	@Override
-    public void activate(final Context context, long contactId, final JSONObject content, final byte[] raw) {
+    public void activate(final Context context, final SignedObj obj) {
 	    Runnable r = new Runnable() {
 	        @Override
 	        public void run() {
-	        	byte[] bytes = raw;
+	        	byte[] bytes = obj.getRaw();
 	    		if(bytes == null) {
-	    			Pair<JSONObject, byte[]> p = splitRaw(content);
+	    			Pair<JSONObject, byte[]> p = splitRaw(obj.getJson());
 //	    			content = p.first;
 	    			bytes = p.second;
 	    		}

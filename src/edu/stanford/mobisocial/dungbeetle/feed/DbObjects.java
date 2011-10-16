@@ -8,6 +8,7 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
@@ -54,12 +55,12 @@ public final class DbObjects {
     private static final List<DbEntryHandler> objs = new ArrayList<DbEntryHandler>();
     private static UnknownObj mUnknownObjHandler = new UnknownObj();
     static {
+        objs.add(new AppObj());
         objs.add(new AppStateObj());
         objs.add(new AppReferenceObj());
 		objs.add(new SubscribeReqObj());
 		objs.add(new IMObj());
 		objs.add(new InviteToWebSessionObj());
-		objs.add(new AppReferenceObj());
         objs.add(new InviteToSharedAppFeedObj());
         objs.add(new InviteToGroupObj());
         objs.add(new LinkObj());
@@ -92,8 +93,7 @@ public final class DbObjects {
         return null;
 	}
 
-	public static Activator getActivator(JSONObject json) {
-	    String type = json.optString("type");
+	public static Activator getActivator(String type) {
         for (DbEntryHandler obj : objs) {
             if (obj instanceof Activator && obj.getType().equals(type)) {
                 return (Activator)obj;

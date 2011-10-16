@@ -205,11 +205,11 @@ public class Helpers {
         c.getContentResolver().insert(url, values); 
     }
     
-    public static void sendToFeed(Context c, DbObject obj, Uri feed) {
+    public static Uri sendToFeed(Context c, DbObject obj, Uri feed) {
         ContentValues values = new ContentValues();
         values.put(DbObject.JSON, obj.getJson().toString());
         values.put(DbObject.TYPE, obj.getType());
-        c.getContentResolver().insert(feed, values); 
+        return c.getContentResolver().insert(feed, values);
     }
 
     /**

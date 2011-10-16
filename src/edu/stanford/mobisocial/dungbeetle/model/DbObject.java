@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.MemObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -37,10 +42,9 @@ import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
-public class DbObject {
+public class DbObject implements Obj {
     private static final String TAG = "dbObject";
     private static final boolean DBG = true;
 
@@ -62,19 +66,32 @@ public class DbObject {
 
 	public static final String RAW = "raw";
 
-    protected final String mType;
+	protected final String mType;
     protected JSONObject mJson;
+    protected byte[] mRaw;
+
     private static OnClickViewProfile sViewProfileAction;
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
+    public DbObject(String type, JSONObject json, byte[] raw) {
+        mType = type;
+        mJson = json;
+        mRaw = raw;
+    }
     public DbObject(String type, JSONObject json) {
         mType = type;
         mJson = json;
+        mRaw = null;
     }
 
     private DbObject(Cursor c) {
         mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
         String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+        try {
+            mRaw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
+        } catch (IllegalArgumentException e) {
+            mRaw = null;
+        }
         try {
             mJson = new JSONObject(jsonStr);
         } catch (JSONException e) {
@@ -98,7 +115,13 @@ public class DbObject {
             return null;
         } 
     }
+
     public static final Uri OBJ_URI = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/obj");
+
+    public static Uri uriForObj(long objId) {
+        return OBJ_URI.buildUpon().appendPath("" + objId).build();
+    }
+
     /**
      * @param v the view to bind
      * @param context standard activity context
@@ -109,16 +132,7 @@ public class DbObject {
     public static void bindView(View v, final Context context, Cursor c, boolean allowInteractions) {
     	//there is probably a utility or should be one that does this
         long objId = c.getLong(0);
-    	Cursor cursor = context.getContentResolver().query(OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            		DbObject.CONTACT_ID,
-            		DbObject.TIMESTAMP,
-            		DbObject.HASH,
-            		DbObject.DELETED,
-            		DbObject.FEED_NAME
-            	},
+    	Cursor cursor = context.getContentResolver().query(OBJ_URI, null,
             	DbObject._ID + " = ?", new String[] {String.valueOf(objId)}, null);
 
     	TextView nameText = (TextView) v.findViewById(R.id.name_text);
@@ -135,13 +149,14 @@ public class DbObject {
 	        	return;
 	        }
 	        
-	        String jsonSrc = cursor.getString(0);
-	        byte[] raw = cursor.getBlob(1);
-	        Long contactId = cursor.getLong(2);
-	        Long timestamp = cursor.getLong(3);
-	        Long hash = cursor.getLong(4);
-	        short deleted = cursor.getShort(5);
-	        String feedName = cursor.getString(6);
+	        String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(JSON));
+	        byte[] raw = cursor.getBlob(cursor.getColumnIndexOrThrow(RAW));
+	        Long contactId = cursor.getLong(cursor.getColumnIndexOrThrow(CONTACT_ID));
+	        Long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(TIMESTAMP));
+	        Long hash = cursor.getLong(cursor.getColumnIndexOrThrow(HASH));
+	        short deleted = cursor.getShort(cursor.getColumnIndexOrThrow(DELETED));
+	        String feedName = cursor.getString(cursor.getColumnIndexOrThrow(FEED_NAME));
+	        String type = cursor.getString(cursor.getColumnIndexOrThrow(TYPE));
 	        Date date = new Date(timestamp);
         	Contact contact = Helpers.getContact(context, contactId);
         	if(contact == null) {
@@ -168,16 +183,23 @@ public class DbObject {
             }
 
             try {
-                JSONObject content = new JSONObject(jsonSrc);
+                JSONObject json = new JSONObject(jsonSrc);
+
+                Obj renderingObj;
+                if (hash == 0) {
+                    renderingObj = new MemObj(type, json, raw);
+                } else {
+                    renderingObj = App.instance().getMusubi().objForCursor(cursor);
+                }
 
                 TextView timeText = (TextView)v.findViewById(R.id.time_text);
                 timeText.setText(RelativeDate.getRelativeDate(date));
 
                 frame.setTag(objId); // TODO: error prone! This is database id
                 frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
-        		FeedRenderer renderer = DbObjects.getFeedRenderer(content);
+        		FeedRenderer renderer = DbObjects.getFeedRenderer(json);
         		if(renderer != null) {
-        			renderer.render(context, frame, content, raw, allowInteractions);
+        			renderer.render(context, frame, renderingObj, allowInteractions);
         		}
 
                 if (!allowInteractions) {
@@ -302,37 +324,10 @@ public class DbObject {
             }
             long objId = (Long)tag;
 
-            Cursor cursor = mContext.getContentResolver().query(DbObject.OBJ_URI,
-                    new String[] { 
-                        DbObject.JSON,
-                        DbObject.RAW,
-                        DbObject.CONTACT_ID
-                    },
-                    DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            try {
-	            if(!cursor.moveToFirst()) {
-	                Log.w(TAG, "clicked unavailable obj");
-	                return;
-	            }
-	            
-	            final String jsonSrc = cursor.getString(0);
-	            final byte[] raw = cursor.getBlob(1);
-	            final long contactId = cursor.getLong(2);
-	            
-	            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-	            try{
-	                JSONObject obj = new JSONObject(jsonSrc);
-	                Activator activator = DbObjects.getActivator(obj);
-	                if(activator != null){
-	                    activator.activate(mContext, contactId, obj, raw);
-	                }
-	            }
-	            catch(JSONException e){
-	                Log.e(TAG, "Couldn't parse obj.", e);
-	            }
-            } finally {
-            	cursor.close();
-            }
+            SignedObj obj = App.instance().getMusubi().objForId(objId);
+            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getJson());
+            Activator activator = DbObjects.getActivator(obj.getType());
+            activator.activate(mContext, obj);
         }
     };
 
@@ -358,51 +353,18 @@ public class DbObject {
                 return false;
             }
             long objId = (Long)v.getTag();
-            Cursor cursor = mContext.getContentResolver().query(DbObject.OBJ_URI,
-                    new String[] { 
-                        DbObject.JSON,
-                        DbObject.RAW,
-                        DbObject.TYPE,
-                        DbObject.FEED_NAME,
-                        DbObject.HASH,
-                        DbObject.CONTACT_ID
-                    },
-                    DbObject._ID + " = ?", new String[] { String.valueOf(objId) }, null);
-            try {
-	            if(!cursor.moveToFirst()) {
-	                return false;
-	            }
-	            
-	            final String jsonSrc = cursor.getString(0);
-	            final byte[] raw = cursor.getBlob(1);
-	            String type = cursor.getString(2);
-	            long hash = cursor.getLong(4);
-	            long contactId = cursor.getLong(5);
-	            Uri feedUri = Feed.uriForName(cursor.getString(3));
-	
-	            if (HomeActivity.DBG) Log.i(TAG, "LongClicked object: " + jsonSrc);
-	            try {
-	                JSONObject obj = new JSONObject(jsonSrc);
-	                createActionDialog(mContext, feedUri, contactId, type, hash, obj, raw).show();
-	            } catch(JSONException e){
-	                Log.e(TAG, "Couldn't parse obj.", e);
-	            }
-	            return false;
-            } finally {
-            	cursor.close();
-            }
-	            
+            DbObj obj = App.instance().getMusubi().objForId(objId);
+            createActionDialog(mContext, obj).show();
+            return false;
         }
     };
 
-    public static Dialog createActionDialog(final Context context, final Uri feedUri,
-            final long contactId, final String type, final long hash, final JSONObject json,
-            final byte[] raw) {
+    public static Dialog createActionDialog(final Context context, final DbObj obj) {
 
-        final DbEntryHandler dbType = DbObjects.forType(type);
+        final DbEntryHandler dbType = DbObjects.forType(obj.getType());
         final List<ObjAction> actions = new ArrayList<ObjAction>();
         for (ObjAction action : ObjActions.getObjActions()) {
-            if (action.isActive(context, dbType, json)) {
+            if (action.isActive(context, dbType, obj.getJson())) {
                 actions.add(action);
             }
         }
@@ -415,8 +377,13 @@ public class DbObject {
                 .setItems(actionLabels, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        actions.get(which).actOn(context, feedUri, contactId, dbType, hash, json, raw);
+                        actions.get(which).actOn(context, dbType, obj);
                     }
                 }).create();
+    }
+
+    @Override
+    public byte[] getRaw() {
+        return mRaw;
     }
 }

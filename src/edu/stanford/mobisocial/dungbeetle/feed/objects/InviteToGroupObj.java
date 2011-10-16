@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import android.net.Uri;
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.app.PendingIntent;
@@ -71,8 +74,8 @@ public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Ac
 		}
 	}
 	@Override
-	public void render(Context context, ViewGroup frame, JSONObject content,
-			byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
 
         TextView valueTV = new TextView(context);
         valueTV.setText("Join me in '" +content.optString(GROUP_NAME)+"'");
@@ -82,9 +85,10 @@ public class InviteToGroupObj extends DbEntryHandler implements FeedRenderer, Ac
         valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
         frame.addView(valueTV);
 	}
+
 	@Override
-	public void activate(Context context, long contactId, JSONObject content, byte[] raw) {
-		// TODO Auto-generated method stub
+	public void activate(Context context, SignedObj obj) {
+		JSONObject content = obj.getJson();
 		String groupName = content.optString(GROUP_NAME);
 		Uri dynUpdateUri = Uri.parse(content.optString(DYN_UPDATE_URI));
 

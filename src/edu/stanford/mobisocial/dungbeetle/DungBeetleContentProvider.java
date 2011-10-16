@@ -31,7 +31,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.mobisocial.db";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
-	static final boolean DBG = false;
+	static final boolean DBG = true;
 	public static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
@@ -85,7 +85,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 	    ContentResolver resolver = getContext().getContentResolver();
-        if(DBG) Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
+        if (DBG) Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
 
         final String appId = getCallingActivityId();
         if (appId == null) {
@@ -101,12 +101,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             try {
             	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
 
-                mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
                     json);
-
+                Uri objUri = DbObject.uriForObj(objId);
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
-                return Uri.parse(uri.toString());
+                resolver.notifyChange(objUri, null);
+                return objUri;
             } catch(JSONException e){
                 return null;
             }
@@ -151,11 +152,13 @@ public class DungBeetleContentProvider extends ContentProvider {
                     json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
                 }
 
-                mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
                         json);
-                notifyDependencies(resolver, feedName);
+                Uri objUri = DbObject.uriForObj(objId);
+                resolver.notifyChange(objUri, null);
+                notifyDependencies(mHelper, resolver, segs.get(1));
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
-                return uri;
+                return objUri;
             }
             catch(JSONException e) {
                 return null;
@@ -399,7 +402,13 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "obj")) {
+        if (match(uri, "obj", ".+")) {
+            // objects by database id
+            String objId = uri.getLastPathSegment();
+            selectionArgs = DBHelper.concat(selectionArgs, new String[] { objId });
+            selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
+            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+        } else if(match(uri, "obj")) {
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
@@ -533,9 +542,15 @@ public class DungBeetleContentProvider extends ContentProvider {
         return null; 
     }
 
-    private void notifyDependencies(ContentResolver resolver, String feedName) {
-        resolver.notifyChange(Feed.uriForName(feedName), null);
-        Cursor c = mHelper.getFeedDependencies(feedName);
+    static void notifyDependencies(DBHelper helper, ContentResolver resolver, String feedName) {
+        Uri feedUri = Feed.uriForName(feedName);
+        Log.d(TAG, "notifying dependencies of  + feedUri");
+        resolver.notifyChange(feedUri, null);
+        if (feedName.contains(":")) {
+            feedName = feedName.split(":")[0];
+            resolver.notifyChange(Feed.uriForName(feedName), null);
+        }
+        Cursor c = helper.getFeedDependencies(feedName);
         try {
 	        while (c.moveToNext()) {
 	            Uri uri = Feed.uriForName(c.getString(0));
