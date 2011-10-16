@@ -26,6 +26,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -157,7 +158,6 @@ public class VideoObj extends DbEntryHandler
 
 	@Override
     public void activate(final Context context, final SignedObj obj) {
-	    JSONObject content = obj.getJson();
 	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
 	        User sender = obj.getSender();
 	        Log.d(TAG, "Corraling video");

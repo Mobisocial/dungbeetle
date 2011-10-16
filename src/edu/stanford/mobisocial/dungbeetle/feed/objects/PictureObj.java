@@ -177,12 +177,11 @@ public class PictureObj extends DbEntryHandler
 
 	@Override
     public void activate(Context context, SignedObj obj) {
-	    JSONObject content = obj.getJson();
 	    byte[] raw = obj.getRaw();
 	    String senderId = obj.getSender().getId(); 
 	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageViewerActivity.class);
-	    intent.putExtra("obj", content.toString());
+	    intent.putExtra("objHash", obj.getHash());
 	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
 	    if (raw != null) {
 	        intent.putExtra("bytes", raw);
