@@ -544,7 +544,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     static void notifyDependencies(DBHelper helper, ContentResolver resolver, String feedName) {
         Uri feedUri = Feed.uriForName(feedName);
-        Log.d(TAG, "notifying dependencies of  + feedUri");
+        if (DBG) Log.d(TAG, "notifying dependencies of  " + feedUri);
         resolver.notifyChange(feedUri, null);
         if (feedName.contains(":")) {
             feedName = feedName.split(":")[0];

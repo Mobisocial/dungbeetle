@@ -55,14 +55,14 @@ public class LaunchApplicationAction implements FeedAction {
         final List<ResolveInfo> availableAppInfos = new ArrayList<ResolveInfo>();
         Intent i = new Intent();
 
-        /** multiplayer applications **/
+        /* Multiplayer applications launched with a child feed */
         ArrayList<String> intentActions = new ArrayList<String>();
         List<ResolveInfo> infos;
         i.addCategory(Intent.CATEGORY_LAUNCHER);
 
         i.setAction(Multiplayer.ACTION_MULTIPLAYER);        
         infos = mgr.queryIntentActivities(i, 0);
-        if (DBG) Log.d(TAG, "Queried " + infos.size() + "multiplayer apps.");
+        if (DBG) Log.d(TAG, "Queried " + infos.size() + " multiplayer apps.");
         for (int j = 0; j < infos.size(); j++) {
             intentActions.add(Multiplayer.ACTION_MULTIPLAYER);
         }
@@ -70,20 +70,31 @@ public class LaunchApplicationAction implements FeedAction {
 
         i.setAction(Multiplayer.ACTION_TWO_PLAYERS);
         infos = mgr.queryIntentActivities(i, 0);
-        if (DBG) Log.d(TAG, "Queried " + infos.size() + "two-player apps.");
+        if (DBG) Log.d(TAG, "Queried " + infos.size() + " two-player apps.");
         for (int j = 0; j < infos.size(); j++) {
             intentActions.add(Multiplayer.ACTION_TWO_PLAYERS);
         }
         availableAppInfos.addAll(infos);
-
         final int numNPlayer = availableAppInfos.size();
 
-        /** Negotiate p2p connectivity via receivers **/
+        /* Connected applications get a direct connection to the given feed. */
+        i.setAction(Multiplayer.ACTION_CONNECTED);
+        infos = mgr.queryIntentActivities(i, 0);
+        if (DBG) Log.d(TAG, "Queried " + infos.size() + " connected apps.");
+        for (int j = 0; j < infos.size(); j++) {
+            intentActions.add(Multiplayer.ACTION_CONNECTED);
+        }
+        availableAppInfos.addAll(infos);
+        final int numConnected = availableAppInfos.size();
+        
+        /* Negotiate p2p connectivity via receivers */
         i = new Intent();
         i.setAction("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
         infos = mgr.queryBroadcastReceivers(i, 0);
         availableAppInfos.addAll(infos);
+
+
         if (availableAppInfos.isEmpty()) {
             Toast.makeText(context.getApplicationContext(),
                     "Sorry, couldn't find any compatible apps.", Toast.LENGTH_SHORT).show();
@@ -107,10 +118,18 @@ public class LaunchApplicationAction implements FeedAction {
                     ((InstrumentedActivity)context).doActivityForResult(
                             new MembersSelectedCallout(context, feedUri, actions[item], info));
                     return;
-                } else {
-                    i.setAction("android.intent.action.CONFIGURE");
-                    i.addCategory("android.intent.category.P2P");
+                } else if (item < numConnected) {
+                    // Create and share new application instance
+                    DbObject obj = AppObj.forConnectedApp(context, info);
+                    Uri objUri = Helpers.sendToFeed(context, obj, feedUri);
+                    context.getContentResolver().registerContentObserver(objUri, false,
+                            new ObjObserver(context, new AppObj(), objUri));
+                    return;
                 }
+
+                /* Callback to the application for launch details. */
+                i.setAction("android.intent.action.CONFIGURE");
+                i.addCategory("android.intent.category.P2P");
 
                 BroadcastReceiver rec = new BroadcastReceiver() {
                     public void onReceive(Context c, Intent i) {
@@ -199,11 +218,9 @@ public class LaunchApplicationAction implements FeedAction {
         public void handleResult(int resultCode, Intent data) {
             if (resultCode == Activity.RESULT_OK) {
                 String action = mAction;
-                String pkgName = mResolveInfo.activityInfo.packageName;
-                String className = mResolveInfo.activityInfo.name;
 
                 // Create and share new application instance
-                DbObject obj = AppObj.fromPickerResult(mContext, action, pkgName, className, data);
+                DbObject obj = AppObj.fromPickerResult(mContext, action, mResolveInfo, data);
                 Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
                 mContext.getContentResolver().registerContentObserver(objUri, false,
                         new ObjObserver(mContext, new AppObj(), objUri));
@@ -211,6 +228,11 @@ public class LaunchApplicationAction implements FeedAction {
         }
     }
 
+    /**
+     * If we send an Obj for a new application, we must wait (asynchronously)
+     * for the obj to be signed and sent before interacting with it.
+     *
+     */
     private class ObjObserver extends ContentObserver {
         private final Uri mUri;
         private final Context mContext;

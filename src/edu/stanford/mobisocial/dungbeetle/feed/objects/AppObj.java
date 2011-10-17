@@ -52,9 +52,11 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         return TYPE;
     }
 
-    public static DbObject fromPickerResult(Context context, String action, String pkgName,
-            String className, Intent pickerResult) {
+    public static DbObject fromPickerResult(Context context, String action,
+            ResolveInfo resolveInfo, Intent pickerResult) {
         long[] contactIds = pickerResult.getLongArrayExtra("contacts");
+        String pkgName = resolveInfo.activityInfo.packageName;
+        String className = resolveInfo.activityInfo.name;
 
         /**
          * TODO:
@@ -83,8 +85,33 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         JSONObject json = new JSONObject();
         try {
             json.put(Multiplayer.OBJ_MEMBERSHIP, (participantIds));
+            json.put(ANDROID_ACTION, action);
             json.put(ANDROID_PACKAGE_NAME, pkgName);
             json.put(ANDROID_CLASS_NAME, className);
+        } catch (JSONException e) {
+            Log.d(TAG, "What? Impossible!", e);
+        }
+        return new DbObject(TYPE, json);
+    }
+
+    public static DbObject forConnectedApp(Context context, ResolveInfo info) {
+        /**
+         * TODO:
+         * 
+         * Identity Firewall Goes Here.
+         * Membership details can be randomized in one of many ways.
+         * The app (scrabble) may see games a set of gamers play together.
+         * The app may always see random ids
+         * The app may always see stable ids
+         * 
+         * Can also permute the cursor and member order.
+         */
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put(ANDROID_ACTION, Multiplayer.ACTION_CONNECTED);
+            json.put(ANDROID_PACKAGE_NAME, info.activityInfo.packageName);
+            json.put(ANDROID_CLASS_NAME, info.activityInfo.name);
         } catch (JSONException e) {
             Log.d(TAG, "What? Impossible!", e);
         }
@@ -195,9 +222,21 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         if (!rendered) {
-            String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
-            if (appName.contains(".")) {
-                appName = appName.substring(appName.lastIndexOf(".") + 1);
+            String appName;
+            Intent launch = getLaunchIntent(context, dbObj);
+            List<ResolveInfo> infos = context.getPackageManager().queryIntentActivities(launch, 0);
+            if (infos.size() > 0) {
+                ResolveInfo info = infos.get(0);
+                if (info.activityInfo.labelRes != 0) {
+                    appName = info.activityInfo.loadLabel(context.getPackageManager()).toString();
+                } else {
+                    appName = info.activityInfo.name;
+                }
+            } else {
+                appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+                if (appName.contains(".")) {
+                    appName = appName.substring(appName.lastIndexOf(".") + 1);
+                }
             }
             String text = "New application: " + appName + ".";
             // TODO: Show Market icon or app icon.
