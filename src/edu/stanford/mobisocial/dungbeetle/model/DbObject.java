@@ -203,33 +203,53 @@ public class DbObject implements Obj {
         		}
 
                 if (!allowInteractions) {
+                    v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
                     v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
                 } else {
                     if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
+                        v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
                         v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
                     } else {
-                        TextView attachmentCountButton = (TextView)v.findViewById(R.id.obj_attachments);
+                        ImageView attachmentCountButton = (ImageView)v.findViewById(R.id.obj_attachments_icon);
+                        TextView attachmentCountText = (TextView)v.findViewById(R.id.obj_attachments);
                         attachmentCountButton.setVisibility(View.VISIBLE);
 
                         if (hash == 0) {
                             attachmentCountButton.setVisibility(View.GONE);
                         } else {
                             int color = DbObject.colorFor(hash);
+                            boolean selfPost = false;
                             DBHelper helper = new DBHelper(context);
                             try {
 	                            Cursor attachments = helper.queryRelatedObjs(objId);
 	                            try {
-		                            attachmentCountButton.setText("" + attachments.getCount());
+		                            attachmentCountText.setText("+" + attachments.getCount());
+		                            
+		                            if(attachments.moveToFirst()) {
+			                            while (!attachments.isAfterLast()) {
+			                            	if (attachments.getInt(attachments.getColumnIndex(CONTACT_ID)) == -666) {
+			                            		selfPost = true;
+			                            		break;
+			                            	}
+			                            	attachments.moveToNext();
+			                            	
+			                            }
+		                            }
 	                            } finally {
 	                            	attachments.close();
 	                            }
                             } finally {
 	                            helper.close();
                             }
-                            attachmentCountButton.setBackgroundColor(color);
-                            attachmentCountButton.setTag(R.id.object_entry, hash);
-                            attachmentCountButton.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            attachmentCountButton.setOnClickListener(LikeListener.getInstance(context));
+                            if (selfPost) {
+                            	attachmentCountButton.setImageResource(R.drawable.ic_menu_love_red);
+                            }
+                            else {
+                            	attachmentCountButton.setImageResource(R.drawable.ic_menu_love);
+                            }
+                            attachmentCountText.setTag(R.id.object_entry, hash);
+                            attachmentCountText.setTag(R.id.feed_label, Feed.uriForName(feedName));
+                            attachmentCountText.setOnClickListener(LikeListener.getInstance(context));
                         }
                     }
                 }
