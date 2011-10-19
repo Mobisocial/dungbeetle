@@ -26,7 +26,7 @@ public class DeleteAction extends ObjAction {
         		return;
         	}
         	Helpers.sendToFeeds(context, DeleteObj.TYPE, DeleteObj.json(hash), new Uri[] { feedUri });
-        	dbh.deleteObjByHash(feedUri.toString(), hash);
+        	dbh.deleteObjByHash(feedUri, hash);
         } finally {
         	dbh.close();
         }

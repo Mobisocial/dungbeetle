@@ -856,6 +856,31 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+    private long getFeedLastVisibleId(String feedName) {
+        String[] types = DbObjects.getRenderableTypes();
+        StringBuffer allowed = new StringBuffer();
+        for (String type : types) {
+            allowed.append(",'").append(type).append("'");
+        }
+        String visibleTypes =  DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+        String selection = DbObject.FEED_NAME + " = ?";
+
+        selection = andClauses(selection, visibleTypes);
+        Cursor c = getReadableDatabase().query(DbObject.TABLE, new String[] { DbObject._ID },
+            selection, new String[]{ feedName }, null, null,
+            DbObject.SEQUENCE_ID + " DESC LIMIT 1");
+        try {
+            c.moveToFirst();
+            if(!c.isAfterLast()){
+                long max = c.getLong(0);
+                return max;
+            }
+            return -1;
+        } finally {
+            c.close();
+        }
+    }
+
     public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
             String sortOrder){
 
@@ -978,7 +1003,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
         // Double this because select appears twice in full query
         String[] selectArgs = selectionArgs == null ? 
-            new String[]{} : concat(selectionArgs, selectionArgs);
+            new String[]{} : andArguments(selectionArgs, selectionArgs);
         String orderBy = sortOrder == null ? "" : " ORDER BY " + sortOrder;
         String q = joinWithSpaces("SELECT",projToStr(projection),
                                   "FROM (SELECT ", DbObject.CONTACT_ID, ",",
@@ -1340,7 +1365,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return A + " AND " + B;
     }
 
-    public static String[] concat(String[] A, String[] B) {
+    public static String[] andArguments(String[] A, String[] B) {
         if (A == null) return B;
         if (B == null) return A;
         String[] C = new String[A.length + B.length];
@@ -1546,17 +1571,72 @@ public class DBHelper extends SQLiteOpenHelper {
 		//TODO: limit by contact and add indexes
 		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
 	}
-	public void deleteObjByHash(String feed_name, long hash) {
-		//TODO: limit by feed and add indexes
-		getWritableDatabase().delete(DbObject.TABLE, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+
+	public void deleteObjByHash(Uri feedUri, long hash) {
+	    getWritableDatabase().delete(DbObject.TABLE,
+	            DbObject.HASH + " = ? AND " + DbObject.FEED_NAME + " = ?",
+	            new String[] { String.valueOf(hash), feedUri.getLastPathSegment()});
 	}
-	
-	public void markObjectAsDeleted(long hash) {
-    	ContentValues cv = new ContentValues();
-    	cv.put(DbObject.DELETED, 1);
-		getWritableDatabase().update(DbObject.TABLE, cv, DbObject.HASH + " = ?", new String[] {String.valueOf(hash)});
+
+	public void markOrDeleteFeedObjs(Uri feedUri, long[] hashes) {
+	    StringBuilder hashBuilder = new StringBuilder();
+	    for (long hash : hashes) {
+	        hashBuilder.append(",").append(hash);
+	    }
+	    String hashList = "(" + hashBuilder.substring(1) + ")";
+	    String feedName = feedUri.getLastPathSegment();
+	    String[] selectionArgs = new String[] { Long.toString(Contact.MY_ID), feedName };
+
+	    final String FEED = DbObject.FEED_NAME;
+	    final String CONTACT = DbObject.CONTACT_ID;
+	    final String HASH = DbObject.HASH;
+
+	    getWritableDatabase().delete(DbObject.TABLE,
+	            CONTACT + " != ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
+	            selectionArgs);
+
+	    ContentValues cv = new ContentValues();
+        cv.put(DbObject.DELETED, 1);
+        getWritableDatabase().update(DbObject.TABLE, cv,
+                CONTACT + " = ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
+                selectionArgs);
+
+        /*
+         * Update the feed modification in case the latest obj was deleted.
+         */
+        long objId = getFeedLastVisibleId(feedName);
+        ContentValues modifiedCv = new ContentValues();
+        modifiedCv.put(Group.LAST_UPDATED, new Date().getTime());
+        modifiedCv.put(Group.LAST_OBJECT_ID, objId);
+        int rows = getWritableDatabase().update(Group.TABLE, modifiedCv,
+                Group.FEED_NAME + " = ?", new String[] { feedName });
+        Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+        Log.d(TAG, "Updating obj on " + feedName + " with " + objId + ", set " + rows);
+        mContext.getContentResolver().notifyChange(feedlistUri, null);
 	}
-	
+
+	public void markOrDeleteObjs(long[] hashes) {
+        StringBuilder hashBuilder = new StringBuilder();
+        for (long hash : hashes) {
+            hashBuilder.append(",").append(hash);
+        }
+        String hashList = "(" + hashBuilder.substring(1) + ")";
+        String[] selectionArgs = new String[] { Long.toString(Contact.MY_ID) };
+
+        final String CONTACT = DbObject.CONTACT_ID;
+        final String HASH = DbObject.HASH;
+
+        getWritableDatabase().delete(DbObject.TABLE,
+                CONTACT + " != ? AND " + HASH + " in " + hashList,
+                selectionArgs);
+
+        ContentValues cv = new ContentValues();
+        cv.put(DbObject.DELETED, 1);
+        getWritableDatabase().update(DbObject.TABLE, cv,
+                CONTACT + " = ? AND " + HASH + " in " + hashList,
+                selectionArgs);
+    }
+
 	public long getObjSenderId(long hash) {
 		Cursor c = getReadableDatabase().rawQuery("SELECT " + DbObject.CONTACT_ID + " FROM " +
         		DbObject.TABLE + " WHERE " + DbObject.HASH + " = '" + hash + "'", 
