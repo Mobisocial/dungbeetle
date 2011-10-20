@@ -1578,28 +1578,34 @@ public class DBHelper extends SQLiteOpenHelper {
 	            new String[] { String.valueOf(hash), feedUri.getLastPathSegment()});
 	}
 
-	public void markOrDeleteFeedObjs(Uri feedUri, long[] hashes) {
+	public void markOrDeleteFeedObjs(Uri feedUri, long[] hashes, boolean force) {
 	    StringBuilder hashBuilder = new StringBuilder();
 	    for (long hash : hashes) {
 	        hashBuilder.append(",").append(hash);
 	    }
 	    String hashList = "(" + hashBuilder.substring(1) + ")";
 	    String feedName = feedUri.getLastPathSegment();
-	    String[] selectionArgs = new String[] { Long.toString(Contact.MY_ID), feedName };
 
 	    final String FEED = DbObject.FEED_NAME;
 	    final String CONTACT = DbObject.CONTACT_ID;
 	    final String HASH = DbObject.HASH;
 
-	    getWritableDatabase().delete(DbObject.TABLE,
-	            CONTACT + " != ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
-	            selectionArgs);
+        if (force) {
+            String[] selectionArgs = new String[] { feedName };
+            getWritableDatabase().delete(DbObject.TABLE,
+                    HASH + " in " + hashList + " AND " + FEED + " = ?", selectionArgs);
+        } else {
+            String[] selectionArgs = new String[] { Long.toString(Contact.MY_ID), feedName };
+            getWritableDatabase().delete(DbObject.TABLE,
+                    CONTACT + " != ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
+                    selectionArgs);
 
-	    ContentValues cv = new ContentValues();
-        cv.put(DbObject.DELETED, 1);
-        getWritableDatabase().update(DbObject.TABLE, cv,
-                CONTACT + " = ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
-                selectionArgs);
+            ContentValues cv = new ContentValues();
+            cv.put(DbObject.DELETED, 1);
+            getWritableDatabase().update(DbObject.TABLE, cv,
+                    CONTACT + " = ? AND " + HASH + " in " + hashList + " AND " + FEED + " = ?",
+                    selectionArgs);
+        }
 
         /*
          * Update the feed modification in case the latest obj was deleted.

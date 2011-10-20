@@ -56,7 +56,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         String[] appSelectionArgs = new String[] { appId };
         selection = DBHelper.andClauses(selection, appSelection);
         selectionArgs = DBHelper.andArguments(selectionArgs, appSelectionArgs);
-        String[] projection = new String[]  { DbObject._ID };
+        String[] projection = new String[]  { DbObject.HASH };
 
         int count = 0;
         Cursor c = mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs,
@@ -68,7 +68,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             do {
                 hashes[i++] = c.getLong(0);
             } while (c.moveToNext());
-            Helpers.sendToFeed(getContext(), DeleteObj.from(hashes), uri);
+            Helpers.sendToFeed(getContext(), DeleteObj.from(hashes, true), uri);
         }
 		return count;
 	}

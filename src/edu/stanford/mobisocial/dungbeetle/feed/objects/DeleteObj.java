@@ -20,6 +20,10 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
     public static final String TYPE = "delete";
     public static final String HASH = "hash";
     public static final String HASHES = "hashes";
+    /**
+     * If true, delete Objs without marking them "deleted".
+     */
+    public static final String FORCE = "force";
 
     @Override
     public String getType() {
@@ -30,8 +34,8 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
         return new DbObject(TYPE, json(hash));
     }
 
-    public static DbObject from(long[] hashes) {
-        return new DbObject(TYPE, json(hashes));
+    public static DbObject from(long[] hashes, boolean force) {
+        return new DbObject(TYPE, json(hashes, force));
     }
 
     public static JSONObject json(long hash) {
@@ -43,12 +47,17 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
         return obj;
     }
 
-    public static JSONObject json(long[] hashes) {
-        //TODO: obj should mention feed
+    public static JSONObject json(long[] hashes, boolean force) {
+        JSONArray arr = new JSONArray();
+        for (long hash : hashes) {
+            arr.put(hash);
+        }
         JSONObject obj = new JSONObject();
-        try{
-            obj.put(HASHES, hashes);
-        }catch(JSONException e){}
+        try {
+            obj.put(HASHES, arr);
+            obj.put(FORCE, force);
+        } catch(JSONException e) {}
+        Log.d(TAG, "sending deleteObj " + obj);
         return obj;
     }
 
@@ -73,14 +82,18 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
             dbh.close();
         }
 	}
+
+	boolean dumb = true;
+
 	@Override
 	public void handleFeedMessage(Context context, DbObj obj) {
+	    if (dumb) Log.d(TAG, "obj " + obj.getJson());
 	    Uri feedUri = obj.getContainingFeed().getUri();
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
 		    JSONObject json = obj.getJson();
 		    long[] hashes;
-		    if (json.has(HASHES)) {
+		    if (json.optJSONArray(HASHES) != null) {
 		        JSONArray jsonHashes = json.optJSONArray(HASHES);
 		        hashes = new long[jsonHashes.length()];
 		        for (int i = 0; i < jsonHashes.length(); i++) {
@@ -92,7 +105,9 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
 		        Log.d(TAG, "DeleteObj with no hashes!");
 		        return;
 		    }
-		    dbh.markOrDeleteFeedObjs(feedUri, hashes);
+		    Log.d(TAG, "marking or deleting " + hashes.length);
+		    dbh.markOrDeleteFeedObjs(feedUri, hashes,
+		            (json.has(FORCE) && json.optBoolean(FORCE)));
 		} finally {
 			dbh.close();
 		}
