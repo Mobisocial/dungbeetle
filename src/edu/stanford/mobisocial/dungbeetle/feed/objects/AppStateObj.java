@@ -42,7 +42,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
  */
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
-	private static final boolean DBG = false;
+	private static final boolean DBG = true;
 
     public static final String TYPE = "appstate";
     public static final String ARG = "arg";
@@ -169,19 +169,20 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 
 	@Override
 	public void activate(Context context, SignedObj obj) {
-	    JSONObject content = obj.getJson();
-	    if (DBG) Log.d(TAG, "activating " + content);
-	    Intent launch = getLaunchIntent(context, content);
+	    if (DBG) Log.d(TAG, "activating " + obj.getJson());
+	    Intent launch = getLaunchIntent(context, obj);
 
 	    // TODO: Temporary, while transitioning to AppObj
-        launch.putExtra("obj", content.toString());
+        launch.putExtra("obj", obj.getJson().toString());
 	    if (!(context instanceof Activity)) {
 	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    }
 	    context.startActivity(launch);
 	}
 
-	public static Intent getLaunchIntent(Context context, JSONObject content) {
+	public static Intent getLaunchIntent(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
+
 	    if (DBG) Log.d(TAG, "Getting launch intent for " + content);
 	    Uri  appFeed;
 	    if (content.has(DbObject.CHILD_FEED_NAME)) {
@@ -193,7 +194,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    }
 	    String arg = content.optString(ARG);
         String state = content.optString(STATE);
-	    String appId = content.optString(PACKAGE_NAME); // Not DbObject.APP_ID!
+	    String appId = obj.getAppId();
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId + " on " + appFeed);
 	    
 	    Intent launch = new Intent();

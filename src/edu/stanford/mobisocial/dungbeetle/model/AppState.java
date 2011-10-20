@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 
 import org.json.JSONObject;
@@ -20,6 +21,10 @@ public class AppState extends DbObject {
 
     public AppState(JSONObject json) {
         super(AppStateObj.TYPE, json);
+    }
+
+    public AppState(DbObj obj) {
+        super(obj.getType(), obj.getJson());
     }
 
     @Deprecated

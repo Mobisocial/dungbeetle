@@ -182,7 +182,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         DbObj dbObj = (DbObj) obj;
         String relatedFeed = dbObj.getContainingFeed().getUri().getLastPathSegment() +
                 ":" + dbObj.getHash();
-        JSONObject latest = App.instance().getMusubi().getFeed(
+        DbObj latest = App.instance().getMusubi().getFeed(
                 Feed.uriForName(relatedFeed)).getLatestObj();
         AppState ref = new AppState(latest);
         String thumbnail = ref.getThumbnailImage();
