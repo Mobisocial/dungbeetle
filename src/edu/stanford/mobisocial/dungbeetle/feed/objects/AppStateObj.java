@@ -42,7 +42,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
  */
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
-	private static final boolean DBG = true;
+	private static final boolean DBG = false;
 
     public static final String TYPE = "appstate";
     public static final String ARG = "arg";
@@ -182,7 +182,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	}
 
 	public static Intent getLaunchIntent(Context context, JSONObject content) {
-	    Log.d(TAG, "Getting launch intent for " + content);
+	    if (DBG) Log.d(TAG, "Getting launch intent for " + content);
 	    Uri  appFeed;
 	    if (content.has(DbObject.CHILD_FEED_NAME)) {
 	        Log.d(TAG, "using child feed");
