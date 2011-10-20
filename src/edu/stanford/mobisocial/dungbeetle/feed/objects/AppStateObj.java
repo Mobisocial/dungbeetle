@@ -3,6 +3,7 @@ import java.util.List;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.Musubi;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -205,8 +206,12 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    }
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+
         // TODO: hack until this obj is available in 'related' query.
         launch.putExtra("obj", content.toString());
+        // TODO: this is better.
+        launch.putExtra(Musubi.EXTRA_OBJ_HASH, obj.getHash());
+
         if (arg != null) {
             launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
         }
