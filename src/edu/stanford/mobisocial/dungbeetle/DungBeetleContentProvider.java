@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -51,11 +52,25 @@ public class DungBeetleContentProvider extends ContentProvider {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return 0;
         }
-        if(!appId.equals(SUPER_APP_ID)) return 0;
-        List<String> segs = uri.getPathSegments();
-        mHelper.getWritableDatabase().delete(segs.get(0), selection, selectionArgs);
-        getContext().getContentResolver().notifyChange(uri, null);
-		return 0;
+        String appSelection = DbObject.APP_ID + "= ?";
+        String[] appSelectionArgs = new String[] { appId };
+        selection = DBHelper.andClauses(selection, appSelection);
+        selectionArgs = DBHelper.andArguments(selectionArgs, appSelectionArgs);
+        String[] projection = new String[]  { DbObject.HASH };
+
+        int count = 0;
+        Cursor c = mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null && c.moveToFirst()) {
+            count = c.getCount();
+            long[] hashes = new long[count];
+            int i = 0;
+            do {
+                hashes[i++] = c.getLong(0);
+            } while (c.moveToNext());
+            Helpers.sendToFeed(getContext(), DeleteObj.from(hashes, true), uri);
+        }
+		return count;
 	}
 
 	@Override
@@ -405,7 +420,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (match(uri, "obj", ".+")) {
             // objects by database id
             String objId = uri.getLastPathSegment();
-            selectionArgs = DBHelper.concat(selectionArgs, new String[] { objId });
+            selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { objId });
             selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "obj")) {
