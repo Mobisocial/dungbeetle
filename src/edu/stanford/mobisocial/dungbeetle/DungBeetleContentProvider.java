@@ -52,7 +52,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return 0;
         }
-        String appSelection = DbObjects.APP_ID + "= ?";
+        String appSelection = DbObject.APP_ID + "= ?";
         String[] appSelectionArgs = new String[] { appId };
         selection = DBHelper.andClauses(selection, appSelection);
         selectionArgs = DBHelper.andArguments(selectionArgs, appSelectionArgs);
