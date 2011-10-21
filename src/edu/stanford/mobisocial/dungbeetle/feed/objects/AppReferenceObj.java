@@ -1,10 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
-import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -48,7 +49,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 public class AppReferenceObj extends DbEntryHandler
         implements FeedRenderer, Activator, FeedMessageHandler {
 	private static final String TAG = "AppReferenceObj";
-	private static final boolean DBG = true;
+	private static final boolean DBG = false;
 
     public static final String TYPE = "invite_app_session";
     public static final String ARG = "arg";
@@ -138,9 +139,8 @@ public class AppReferenceObj extends DbEntryHandler
 
 	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
 	    JSONObject content = obj.getJson();
-	    byte[] raw = obj.getRaw();
 	    // TODO: hack to show object history in app feeds
-        JSONObject appState = getAppStateForChildFeed(context, content);
+        SignedObj appState = getAppStateForChildFeed(context, obj);
         if (appState != null) {
             mAppStateObj.render(context, frame, obj, allowInteractions);
             return;
@@ -173,9 +173,9 @@ public class AppReferenceObj extends DbEntryHandler
         }
 
 	    Log.w(TAG, "Using old-school app launch");
-	    JSONObject appContent = getAppStateForChildFeed(context, content);
+	    SignedObj appContent = getAppStateForChildFeed(context, obj);
 	    if (appContent == null) {
-	        Intent launch = AppStateObj.getLaunchIntent(context, content);
+	        Intent launch = AppStateObj.getLaunchIntent(context, appContent);
 	        if (!(context instanceof Activity)) {
 	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	        }
@@ -184,37 +184,33 @@ public class AppReferenceObj extends DbEntryHandler
 	    } else {
             if (DBG) Log.d(TAG, "pulled app state " + appContent);
             try {
-                appContent.put(PACKAGE_NAME, content.get(PACKAGE_NAME));
-                appContent.put(OBJ_INTENT_ACTION, content.get(OBJ_INTENT_ACTION));
-                appContent.put(DbObject.CHILD_FEED_NAME, content.get(DbObject.CHILD_FEED_NAME));
+                appContent.getJson().put(PACKAGE_NAME, content.get(PACKAGE_NAME));
+                appContent.getJson().put(OBJ_INTENT_ACTION, content.get(OBJ_INTENT_ACTION));
+                appContent.getJson().put(DbObject.CHILD_FEED_NAME,
+                        content.get(DbObject.CHILD_FEED_NAME));
             } catch (JSONException e) {
             }
-            mAppStateObj.activate(context, null);
+            mAppStateObj.activate(context, appContent);
 	    }
 	}
 
-   private JSONObject getAppStateForChildFeed(Context context, JSONObject appReference) {
-        if (DBG) Log.w(TAG, "returning app state for " + appReference.toString());
+    private SignedObj getAppStateForChildFeed(Context context, Obj appReferenceObj) {
+        JSONObject appReference = appReferenceObj.getJson();
+        if (DBG)
+            Log.w(TAG, "returning app state for " + appReference.toString());
         if (appReference.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = appReference.optString(DbObject.CHILD_FEED_NAME);
             Uri feedUri = Feed.uriForName(feedName);
             String selection = "type in ('" + AppStateObj.TYPE + "')";
-            String[] projection = new String[] {"json"};
+            String[] projection = null;
             String order = "_id desc LIMIT 1";
-            Cursor c = context.getContentResolver().query(feedUri, projection, selection, null, order);
-            try {
-	            if (c.moveToFirst()) {
-	            	try {
-	                    return new JSONObject(c.getString(0));
-	                } catch (JSONException e) {
-	                    Log.e(TAG, "not really json", e);
-	                }
-	            }
-        	} finally {
-        		c.close();
-        	}
+            Cursor c = context.getContentResolver().query(feedUri, projection, selection, null,
+                    order);
+            if (c.moveToFirst()) {
+                return App.instance().getMusubi().objForCursor(c);
+            }
         } else if (appReference.has("state")) {
-            return appReference;
+            return (SignedObj)appReferenceObj;
         }
         return null;
     }

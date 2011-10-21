@@ -3,6 +3,7 @@ import java.util.List;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.Musubi;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -169,20 +170,21 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 
 	@Override
 	public void activate(Context context, SignedObj obj) {
-	    JSONObject content = obj.getJson();
-	    if (DBG) Log.d(TAG, "activating " + content);
-	    Intent launch = getLaunchIntent(context, content);
+	    if (DBG) Log.d(TAG, "activating " + obj.getJson());
+	    Intent launch = getLaunchIntent(context, obj);
 
 	    // TODO: Temporary, while transitioning to AppObj
-        launch.putExtra("obj", content.toString());
+        launch.putExtra("obj", obj.getJson().toString());
 	    if (!(context instanceof Activity)) {
 	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    }
 	    context.startActivity(launch);
 	}
 
-	public static Intent getLaunchIntent(Context context, JSONObject content) {
-	    Log.d(TAG, "Getting launch intent for " + content);
+	public static Intent getLaunchIntent(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
+
+	    if (DBG) Log.d(TAG, "Getting launch intent for " + content);
 	    Uri  appFeed;
 	    if (content.has(DbObject.CHILD_FEED_NAME)) {
 	        Log.d(TAG, "using child feed");
@@ -193,7 +195,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    }
 	    String arg = content.optString(ARG);
         String state = content.optString(STATE);
-	    String appId = content.optString(PACKAGE_NAME); // Not DbObject.APP_ID!
+	    String appId = obj.getAppId();
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId + " on " + appFeed);
 	    
 	    Intent launch = new Intent();
@@ -204,8 +206,12 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    }
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+
         // TODO: hack until this obj is available in 'related' query.
         launch.putExtra("obj", content.toString());
+        // TODO: this is better.
+        launch.putExtra(Musubi.EXTRA_OBJ_HASH, obj.getHash());
+
         if (arg != null) {
             launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
         }
