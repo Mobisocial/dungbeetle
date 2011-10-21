@@ -36,130 +36,60 @@
             android:src="@drawable/title_search"
             android:onClick="onClickSearch" />-->
 </LinearLayout>
-<LinearLayout
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:padding="6dip">
+<ScrollView
+    android:layout_width="fill_parent" android:layout_height="fill_parent" android:orientation="vertical">
     <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-	    <LinearLayout
-	        android:orientation="vertical"
-	        android:layout_width="0dip"
-	        android:layout_height="wrap_content"
-	        android:layout_weight="1">
-	        <ImageView android:id="@+id/home_btn_latest"
-	            style="@style/HomeButton"
-	            android:onClick="onClickFeature"
-	            android:src="@drawable/home_latest_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_latest"/>
-	    </LinearLayout>
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_friends"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_friends_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_friends"/>
+    android:layout_width="fill_parent" android:layout_height="fill_parent" android:orientation="vertical">
+    <TextView android:text="Latest" android:id="@+id/textView1" android:layout_height="wrap_content" android:layout_width="wrap_content" android:textSize="20dp"></TextView>
+    <HorizontalScrollView android:id="@+id/horizontalScrollView1"
+        android:layout_width="wrap_content" android:layout_height="100dp" android:scrollbars="none">
+        <LinearLayout android:id="@+id/linearLayout1"
+            android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="match_parent">
+            <ImageView android:id="@+id/imageView1"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:id="@+id/imageView2"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:id="@+id/imageView3"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:id="@+id/imageView4"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:id="@+id/imageView5"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:id="@+id/imageView6"
+                android:src="@drawable/image" android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
+            <ImageView android:src="@drawable/image"
+                android:id="@+id/imageView7"
+                android:layout_width="match_parent" android:layout_height="match_parent" android:adjustViewBounds="true"></ImageView>
         </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_profile"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_profile_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_profile"/>
-        </LinearLayout>
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_groups"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_groups_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_groups"/>
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_new_group"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_new_group_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_new_group"/>
+    </HorizontalScrollView>
+    <TextView android:text="Groups" android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/TextView01" android:textSize="20dp"></TextView>
+    <HorizontalScrollView android:id="@+id/horizontalScrollView2"
+        android:layout_width="wrap_content" android:layout_height="100dp" android:scrollbars="none">
+        <LinearLayout android:id="@+id/LinearLayout02" android:layout_width="wrap_content" android:orientation="horizontal" android:layout_height="match_parent">
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView08"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView09"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView13"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView14"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView10"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView11"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView12"></ImageView>
         </LinearLayout>
         
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_nearby"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_nearby_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_nearby"/>
+    </HorizontalScrollView>
+    
+    <TextView android:text="Friends" android:id="@+id/textView2" android:layout_height="wrap_content" android:layout_width="wrap_content" android:textSize="20dp"></TextView>
+    <HorizontalScrollView android:id="@+id/horizontalScrollView2"
+        android:layout_width="wrap_content" android:layout_height="100dp" android:scrollbars="none">
+        <LinearLayout android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:orientation="horizontal" android:layout_height="match_parent">
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView01"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView02"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView06"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView07"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView03"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView04"></ImageView>
+            <ImageView android:layout_height="match_parent" android:src="@drawable/image" android:adjustViewBounds="true" android:layout_width="match_parent" android:id="@+id/ImageView05"></ImageView>
         </LinearLayout>
+    </HorizontalScrollView>
     </LinearLayout>
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-            <ImageView android:id="@+id/home_btn_settings"
-                style="@style/HomeButton"
-                android:onClick="onClickFeature"
-                android:src="@drawable/home_settings_button" android:focusable="true"/>
-            <TextView
-                style="@style/HomeText"
-                android:text="@string/title_settings"/>
-        </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
+</ScrollView>
 </LinearLayout>
