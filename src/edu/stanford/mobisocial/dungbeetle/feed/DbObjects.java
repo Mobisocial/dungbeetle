@@ -83,8 +83,7 @@ public final class DbObjects {
         objs.add(new RemoteIntentObj());
     }
 
-	public static FeedRenderer getFeedRenderer(JSONObject json) {
-	    String type = json.optString("type");
+	public static FeedRenderer getFeedRenderer(String type) {
 	    for (DbEntryHandler obj : objs) {
             if (obj instanceof FeedRenderer && obj.getType().equals(type)) {
                 return (FeedRenderer)obj;

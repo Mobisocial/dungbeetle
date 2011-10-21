@@ -148,9 +148,7 @@ public class DbObject implements Obj {
 	    		nameText.setText("Object not found?!.");
 	        	return;
 	        }
-	        
-	        String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(JSON));
-	        byte[] raw = cursor.getBlob(cursor.getColumnIndexOrThrow(RAW));
+
 	        Long contactId = cursor.getLong(cursor.getColumnIndexOrThrow(CONTACT_ID));
 	        Long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(TIMESTAMP));
 	        Long hash = cursor.getLong(cursor.getColumnIndexOrThrow(HASH));
@@ -183,10 +181,11 @@ public class DbObject implements Obj {
             }
 
             try {
-                JSONObject json = new JSONObject(jsonSrc);
-
                 Obj renderingObj;
                 if (hash == 0) {
+                    String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(JSON));
+                    JSONObject json = new JSONObject(jsonSrc);
+                    byte[] raw = cursor.getBlob(cursor.getColumnIndexOrThrow(RAW));
                     renderingObj = new MemObj(type, json, raw);
                 } else {
                     renderingObj = App.instance().getMusubi().objForCursor(cursor);
@@ -197,7 +196,7 @@ public class DbObject implements Obj {
 
                 frame.setTag(objId); // TODO: error prone! This is database id
                 frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
-        		FeedRenderer renderer = DbObjects.getFeedRenderer(json);
+                FeedRenderer renderer = DbObjects.getFeedRenderer(type);
         		if(renderer != null) {
         			renderer.render(context, frame, renderingObj, allowInteractions);
         		}
@@ -217,11 +216,12 @@ public class DbObject implements Obj {
                         if (hash == 0) {
                             attachmentCountButton.setVisibility(View.GONE);
                         } else {
-                            int color = DbObject.colorFor(hash);
+                            //int color = DbObject.colorFor(hash);
                             boolean selfPost = false;
                             DBHelper helper = new DBHelper(context);
                             try {
-	                            Cursor attachments = helper.queryRelatedObjs(objId);
+                                Cursor attachments = ((DbObj)renderingObj).getRelatedFeed()
+                                        .query("type=?", new String[] { LikeObj.TYPE });
 	                            try {
 		                            attachmentCountText.setText("+" + attachments.getCount());
 		                            
