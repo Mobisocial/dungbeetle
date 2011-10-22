@@ -945,7 +945,16 @@ public class DBHelper extends SQLiteOpenHelper {
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
             select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
         }
-        if (DBG) Log.d(TAG, "Running query " + select);
+        if (DBG) {
+            Log.d(TAG, "Running query " + select);
+            String args = "";
+            if (selectionArgs != null) {
+                for (String arg : selectionArgs) {
+                    args += ", " + arg;
+                }
+                Log.d(TAG, "args: " + args.substring(2));
+            }
+        }
         Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
                 null, null, sortOrder, null);
         if (DBG) Log.d(TAG, "got " + c.getCount() + " items");
@@ -986,7 +995,11 @@ public class DBHelper extends SQLiteOpenHelper {
                                   String[] proj, String selection,
                                   String[] selectionArgs, String sortOrder){
         String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
-        select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
+
+        // TODO: allow federated permission across apps.
+        if (!DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
+            select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
+        }
 
         // Don't allow custom projection. Just grab everything.
         String[] projection = new String[]{

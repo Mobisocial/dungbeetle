@@ -175,7 +175,7 @@ public class AppReferenceObj extends DbEntryHandler
 	    Log.w(TAG, "Using old-school app launch");
 	    SignedObj appContent = getAppStateForChildFeed(context, obj);
 	    if (appContent == null) {
-	        Intent launch = AppStateObj.getLaunchIntent(context, appContent);
+	        Intent launch = AppStateObj.getLaunchIntent(context, obj);
 	        if (!(context instanceof Activity)) {
 	            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	        }

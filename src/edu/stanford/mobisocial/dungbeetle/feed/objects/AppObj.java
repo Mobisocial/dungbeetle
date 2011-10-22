@@ -15,6 +15,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.view.Gravity;
@@ -34,13 +35,12 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     private static final String TAG = "musubi-appObj";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
 
     public static final String TYPE = "app";
     public static final String ANDROID_PACKAGE_NAME = "android_pkg";
@@ -123,7 +123,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         if (DBG) {
             Uri feedUri = obj.getContainingFeed().getUri();
             JSONObject content = obj.getJson();
-            Log.d(TAG, "activating app " + content + " for " + feedUri);
+            Log.d(TAG, "activating app " + content + " for " + feedUri + ", " + obj.getHash());
         }
 
         Intent launch = getLaunchIntent(context, obj);
@@ -179,51 +179,53 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
             return;
         }
 
-        DbObj dbObj = (DbObj) obj;
-        String relatedFeed = dbObj.getContainingFeed().getUri().getLastPathSegment() +
-                ":" + dbObj.getHash();
-        DbObj latest = App.instance().getMusubi().getFeed(
-                Feed.uriForName(relatedFeed)).getLatestObj();
-        AppState ref = new AppState(latest);
-        String thumbnail = ref.getThumbnailImage();
-        if (thumbnail != null) {
-            rendered = true;
-            ImageView imageView = new ImageView(context);
-            imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                          LinearLayout.LayoutParams.WRAP_CONTENT,
-                                          LinearLayout.LayoutParams.WRAP_CONTENT));
-            App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
-            frame.addView(imageView);
-        }
-
-        thumbnail = ref.getThumbnailText();
-        if (thumbnail != null) {
-            rendered = true;
-            TextView valueTV = new TextView(context);
-            valueTV.setText(thumbnail);
-            valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT));
-            valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-            frame.addView(valueTV);
-        }
-
-        thumbnail = ref.getThumbnailHtml();
-        if (thumbnail != null) {
-            rendered = true;
-            WebView webview = new WebView(context);
-            webview.loadData(thumbnail, "text/html", "UTF-8");
-            webview.setLayoutParams(new LinearLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT));
-            Object o = frame.getTag(R.id.object_entry);
-            webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
-            frame.addView(webview);
+        DbObj dbParentObj = (DbObj) obj;
+        String selection = "type = ?";
+        String[] selectionArgs = new String[] { AppStateObj.TYPE };
+        Cursor cursor = dbParentObj.getRelatedFeed().query(selection, selectionArgs);
+        if (cursor.moveToFirst()) {
+            DbObj dbObj = App.instance().getMusubi().objForCursor(cursor);
+            AppState ref = new AppState(dbObj);
+            String thumbnail = ref.getThumbnailImage();
+            if (thumbnail != null) {
+                rendered = true;
+                ImageView imageView = new ImageView(context);
+                imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                                              LinearLayout.LayoutParams.WRAP_CONTENT,
+                                              LinearLayout.LayoutParams.WRAP_CONTENT));
+                App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
+                frame.addView(imageView);
+            }
+    
+            thumbnail = ref.getThumbnailText();
+            if (thumbnail != null) {
+                rendered = true;
+                TextView valueTV = new TextView(context);
+                valueTV.setText(thumbnail);
+                valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                                            LinearLayout.LayoutParams.WRAP_CONTENT));
+                valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+                frame.addView(valueTV);
+            }
+    
+            thumbnail = ref.getThumbnailHtml();
+            if (thumbnail != null) {
+                rendered = true;
+                WebView webview = new WebView(context);
+                webview.loadData(thumbnail, "text/html", "UTF-8");
+                webview.setLayoutParams(new LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                                            LinearLayout.LayoutParams.WRAP_CONTENT));
+                Object o = frame.getTag(R.id.object_entry);
+                webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
+                frame.addView(webview);
+            }
         }
 
         if (!rendered) {
             String appName;
-            Intent launch = getLaunchIntent(context, dbObj);
+            Intent launch = getLaunchIntent(context, dbParentObj);
             List<ResolveInfo> infos = context.getPackageManager().queryIntentActivities(launch, 0);
             if (infos.size() > 0) {
                 ResolveInfo info = infos.get(0);

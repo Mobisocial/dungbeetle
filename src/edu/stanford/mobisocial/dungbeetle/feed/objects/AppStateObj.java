@@ -43,7 +43,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
  */
 public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
-	private static final boolean DBG = true;
+	private static final boolean DBG = false;
 
     public static final String TYPE = "appstate";
     public static final String ARG = "arg";
@@ -170,7 +170,7 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 
 	@Override
 	public void activate(Context context, SignedObj obj) {
-	    if (DBG) Log.d(TAG, "activating " + obj.getJson());
+	    if (DBG) Log.d(TAG, "activating " + obj.getJson() + "; hash=" + obj.getHash());
 	    Intent launch = getLaunchIntent(context, obj);
 
 	    // TODO: Temporary, while transitioning to AppObj
@@ -196,6 +196,10 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    String arg = content.optString(ARG);
         String state = content.optString(STATE);
 	    String appId = obj.getAppId();
+	    // TODO: Hack for deprecated launch method
+	    if (appId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
+	        appId = content.optString(PACKAGE_NAME);
+	    }
 	    if (DBG) Log.d(TAG, "Preparing launch of " + appId + " on " + appFeed);
 	    
 	    Intent launch = new Intent();
@@ -204,6 +208,9 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
 	    } else {
 	        launch.setAction(Intent.ACTION_MAIN);
 	    }
+	    if (state != null) {
+            launch.putExtra("mobisocial.db.STATE", state);
+        }
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
 
@@ -222,9 +229,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             if (activity.packageName.equals(appId)) {
                 launch.setClassName(activity.packageName, activity.name);
                 launch.putExtra("mobisocial.db.PACKAGE", activity.packageName);
-                if (state != null) {
-                    launch.putExtra("mobisocial.db.STATE", state);
-                }
                 return launch;
             }
         }

@@ -19,7 +19,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 
 import mobisocial.socialkit.SignedObj;
-import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
