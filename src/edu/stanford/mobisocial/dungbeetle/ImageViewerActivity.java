@@ -95,7 +95,7 @@ public class ImageViewerActivity extends Activity {
                     public void run() {
                         try {
                             if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, obj)) {
-                                toast("Trying to go HD...");
+                                //toast("Trying to go HD...");
                             }
                             Log.d(TAG, "Trying to go HD...");
                             final Uri fileUri = ContentCorral
@@ -132,7 +132,7 @@ public class ImageViewerActivity extends Activity {
                                 }
                             });
                         } catch (IOException e) {
-                            toast("Failed to go HD");
+                            // toast("Failed to go HD");
                             Log.e(TAG, "Failed to get hd content", e);
                             // continue
                         }
