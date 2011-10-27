@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
 import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 
@@ -15,7 +16,7 @@ public class AutoActivateObjHandler extends ObjHandler {
             return;
         }
         if (handler instanceof Activator) {
-            ((Activator)handler).activate(context, null);
+            ((Activator)handler).activate(context, obj);
         }
     }
 }
