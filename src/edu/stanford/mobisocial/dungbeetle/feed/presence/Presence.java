@@ -13,6 +13,7 @@ public class Presence {
     	if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
     	    sFeedPresence.add(new VideosPresence());
             sFeedPresence.add(new MusicPresence());
+            sFeedPresence.add(new DiivaPresence());
             sFeedPresence.add(new LocationPresence());
             sFeedPresence.add(new PhonePresence());
             sFeedPresence.add(Push2TalkPresence.getInstance());
