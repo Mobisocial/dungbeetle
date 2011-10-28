@@ -22,15 +22,13 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class ObjectListCursorAdapter extends CursorAdapter {
-    private ContactCache mContactCache;
 	private Cursor originalCursor;
+	private int mTotal = BATCH_SIZE;
 
     public ObjectListCursorAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
-        mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
     }
 
@@ -45,19 +43,23 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache, true);
+        DbObject.bindView(v, context, c, true);
         
     }
     
     static final int BATCH_SIZE = getBestBatchSize();
+    
+    public int getTotalQueried() {
+    	return mTotal;
+    }
 
-    public static CursorLoader queryObjects(Context context, Uri feedUri) {
+    public static CursorLoader queryObjects(Context context, Uri feedUri, String[] types) {
         return new CursorLoader(context, feedUri, 
         	new String[] { 
         		DbObject._ID,
         		DbObject.FEED_NAME
         	},
-        	DbObjects.getFeedObjectClause(), null, DbObject._ID + 
+        	DbObjects.getFeedObjectClause(types), null, DbObject._ID + 
         	" DESC LIMIT " + BATCH_SIZE);
     }
     private static int getBestBatchSize() {
@@ -79,14 +81,14 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 		return 15;
 	}
 
-	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total) {
-    	int newTotal = total + BATCH_SIZE;
+	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total, String[] types) {
+    	mTotal = total + BATCH_SIZE;
     	CursorLoader cl = new CursorLoader(context, feedUri, 
             	new String[] { 
             		DbObject._ID,
             		DbObject.FEED_NAME
             	},
-            	DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC LIMIT " + newTotal);
+            	DbObjects.getFeedObjectClause(types), null, DbObject._ID + " DESC LIMIT " + mTotal);
 		Cursor newCursor = cl.loadInBackground(); 
 		
     	if (originalCursor == null) {

@@ -12,7 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 
-public class PresenceObj implements DbEntryHandler {
+public class PresenceObj extends DbEntryHandler {
 
     public static final String TYPE = "presence";
     public static final String PRESENCE = "presence";
@@ -24,18 +24,11 @@ public class PresenceObj implements DbEntryHandler {
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     @Override
     public String getType() {
         return TYPE;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
         int presence = obj.optInt(PRESENCE);

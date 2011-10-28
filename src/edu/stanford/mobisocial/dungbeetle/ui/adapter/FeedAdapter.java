@@ -11,14 +11,10 @@ import android.view.ViewGroup;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 public class FeedAdapter extends CursorAdapter {
-    private ContactCache mContactCache;
-
     public FeedAdapter (Context context, Cursor cursor) {
         super(context, cursor, FLAG_REGISTER_CONTENT_OBSERVER);
-        mContactCache = new ContactCache(context); // TODO: Global contact cache
         // TODO: does contact cache handle images and attributes?
     }
 
@@ -32,7 +28,7 @@ public class FeedAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View v, Context context, Cursor c) {
-        DbObject.bindView(v, context, c, mContactCache, false);
+        DbObject.bindView(v, context, c, false);
     }
 
     public static CursorLoader queryObjects(Context context) {

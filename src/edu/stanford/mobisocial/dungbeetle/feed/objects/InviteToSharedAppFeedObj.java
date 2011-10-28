@@ -23,7 +23,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
-public class InviteToSharedAppFeedObj implements DbEntryHandler {
+public class InviteToSharedAppFeedObj extends DbEntryHandler {
 	private static final String TAG = "InviteToSharedAppFeedHandler";
 
     public static final String TYPE = "invite_app_feed";
@@ -36,9 +36,6 @@ public class InviteToSharedAppFeedObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(Collection<Contact> contacts, 
                                   String feedName,
@@ -59,10 +56,6 @@ public class InviteToSharedAppFeedObj implements DbEntryHandler {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		try {

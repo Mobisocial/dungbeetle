@@ -1,43 +1,42 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.os.Environment;
+import android.util.Base64;
+import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import android.util.Base64;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.app.Activity;
-import android.util.Log;
-import android.os.Environment;
-
-import android.media.MediaPlayer;
-import java.io.File;
-import java.io.OutputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-
-import android.media.AudioRecord;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.database.Cursor;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.content.DialogInterface;
-
+/**
+ * Plays all audio clips that are at least as recent than the one
+ * being clicked.
+ *
+ */
 public class PlayAllAudioAction extends ObjAction {
 
     private static final int RECORDER_BPP = 16;
@@ -61,7 +60,7 @@ ORDER BY _id ASC
 */
 
 
-    private String getTempFilename(){
+    	private String getTempFilename(){
             return Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp.raw";
         }
 
@@ -127,14 +126,23 @@ ORDER BY _id ASC
             
         }
 	
-    public void onAct(Context context, DbEntryHandler objType, final JSONObject objData, byte[] raw) {
-        DBHelper helper = new DBHelper(context);
+        public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        DBHelper helper = DBHelper.getGlobal(context);
         this.context = context;
+        JSONObject objData = obj.getJson();
         
         //TODO: this cursor really need to be closed somewhere!!!  it may be but its sketchy
-        
-        c = helper.getReadableDatabase().query(DbObject.TABLE, null, DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject._ID+" >= (SELECT "+DbObject._ID+" FROM "+DbObject.TABLE+" WHERE "+DbObject.FEED_NAME+"=? AND "+DbObject.TYPE+"='voice' AND "+DbObject.SEQUENCE_ID+"=? AND "+DbObject.TIMESTAMP+"=?)", new String[]{objData.optString("feedName"), objData.optString("feedName"), objData.optString("sequenceId"), objData.optString("timestamp")}, null, null, DbObject._ID + " ASC");
+        //TODO: holy frickin hell its sketch... slutty code, plus it pulls the full body in as well
+        //it should maybe load an objid list and then fetch each voice obj individually.
 
+        String query = DbObject.FEED_NAME + "= ? AND "+DbObject.TYPE+"='voice' AND " + DbObject._ID +
+                " >= (SELECT " + DbObject._ID + " FROM " + DbObject.TABLE + " WHERE " +
+                DbObject.FEED_NAME + "= ? AND " + DbObject.TYPE + "='voice' AND " +
+                DbObject.SEQUENCE_ID + "= ? AND " + DbObject.TIMESTAMP+"= ?)";
+        String[] queryParams = new String[]{objData.optString("feedName"), objData.optString("feedName"), objData.optString("sequenceId"), objData.optString("timestamp")};
+        c = helper.getReadableDatabase().query(DbObject.TABLE, null, query, queryParams,
+                null, null, DbObject._ID + " ASC");
+        
         c.moveToFirst();
 
         /*while(!c.isAfterLast()) {
@@ -262,12 +270,12 @@ ORDER BY _id ASC
 
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Replay Conversation";
     }
 
     @Override
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
         }

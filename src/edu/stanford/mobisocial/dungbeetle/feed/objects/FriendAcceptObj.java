@@ -12,7 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 
-public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandler {
+public class FriendAcceptObj extends DbEntryHandler implements UnprocessedMessageHandler {
     public static final String TYPE = "friend_accept";
     public static final String URI = "uri";
 
@@ -37,14 +37,6 @@ public class FriendAcceptObj implements DbEntryHandler, UnprocessedMessageHandle
     public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
-
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     /**
      * Inserts a friend into the list of contacts based on a received

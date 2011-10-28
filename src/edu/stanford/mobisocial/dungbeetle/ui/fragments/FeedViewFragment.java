@@ -1,16 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import org.json.JSONException;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -31,67 +30,62 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.KeyEvent.DispatcherState;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
-import edu.stanford.mobisocial.dungbeetle.PhotoQuickTakeActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Shows a series of posts from a feed.
  */
-public class FeedViewFragment extends ListFragment implements OnItemClickListener, OnScrollListener,
+public class FeedViewFragment extends ListFragment implements OnScrollListener,
         OnEditorActionListener, TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, KeyEvent.Callback {
 
     public static final String ARG_FEED_URI = "feed_uri";
     public static final String ARG_DUAL_PANE = "dual_pane";
 
-    private boolean DBG = false;
-    private ListAdapter mObjects;
+    private boolean DBG = true;
+    private ObjectListCursorAdapter mObjects;
 	public static final String TAG = "ObjectsActivity";
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private EditText mStatusText;
     private ImageView mSendTextButton;
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
-	
-	private String feedName;
+
+	private String[] filterTypes = null;
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mFeedUri = getArguments().getParcelable(ARG_FEED_URI);
-        feedName = mFeedUri.getLastPathSegment();
+        if (DBG) Log.d(TAG, "Attaching fragment to feed " + mFeedUri);
     }
 
     @Override
@@ -114,10 +108,12 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         mSendObjectButton = (ImageView)view.findViewById(R.id.more);
         mSendObjectButton.setOnClickListener(mSendObject);
 
-        getListView().setOnItemClickListener(this);
-        getListView().setFastScrollEnabled(true);
-        getListView().setOnItemLongClickListener(mLongClickListener);
-        getListView().setOnScrollListener(this);
+        ListView lv = getListView();
+        lv.setFastScrollEnabled(true);
+        lv.setOnItemClickListener(mItemClickListener);
+        lv.setOnItemLongClickListener(mItemLongClickListener);
+        lv.setOnScrollListener(this);
+        lv.setFocusable(true);
 
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
@@ -128,81 +124,44 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
-        mContactCache = new ContactCache(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        cursor.close();
-
-        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-        try{
-            JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = DbObjects.getActivator(obj);
-            if(activator != null){
-                activator.activate(getActivity(), obj, raw);
-            }
-        }
-        catch(JSONException e){
-            Log.e(TAG, "Couldn't parse obj.", e);
-        }
-    }
-
-
-    @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
-    
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        App.instance().setCurrentFeed(mFeedUri);
+
+        getLoaderManager().restartLoader(0, null, this);
+    	
+
+    }
+
     @Override
     public void onPause() {
     	super.onPause();
-    	resetUnreadMessages();
-    }
-    
-    private void resetUnreadMessages() {
-
-        try {
-	        ContentValues cv = new ContentValues();
-	        cv.put(Group.NUM_UNREAD, 0);
-	        
-	        this.getActivity().getContentResolver().update(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv, Group.FEED_NAME+"='"+feedName+"'", null);
-	        
-	        this.getActivity().getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);        
-        }
-        catch (Exception e) {
-        	
-        }
+    	App.instance().setCurrentFeed(null);
     }
     
     @Override
     public void onDestroy() {
     	super.onDestroy();
     
-    	if(mLoader != null)
+    	if(mLoader != null) {
     		mLoader.cancelLoad();
-    	
-    	//the mObjects field is accessed by the background loader
-    	synchronized (this) {
-    		if(mObjects != null)
-    			((ObjectListCursorAdapter) mObjects).closeCursor();
     	}
 
-    	resetUnreadMessages();
+    	//the mObjects field is accessed by the background loader
+    	synchronized (this) {
+    		if (mObjects != null) {
+    			((ObjectListCursorAdapter) mObjects).closeCursor();
+    		}
+    	}
     }
 
     @Override
@@ -258,27 +217,40 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         }
     };
 
-    private AdapterView.OnItemLongClickListener mLongClickListener = new AdapterView.OnItemLongClickListener() {
-        @Override
-        public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            showMenuForObj(position);
-            return true;
-        }
-    };
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri);
+    	
+    	if(getActivity() instanceof Filterable)
+    	{
+    		Filterable context = (Filterable) getActivity();
+	    	List<String> filterTypes = new ArrayList<String>();
+	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    		if (context.getFilterCheckboxes()[x]) {
+	    			filterTypes.add(context.getFilterTypes()[x]);
+	    		}
+	    	}
+	    	Log.w(TAG, "changeFilter reached in feedview");
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
+	        
+    	}
+    	else {
+    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
+    	}
+
+        mLoader.loadInBackground();
         return mLoader;
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
     	//the mObjects field is accessed by the ui thread as well
-    	synchronized (this) {
+        if (mObjects == null) {
             mObjects = new ObjectListCursorAdapter(getActivity(), cursor);
+            setListAdapter(mObjects);
+		} else {
+		    mObjects.changeCursor(cursor);
 		}
-        setListAdapter(mObjects);
+    	Log.w(TAG, "setting adapter");
     }
 
     @Override
@@ -287,30 +259,11 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
     }
 
     void showMenuForObj(int position) {
-        Cursor c = (Cursor)mObjects.getItem(position);
-    	Cursor cursor = getActivity().getContentResolver().query(DbObject.OBJ_URI,
-            	new String[] { 
-            		DbObject.JSON,
-            		DbObject.RAW,
-            		DbObject.TYPE,
-            	},
-            	DbObject._ID + " = ?", new String[] {String.valueOf(c.getLong(0))}, null);
-        if(!cursor.moveToFirst())
-        	return;
-        
-        final String type = cursor.getString(2);
-        final String jsonSrc = cursor.getString(0);
-        final byte[] raw = cursor.getBlob(1);
-        cursor.close();
+    	//this first cursor is the internal one
+        Cursor cursor = (Cursor)mObjects.getItem(position);
+        long objId = cursor.getLong(0);
 
-        final JSONObject json;
-        try {
-            json = new JSONObject(jsonSrc);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error building dialog", e);
-            return;
-        }
-
+        DbObj obj = App.instance().getMusubi().objForId(objId);
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         Fragment prev = getFragmentManager().findFragmentByTag("dialog");
         if (prev != null) {
@@ -319,17 +272,21 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         ft.addToBackStack(null);
 
         // Create and show the dialog.
-        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(type, json, raw);
+        DialogFragment newFragment = ObjMenuDialogFragment.newInstance(obj);
         newFragment.show(ft, "dialog");
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {
         String mType;
-        JSONObject mObj;
+        private DbObj mObj;
+        private JSONObject mJson;
 		byte[] mRaw;
+		Uri mFeedUri;
+		long mHash;
+		long mContactId;
 
-        public static ObjMenuDialogFragment newInstance(String type, JSONObject obj, byte[] raw) {
-            return new ObjMenuDialogFragment(type, obj, raw);
+        public static ObjMenuDialogFragment newInstance(DbObj obj) {
+            return new ObjMenuDialogFragment(obj);
         }
 
         // Required by framework; fields populated from savedInstanceState.
@@ -337,38 +294,35 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
             
         }
 
-        private ObjMenuDialogFragment(String type, JSONObject obj, byte[] raw) {
-            mType = type;
-            mObj = obj;
-            mRaw = raw;
+        private ObjMenuDialogFragment(DbObj obj) {
+            loadFromObj(obj);
         }
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             if (savedInstanceState != null) {
-                mType = savedInstanceState.getString("type");
-                try {
-                    mObj = new JSONObject(savedInstanceState.getString("obj"));
-                } catch (JSONException e) {}
+                long objId = savedInstanceState.getLong("objId");
+                loadFromObj(App.instance().getMusubi().objForId(objId));
             }
 
             final DbEntryHandler dbType = DbObjects.forType(mType);
             final List<ObjAction> actions = new ArrayList<ObjAction>();
             for (ObjAction action : ObjActions.getObjActions()) {
-                if (action.isActive(dbType, mObj)) {
+                if (action.isActive(getActivity(), dbType, mJson)) {
                     actions.add(action);
                 }
             }
             final String[] actionLabels = new String[actions.size()];
             int i = 0;
             for (ObjAction action : actions) {
-                actionLabels[i++] = action.getLabel();
+                actionLabels[i++] = action.getLabel(getActivity());
             }
             return new AlertDialog.Builder(getActivity()).setTitle("Handle...")
                     .setItems(actionLabels, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            actions.get(which).actOn(getActivity(), dbType, mObj, mRaw);
+                            Log.d(TAG, "getting for " + getActivity());
+                            actions.get(which).actOn(getActivity(), dbType, mObj);
                         }
                     }).create();
         }
@@ -376,8 +330,17 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
         @Override
         public void onSaveInstanceState(Bundle bundle) {
             super.onSaveInstanceState(bundle);
-            bundle.putString("type", mType);
-            bundle.putString("obj", mObj.toString());
+            bundle.putLong("objId", mObj.getLocalId());
+        }
+
+        private void loadFromObj(DbObj obj) {
+            mFeedUri = obj.getContainingFeed().getUri();
+            mType = obj.getType();
+            mObj = obj;
+            mJson = obj.getJson();
+            mRaw = obj.getRaw();
+            mHash = obj.getHash();
+            mContactId = obj.getSender().getLocalId();
         }
     }
 
@@ -458,19 +421,32 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 	@Override
 	public void onScroll(AbsListView view, int firstVisible,
 			int visibleCount, int totalCount) {
-		if(mObjects == null)
+ 		if(mObjects == null)
 			return;		
 		
 		boolean loadMore = /* maybe add a padding */
-	            firstVisible + visibleCount >= totalCount;
+	            firstVisible + visibleCount >= mObjects.getTotalQueried();
 
     	if (loadMore) {
-    		Log.w(TAG, "load more");
     		mLoader.cancelLoad();
-    		Activity activity = getActivity();
-    		if(activity != null) {
-        		mLoader = ((ObjectListCursorAdapter) mObjects).queryLaterObjects(activity, mFeedUri, totalCount);
-    		}
+
+        	if(getActivity() instanceof Filterable)
+        	{
+	    		Filterable context = (Filterable) getActivity();
+	    		if(context != null) {
+	    			List<String> filterTypes = new ArrayList<String>();
+	    	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    	    		if (context.getFilterCheckboxes()[x]) {
+	    	    			Log.w(TAG, "adding " + context.getFilterTypes()[x]);
+	    	    			filterTypes.add(context.getFilterTypes()[x]);
+	    	    		}
+	    	    	}
+	        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, filterTypes.toArray(new String[filterTypes.size()]));
+	    		}
+        	}
+        	else {
+        		mLoader = mObjects.queryLaterObjects(getActivity(), mFeedUri, totalCount, null);
+        	}
     	}
 	}
 
@@ -479,4 +455,20 @@ public class FeedViewFragment extends ListFragment implements OnItemClickListene
 		// TODO Auto-generated method stub
 		
 	}
+
+	private OnItemClickListener mItemClickListener = new OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+            DbObject.ItemClickListener.getInstance(getActivity()).onClick(view);
+        }
+	};
+
+	private OnItemLongClickListener mItemLongClickListener = new OnItemLongClickListener() {
+        @Override
+        public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+            DbObject.ItemLongClickListener.getInstance(getActivity()).onLongClick(view);
+            return true;
+        }
+        
+    };
 }

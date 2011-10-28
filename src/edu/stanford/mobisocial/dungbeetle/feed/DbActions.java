@@ -10,7 +10,6 @@ import android.view.View;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.CameraAction;
-import edu.stanford.mobisocial.dungbeetle.feed.action.ClipboardAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.GalleryAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.action.NewFeedAction;
@@ -23,7 +22,6 @@ public class DbActions {
     // TODO: Use reflection.
     private static final List<FeedAction> sFeedActions = new ArrayList<FeedAction>();
     static {
-        sFeedActions.add(new ClipboardAction());
         sFeedActions.add(new PresenceAction());
         sFeedActions.add(new CameraAction());
         sFeedActions.add(new GalleryAction());

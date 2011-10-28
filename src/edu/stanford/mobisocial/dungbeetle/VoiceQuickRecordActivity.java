@@ -95,6 +95,8 @@ public class VoiceQuickRecordActivity extends Activity
         RemoteControlReceiver.setSpecialKeyEventHandler(this);
         bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,RECORDER_CHANNELS,RECORDER_AUDIO_ENCODING);
         notifyStartRecording();
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 
     @Override

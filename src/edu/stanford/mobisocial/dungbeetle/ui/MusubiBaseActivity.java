@@ -20,7 +20,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -31,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
@@ -53,6 +53,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
     private static MusubiBaseActivity sInstance;
+    public static final boolean DBG = true;
 
 
     /**
@@ -69,8 +70,10 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sInstance = this;
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         remoteControlRegistrar = new RemoteControlRegistrar(this, RemoteControlReceiver.class);
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 
     /**
@@ -197,7 +200,10 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
 
     public void goHome(Context context) {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
@@ -261,7 +267,12 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     public void doActivityForResult(ActivityCallout callout) {
         mCurrentCallout = callout;
         Intent launch = callout.getStartIntent();
-        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        if(launch != null)
+        	startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        else {
+        	Log.wtf(callout.getClass().getCanonicalName(), "I failed to return a valid intent, so something is probably very bad.");
+        	Toast.makeText(this, "Callback for object type failed! " + callout.getClass().getName(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -274,6 +285,7 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     public boolean isDeveloperModeEnabled() {
         return getSharedPreferences("main", 0).getBoolean("dev_mode", false);
     }
+
     public static boolean isDeveloperModeEnabled(Context c) {
         return c.getSharedPreferences("main", 0).getBoolean("dev_mode", false);
     }
@@ -293,19 +305,6 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
     private boolean mResumed;
     public boolean amResumed() {
         return mResumed;
-    }
-
-    private Uri mFeedUri;
-    public void setFeedUri(Uri feedUri) {
-        mFeedUri = feedUri;
-    }
-
-    public void clearFeedUri() {
-        mFeedUri = null;
-    }
-
-    public Uri getFeedUri() {
-        return mFeedUri;
     }
 
     private KeyEvent.Callback mOnKeyListener;

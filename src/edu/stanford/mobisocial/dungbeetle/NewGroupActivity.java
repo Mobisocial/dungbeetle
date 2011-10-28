@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -19,7 +20,7 @@ public class NewGroupActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_group);
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
 
 		((Button)findViewById(R.id.newGroupOk)).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -43,5 +44,7 @@ public class NewGroupActivity extends Activity {
                 NewGroupActivity.this.finish();
             }
         });
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
     }
 }

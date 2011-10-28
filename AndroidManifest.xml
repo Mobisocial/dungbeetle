@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="63"
-	  android:versionName="0.2"
+	  android:versionCode="76"
+	  android:versionName="0.3.6"
 	  android:installLocation="auto"
 	  >
     <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="12" />
@@ -37,7 +37,6 @@
     <activity android:name=".ui.HomeActivity"
 	      android:label="@string/app_name"
 	      android:windowSoftInputMode="stateHidden"
-	      android:clearTaskOnLaunch="true"
 	      >
       <intent-filter>
 	    <action android:name="android.intent.action.MAIN" />
@@ -268,7 +267,9 @@
    </receiver>
    -->
 
-    <activity android:name=".PickContactsActivity">
+    <activity 
+    	android:name=".PickContactsActivity"
+    	android:theme="@style/Theme.D1dialog">
     
     <intent-filter>
 	<action android:name="android.intent.action.SEND" />
@@ -302,6 +303,12 @@
       <intent-filter>
 	<action android:name="edu.stanford.mobisocial.dungbeetle.PICK_CONTACTS" />
 	<category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+
+      <intent-filter>
+	<action android:name="android.intent.action.PICK" />
+	<category android:name="android.intent.category.DEFAULT" />
+	<data android:mimeType="vnd.mobisocial.org/recipient"/>
       </intent-filter>
     
     </activity>

@@ -1,6 +1,8 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -13,7 +15,8 @@ import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 
 public class ViewFeedObjAction extends ObjAction {
     @Override
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        JSONObject objData = obj.getJson();
         if (objData.has(DbObject.CHILD_FEED_NAME)) {
             Uri appFeed = Feed.uriForName(objData.optString(DbObject.CHILD_FEED_NAME));
             Intent viewFeed = new Intent(Intent.ACTION_VIEW);
@@ -23,12 +26,12 @@ public class ViewFeedObjAction extends ObjAction {
     }
 
     @Override
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         return false; //objData.has(DbObject.CHILD_FEED_NAME);
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Show History";
     }
 }

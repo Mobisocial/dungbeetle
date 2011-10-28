@@ -1,16 +1,18 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
 
+/**
+ * Automatically plays back audio clips as they are received.
+ *
+ */
 public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     private static final String TAG = "push2talk";
     private boolean mEnabled = false;
@@ -38,15 +40,15 @@ public class Push2TalkPresence extends FeedPresence implements IObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-            DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
+    public void handleObj(Context context, DbEntryHandler typeInfo, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
         if (!mEnabled || !getFeedsWithPresence().contains(feedUri) ||
                 !(typeInfo instanceof VoiceObj)) {
             return;
         }
 
         if (DBG) Log.d(TAG, "Playing audio via push2talk on " + feedUri);
-        ((VoiceObj) typeInfo).activate(context, json, raw);
+        ((VoiceObj) typeInfo).activate(context, null);
     }
 
     public boolean isOnCall() {

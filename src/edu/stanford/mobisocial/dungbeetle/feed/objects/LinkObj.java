@@ -2,6 +2,9 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,10 +14,8 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.text.method.BaseMovementMethod;
 import android.text.util.Linkify;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -27,7 +28,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
-public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
+public class LinkObj extends DbEntryHandler implements FeedRenderer, Activator {
     private static final String TAG = "dungbeetle";
 
     public static final String TYPE = "send_file";
@@ -43,9 +44,6 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     public static DbObject from(String uri, String mimeType, String title) {
         return new DbObject(TYPE, json(uri, mimeType, title));
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(String uri, String mimeType, String title) {
         JSONObject obj = new JSONObject();
@@ -56,10 +54,6 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String mimeType = obj.optString(MIME_TYPE);
@@ -82,10 +76,15 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
 	}
 
 	private boolean fileAvailable(String mimeType, Uri uri) {
-	    return uri != null && uri.getScheme().startsWith("http");
+	    if (uri != null && uri.getScheme().startsWith("http")) {
+	        return true;
+	    }
+	    Log.d(TAG, "TODO: Content corral for " + uri);
+	    return false;
 	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         String title;
         if (content.has(TITLE)) {
@@ -107,7 +106,8 @@ public class LinkObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
     @Override
-    public void activate(Context context, JSONObject content, byte[] raw){
+    public void activate(Context context, SignedObj obj) {
+        JSONObject content = obj.getJson();
     	//linkify should have picked it up already but if we are in TV mode we
     	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);

@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,7 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 /**
  * Metadata marking the beginning of a feed.
  */
-public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
+public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler {
     private static final String TAG = "musubi";
     public static final String TYPE = "feed-anchor";
     public static final String PARENT_FEED_NAME = "parent";
@@ -33,9 +35,6 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         return new DbObject(TYPE, json(parentFeedName));
     }
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static JSONObject json(String parentFeedName) {
         JSONObject obj = new JSONObject();
         try {
@@ -43,14 +42,11 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
         } catch (JSONException e) {}
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-    public void handleFeedMessage(Context context, Uri feedUri, long contactId, long sequenceId,
-            String type, JSONObject obj) {
-        String parentFeedName = obj.optString(PARENT_FEED_NAME);
+    @Override
+    public void handleFeedMessage(Context context, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
+        String parentFeedName = obj.getJson().optString(PARENT_FEED_NAME);
         if (parentFeedName == null) {
             Log.e(TAG, "anchor for feed, but no parent given");
             return;
@@ -69,7 +65,7 @@ public class FeedAnchorObj implements DbEntryHandler, FeedMessageHandler {
 
         String feedName = feedUri.getLastPathSegment();
         Log.d(TAG, "Updating parent_feed_id for " + feedName);
-        DBHelper mHelper = new DBHelper(context);
+        DBHelper mHelper = DBHelper.getGlobal(context);
         ContentValues cv = new ContentValues();
         cv.put(Group.PARENT_FEED_ID, parentId);
         mHelper.getWritableDatabase().update(Group.TABLE, cv, Group.FEED_NAME + "=?",

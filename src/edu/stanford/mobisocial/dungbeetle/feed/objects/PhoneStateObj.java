@@ -1,8 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import mobisocial.socialkit.Obj;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.telephony.TelephonyManager;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -12,10 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-public class PhoneStateObj implements DbEntryHandler, FeedRenderer {
+public class PhoneStateObj extends DbEntryHandler implements FeedRenderer {
 
     public static final String EXTRA_STATE_UNKNOWN = "UNKNOWN";
     public static final String TYPE = "phone";
@@ -39,19 +40,13 @@ public class PhoneStateObj implements DbEntryHandler, FeedRenderer {
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+        JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         valueTV.setText(asText(content));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(

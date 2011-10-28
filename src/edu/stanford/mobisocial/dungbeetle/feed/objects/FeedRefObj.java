@@ -18,15 +18,17 @@ import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.content.Context;
 
 import android.net.Uri;
-import android.util.Base64;
 import android.util.Pair;
 
-public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
+public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activator {
 
     public static final String TAG = "FeedObj";
 
@@ -42,9 +44,6 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         return Feed.forGroup(g);
     }
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static JSONObject json(Group g){
         JSONObject obj = new JSONObject();
         try{
@@ -54,12 +53,11 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
         }
         return obj;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+
 		TextView view = new TextView(context);
         view.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -71,8 +69,8 @@ public class FeedRefObj implements DbEntryHandler, FeedRenderer, Activator {
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
-	    Feed feedRef = new Feed(content);
+	public void activate(Context context, SignedObj obj) {
+	    Feed feedRef = new Feed(obj.getJson());
 	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
 	    try {
 	        Group g = mg.get();

@@ -1,21 +1,23 @@
 package edu.stanford.mobisocial.dungbeetle;
-import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
-import android.widget.ImageView;
-import android.widget.TextView;
+import java.util.BitSet;
+
+import org.json.JSONObject;
+
 import android.app.Activity;
-import android.os.Bundle;
 import android.content.Intent;
+import android.net.Uri;
+import android.nfc.NfcAdapter;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.net.Uri;
-import android.nfc.NfcAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
-import java.util.BitSet;
-import org.json.JSONObject;
-import edu.stanford.mobisocial.bumblebee.util.Base64;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class HandleNfcContact extends Activity {
     private String mName;
@@ -32,7 +34,7 @@ public class HandleNfcContact extends Activity {
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
 		mutualFriendsButton.setVisibility(View.GONE);
 
-		if(uri != null && 
+		if (uri != null && 
 		        (uri.getScheme().equals(HomeActivity.SHARE_SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
 			
@@ -46,7 +48,7 @@ public class HandleNfcContact extends Activity {
             try{
                 JSONObject o = new JSONObject(mProfile);
                 mName = o.getString("name");
-                //mPicture = Base64.decode(o.getString("picture"));
+                //mPicture = FastBase64.decode(o.getString("picture"));
             }
             catch(Exception e){
             }
@@ -57,12 +59,12 @@ public class HandleNfcContact extends Activity {
             final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri, false);
 		    saveButton.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
-                        DBHelper helper = new DBHelper(HandleNfcContact.this);
+                        DBHelper helper = DBHelper.getGlobal(HandleNfcContact.this);
                         IdentityProvider ident = new DBIdentityProvider(helper);
 
                         try {
                             JSONObject profile = new JSONObject(ident.userProfile());
-                            byte[] data = Base64.decode(profile.getString("picture"));
+                            byte[] data = FastBase64.decode(profile.getString("picture"));
                             
                             Helpers.updatePicture(HandleNfcContact.this, data);
                         } catch(Exception e) { }
@@ -95,11 +97,16 @@ public class HandleNfcContact extends Activity {
                     
                 //((App)getApplication()).contactImages.lazyLoadImage(mPicture.hashCode(), mPicture, portraitView);
             }
-		}
-		else{
-            saveButton.setVisibility(View.INVISIBLE);
+		} else {
+            saveButton.setEnabled(false);
+            cancelButton.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    finish();
+                }
+            });
 			Toast.makeText(this, "Failed to receive contact :(", 
                            Toast.LENGTH_SHORT).show();
+			Log.d(TAG, "Failed to handle " + uri);
 		}
 
 	}

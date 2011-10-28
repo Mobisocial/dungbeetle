@@ -1,8 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
@@ -18,13 +16,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CursorAdapter;
 import android.widget.Gallery;
 import android.widget.SpinnerAdapter;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * A side-scrolling view of a feed's objects.
@@ -33,7 +31,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     private static final String TAG = "dbobjPager";
 
     private Uri mFeedUri;
-    private ContactCache mContactCache;
     private SpinnerAdapter mAdapter;
 
     @Override
@@ -45,7 +42,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mContactCache = new ContactCache(getActivity());
     }
 
     @Override
@@ -61,7 +57,6 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mContactCache.close();
     }
 
     private class ObjectListCursorAdapter extends CursorAdapter {
@@ -79,31 +74,25 @@ public class FeedHistoryFragment extends Fragment implements OnItemClickListener
 
         @Override
         public void bindView(View v, Context context, Cursor c) {
-            DbObject.bindView(v, context, c, mContactCache, true);
+            DbObject.bindView(v, context, c, true);
         }
     }
 
     private SpinnerAdapter getListAdapter(Context context, Uri feedUri) {
         Cursor c = context.getContentResolver().query(feedUri, null,
-                DbObjects.getFeedObjectClause(), null, DbObject._ID + " DESC");
+                DbObjects.getFeedObjectClause(null), null, DbObject._ID + " DESC");
         return new ObjectListCursorAdapter(context, c);
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Cursor c = (Cursor)mAdapter.getItem(position);
-        String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-        byte[] raw = c.getBlob(c.getColumnIndexOrThrow(DbObject.RAW));
-        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + jsonSrc);
-        try{
-            JSONObject obj = new JSONObject(jsonSrc);
-            Activator activator = DbObjects.getActivator(obj);
-            if(activator != null){
-                activator.activate(getActivity(), obj, raw);
-            }
-        }
-        catch(JSONException e){
-            Log.e(TAG, "Couldn't parse obj.", e);
+        DbObj obj = App.instance().getMusubi().objForCursor(c);
+        if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getJson());
+
+        Activator activator = DbObjects.getActivator(obj.getType());
+        if(activator != null){
+            activator.activate(getActivity(), obj);
         }
     }
 }

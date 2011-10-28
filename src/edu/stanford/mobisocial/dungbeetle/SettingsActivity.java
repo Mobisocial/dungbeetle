@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Process;
@@ -206,7 +207,10 @@ public class SettingsActivity extends Activity {
 	/*** Dashboard stuff ***/
 	public void goHome(Context context) {
 		final Intent intent = new Intent(context, HomeActivity.class);
-		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
 		context.startActivity(intent);
 	}
 
@@ -298,7 +302,7 @@ public class SettingsActivity extends Activity {
 		@Override
 		protected Void doInBackground(Void... params) {
 			try {
-				DBHelper mHelper = new DBHelper(SettingsActivity.this);
+				DBHelper mHelper = DBHelper.getGlobal(SettingsActivity.this);
 				mHelper.vacuum();
 			} catch (Exception e) {
 				Log.e(TAG, "Failure doing chores (vacuuming)", e);
@@ -336,7 +340,7 @@ public class SettingsActivity extends Activity {
 		@Override
 		protected Exception doInBackground(Void... params) {
 			try {
-				DBHelper mHelper = new DBHelper(SettingsActivity.this);
+				DBHelper mHelper = DBHelper.getGlobal(SettingsActivity.this);
 				mHelper.getReadableDatabase().close();
 				File data = Environment.getDataDirectory();
 				String currentDBPath = "/data/edu.stanford.mobisocial.dungbeetle/databases/"
@@ -391,7 +395,7 @@ public class SettingsActivity extends Activity {
 
 		@Override
 		protected void onPreExecute() {
-			helper_ = new DBHelper(SettingsActivity.this);
+			helper_ = DBHelper.getGlobal(SettingsActivity.this);
 			progress_ = new ProgressDialog(SettingsActivity.this);
 			progress_.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 			progress_.setOnKeyListener(new IgnoreSearchKeyListener());
@@ -443,7 +447,6 @@ public class SettingsActivity extends Activity {
 				// Access the copied database so SQLiteHelper will cache it and
 				// mark it as created.
 				helper_.getWritableDatabase().close();
-				helper_.checkEncodedExists(helper_.getReadableDatabase());
 				helper_.close();
 
 				//kill because the old toggle code really never worked for me

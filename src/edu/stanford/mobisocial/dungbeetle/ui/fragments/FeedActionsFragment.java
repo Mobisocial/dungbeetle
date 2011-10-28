@@ -31,6 +31,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -45,6 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
+import edu.stanford.mobisocial.dungbeetle.ui.FeedHomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
@@ -59,9 +61,13 @@ public class FeedActionsFragment extends Fragment {
     private Uri mExternalFeedUri;
     private String mGroupName;
     private boolean mDualPane;
+    
 
     private static final int REQUEST_BT_BROADCAST = 2;
     private static final int REQUEST_BT_ENABLE = 3;
+    
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,17 +90,19 @@ public class FeedActionsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem item;
+        int placement = 0;
         Log.d(TAG, "creating menu " + mDualPane);
-        if (mDualPane) {
-            item = menu.add(0, MENU_VIEW, 0, "View");
+        if (mDualPane || MusubiBaseActivity.isDeveloperModeEnabled(getActivity())) {
+            item = menu.add(0, MENU_VIEW, placement++, "View");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
             }
         }
-        item = menu.add(0, MENU_SHARE, 0, "Share");
+        item = menu.add(0, MENU_SHARE, placement++, "Share");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
         }
+        
     }
 
     public boolean onOptionsItemSelected (MenuItem item){
@@ -110,6 +118,7 @@ public class FeedActionsFragment extends Fragment {
         }
         return false;
     }
+    
 
     public void promptForSharing() {
         new AlertDialog.Builder(getActivity())

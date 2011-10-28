@@ -7,13 +7,16 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.view.MenuItem;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedSlideshowFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 
 public class FeedViews {
@@ -23,6 +26,7 @@ public class FeedViews {
         sFeedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         sFeedViews.add(new MapView());
         sFeedViews.add(new PartyView());
+        sFeedViews.add(FeedViews.feedViewFrom("Timeshow", new FeedSlideshowFragment()));
         sFeedViews.add(new PresenceView());
         //sFeedViews.add(new StatsView());
     }
@@ -31,15 +35,15 @@ public class FeedViews {
         return sFeedViews;
     }
 
-    public static List<FeedView> getDefaultFeedViews() {
+    public static List<FeedView> getDefaultFeedViews(Context context) {
         List<FeedView> feedViews = new ArrayList<FeedView>();
         feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
-        //feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        //if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
-            feedViews.add(new PresenceView());
-        //}
+        feedViews.add(new PresenceView());
+        if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
+            feedViews.add(new FilterView());
+        }
         return feedViews;
     }
 

@@ -1,11 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
@@ -26,7 +22,6 @@ import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -48,7 +43,6 @@ import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 
@@ -80,14 +74,7 @@ public class HomeActivity extends MusubiBaseActivity {
             }
         } catch (ClassCastException e) {}
 
-        
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
-        if(metrics.heightPixels > metrics.widthPixels)
-        	setContentView(R.layout.activity_home_portrait);
-        else
-        	setContentView(R.layout.activity_home_landscape);
+        setContentView(R.layout.activity_home);
         MusubiBaseActivity.doTitleBar(this);
         DBServiceIntent = new Intent(this, DungBeetleService.class);
         startService(DBServiceIntent);
@@ -130,7 +117,7 @@ public class HomeActivity extends MusubiBaseActivity {
                             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 
                                     
-                            DBHelper helper = new DBHelper(HomeActivity.this);
+                            DBHelper helper = DBHelper.getGlobal(HomeActivity.this);
                             DBIdentityProvider ident = new DBIdentityProvider(helper);
                             nameValuePairs.add(new BasicNameValuePair("email", ident.userEmail()));
                             
@@ -162,7 +149,8 @@ public class HomeActivity extends MusubiBaseActivity {
         mNfc.addNdefHandler(new NdefHandler() {
                 public int handleNdef(final NdefMessage[] messages){
                     HomeActivity.this.runOnUiThread(new Runnable(){
-                            public void run(){
+                            public void run() {
+                                Log.d(TAG, "Handling ndef uri: " + uriFromNdef(messages));
                                 doHandleInput(uriFromNdef(messages));
                             }
                         });
@@ -194,7 +182,7 @@ public class HomeActivity extends MusubiBaseActivity {
         /* sample code for demonstration of the nearby functionality without
          * a real hookup to the service.
          */
-//        DBHelper helper = new DBHelper(HomeActivity.this);
+//        DBHelper helper = DBHelper.getGlobal(HomeActivity.this);
 //        Map<byte[], byte[]> pkss = helper.getPublicKeySharedSecretMap();
 //
 //        Set<byte[]> ks = pkss.keySet();
@@ -224,13 +212,18 @@ public class HomeActivity extends MusubiBaseActivity {
     }
 
     protected void doHandleInput(Uri uri) {
+        if (DBG) Log.d(TAG, "Handling input uri " + uri);
         if (uri == null) {
             return;
+        }
+
+        if (uri.getScheme() == null) {
+            Log.w(TAG, "Null uri scheme for " + uri);
         }
         
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
-            Intent intent = new Intent(getIntent());
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             intent.setClass(this, HandleNfcContact.class);
             startActivity(intent);
         } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
@@ -281,23 +274,13 @@ public class HomeActivity extends MusubiBaseActivity {
     }
 
     public void pushGroupInfoViaNfc(Uri uri) {
-        NdefRecord urlRecord = new NdefRecord(
-            NdefRecord.TNF_ABSOLUTE_URI, 
-            NdefRecord.RTD_URI, new byte[] {},
-            uri.toString().getBytes());
-        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
-        mNfc.share(ndef);
+        mNfc.share(NdefFactory.fromUri(uri));
     }
 
     public void pushContactInfoViaNfc() {
     	Uri uri = FriendRequest.getInvitationUri(this);
-    	Log.w(TAG, "pushing " + uri.toString());
-        NdefRecord urlRecord = new NdefRecord(
-            NdefRecord.TNF_ABSOLUTE_URI, 
-            NdefRecord.RTD_URI, new byte[] {},
-            uri.toString().getBytes());
-        NdefMessage ndef = new NdefMessage(new NdefRecord[] { urlRecord });
-        mNfc.share(ndef);
+    	if (DBG) Log.w(TAG, "pushing " + uri.toString());
+        mNfc.share(NdefFactory.fromUri(uri));
     }
 
     public boolean acceptInboundContactInfo() {

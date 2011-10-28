@@ -1,34 +1,38 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.Helpers;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Environment;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-
-import android.graphics.Bitmap;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.os.Environment;
-import android.content.Intent;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
-
-import java.io.File;
-import java.io.OutputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import android.net.Uri;
-import android.util.Log;
-
-public class ResharePhotoAction extends ObjAction {
-    public void onAct(Context context, DbEntryHandler objType, JSONObject objData, byte[] raw) {
-        String b64Bytes = objData.optString(PictureObj.DATA);
-
+/**
+ * Sends a picture object using the standard Android "SEND" intent.
+ *
+ */
+public class ExportPhotoAction extends ObjAction {
+    @Override
+    public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
+        byte[] raw = obj.getRaw();
+        if (raw == null) {
+            String b64Bytes = obj.getJson().optString(PictureObj.DATA);
+        	raw = FastBase64.decode(b64Bytes);
+        }
         OutputStream outStream = null;
         File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/temp_share.png");
         try {
@@ -42,6 +46,7 @@ public class ResharePhotoAction extends ObjAction {
             outStream.close();
 
             bitmap.recycle();
+            bitmap = null;
             System.gc();
             Intent intent = new Intent(android.content.Intent.ACTION_SEND);  
             intent.setType("image/png");
@@ -56,12 +61,12 @@ public class ResharePhotoAction extends ObjAction {
     }
 
     @Override
-    public String getLabel() {
+    public String getLabel(Context context) {
         return "Export";
     }
 
     @Override
-    public boolean isActive(DbEntryHandler objType, JSONObject objData) {
+    public boolean isActive(Context context, DbEntryHandler objType, JSONObject objData) {
         /*if (!MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
             return false;
         }*/

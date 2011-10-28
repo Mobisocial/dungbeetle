@@ -2,28 +2,28 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.app.Activity;
-import android.content.ContentValues;
-import android.content.Context;
-import android.net.Uri;
-import android.text.util.Linkify;
-import android.util.Pair;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
-import android.content.Intent;
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.text.util.Linkify;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+
+public class StatusObj extends DbEntryHandler implements FeedRenderer, Activator {
 
     public static final String TYPE = "status";
     public static final String TEXT = "text";
@@ -48,15 +48,9 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
     public void handleDirectMessage(Context context, Contact from, JSONObject obj){
 
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+        JSONObject content = obj.getJson();
         TextView valueTV = new TextView(context);
         valueTV.setText(content.optString(TEXT));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
@@ -67,16 +61,17 @@ public class StatusObj implements DbEntryHandler, FeedRenderer, Activator {
             if(!allowInteractions)
             	valueTV.setMovementMethod(null);
         }
+
         frame.addView(valueTV);
     }
 
 	static final Pattern p = Pattern.compile("\\b[-0-9a-zA-Z+\\.]+:\\S+");
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
+    public void activate(Context context, SignedObj obj){
     	//linkify should have picked it up already but if we are in TV mode we
     	//still need to activate
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        String text = content.optString(TEXT);
+        String text = obj.getJson().optString(TEXT);
         
         //launch the first thing that looks like a link
         Matcher m = p.matcher(text);

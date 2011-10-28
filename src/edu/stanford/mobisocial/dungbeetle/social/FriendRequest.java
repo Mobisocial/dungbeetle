@@ -42,7 +42,7 @@ public class FriendRequest {
             p.edit().putString(PREF_FRIEND_CAPABILITY, capability).commit();
             cap = capability;
         }
-        DBHelper helper = new DBHelper(c);
+        DBHelper helper = DBHelper.getGlobal(c);
         IdentityProvider ident = new DBIdentityProvider(helper);
         try {
 	        // String name = ident.userName();
@@ -72,7 +72,7 @@ public class FriendRequest {
         try {
             JSONObject o = new JSONObject(friendRequest.getQueryParameter("profile"));
             name = o.getString("name");
-            // picture = Base64.decode(o.getString("picture"));
+            // picture = FastBase64.decode(o.getString("picture"));
         } catch (Exception e) {
         }
 

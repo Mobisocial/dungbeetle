@@ -29,7 +29,6 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
@@ -38,7 +37,6 @@ import edu.stanford.mobisocial.dungbeetle.util.ContactCache;
 public class FeedListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "DungBeetle";
     private FeedListCursorAdapter mFeeds;
-    private ContactCache mContactCache;
     private DBHelper mHelper;
     private OnFeedSelectedListener mFeedSelectedListener;
     
@@ -70,15 +68,13 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
             getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         }
 
-        mHelper = new DBHelper(getActivity());
-        mContactCache = new ContactCache(getActivity());
+        mHelper = DBHelper.getGlobal(getActivity());
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        mContactCache.close();
     }
 
     private class FeedListCursorAdapter extends CursorAdapter {
@@ -111,7 +107,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
             int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
-            DbObject.bindView(v, getActivity(), c, mContactCache, false);
+            DbObject.bindView(v, context, c, false);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
                 Group g = new Group(c);
@@ -119,14 +115,14 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
                 v.setTag(R.id.group_id, g.id);
                 v.setTag(R.id.group_uri, g.dynUpdateUri);
                 if (numUnread > 0) {
-                    labelView.setText(g.name + " (" + numUnread + " unread messages)");
+                    labelView.setText(g.name + " (" + numUnread + " unread)");
                 }
                 else {
                 	labelView.setText(g.name);
                 }
             } else {
             	if (numUnread > 0) {
-            		labelView.setText(feedName + " (" + numUnread + " unread messages)");
+            		labelView.setText(feedName + " (" + numUnread + " unread)");
             	}
             	else {
             		labelView.setText(feedName);
@@ -222,8 +218,12 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        mFeeds = new FeedListCursorAdapter(getActivity(), cursor);
-        setListAdapter(mFeeds);
+        if (mFeeds == null) {
+            mFeeds = new FeedListCursorAdapter(getActivity(), cursor);
+            setListAdapter(mFeeds);
+        } else {
+            mFeeds.changeCursor(cursor);
+        }
     }
 
     @Override

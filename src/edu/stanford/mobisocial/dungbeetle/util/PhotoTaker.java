@@ -79,7 +79,7 @@ public class PhotoTaker implements ActivityCallout {
 			
 			options.inJustDecodeBounds = false;
 			options.inSampleSize = scale;
-			Bitmap sourceBitmap = sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
+			Bitmap sourceBitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
 			// Bitmap sourceBitmap = Media.getBitmap(getContentResolver(),
 			// Uri.fromFile(file) );
 			int width = sourceBitmap.getWidth();
@@ -139,8 +139,12 @@ public class PhotoTaker implements ActivityCallout {
             String[] projection = { Images.ImageColumns.ORIENTATION };
             Cursor c = context.getContentResolver().query(
                     uri, projection, null, null, null);
-            if (c.moveToFirst()) {
-                return c.getInt(0);
+            try {
+	            if (c.moveToFirst()) {
+	                return c.getInt(0);
+	            }
+            } finally {
+            	c.close();
             }
         } else if (uri.getScheme().equals("file")) {
             try {

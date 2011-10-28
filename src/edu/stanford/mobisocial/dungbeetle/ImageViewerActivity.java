@@ -1,35 +1,47 @@
 package edu.stanford.mobisocial.dungbeetle;
-import android.app.Activity;
-import android.net.Uri;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import android.content.Intent;
-import android.os.Bundle;
-import android.widget.ImageView;
-
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.graphics.Bitmap;
-import android.os.Environment;
-import android.widget.Toast;
-
 import java.io.File;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class ImageViewerActivity extends Activity{
+import mobisocial.socialkit.musubi.DbObj;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mobisocial.corral.ContentCorral;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
+import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
+import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
+
+public class ImageViewerActivity extends Activity {
+    private static final String TAG = "imageViewer";
 	private BitmapManager mgr = new BitmapManager(1);
 	private ImageView im;
 
 	private Bitmap bitmap;
-	private String extStorageDirectory;
+	private final String extStorageDirectory =
+	        Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
 	private Intent mIntent;
 
     public void onCreate(Bundle savedInstanceState) {
@@ -38,7 +50,11 @@ public class ImageViewerActivity extends Activity{
 		im = (ImageView)findViewById(R.id.image);
 		im.setScaleType(ImageView.ScaleType.FIT_CENTER);
 		mIntent = getIntent();
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
         if(mIntent.hasExtra("image_url")){
             String url = mIntent.getStringExtra("image_url");
             ((App)getApplication()).objectImages.lazyLoadImage(
@@ -55,13 +71,76 @@ public class ImageViewerActivity extends Activity{
             ((App)getApplication()).objectImages.lazyLoadImage(
             		bytes.hashCode(), bytes, im);
             bitmap = mgr.getBitmap(bytes.hashCode(), bytes);
+        } else if (mIntent.hasExtra("obj")) {
+            try {
+                final JSONObject content = new JSONObject(mIntent.getStringExtra("obj"));
+                byte[] bytes = FastBase64.decode(content.optString(PictureObj.DATA));
+                ((App)getApplication()).objectImages.lazyLoadImage(
+                        bytes.hashCode(), bytes, im);
+                bitmap = mgr.getBitmap(bytes.hashCode(), bytes);
+            } catch (JSONException e) {}
         }
+        
+        if (mIntent.hasExtra("objHash")) {
+            if (!ContentCorral.CONTENT_CORRAL_ENABLED) {
+                return;
+            }
 
-        extStorageDirectory = Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
+            long objHash = mIntent.getLongExtra("objHash", -1);
+            final DbObj obj = App.instance().getMusubi().objForHash(objHash);
+            final JSONObject json = obj.getJson();
+            if (json.has(ContentCorral.OBJ_LOCAL_URI)) {
+                // TODO: this is a proof-of-concept.
+                new Thread() {
+                    public void run() {
+                        try {
+                            if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, obj)) {
+                                //toast("Trying to go HD...");
+                            }
+                            Log.d(TAG, "Trying to go HD...");
+                            final Uri fileUri = ContentCorral
+                                    .fetchContent(ImageViewerActivity.this, obj);
+                            if (fileUri == null) {
+                                try {
+                                    Log.d(TAG, "Failed to go HD for " + json.getString(ContentCorral.OBJ_LOCAL_URI));
+                                } catch (JSONException e) {
+                                    Log.d(TAG, "Failed to go HD for " + json);
+                                }
+                                return;
+                            }
+                            Log.d(TAG, "Opening HD file " + fileUri);
 
+                            InputStream is = getContentResolver().openInputStream(fileUri);
+                            BitmapFactory.Options options = new BitmapFactory.Options();
+                            options.inSampleSize = 4;
 
+                            Matrix matrix = new Matrix();
+                            float rotation = PhotoTaker.rotationForImage(ImageViewerActivity.this, fileUri);
+                            if (rotation != 0f) {
+                                matrix.preRotate(rotation);
+                            }
+                            bitmap = BitmapFactory.decodeStream(is, null, options);
+
+                            int width = bitmap.getWidth();
+                            int height = bitmap.getHeight();
+                            bitmap = Bitmap.createBitmap(
+                                    bitmap, 0, 0, width, height, matrix, true);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    im.setImageBitmap(bitmap);
+                                }
+                            });
+                        } catch (IOException e) {
+                            // toast("Failed to go HD");
+                            Log.e(TAG, "Failed to get hd content", e);
+                            // continue
+                        }
+                    };
+                }.start();
+            }
+        }
 	}
-
 	
     private final static int SAVE = 0;
     private final static int SET_PROFILE = 1;
@@ -107,7 +186,7 @@ public class ImageViewerActivity extends Activity{
             case SET_PROFILE: {
                 if(mIntent.hasExtra("b64Bytes")) {
                     String b64Bytes = mIntent.getStringExtra("b64Bytes");
-                    byte[] data = Base64.decode(b64Bytes);
+                    byte[] data = FastBase64.decode(b64Bytes);
                     Helpers.updatePicture(ImageViewerActivity.this, data);
                     Toast.makeText(ImageViewerActivity.this,
                             "Set profile picture.", Toast.LENGTH_LONG).show(); 
@@ -124,13 +203,30 @@ public class ImageViewerActivity extends Activity{
     }
 
 
-    public void onDestroy() {
-		super.onDestroy();
-		if(bitmap != null)
+    public void onPause() {
+		super.onPause();
+		if (bitmap != null) {
 			bitmap.recycle();
-		if(mgr != null)
-			mgr.recycle();
+			bitmap = null;
+		}
         System.gc();
 	}
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mgr != null) {
+            mgr.recycle();
+            mgr = null;
+        }
+    }
+
+    private final void toast(final String text) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(ImageViewerActivity.this, text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }

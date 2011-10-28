@@ -18,7 +18,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -39,9 +38,12 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
+import edu.stanford.mobisocial.dungbeetle.feed.view.FilterView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -56,7 +58,7 @@ import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 /**
  * TODO: This should be split into two classes: ViewProfileActivity and ViewContactActivity.
  */
-public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener {
+public class ViewContactActivity extends MusubiBaseActivity implements ViewPager.OnPageChangeListener, Filterable {
     @SuppressWarnings("unused")
     private static final String TAG = "ProfileActivity";
     private long mContactId;
@@ -67,11 +69,21 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
     private final List<Fragment> mFragments = new ArrayList<Fragment>();
     private final List<String> mLabels = new ArrayList<String>();
     ProfileContentObserver mProfileContentObserver;
+    
+
+    private final String[] filterTypes = DbObjects.getRenderableTypes();
+    private boolean[] checked;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
 
+        
+        checked = new boolean[filterTypes.length];
+    	
+        for(int x = 0; x < filterTypes.length; x++) {
+        	checked[x] = true;
+        }
         
         findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
         mContactId = getIntent().getLongExtra("contact_id", -1);
@@ -120,6 +132,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 sharingView.getFragment().setArguments(args);
                 mLabels.add(sharingView.getName());
                 mFragments.add(sharingView.getFragment());
+                
+                FeedView filteringView = new FilterView();
+                filteringView.getFragment().setArguments(args);
+                mLabels.add(filteringView.getName());
+                mFragments.add(filteringView.getFragment());
             }
         }
 
@@ -236,6 +253,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
      */
 
     public static class EditProfileFragment extends Fragment {
+        private ImageView mIcon;
         private EditText mProfileName;
         private EditText mProfileAbout;
 
@@ -250,37 +268,23 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         public void onActivityCreated(Bundle savedInstanceState) {
             super.onActivityCreated(savedInstanceState);
             
-            final DBHelper mHelper = new DBHelper(getActivity());
-            final IdentityProvider mIdent = new DBIdentityProvider(mHelper);
+            final DBHelper mHelper = DBHelper.getGlobal(getActivity());
+            final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
             try {
 	            mProfileName = (EditText) getView().findViewById(R.id.edit_profile_name);
 	            mProfileAbout = (EditText) getView().findViewById(R.id.edit_profile_about);
 	
 	            mProfileName.setText(mIdent.userName());
-	            Cursor c = getActivity().getContentResolver().query(
-	                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
-	                    DbObject.TYPE + "=? AND " + DbObject.CONTACT_ID + "=?", new String[] {
-	                            "profile", Long.toString(Contact.MY_ID)
-	                    }, DbObject.TIMESTAMP + " DESC");
-	
-	            if (c.moveToFirst()) {
-	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                try {
-	                    JSONObject obj = new JSONObject(jsonSrc);
-	                    String name = obj.optString("name");
-	                    String about = obj.optString("about");
-	                    mProfileName.setText(name);
-	                    mProfileAbout.setText(about);
-	                } catch (JSONException e) {
-	                }
-	            }
-	
-	            Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
+	            Contact c = mIdent.contactForUser();
+                mProfileName.setText(c.name);
+                mProfileAbout.setText(c.status);
+                Button saveButton = (Button) getView().findViewById(R.id.save_profile_button);
 	            saveButton.setOnClickListener(new OnClickListener() {
 	                public void onClick(View v) {
 	                    String name = mProfileName.getText().toString();
 	                    String about = mProfileAbout.getText().toString();
-	                    MyInfo.setMyName(mHelper, mProfileName.getText().toString());
+	                    MyInfo.setMyName(mHelper, name);
+	                    MyInfo.setMyAbout(mHelper, about);
 	                    Helpers.updateProfile(getActivity(), name, about);
 	                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
 	                }
@@ -304,10 +308,17 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         private TextView mProfileName;
         private TextView mProfileEmail;
         private TextView mProfileAbout;
+		private Activity mActivity;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+        }
+        @Override
+        public void onAttach(Activity activity) {
+        	//we have to save this because we get a callback
+        	mActivity = activity;
+        	super.onDetach();
         }
 
         @Override
@@ -316,21 +327,37 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             mContactId = getArguments().getLong("contact_id");
             View v = inflater.inflate(R.layout.view_self_profile, container, false);
             mIcon = (ImageView) v.findViewById(R.id.icon);
+            
+            final DBHelper mHelper = DBHelper.getGlobal(mActivity);
+            final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+            Contact c = null;
+            try {
+            	c = mIdent.contactForUser();
+            } finally {
+            	mHelper.close();
+            	mIdent.close();
+            }
             if (mContactId == Contact.MY_ID) {
+            	if(c.picture == null) {
+            		mIcon.setImageResource(R.drawable.anonymous);        		
+            	} else {
+                	mIcon.setImageBitmap(c.picture);
+            	}
                 mIcon.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
-                        Toast.makeText(getActivity(), "Loading camera...", Toast.LENGTH_SHORT)
+                        Toast.makeText(mActivity, "Loading camera...", Toast.LENGTH_SHORT)
                                 .show();
-                        ((InstrumentedActivity) getActivity()).doActivityForResult(new PhotoTaker(
-                                getActivity(), new PhotoTaker.ResultHandler() {
+                        ((InstrumentedActivity) mActivity).doActivityForResult(new PhotoTaker(
+                        		mActivity, new PhotoTaker.ResultHandler() {
                                     @Override
                                     public void onResult(byte[] data) {
-                                        Helpers.updatePicture(getActivity(), data);
+                                        Helpers.updatePicture(mActivity, data);
                                         // updateProfileToGroups();
                                     }
                                 }, 200, false));
                     }
                 });
+            } else {
             }
             mProfileName = (TextView) v.findViewById(R.id.view_profile_name);
             mProfileEmail = (TextView) v.findViewById(R.id.view_profile_email);
@@ -355,23 +382,26 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         DbObject.TYPE + "= ? AND " + DbObject.CONTACT_ID + "= ?", new String[] {
                                 "profile", Long.toString(mContactId)
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                    DBHelper mHelper = new DBHelper(getActivity());
-                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        String name = obj.optString("name");
-                        String about = obj.optString("about");
-                        mProfileName.setText(name);
-                        mProfileEmail.setText(mIdent.userEmail());
-                        mProfileAbout.setText(about);
-                    } catch (JSONException e) {
-                    } finally {
-                    	mIdent.close();
-                    	mHelper.close();
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
+	                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        String name = obj.optString("name");
+	                        String about = obj.optString("about");
+	                        mProfileName.setText(name);
+	                        mProfileEmail.setText(mIdent.userEmail());
+	                        mProfileAbout.setText(about);
+	                    } catch (JSONException e) {
+	                    } finally {
+	                    	mIdent.close();
+	                    	mHelper.close();
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
 
                 presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener(getActivity()));
@@ -385,15 +415,18 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         DbObject.TYPE + "=?", new String[] {
                             PresenceObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        int myPresence = Integer.parseInt(obj.optString("presence"));
-                        presence.setSelection(myPresence);
-                    } catch (JSONException e) {
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        int myPresence = Integer.parseInt(obj.optString("presence"));
+	                        presence.setSelection(myPresence);
+	                    } catch (JSONException e) {
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
 
                 Uri profileUri = Uri
@@ -402,17 +435,20 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         new String[] {
                             ProfilePictureObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
-
-                if (c.moveToFirst()) {
-                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-
-                    try {
-                        JSONObject obj = new JSONObject(jsonSrc);
-                        String bytes = obj.optString(ProfilePictureObj.DATA);
-                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
-                                bytes.hashCode(), bytes, mIcon);
-                    } catch (JSONException e) {
-                    }
+                try {
+	                if (c.moveToFirst()) {
+	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	
+	                    try {
+	                        JSONObject obj = new JSONObject(jsonSrc);
+	                        String bytes = obj.optString(ProfilePictureObj.DATA);
+	                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
+	                                bytes.hashCode(), bytes, mIcon);
+	                    } catch (JSONException e) {
+	                    }
+	                }
+                } finally {
+                	c.close();
                 }
             } else {
                 presence.setVisibility(View.GONE);
@@ -421,8 +457,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                     mProfileName.setText(contact.name);
                     mProfileEmail.setText(contact.email);
                     mProfileAbout.setText(contact.status);
-                    ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(
-                            contact, mIcon, 200);
+                    mIcon.setImageBitmap(contact.picture);
                 } catch (NoValError e) {}
             }
         }
@@ -450,4 +485,19 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             }
         }
     }
+
+    @Override
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	@Override
+	public boolean[] getFilterCheckboxes() {
+		return checked;
+	}
+
+	@Override
+	public void setFilterCheckbox(int position, boolean check) {
+		checked[position] = check;
+	}
 }

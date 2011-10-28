@@ -33,7 +33,7 @@ public class HandleGroupSessionActivity extends Activity {
 		if(uri != null) {
             GroupProviders.GroupProvider gp1 = GroupProviders.forUri(uri);
             String feedName = gp1.feedName(uri);
-            DBHelper helper = new DBHelper(this);
+            DBHelper helper = DBHelper.getGlobal(this);
             Maybe<Group> mg = helper.groupByFeedName(feedName);
             long id = -1;
             try {

@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
+import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.Musubi;
+
 import org.json.JSONObject;
 
 import android.content.Intent;
@@ -13,9 +16,15 @@ public class AppState extends DbObject {
     public static final String EXTRA_APPLICATION_STATE = "mobisocial.db.STATE";
     public static final String EXTRA_APPLICATION_IMG = "mobisocial.db.THUMBNAIL_IMAGE";
     public static final String EXTRA_APPLICATION_TEXT = "mobisocial.db.THUMBNAIL_TEXT";
-    public static final String EXTRA_FEED_URI = "mobisocial.db.FEED";
+    public static final String EXTRA_FEED_URI = Musubi.EXTRA_FEED_URI;
+    public static final String EXTRA_OBJ_HASH = "mobisocial.db.OBJ_HASH";
+
     public AppState(JSONObject json) {
         super(AppStateObj.TYPE, json);
+    }
+
+    public AppState(DbObj obj) {
+        super(obj.getType(), obj.getJson());
     }
 
     @Deprecated

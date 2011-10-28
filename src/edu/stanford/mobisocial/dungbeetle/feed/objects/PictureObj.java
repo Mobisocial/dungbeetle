@@ -1,16 +1,28 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mobisocial.corral.ContentCorral;
+
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.util.Log;
+import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -19,25 +31,20 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-
-import android.net.Uri;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-import android.util.Log;
-import android.util.Pair;
-
-public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
+public class PictureObj extends DbEntryHandler
+        implements FeedRenderer, Activator, UnprocessedMessageHandler, OutgoingMessageHandler {
 	public static final String TAG = "PictureObj";
 
     public static final String TYPE = "picture";
     public static final String DATA = "data";
+
+    // TODO: This is a hack, with many ways to fix. For example,
+    // it can be used with its timestamp and an instance variable to
+    // track a users' latest ip address.
+    // Security should also be considered.
 
     @Override
     public String getType() {
@@ -50,9 +57,13 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
     public static DbObject from(byte[] data) {
         return new DbObject(TYPE, PictureObj.json(data));
     }
+
+    public static DbObject from(JSONObject base, byte[] data) {
+        return new DbObject(TYPE, PictureObj.json(base, data));
+    }
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		byte[] raw = Base64.decode(json.optString(DATA));
+		byte[] raw = FastBase64.decode(json.optString(DATA));
 		json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, raw);
 	}
@@ -104,22 +115,46 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
         byte[] data = baos.toByteArray();
         sourceBitmap.recycle();
+        sourceBitmap = null;
         resizedBitmap.recycle();
-        System.gc();
-        return from(data);
+        resizedBitmap = null;
+        System.gc(); // TODO: gross.
+
+        JSONObject base = new JSONObject();
+        if (ContentCorral.CONTENT_CORRAL_ENABLED) {
+            String localIp = ContentCorral.getLocalIpAddress();
+            if (localIp != null) {
+                try {
+                    // TODO: Security breach.
+                    // Send to trusted users only.
+                    base.put(Contact.ATTR_LAN_IP, localIp);
+                    base.put(ContentCorral.OBJ_LOCAL_URI, imageUri.toString());
+                    base.put(ContentCorral.OBJ_MIME_TYPE, cr.getType(imageUri));
+                } catch (JSONException e) {
+                    Log.e(TAG, "impossible json error possible!");
+                }
+            }
+        }
+        return from(base, data);
     }
 
     public static JSONObject json(byte[] data){
-        String encoded = Base64.encodeToString(data, false);
         JSONObject obj = new JSONObject();
+        return json(obj, data);
+    }
+
+    public static JSONObject json(JSONObject base, byte[] data){
+        String encoded = FastBase64.encodeToString(data);
         try{
-            obj.put("data", encoded);
+            base.put("data", encoded);
         }catch(JSONException e){}
-        return obj;
+        return base;
     }
 	
-	public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
-		if(raw == null) {
+	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
+        byte[] raw = obj.getRaw();
+		if (raw == null) {
 			Pair<JSONObject, byte[]> p = splitRaw(content);
 			content = p.first;
 			raw = p.second;
@@ -135,27 +170,32 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
-        byte[] bytes = Base64.decode(msg.optString(DATA));
+        byte[] bytes = FastBase64.decode(msg.optString(DATA));
         msg.remove(DATA);
 		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}
 
 	@Override
-    public void activate(Context context, JSONObject content, byte[] raw){
-		if(raw == null)
-	        raw = Base64.decode(content.optString(DATA));
-        Intent intent = new Intent(context, ImageViewerActivity.class);
-        String bytes = content.optString(DATA);
-        intent.putExtra("bytes", raw);
-        if (!(context instanceof Activity)) {
+    public void activate(Context context, SignedObj obj) {
+	    byte[] raw = obj.getRaw();
+	    String senderId = obj.getSender().getId(); 
+	    // TODO: set data uri for obj
+	    Intent intent = new Intent(context, ImageViewerActivity.class);
+	    intent.putExtra("objHash", obj.getHash());
+	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
+	    if (raw != null) {
+	        intent.putExtra("bytes", raw);
+	    }
+	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        context.startActivity(intent); 
+	    context.startActivity(intent);
     }
+
 	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
 		try {
 			if(raw != null)
-				objData = objData.put(DATA, Base64.encodeToString(raw, false));
+				objData = objData.put(DATA, FastBase64.encodeToString(raw));
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -185,7 +225,7 @@ public class PictureObj implements DbEntryHandler, FeedRenderer, Activator, Unpr
 
 	@Override
 	public Pair<JSONObject, byte[]> handleOutgoing(JSONObject json) {
-        byte[] bytes = Base64.decode(json.optString(DATA));
+        byte[] bytes = FastBase64.decode(json.optString(DATA));
         json.remove(DATA);
 		return new Pair<JSONObject, byte[]>(json, bytes);
 	}

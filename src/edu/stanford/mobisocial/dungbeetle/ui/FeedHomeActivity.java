@@ -20,7 +20,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -34,7 +36,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * Represents a group by showing its feed and members.
  */
 public class FeedHomeActivity extends MusubiBaseActivity
-        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener {
+        implements ViewPager.OnPageChangeListener, FeedListFragment.OnFeedSelectedListener, Filterable {
     private Nfc mNfc;
     private String mGroupName;
     private FeedActionsFragment mActionsFragment;
@@ -46,6 +48,10 @@ public class FeedHomeActivity extends MusubiBaseActivity
     private List<FeedView> mFeedViews = new ArrayList<FeedView>();
 
     public final String TAG = "GroupsTabActivity";
+    
+
+    private final String[] filterTypes = DbObjects.getRenderableTypes();
+    private boolean[] checked;
 
     public void onClickBroadcast(View v) {
         mActionsFragment.promptForSharing();
@@ -58,18 +64,24 @@ public class FeedHomeActivity extends MusubiBaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed_home);
         mNfc = new Nfc(this);
+        
+        checked = new boolean[filterTypes.length];
+    	
+        for(int x = 0; x < filterTypes.length; x++) {
+        	checked[x] = true;
+        }
 
-        mFeedViews = FeedViews.getDefaultFeedViews();
+        mFeedViews = FeedViews.getDefaultFeedViews(this);
         Intent intent = getIntent();
         String feed_name = null;
         String dyn_feed_uri = null;
         if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
-            Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feedUri.getLastPathSegment());
+            feed_name = feedUri.getLastPathSegment();
+            Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feed_name);
             try {
                 Group g = maybeG.get();
                 mGroupName = g.name;
-                feed_name = g.feedName;
                 dyn_feed_uri = g.dynUpdateUri;
             } catch (Exception e) {}
         }
@@ -106,7 +118,6 @@ public class FeedHomeActivity extends MusubiBaseActivity
         mFeedViewPager.setOnPageChangeListener(this);
         mFeedViewPager.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
 
-        new FeedFragmentAdapter(getSupportFragmentManager(), mFeedUri);
         ViewGroup group = (ViewGroup)findViewById(R.id.tab_frame);
         int i = 0;
         for (FeedView f : mFeedViews) {
@@ -131,14 +142,12 @@ public class FeedHomeActivity extends MusubiBaseActivity
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
-        setFeedUri(mFeedUri);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
-        clearFeedUri();
     }
 
     @Override
@@ -185,6 +194,7 @@ public class FeedHomeActivity extends MusubiBaseActivity
             return mFragments.get(position);
         }
     }
+    
 
     @Override
     public void onPageScrollStateChanged(int state) {
@@ -204,4 +214,19 @@ public class FeedHomeActivity extends MusubiBaseActivity
         }
         mButtons.get(position).setBackgroundColor(mColor);
     }
+
+	@Override
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	@Override
+	public boolean[] getFilterCheckboxes() {
+		return checked;
+	}
+
+	@Override
+	public void setFilterCheckbox(int position, boolean check) {
+		checked[position] = check;
+	}
 }

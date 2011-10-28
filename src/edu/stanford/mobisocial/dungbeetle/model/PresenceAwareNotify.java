@@ -32,7 +32,7 @@ public class PresenceAwareNotify {
     	Log.w(TAG, "notify me");
     	boolean doVibrate = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
-            doVibrate = false;
+            return;
         }
                 
         if (Push2TalkPresence.getInstance().isOnCall()) {
@@ -61,16 +61,19 @@ public class PresenceAwareNotify {
                 Log.e(TAG, "Error querying feeds/me/head");
                 return;
             }
-            c.moveToFirst();
-            if(!c.isAfterLast()) {
-                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-                try{
-                    JSONObject obj = new JSONObject(jsonSrc);
-                    int myPresence = Integer.parseInt(obj.optString("presence"));
-                    if(myPresence == Presence.BUSY) {
-                        notification.vibrate = null;
-                    }
-                }catch(JSONException e){}
+            try {
+            	if(c.moveToFirst()) {
+	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                try{
+	                    JSONObject obj = new JSONObject(jsonSrc);
+	                    int myPresence = Integer.parseInt(obj.optString("presence"));
+	                    if(myPresence == Presence.BUSY) {
+	                        notification.vibrate = null;
+	                    }
+	                }catch(JSONException e){}
+	            }
+            } finally {
+            	c.close();
             }
     	}
         else {
@@ -85,7 +88,6 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
-        mNotificationManager.cancel(NOTIFY_ID);
         mNotificationManager.notify(NOTIFY_ID, notification);
     }
 

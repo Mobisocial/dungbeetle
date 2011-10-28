@@ -1,6 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.Musubi;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -37,9 +41,9 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
-public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
+public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
 	private static final String TAG = "AppStateObj";
-	private static final boolean DBG = true;
+	private static final boolean DBG = false;
 
     public static final String TYPE = "appstate";
     public static final String ARG = "arg";
@@ -54,14 +58,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     public String getType() {
         return TYPE;
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
     public static AppState from(String packageName, String arg, String feedName, String groupUri) {
         return new AppState(json(packageName, arg, feedName, groupUri));
     }
@@ -107,7 +104,8 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-	public void render(final Context context, final ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
+	    JSONObject content = obj.getJson();
 	    // TODO: hack to show object history in app feeds
         JSONObject appState = getAppState(context, content);
         if (appState != null) {
@@ -150,7 +148,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
                                         LinearLayout.LayoutParams.WRAP_CONTENT,
                                         LinearLayout.LayoutParams.WRAP_CONTENT));
             Object o = frame.getTag(R.id.object_entry);
-            webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
+            webview.setOnTouchListener(new WebViewClickListener(frame, (Integer)o));
             frame.addView(webview);
         }
 
@@ -171,32 +169,56 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
 	@Override
-	public void activate(Context context, final JSONObject content, byte[] raw) {
-	    if (DBG) Log.d(TAG, "activating " + content);
+	public void activate(Context context, SignedObj obj) {
+	    if (DBG) Log.d(TAG, "activating " + obj.getJson() + "; hash=" + obj.getHash());
+	    Intent launch = getLaunchIntent(context, obj);
 
-	    String arg = content.optString(ARG);
-	    String state = content.optString(STATE);
-	    String appId = content.optString(DbObjects.APP_ID); // Not DbObject.APP_ID!
-	    if (DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
-	        // TODO: This is temporary, to continue to allow for posts
-	        // from a broadcasted Intent. This should be removed once the dependency
-	        // on Publisher and AppState.formIntent are removed.
-	        appId = content.optString(PACKAGE_NAME);
-	    }
-	    Uri appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
-	    Intent launch = getLaunchIntent(context, appId, arg, state, appFeed);
+	    // TODO: Temporary, while transitioning to AppObj
+        launch.putExtra("obj", obj.getJson().toString());
 	    if (!(context instanceof Activity)) {
 	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    }
 	    context.startActivity(launch);
 	}
 
-	public static Intent getLaunchIntent(Context context, String appId,
-	        String arg, String state, Uri appFeed) {
-	    if (DBG) Log.d(TAG, "Preparing launch of " + appId);
-	    Intent launch = new Intent(Intent.ACTION_MAIN);
+	public static Intent getLaunchIntent(Context context, SignedObj obj) {
+	    JSONObject content = obj.getJson();
+
+	    if (DBG) Log.d(TAG, "Getting launch intent for " + content);
+	    Uri  appFeed;
+	    if (content.has(DbObject.CHILD_FEED_NAME)) {
+	        Log.d(TAG, "using child feed");
+	        appFeed = Feed.uriForName(content.optString(DbObject.CHILD_FEED_NAME));
+	    } else {
+	        Log.d(TAG, "using obj feed");
+	        appFeed = Feed.uriForName(content.optString(DbObjects.FEED_NAME));
+	    }
+	    String arg = content.optString(ARG);
+        String state = content.optString(STATE);
+	    String appId = obj.getAppId();
+	    // TODO: Hack for deprecated launch method
+	    if (appId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
+	        appId = content.optString(PACKAGE_NAME);
+	    }
+	    if (DBG) Log.d(TAG, "Preparing launch of " + appId + " on " + appFeed);
+	    
+	    Intent launch = new Intent();
+	    if (content.has(AppReferenceObj.OBJ_INTENT_ACTION)) {
+	        launch.setAction(content.optString(AppReferenceObj.OBJ_INTENT_ACTION));
+	    } else {
+	        launch.setAction(Intent.ACTION_MAIN);
+	    }
+	    if (state != null) {
+            launch.putExtra("mobisocial.db.STATE", state);
+        }
         launch.addCategory(Intent.CATEGORY_LAUNCHER);
         launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+
+        // TODO: hack until this obj is available in 'related' query.
+        launch.putExtra("obj", content.toString());
+        // TODO: this is better.
+        launch.putExtra(Musubi.EXTRA_OBJ_HASH, obj.getHash());
+
         if (arg != null) {
             launch.putExtra(AppState.EXTRA_APPLICATION_ARGUMENT, arg);
         }
@@ -207,9 +229,6 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
             if (activity.packageName.equals(appId)) {
                 launch.setClassName(activity.packageName, activity.name);
                 launch.putExtra("mobisocial.db.PACKAGE", activity.packageName);
-                if (state != null) {
-                    launch.putExtra("mobisocial.db.STATE", state);
-                }
                 return launch;
             }
         }
@@ -251,7 +270,7 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
         private ViewGroup frame;
         private ListView lv;
 
-        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
+        public WebViewClickListener(ViewGroup vg, int position) {
             this.vg = vg;
             this.position = position;
         }
@@ -260,13 +279,13 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
             int action = event.getAction();
 
             switch (action) {
+                case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_CANCEL:
                     return true;
                 case MotionEvent.ACTION_UP:
                     sendClick();
                     return true;
             }
-
             return false;
         }
 
@@ -276,7 +295,10 @@ public class AppStateObj implements DbEntryHandler, FeedRenderer, Activator {
                     if (null != vg.getTag(R.id.object_entry)) {
                         frame = vg;
                     }
-                    vg = (ViewGroup)vg.getParent();
+                    vg = (ViewGroup) vg.getParent();
+                    if (vg.performClick()) {
+                        return;
+                    }
                 }
                 lv = (ListView) vg;
             }

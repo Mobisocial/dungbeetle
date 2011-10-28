@@ -11,7 +11,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 
-public class InviteToWebSessionObj implements DbEntryHandler {
+public class InviteToWebSessionObj extends DbEntryHandler {
 
     public static final String TYPE = "invite_web_session";
     public static final String WEB_URL = "webUrl";
@@ -21,13 +21,6 @@ public class InviteToWebSessionObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
 	public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
 		String arg = obj.optString(ARG);

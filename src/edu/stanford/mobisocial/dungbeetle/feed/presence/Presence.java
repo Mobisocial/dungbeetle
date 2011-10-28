@@ -9,16 +9,18 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 public class Presence {
     private static final List<FeedPresence> sFeedPresence = new ArrayList<FeedPresence>();
     static {
-
         sFeedPresence.add(new PhotosPresence());
     	if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
+    	    sFeedPresence.add(new VideosPresence());
             sFeedPresence.add(new MusicPresence());
+            sFeedPresence.add(new DiivaPresence());
             sFeedPresence.add(new LocationPresence());
             sFeedPresence.add(new PhonePresence());
             sFeedPresence.add(Push2TalkPresence.getInstance());
             sFeedPresence.add(TVModePresence.getInstance());
+            sFeedPresence.add(new SpamPresence());
+            sFeedPresence.add(DropMessagesPresence.getInstance());
     	}
-    	
     }
 
     public static List<FeedPresence> getActivePresenceTypes() {

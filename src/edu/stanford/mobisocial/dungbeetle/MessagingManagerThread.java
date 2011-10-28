@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.SoftReference;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
+
+import mobisocial.socialkit.musubi.DbObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,11 +24,14 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Process;
 import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
+import edu.stanford.mobisocial.bumblebee.CryptoException;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
+import edu.stanford.mobisocial.bumblebee.MessageFormat;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
 import edu.stanford.mobisocial.bumblebee.MessengerService;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
@@ -37,6 +43,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence.MessageDropHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -47,6 +54,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
+import edu.stanford.mobisocial.dungbeetle.obj.handler.ProfileScanningObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.StringSearchAndReplacer;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -59,16 +67,13 @@ public class MessagingManagerThread extends Thread {
     private ObjectContentObserver mOco;
     private DBHelper mHelper;
     private IdentityProvider mIdent;
-    private Handler mMainThreadHandler;
-    private final Set<Long>mSentObjects = new HashSet<Long>();
-    private final FeedModifiedObjHandler mFeedModifiedObjHandler;
+    private final MessageDropHandler mMessageDropHandler;
 
     public MessagingManagerThread(final Context context){
         mContext = context;
-        mMainThreadHandler = new Handler(context.getMainLooper());
-        mHelper = new DBHelper(context);
+        mHelper = DBHelper.getGlobal(context);
         mIdent = new DBIdentityProvider(mHelper);
-        mFeedModifiedObjHandler = new FeedModifiedObjHandler(mHelper);
+        mMessageDropHandler = new MessageDropHandler();
 
         ConnectionStatus status = new ConnectionStatus(){
                 public boolean isConnected(){
@@ -105,7 +110,6 @@ public class MessagingManagerThread extends Thread {
 					p.println(e.getMessage());
 					e.printStackTrace(p);
 				}
-				
                 Log.e(TAG, "Connection Status: " + msg + "\n" + err.toString());
 			}
 		});
@@ -121,7 +125,7 @@ public class MessagingManagerThread extends Thread {
     // FYI: Invoked on connection reader thread
     private void handleIncomingMessage(final IncomingMessage incoming){
         final String personId = incoming.from();
-        final byte[] encoded = incoming.encoded();
+        final long hash = incoming.hash();
         final String contents = localize(incoming.contents());
    
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
@@ -129,18 +133,21 @@ public class MessagingManagerThread extends Thread {
             JSONObject in_obj = new JSONObject(contents);
             String feedName = in_obj.getString("feedName");
             String type = in_obj.optString(DbObjects.TYPE);
-            Log.w(TAG, "encoded length: " + encoded.length);
-            //if (encoded.length > 200000 || mHelper.queryAlreadyReceived(encoded)) {
-            if (mHelper.queryAlreadyReceived(encoded)) {
+            Uri feedPreUri = Feed.uriForName(feedName);
+            if (mMessageDropHandler.preFiltersObj(mContext, feedPreUri)) {
+                return;
+            }
+
+            if (mHelper.queryAlreadyReceived(hash)) {
                 if (DBG) Log.i(TAG, "Message already received. " + contents);
                 return;
             }
 
             Maybe<Contact> contact = mHelper.contactForPersonId(personId);
-            DbEntryHandler h = DbObjects.getMessageHandler(in_obj);
+            final DbEntryHandler objHandler = DbObjects.getObjHandler(in_obj);
             byte[] extracted_data = null;
-            if (h != null && h instanceof UnprocessedMessageHandler) {
-            	Pair<JSONObject, byte[]> r =((UnprocessedMessageHandler)h).handleUnprocessed(mContext, in_obj);
+            if (objHandler instanceof UnprocessedMessageHandler) {
+            	Pair<JSONObject, byte[]> r =((UnprocessedMessageHandler)objHandler).handleUnprocessed(mContext, in_obj);
             	if(r != null) {
             		in_obj = r.first;
             		extracted_data = r.second;
@@ -150,12 +157,17 @@ public class MessagingManagerThread extends Thread {
             final byte[] raw = extracted_data;
 
             if (contact.isKnown()) {
-                long sequenceID;
+                long objId;
                 final Contact realContact = contact.get();
                 long contactId = realContact.id;
                 if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
                 // Insert into the database. (TODO: Handler, both android.os and musubi.core)
-				sequenceID = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, encoded, raw);
+
+                if (!objHandler.handleObjFromNetwork(mContext, realContact, obj)) {
+                    return;
+                }
+
+                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -164,18 +176,9 @@ public class MessagingManagerThread extends Thread {
                 }
                 mContext.getContentResolver().notifyChange(feedUri, null);
                 if (feedName.equals("direct") || feedName.equals("friend")) {
-                    // TODO: Is this threading necessary?
-                    mMainThreadHandler.post(new Runnable() {
-                        public void run() {
-                            long time = obj.optLong(DbObject.TIMESTAMP);
-                            Helpers.updateLastPresence(mContext, realContact, time);
-
-                            final DbEntryHandler h = DbObjects.getMessageHandler(obj);
-                            if (h != null) {
-                                h.handleDirectMessage(mContext, realContact, obj);
-                            }
-                        }
-                    });
+                    long time = obj.optLong(DbObject.TIMESTAMP);
+                    Helpers.updateLastPresence(mContext, realContact, time);
+                    objHandler.handleDirectMessage(mContext, realContact, obj);
                 }
 
                 /**
@@ -183,14 +186,14 @@ public class MessagingManagerThread extends Thread {
                  */
 
                 // TODO: framework code.
-                getFromNetworkHandlers().handleObj(mContext, feedUri, realContact, sequenceID,
-                        DbObjects.forType(type), obj, raw);
+                DbObj signedObj = App.instance().getMusubi().objForId(objId);
+                getFromNetworkHandlers().handleObj(mContext, DbObjects.forType(type), signedObj);
 
                 // Per-object handlers:
-                if (h != null && h instanceof FeedMessageHandler) {
-                    ((FeedMessageHandler) h).handleFeedMessage(
-                            mContext, feedUri, contactId, sequenceID, type, obj);
+                if (objHandler instanceof FeedMessageHandler) {
+                    ((FeedMessageHandler) objHandler).handleFeedMessage(mContext, signedObj);
                 }
+                
             } else {
                 Log.i(TAG, "Message from unknown contact. " + contents);
             }
@@ -208,7 +211,7 @@ public class MessagingManagerThread extends Thread {
             mFromNetworkHandlers.addHandler(Push2TalkPresence.getInstance());
             mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
             mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
-            mFromNetworkHandlers.addHandler(mFeedModifiedObjHandler);
+            mFromNetworkHandlers.addHandler(new ProfileScanningObjHandler());
         }
         return mFromNetworkHandlers;
     }
@@ -264,21 +267,24 @@ public class MessagingManagerThread extends Thread {
 
     @Override
     public void run() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         Set<Long> notSendingObjects = new HashSet<Long>();
         if (DBG) Log.i(TAG, "Running...");
         mMessenger.init();
+        long max_sent = -1;
         while (!interrupted()) {
             mOco.waitForChange();
-            if (DBG) Log.i(TAG, "Noticed change...");
             mOco.clearChanged();
-            Cursor objs = mHelper.queryUnsentObjects();
+            Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {
-                if (DBG) Log.i(TAG, objs.getCount() + " objects...");
-                objs.moveToFirst();
-                while (!objs.isAfterLast()) {
+            	int i = 0;
+                Log.i(TAG, objs.getCount() + " objects...");
+                if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
                     String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
+                    max_sent = objId.longValue();
+
                     Uri feedUri = Feed.uriForName(feedName);
                     JSONObject json = null;
                     try {
@@ -287,8 +293,7 @@ public class MessagingManagerThread extends Thread {
                         Log.e(TAG, "bad json", e);
                     }
                     if (json != null) {
-                        String type = json.optString(DbObjects.TYPE);
-                        /*if you udpate latest feed here then there is a race condition between
+                        /*if you update latest feed here then there is a race condition between
                          * when you put a message into your db,
                          * when you actually have a connection to send the message (which is here)
                          * when other people send you messages
@@ -297,45 +302,33 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
-                        DbEntryHandler h = DbObjects.getMessageHandler(json);
+                        DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
-                            ((FeedMessageHandler) h).handleFeedMessage(
-                                    mContext, feedUri, Contact.MY_ID, -1, type, json);
+                            DbObj signedObj = App.instance().getMusubi().objForId(objId);
+                            ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
                         }
-                    }
-                    if (mSentObjects.contains(objId)) {
-                        if (DBG) Log.i(TAG, "Skipping previously sent object " + objId);
-                        objs.moveToNext();
-                        continue;
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
                     if (to != null) {
-                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending direct message " + m);
                         if (m.toPublicKeys().isEmpty()) {
                             Log.w(TAG, "No addressees for direct message " + objId);
                             notSendingObjects.add(objId);
                         } else {
-                            synchronized (mSentObjects) {
-                                mSentObjects.add(objId);
-                            }
                             mMessenger.sendMessage(m);
                         }
                     } else {
-                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs);
+                        OutgoingMessage m = new OutgoingFeedObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending feed object " + objId + ": " + m);
                         if(m.toPublicKeys().isEmpty()) {
                             Log.i(TAG, "No addresses for feed message " + objId);
                             notSendingObjects.add(objId);
                         } else {
-                            synchronized (mSentObjects) {
-                                mSentObjects.add(objId);
-                            }
                             mMessenger.sendMessage(m);
                         }
                     }
-                    objs.moveToNext();
-                }
+                } while(objs.moveToNext());
                 if (notSendingObjects.size() > 0) {
                     if (DBG) Log.d(TAG, "Marking " + notSendingObjects.size() + " objects sent");
                     mHelper.markObjectsAsSent(notSendingObjects);
@@ -355,17 +348,17 @@ public class MessagingManagerThread extends Thread {
     }
 
     private abstract class OutgoingMsg implements OutgoingMessage {
+    	protected SoftReference<byte[]> mEncoded;
         protected String mBody;
         protected List<RSAPublicKey> mPubKeys;
         protected long mObjectId;
-        protected byte[] mEncoded;
         protected JSONObject mJson;
         protected byte[] mRaw;
+        protected boolean mDeleteOnCommit;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
-        	//load the iv if it was already picked
-        	int encoded_index = objs.getColumnIndexOrThrow(DbObject.ENCODED);
-        	mEncoded = objs.getBlob(encoded_index);        	
+            DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
+            mDeleteOnCommit = objHandler.discardOutboundObj();
         }
 		@Override
 		public long getLocalUniqueId() {
@@ -375,27 +368,43 @@ public class MessagingManagerThread extends Thread {
         public String contents(){ return mBody; }
         public String toString(){ return "[Message with body: " + mBody + " to " + toPublicKeys().size() + " recipient(s) ]"; }
         public void onCommitted() {
-            mHelper.markObjectAsSent(mObjectId);
-            if (mSentObjects.contains(mObjectId)) {
-                synchronized (mSentObjects) {
-                    mSentObjects.remove(mObjectId);
-                }
-            }
+        	mEncoded.clear();
+        	mHelper.getWritableDatabase().beginTransaction();
+        	try {
+	            mHelper.markObjectAsSent(mObjectId);
+	            mHelper.clearEncoded(mObjectId);
+	            if(mDeleteOnCommit)
+	            	mHelper.deleteObj(mObjectId);
+	            mHelper.getWritableDatabase().setTransactionSuccessful();
+        	} finally {
+        		mHelper.getWritableDatabase().endTransaction();
+        	}
         }
 
 		@Override
 		public void onEncoded(byte[] encoded) {
-			mEncoded = encoded;
-			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw);
+			mEncoded = new SoftReference<byte[]>(encoded);
+			long hash = -1;
+			try {
+				hash = MessageFormat.extractHash(encoded);
+			} catch(CryptoException e) {}
+			mHelper.markEncoded(mObjectId, encoded, mJson.toString(), mRaw, hash);
+			mJson = null;
+			mRaw = null;
+			mBody = null;
 		}
 
 		@Override
 		public byte[] getEncoded() {
-			return mEncoded;
+			byte[] cached = mEncoded != null ? mEncoded.get() : null;
+			if(cached != null)
+				return cached;
+			cached = mHelper.getEncoded(mObjectId);
+			mEncoded = new SoftReference<byte[]>(cached);
+			return cached;
 		}
 		void processRawData() {
-            DbEntryHandler h = DbObjects.getMessageHandler(mJson);
-            byte[] extracted_data = null;
+            DbEntryHandler h = DbObjects.getObjHandler(mJson);
             if (h != null && h instanceof OutgoingMessageHandler) {
             	Pair<JSONObject, byte[]> r =((OutgoingMessageHandler)h).handleOutgoing(mJson);
             	if(r != null) {
@@ -407,7 +416,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingFeedObjectMsg extends OutgoingMsg {
-        public OutgoingFeedObjectMsg(Cursor objs){
+        public OutgoingFeedObjectMsg(Cursor objs, JSONObject json){
         	super(objs);
             String feedName = objs.getString(
                 objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
@@ -419,22 +428,21 @@ public class MessagingManagerThread extends Thread {
                             subs.getColumnIndexOrThrow(Subscriber.CONTACT_ID)));
                 subs.moveToNext();
             }
+            subs.close();
+
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            try {
-				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-            // the processing code manipulates the json so this has to come first
-            mBody = globalize(mJson.toString());
-            processRawData();
+            //this obj is not yet encoded
+            if(objs.getInt(1) == 0) {
+				mJson = json;
+	            // the processing code manipulates the json so this has to come first
+	            mBody = globalize(mJson.toString());
+	            processRawData();
+        	}
         }
     }
 
     private class OutgoingDirectObjectMsg extends OutgoingMsg {
-        public OutgoingDirectObjectMsg(Cursor objs) {
+        public OutgoingDirectObjectMsg(Cursor objs, JSONObject json) {
             super(objs);
             String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
             try {
@@ -444,15 +452,13 @@ public class MessagingManagerThread extends Thread {
                 Log.w(TAG, "Bad destination found: '" + to + "'");
                 mPubKeys = new ArrayList<RSAPublicKey>();
             }
-            try {
-				mJson = new JSONObject(objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON)));
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-            mBody = globalize(mJson.toString());
-            processRawData();
+            //this obj is not yet encoded
+            if(objs.getInt(1) == 0) {
+				mJson = json;
+	            mBody = globalize(mJson.toString());
+	            // the processing code manipulates the json so this has to come first
+	            processRawData();
+            }
         }
     }
 

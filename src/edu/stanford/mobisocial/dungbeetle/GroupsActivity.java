@@ -25,6 +25,7 @@ import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
 import android.nfc.NdefMessage;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -61,7 +62,10 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity (intent);
     }
 
@@ -93,7 +97,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
 		setContentView(R.layout.groups);
         setTitleFromActivityLabel (R.id.title_text);
         
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         String selection = DbObject.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
@@ -105,6 +109,8 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
 		registerForContextMenu(getListView());
+        //in case there was an FC, we must restart the service whenever one of our dialogs is opened.
+        startService(new Intent(this, DungBeetleService.class));
 	}
 
     @Override
@@ -341,7 +347,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
 
                         //qa.addActionItem(sendIM);
                         //qa.addActionItem(startApp);
-                        //qa.addActionItem(invite);
+                        qa.addActionItem(invite);
                         qa.addActionItem(nearby);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 

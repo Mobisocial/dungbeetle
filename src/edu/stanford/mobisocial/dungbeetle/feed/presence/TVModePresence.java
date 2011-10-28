@@ -1,16 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle.feed.presence;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedPresence;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IObjHandler;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 /**
  * Automatically launches all openable content.
@@ -42,12 +39,12 @@ public class TVModePresence extends FeedPresence implements IObjHandler {
     }
 
     @Override
-    public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-            DbEntryHandler typeInfo, JSONObject json, byte[] raw) {
+    public void handleObj(Context context, DbEntryHandler typeInfo, DbObj obj) {
+        Uri feedUri = obj.getContainingFeed().getUri();
         if (mInterrupt && getFeedsWithPresence().contains(feedUri)) {
             if (typeInfo instanceof Activator) {
                 if (DBG) Log.d(TAG, "activating via tv mode");
-                ((Activator) typeInfo).activate(context, json, raw);
+                ((Activator) typeInfo).activate(context, null);
             }
         }
     }

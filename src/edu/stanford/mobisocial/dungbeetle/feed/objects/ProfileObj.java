@@ -1,19 +1,23 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
 import org.json.JSONException;
-
 import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Pair;
-
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
-public class ProfileObj implements DbEntryHandler {
+/**
+ * Obj to update user profiles. Globally defined user attributes
+ * are also scanned across all Objs.
+ * {@see Contact#ATTR_LAN_IP}
+ * {@see DbContactAttributes}
+ */
+public class ProfileObj extends DbEntryHandler {
 	public static final String TAG = "ProfileObj";
 
     public static final String TYPE = "profile";
@@ -23,13 +27,6 @@ public class ProfileObj implements DbEntryHandler {
     public String getType() {
         return TYPE;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public static JSONObject json(String name, String about){
         JSONObject obj = new JSONObject();

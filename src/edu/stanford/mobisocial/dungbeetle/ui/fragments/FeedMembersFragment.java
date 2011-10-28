@@ -1,10 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
+import java.util.Collection;
 import java.util.Collections;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -37,12 +39,9 @@ import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.JoinNotificationObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -60,46 +59,54 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
 	public static final String TAG = "ContactsActivity";
 
+    private static final int sDeletedColor = Color.parseColor("#66FF3333");
+
 	private DBHelper mHelper;
     private Maybe<Group> mGroup = Maybe.unknown();
     private Uri mFeedUri;
     private String mFeedName;
 
-    private void onClickNew(View v) {
-        Intent share = new Intent(Intent.ACTION_SEND);
-        Uri friendRequest = FriendRequest.getInvitationUri(getActivity());
-        share.putExtra(Intent.EXTRA_TEXT,
-                "Be my friend on Musubi! Click here from your Android device: "
-                + friendRequest);
-        share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
-        share.setType("text/plain");
-        startActivity(share);
-    }
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		mHelper = new DBHelper(getActivity());
+		mHelper = DBHelper.getGlobal(getActivity());
 		getLoaderManager().initLoader(0, null, this);
-		final Context context = this.getActivity();
-        final GroupProviders.GroupProvider h = GroupProviders.forUri(mFeedUri);
-        final IdentityProvider ident = new DBIdentityProvider(mHelper);
-        Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
-        try {
-            // group exists already, load view
-            final Group g = mg.get();
 
-            g.forceUpdate(context);
-        }
-        catch(Maybe.NoValError e) { }
-        ident.close();
-        Helpers.resendProfile(context);
+		groupUpdateHack();
 	}
+
+    private void groupUpdateHack() {
+        final Context context = getActivity();
+       
+        new Thread() {
+            public void run() {
+                final IdentityProvider ident = new DBIdentityProvider(mHelper);
+                Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {}
+                try {
+                    // group exists already, load view
+                    final Group g = mg.get();
+                    Collection<Contact> existingContacts = g.contactCollection(mHelper);
+                    //TODO: XXXXX these two won't do a thing because g.forceUpdate happens
+                    //in the background.....
+                    g.forceUpdate(context);
+                    Collection<Contact> newContacts = g.contactCollection(mHelper);
+                    newContacts.removeAll(existingContacts);
+
+                    Helpers.resendProfile(context, newContacts, true);
+                }
+                catch(Maybe.NoValError e) { }
+                ident.close();
+            };
+        }.start();
+    }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(v.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));;
         menu.setHeaderTitle(c.name);
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
@@ -113,7 +120,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         int menuItemIndex = item.getItemId();
 
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(getActivity(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
  
         switch(menuItemIndex) {
@@ -127,7 +134,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-        new Contact(cursor).view(getActivity());
+        Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID))).view(getActivity());
     }
 
     @Override
@@ -157,24 +164,41 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            final Contact c = new Contact(cursor);
-
+            TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
+            TextView statusText = (TextView) v.findViewById(R.id.status_text);
+            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+            final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
+            final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
+            final ImageView more = (ImageView)v.findViewById(R.id.more);
+
+            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
+            if(c == null) {
+            	unreadCount.setVisibility(View.INVISIBLE);
+            	nameText.setText("Missing contact data...");
+            	statusText.setText("");
+            	icon.setImageResource(R.drawable.anonymous);
+            	return;
+            }
+            unreadCount.setTextColor(Color.RED);
+            unreadCount.setText(c.numUnread + " unread");
+            unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
+            
+            if (c.hidden == 1) {
+                v.setBackgroundColor(sDeletedColor);
+            } else {
+                v.setBackgroundColor(Color.TRANSPARENT);
+            }
+
             nameText.setText(c.name);
 
-            TextView statusText = (TextView) v.findViewById(R.id.status_text);
             statusText.setText(c.status);
             
-            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            ((App)getActivity().getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
+            icon.setImageBitmap(c.picture);
 
-            final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());
 
-            final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
-
-            final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {
                     @Override
@@ -216,21 +240,10 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
                                 }
                             });
 
-                        final ActionItem join_activity = new ActionItem();
-                        join_activity.setTitle("Join Activity");
-                        join_activity.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    ActivityPullObj.activityForContact(getActivity(), c);
-                                }
-                            });
-                    
                         QuickAction qa = new QuickAction(v);
-
                         //qa.addActionItem(send_im);
                         //qa.addActionItem(start_app);
                         qa.addActionItem(manage_groups);
-                        //qa.addActionItem(join_activity);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();
@@ -290,7 +303,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         }
         Uri memberlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI +
                 "/group_contacts/" + gid);
-        return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " ASC");
+        return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " COLLATE NOCASE ASC");
     }
 
     @Override

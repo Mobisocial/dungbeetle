@@ -15,15 +15,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Binder;
 import android.util.Log;
-import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
@@ -34,12 +32,13 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.mobisocial.db";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	static final String TAG = "DungBeetleContentProvider";
-	static final boolean DBG = false;
+	static final boolean DBG = true;
 	public static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
 
-	public DungBeetleContentProvider() {}
+	public DungBeetleContentProvider() {
+	}
 
 	@Override
 	protected void finalize() throws Throwable {
@@ -53,11 +52,25 @@ public class DungBeetleContentProvider extends ContentProvider {
             Log.d(TAG, "No AppId for calling activity. Ignoring query.");
             return 0;
         }
-        if(!appId.equals(SUPER_APP_ID)) return 0;
-        List<String> segs = uri.getPathSegments();
-        mHelper.getWritableDatabase().delete(segs.get(0), selection, selectionArgs);
-        getContext().getContentResolver().notifyChange(uri, null);
-		return 0;
+        String appSelection = DbObject.APP_ID + "= ?";
+        String[] appSelectionArgs = new String[] { appId };
+        selection = DBHelper.andClauses(selection, appSelection);
+        selectionArgs = DBHelper.andArguments(selectionArgs, appSelectionArgs);
+        String[] projection = new String[]  { DbObject.HASH };
+
+        int count = 0;
+        Cursor c = mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null && c.moveToFirst()) {
+            count = c.getCount();
+            long[] hashes = new long[count];
+            int i = 0;
+            do {
+                hashes[i++] = c.getLong(0);
+            } while (c.moveToNext());
+            Helpers.sendToFeed(getContext(), DeleteObj.from(hashes, true), uri);
+        }
+		return count;
 	}
 
 	@Override
@@ -87,7 +100,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 	    ContentResolver resolver = getContext().getContentResolver();
-        Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
+        if (DBG) Log.i(TAG, "Inserting at uri: " + uri + ", " + values);
 
         final String appId = getCallingActivityId();
         if (appId == null) {
@@ -103,12 +116,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             try {
             	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
 
-                mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
                     json);
-
+                Uri objUri = DbObject.uriForObj(objId);
                 resolver.notifyChange(Feed.uriForName("me"), null);
                 resolver.notifyChange(Feed.uriForName("friend"), null);
-                return Uri.parse(uri.toString());
+                resolver.notifyChange(objUri, null);
+                return objUri;
             } catch(JSONException e){
                 return null;
             }
@@ -141,14 +155,25 @@ public class DungBeetleContentProvider extends ContentProvider {
         } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
             try {
-            	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+                String objHash = null;
+                if (feedName.contains(":")) {
+                    String[] parts = feedName.split(":");
+                    feedName = parts[0];
+                    objHash = parts[1];
+                }
+                if (objHash != null) {
+                    json.put(DbObjects.TARGET_HASH, Long.parseLong(objHash));
+                    json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
+                }
 
-
-                mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
+                long objId = mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
                         json);
-                notifyDependencies(resolver, feedName);
+                Uri objUri = DbObject.uriForObj(objId);
+                resolver.notifyChange(objUri, null);
+                notifyDependencies(mHelper, resolver, segs.get(1));
                 if (DBG) Log.d(TAG, "just inserted " + values.getAsString(DbObject.JSON));
-                return Uri.parse(uri.toString()); // TODO: is there a reason for this?
+                return objUri;
             }
             catch(JSONException e) {
                 return null;
@@ -234,25 +259,31 @@ public class DungBeetleContentProvider extends ContentProvider {
                 String[] selectionArgs = new String[] { feedName };
                 Cursor parent = mHelper.getReadableDatabase().query(
                         table, columns, selection, selectionArgs, null, null, null);
-                if (parent.moveToFirst()) {
-                    String parentName = parent.getString(0);
-                    table = Group.TABLE;
-                    columns = new String[] { Group._ID };
-                    selection = Group.FEED_NAME + " = ?";
-                    selectionArgs = new String[] { parentName };
-
-                    Cursor parent2 = mHelper.getReadableDatabase().query(
-                            table, columns, selection, selectionArgs, null, null, null);
-                    if (parent2.moveToFirst()) {
-                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
-                    } else {
-                        Log.e(TAG, "Parent feed found but no id for " + parentName);
-                    }
-                    parent2.close();
-                } else {
-                    Log.w(TAG, "No parent feed for " + feedName);
+                try {
+	                if (parent.moveToFirst()) {
+	                    String parentName = parent.getString(0);
+	                    table = Group.TABLE;
+	                    columns = new String[] { Group._ID };
+	                    selection = Group.FEED_NAME + " = ?";
+	                    selectionArgs = new String[] { parentName };
+	
+	                    Cursor parent2 = mHelper.getReadableDatabase().query(
+	                            table, columns, selection, selectionArgs, null, null, null);
+	                    try {
+		                    if (parent2.moveToFirst()) {
+		                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
+		                    } else {
+		                        Log.e(TAG, "Parent feed found but no id for " + parentName);
+		                    } 
+	                    } finally {
+	                    	parent2.close();
+	                    }
+	                } else {
+	                    Log.w(TAG, "No parent feed for " + feedName);
+	                }
+                } finally {
+                    parent.close();
                 }
-                parent.close();
                 id = mHelper.insertGroup(cv);
                 getContext().getContentResolver().notifyChange(
                         Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
@@ -267,7 +298,7 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             SQLiteDatabase db = mHelper.getWritableDatabase();
-            db.beginTransaction();
+        	db.beginTransaction();
             try {
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
@@ -366,7 +397,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
         mIdent = new DBIdentityProvider(mHelper);
-        return mHelper.getWritableDatabase() == null;
+        boolean ok = mHelper.getWritableDatabase() == null;
+        if(!ok)
+        	return false;
+		return true;
     }
 
     @Override
@@ -383,7 +417,13 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         List<String> segs = uri.getPathSegments();
-        if(match(uri, "obj")) {
+        if (match(uri, "obj", ".+")) {
+            // objects by database id
+            String objId = uri.getLastPathSegment();
+            selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { objId });
+            selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
+            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+        } else if(match(uri, "obj")) {
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "feedlist")) {
             Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
@@ -434,9 +474,9 @@ public class DungBeetleContentProvider extends ContentProvider {
             Cursor c = mHelper.queryLocalUser(feed_name);
             c.setNotificationUri(resolver, uri);
             return c;
-        } else if(match(uri, "feed_members", ".+")) {
+        } else if(match(uri, "members", ".+")) {
             String feedName = segs.get(1);
-            Cursor c = mHelper.queryFeedMembers(feedName, realAppId);
+            Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, feedName, realAppId);
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "groups")) {
@@ -517,13 +557,27 @@ public class DungBeetleContentProvider extends ContentProvider {
         return null; 
     }
 
-    private void notifyDependencies(ContentResolver resolver, String feedName) {
-        resolver.notifyChange(Feed.uriForName(feedName), null);
-        Cursor c = mHelper.getFeedDependencies(feedName);
-        while (c.moveToNext()) {
-            Uri uri = Feed.uriForName(c.getString(0));
-            resolver.notifyChange(uri, null);
+    static void notifyDependencies(DBHelper helper, ContentResolver resolver, String feedName) {
+        Uri feedUri = Feed.uriForName(feedName);
+        if (DBG) Log.d(TAG, "notifying dependencies of  " + feedUri);
+        resolver.notifyChange(feedUri, null);
+        if (feedName.contains(":")) {
+            feedName = feedName.split(":")[0];
+            resolver.notifyChange(Feed.uriForName(feedName), null);
         }
-        c.close();
+        Cursor c = helper.getFeedDependencies(feedName);
+        try {
+	        while (c.moveToNext()) {
+	            Uri uri = Feed.uriForName(c.getString(0));
+	            resolver.notifyChange(uri, null);
+	        }
+        } finally {
+	        c.close();
+        }
     }
+
+	public DBHelper getDBHelper() {
+		mHelper.addRef();
+		return mHelper;
+	}
 }

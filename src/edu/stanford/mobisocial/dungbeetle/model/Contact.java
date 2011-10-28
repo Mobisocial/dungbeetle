@@ -2,11 +2,14 @@ package edu.stanford.mobisocial.dungbeetle.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -19,6 +22,7 @@ public class Contact implements Serializable{
 
     public static final String TABLE = "contacts";
     public static final long MY_ID = -666;
+    public static final String UNKNOWN = "UNKNOWN";
     public static final String _ID = "_id";
     public static final String NAME = "name";
     public static final String PUBLIC_KEY = "public_key";
@@ -32,6 +36,10 @@ public class Contact implements Serializable{
 	public static final String NEARBY = "nearby";
 	public static final String SHARED_SECRET = "secret";
 	public static final String PUBLIC_KEY_HASH_64 = "public_key_print";
+	public static final String LAST_OBJECT_ID = "last_object_id";
+	public static final String LAST_UPDATED = "last_updated";
+	public static final String NUM_UNREAD = "num_unread";
+	public static final String HIDDEN = "hidden";
 
     public final String name;
     public final String email;
@@ -42,8 +50,27 @@ public class Contact implements Serializable{
     public final boolean nearby;
     public final byte[] secret;
     public final String status;
-    public byte[] picture;
+    public Long lastObjectId;
+	public Long lastUpdated;
+	public long numUnread;
+	public int hidden;
+	public android.graphics.Bitmap picture;
 
+    // TODO: Move to SocialKit.
+    public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+
+	private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
+    static {
+        sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
+    }
+
+    public static boolean isWellKnownAttribute(String attr) {
+        return sWellKnownAttrs.contains(attr);
+    }
+    @Override
+    protected void finalize() throws Throwable {
+    	super.finalize();
+    }
 
     public Contact(Cursor c){
         id = c.getLong(c.getColumnIndexOrThrow(_ID));
@@ -55,10 +82,20 @@ public class Contact implements Serializable{
         nearby = c.getInt(c.getColumnIndexOrThrow(NEARBY)) != 0;
         secret = c.getBlob(c.getColumnIndexOrThrow(SHARED_SECRET));
         status = c.getString(c.getColumnIndexOrThrow(STATUS));
-        picture = c.getBlob(c.getColumnIndexOrThrow(PICTURE));
+        if(!c.isNull(c.getColumnIndexOrThrow(LAST_OBJECT_ID)))
+        	lastObjectId = c.getLong(c.getColumnIndexOrThrow(LAST_OBJECT_ID));
+        if(!c.isNull(c.getColumnIndexOrThrow(LAST_UPDATED)))
+        	lastUpdated = c.getLong(c.getColumnIndexOrThrow(LAST_UPDATED));
+        numUnread = c.getLong(c.getColumnIndexOrThrow(NUM_UNREAD));
+        byte[] picdata = c.getBlob(c.getColumnIndexOrThrow(PICTURE)); 
+        if(picdata != null) {
+        	picture = BitmapFactory.decodeByteArray(picdata, 0, picdata.length);
+    }
+        hidden = c.getInt(c.getColumnIndexOrThrow(HIDDEN));
+
     }
 
-    public Contact(Long id, String personId, String name, String email, int presence, long lastPresenceTime, boolean nearby, byte[] secret, String status){
+    public Contact(Long id, String personId, String name, String email, int presence, long lastPresenceTime, boolean nearby, byte[] secret, String status, Long last_object_id, Long last_updated, long num_unread){
         this.id = id;
         this.name = name;
         this.email = email;
@@ -68,15 +105,17 @@ public class Contact implements Serializable{
         this.nearby = nearby;
         this.secret = secret;
         this.status = status;
-        this.picture = null;
+        this.lastObjectId = last_object_id;
+        this.lastUpdated = last_updated;
+        this.numUnread = num_unread;
     }
 
     public static Contact NA(){
-        return new Contact(-1L, "NA", "NA", "NA", 1, 0, false, null, "NA");
+        return new Contact(-1L, "NA", "NA", "NA", 1, 0, false, null, "NA", null, null, 0);
     }
 
     public static Maybe<Contact> forId(Context context, long id) {
-        DBHelper helper = new DBHelper(context);
+        DBHelper helper = DBHelper.getGlobal(context);
         Maybe<Contact> contact = helper.contactForContactId(id);
         helper.close();
         return contact;
@@ -121,13 +160,11 @@ public class Contact implements Serializable{
         view(foreground, id);
     }
 
-    public Intent intentForViewing(Context context) {
-        Intent launch = new Intent().setClass(context, ViewContactActivity.class);
-        launch.putExtra("contact_id", id);
-        return launch;
-    }
-
     public Uri getFeedUri() {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
     }
+
+    public static Uri uriFor(long id) {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts/" + id);
+}
 }

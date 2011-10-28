@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.SignedObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,18 +10,20 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 
-public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
+public class MusicObj extends DbEntryHandler implements FeedRenderer, Activator {
 
     public static final String TYPE = "music";
     public static final String ARTIST = "a";
@@ -39,10 +44,6 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     public static DbObject from(String artist, String album, String track) {
         return new DbObject(TYPE, json(artist, album, track));
     }
-	@Override
-	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
-		return null;
-	}
 
     public static JSONObject json(String artist, String number) {
         JSONObject obj = new JSONObject();
@@ -52,9 +53,6 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
         }catch(JSONException e){}
         return obj;
     }
-	public JSONObject mergeRaw(JSONObject objData, byte[] raw) {
-		return objData;
-	}
 
     public static JSONObject json(String artist, String album, String track) {
         JSONObject obj = new JSONObject();
@@ -70,14 +68,30 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
 
     }
 
-    public void render(Context context, ViewGroup frame, JSONObject content, byte[] raw, boolean allowInteractions) {
+    public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
+        JSONObject content = obj.getJson();
+        LinearLayout container = new LinearLayout(context);
+        container.setLayoutParams(CommonLayouts.FULL_WIDTH);
+        container.setOrientation(LinearLayout.HORIZONTAL);
+        container.setGravity(Gravity.CENTER);
+
+        ImageView imageView = new ImageView(context);
+        imageView.setImageResource(R.drawable.play);
+        imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                                      LinearLayout.LayoutParams.WRAP_CONTENT,
+                                      LinearLayout.LayoutParams.WRAP_CONTENT));
+
         TextView valueTV = new TextView(context);
         valueTV.setText(asText(content));
         valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.FILL_PARENT,
                                     LinearLayout.LayoutParams.WRAP_CONTENT));
-        valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-        frame.addView(valueTV);
+        valueTV.setGravity(Gravity.BOTTOM | Gravity.LEFT);
+        valueTV.setPadding(4, 0, 0, 0);
+
+        container.addView(imageView);
+        container.addView(valueTV);
+        frame.addView(container);
     }
 
     private String asText(JSONObject obj) {
@@ -92,7 +106,8 @@ public class MusicObj implements DbEntryHandler, FeedRenderer, Activator {
     }
 
     @Override
-    public void activate(Context context, JSONObject content, byte[] raw) {
+    public void activate(Context context, SignedObj obj) {
+        JSONObject content = obj.getJson();
         if (content.has(URL)) {
             Intent view = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(content.optString(URL));

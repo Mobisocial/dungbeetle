@@ -6,7 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -29,13 +31,14 @@ import edu.stanford.mobisocial.dungbeetle.ActionItem;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ActivityPullObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -59,7 +62,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void goHome(Context context) 
     {
         final Intent intent = new Intent(context, HomeActivity.class);
-        intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if(Build.VERSION.SDK_INT < 11)
+        	intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    	else 
+    		intent.setFlags (Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity (intent);
     }
 
@@ -97,7 +103,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        mHelper = new DBHelper(this);
+        mHelper = DBHelper.getGlobal(this);
         Intent intent = getIntent();
 
         if (intent.hasExtra("group_id")) {    
@@ -108,7 +114,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                 long gid = mGroup.get().id;
                 Cursor c = getContentResolver().query(
                     Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
-                    null, null, null, Contact.NAME + " ASC");
+                    null, Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
                 mContacts = new ContactListCursorAdapter(this, c);
             } catch(Maybe.NoValError e) {
                 Log.i(TAG, "group not found!");
@@ -120,7 +126,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             Cursor c = getContentResolver().query(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts"), 
                 null, 
-                null, null, Contact.NAME + " COLLATE NOCASE ASC");
+                Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
             mContacts = new ContactListCursorAdapter(this, c);
         }
 
@@ -128,15 +134,18 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         ListView lv = getListView();
         lv.setTextFilterEnabled(true);
         lv.setFastScrollEnabled(true);
-        //registerForContextMenu(lv);
+        registerForContextMenu(lv);
 		lv.setOnItemClickListener(this);
 		//lv.setCacheColorHint(Feed.colorFor(groupName, Feed.BACKGROUND_ALPHA));
-	}
+		
+		//THIS is not derived from musubibaseactivity so it needs its own
+        startService(new Intent(this, DungBeetleService.class));
+    }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(v.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
         menu.setHeaderTitle(c.name);
         String[] menuItems = new String[]{ "Delete" };
         for (int i = 0; i<menuItems.length; i++) {
@@ -150,7 +159,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         int menuItemIndex = item.getItemId();
 
         Cursor cursor = (Cursor)mContacts.getItem(info.position);
-        final Contact c = new Contact(cursor);
+        final Contact c = Helpers.getContact(this, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
  
         switch(menuItemIndex) {
@@ -165,7 +174,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Cursor cursor = (Cursor)mContacts.getItem(position);
-        new Contact(cursor).view(this);
+        Helpers.getContact(view.getContext(), cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID))).view(this);
     }
 
     private class ContactListCursorAdapter extends CursorAdapter {
@@ -183,7 +192,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
         @Override
         public void bindView(View v, Context context, Cursor cursor) {
-            final Contact c = new Contact(cursor);
+            final Contact c = Helpers.getContact(context, cursor.getLong(cursor.getColumnIndexOrThrow(Contact._ID)));
 
             TextView nameText = (TextView) v.findViewById(R.id.name_text);
             nameText.setText(c.name);
@@ -191,15 +200,21 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             TextView statusText = (TextView) v.findViewById(R.id.status_text);
             statusText.setText(c.status);
             
+            TextView unreadCount = (TextView)v.findViewById(R.id.unread_count);
+            unreadCount.setTextColor(Color.RED);
+            unreadCount.setText(c.numUnread + " unread");
+            unreadCount.setVisibility(c.numUnread == 0 ? View.INVISIBLE : View.VISIBLE);
+            
+            
             final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            ((App)getApplication()).contactImages.lazyLoadContactPortrait(c, icon);
-
+            icon.setImageBitmap(c.picture);
+            
             final ImageView presenceIcon = (ImageView)v.findViewById(R.id.presence_icon);
             presenceIcon.setImageResource(c.currentPresenceResource());
 
             final ImageView nearbyIcon = (ImageView)v.findViewById(R.id.nearby_icon);
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
-
+        	
             final ImageView more = (ImageView)v.findViewById(R.id.more);
 
             more.setOnClickListener(new OnClickListener() {
@@ -243,21 +258,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
                                 }
                             });
 
-                        final ActionItem join_activity = new ActionItem();
-                        join_activity.setTitle("Join Activity");
-                        join_activity.setOnClickListener(new OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    ActivityPullObj.activityForContact(ContactsActivity.this, c);
-                                }
-                            });
-                    
                         QuickAction qa = new QuickAction(v);
-
                         //qa.addActionItem(send_im);
                         //qa.addActionItem(start_app);
                         qa.addActionItem(manage_groups);
-                        //qa.addActionItem(join_activity);
                         qa.setAnimStyle(QuickAction.ANIM_GROW_FROM_RIGHT);
 
                         qa.show();

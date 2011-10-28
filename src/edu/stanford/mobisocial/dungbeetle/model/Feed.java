@@ -49,6 +49,8 @@ public class Feed extends DbObject {
     	return Color.HSVToColor(hsv);
     }
     public static int colorFor(String name, int alpha) {
+    	if(name == null)
+    		return Color.BLACK;
         int c = colorFor(name);
         return Color.argb(alpha, Color.red(c), Color.green(c), Color.blue(c));
     }
@@ -75,4 +77,16 @@ public class Feed extends DbObject {
         launch.setDataAndType(feedUri, MIME_TYPE);
         foreground.startActivity(launch);
     }
+
+    public static final int FEED_GROUP = 1;
+    public static final int FEED_FRIEND = 2;
+    public static final int FEED_RELATED = 3;
+	public static int typeOf(Uri feedUri) {
+		if(feedUri.getPath().startsWith("/feeds/friend/")) {
+			return FEED_FRIEND;
+		} else if (feedUri.getPath().startsWith("/feeds/related/")){
+			return FEED_RELATED;
+		}
+		return FEED_GROUP;
+	}
 }

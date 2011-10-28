@@ -1,25 +1,22 @@
 package edu.stanford.mobisocial.dungbeetle.obj.handler;
 
-import org.json.JSONObject;
-
+import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
-import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
 
 /**
  * Automatically launches some received objects.
  */
 public class AutoActivateObjHandler extends ObjHandler {
     @Override
-    public void handleObj(Context context, Uri feedUri, Contact contact, long sequenceId,
-            DbEntryHandler handler, JSONObject json, byte[] raw) {
+    public void handleObj(Context context, DbEntryHandler handler, DbObj obj) {
         if (!context.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
             return;
         }
         if (handler instanceof Activator) {
-            ((Activator)handler).activate(context, json, raw);
+            ((Activator)handler).activate(context, obj);
         }
     }
 }
