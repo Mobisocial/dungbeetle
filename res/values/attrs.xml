@@ -36,5 +36,4 @@
         <attr name="endHour" format="integer" />
     </declare-styleable>
 
-
 </resources>

@@ -170,6 +170,9 @@
     <activity android:name="edu.stanford.mobisocial.dungbeetle.ImageViewerActivity"
 	      android:label="@string/app_name">
     </activity>
+    <activity android:name="edu.stanford.mobisocial.dungbeetle.ImageGalleryActivity"
+	      android:label="@string/app_name">
+    </activity>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.google.PrepareRequestTokenActivity" android:launchMode="singleTask">
       <intent-filter>
