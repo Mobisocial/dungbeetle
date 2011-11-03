@@ -76,8 +76,7 @@ public class PictureObj extends DbEntryHandler
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;
 		BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
-		
-		
+
 		int targetSize = 200;
 		int xScale = (options.outWidth  + targetSize - 1) / targetSize;
 		int yScale = (options.outHeight + targetSize - 1) / targetSize;

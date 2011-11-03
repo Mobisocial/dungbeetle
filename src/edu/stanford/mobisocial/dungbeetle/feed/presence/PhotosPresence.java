@@ -73,7 +73,7 @@ public class PhotosPresence extends FeedPresence {
         private Uri getLatestCameraPhoto() {
             String selection = ImageColumns.BUCKET_DISPLAY_NAME + " = 'Camera'";
             String[] selectionArgs = null;
-            String sort = ImageColumns.DATE_TAKEN + " desc";
+            String sort = ImageColumns._ID + " DESC LIMIT 1";
             Cursor c =
                 android.provider.MediaStore.Images.Media.query(mmContext.getContentResolver(),
                         Images.Media.EXTERNAL_CONTENT_URI,
