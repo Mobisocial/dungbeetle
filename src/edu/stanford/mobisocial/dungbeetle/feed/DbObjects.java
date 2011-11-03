@@ -2,12 +2,18 @@ package edu.stanford.mobisocial.dungbeetle.feed;
 import java.util.ArrayList;
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.musubi.MemObj;
+
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.util.Log;
+import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
@@ -138,5 +144,22 @@ public final class DbObjects {
         }
         Log.w("DbObjects", DbObject.TYPE + " in (" + allowed.substring(1) + ")");
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+    }
+
+    /**
+     * We used to encode binary content as base64 as a json field. Now,
+     * an Obj understands binary. This method converts an old json representation
+     * to the new Obj format.
+     */
+    public static Obj convertOldJsonToObj(Context c, String type, JSONObject json) {
+        DbEntryHandler e = forType(type);
+        if (e instanceof UnprocessedMessageHandler) {
+            Pair<JSONObject, byte[]> r = ((UnprocessedMessageHandler)e)
+                    .handleUnprocessed(c, json);
+            if (r != null) {
+                return new MemObj(type, r.first, r.second);
+            }
+        }
+        return new MemObj(type, json);
     }
 }

@@ -44,6 +44,20 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
+/**
+ * <p>DO NOT USE AS A REPRESENTATION OF A MUSUBI OBJ.
+ * <ul>
+ * <li>Obj is an interface for basic Musubi content.
+ * <li>MemObj is a concrete implementation stored in memory.
+ * <li>SignedObj represents an obj that has been signed for sending by some user.
+ * <li>DbObj represents an obj that has been sent or received and is held
+ * in Musubi's database.
+ * </ul></p>
+ * 
+ * <p>Note that this class used as both a representation of Objs, and a set of
+ * utility methods and constants. Only the use as an Obj is deprecated,
+ * the rest will be moved to a new class.</p>
+ */
 public class DbObject implements Obj {
     private static final String TAG = "dbObject";
     private static final boolean DBG = true;
@@ -73,17 +87,30 @@ public class DbObject implements Obj {
     private static OnClickViewProfile sViewProfileAction;
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public DbObject(String type, JSONObject json, byte[] raw) {
         mType = type;
         mJson = json;
         mRaw = raw;
     }
+
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public DbObject(String type, JSONObject json) {
         mType = type;
         mJson = json;
         mRaw = null;
     }
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     private DbObject(Cursor c) {
         mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
         String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
@@ -107,6 +134,10 @@ public class DbObject implements Obj {
         return mJson;
     }
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public static DbObject fromCursor(Cursor c) {
         try {
             return new DbObject(c);

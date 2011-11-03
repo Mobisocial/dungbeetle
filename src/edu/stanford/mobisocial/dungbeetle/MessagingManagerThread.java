@@ -51,7 +51,6 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
-import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.ProfileScanningObjHandler;
@@ -277,21 +276,27 @@ public class MessagingManagerThread extends Thread {
             mOco.clearChanged();
             Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {
-            	int i = 0;
                 Log.i(TAG, objs.getCount() + " objects...");
                 if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
-                    String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
-                    max_sent = objId.longValue();
+                    byte[] raw = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.RAW));
 
-                    Uri feedUri = Feed.uriForName(feedName);
+                    max_sent = objId.longValue();
                     JSONObject json = null;
                     try {
                         json = new JSONObject(jsonSrc);
                     } catch (JSONException e) {
                         Log.e(TAG, "bad json", e);
                     }
+
+                    if (raw != null && json != null) {
+                        // TODO: Hack in anticipation of new binary-friendly wire format.
+                        String type = objs.getString(objs.getColumnIndexOrThrow(DbObject.TYPE));
+                        DbEntryHandler e = DbObjects.forType(type);
+                        json = e.mergeRaw(json, raw);
+                    }
+
                     if (json != null) {
                         /*if you update latest feed here then there is a race condition between
                          * when you put a message into your db,

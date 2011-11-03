@@ -16,7 +16,9 @@ import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -44,10 +46,14 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class ImageGalleryActivity extends FragmentActivity implements LoaderCallbacks<Cursor> {
+public class ImageGalleryActivity extends FragmentActivity implements LoaderCallbacks<Cursor>,
+        InstrumentedActivity {
     private static final String TAG = "imageGallery";
 
 	private final String extStorageDirectory =
@@ -157,20 +163,21 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         }
     }
 
-    private final static int SAVE = 0;
-    private final static int SET_PROFILE = 1;
+    private static final int MENU_SAVE = 0;
+    private static final int MENU_SET_PROFILE = 1;
+    private static final int MENU_EDIT = 2;
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
-        menu.add(0, SAVE, 0, "Download to SD Card");
-        menu.add(0, SET_PROFILE, 0, "Set as Profile");
-        //menu.add(1, ANON, 1, "Add anon profile");
+        menu.add(0, MENU_EDIT, 0, "Edit");
+        menu.add(0, MENU_SAVE, 0, "Save to SD Card");
+        menu.add(0, MENU_SET_PROFILE, 0, "Set as Profile");
         return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case SAVE: {
+            case MENU_SAVE: {
                 long objId = (Long)mGallery.getSelectedView().getTag();
                 DbObj obj = App.instance().getMusubi().objForId(objId);
 
@@ -217,7 +224,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                 }
                 return true;
             }
-            case SET_PROFILE: {
+            case MENU_SET_PROFILE: {
                 new Thread() {
                     public void run() {
                         long objId = (Long)mGallery.getSelectedView().getTag();
@@ -227,6 +234,12 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                         toast("Set profile picture.");
                     };
                 }.start(); 
+                return true;
+            }
+            case MENU_EDIT: {
+                long objId = (Long)mGallery.getSelectedView().getTag();
+                DbObj obj = App.instance().getMusubi().objForId(objId);
+                doActivityForResult(new EditPhotoAction.EditCallout(this, obj));
                 return true;
             }
             default:
@@ -341,5 +354,31 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
     @Override
     public void onLoaderReset(Loader<Cursor> arg0) {
+    }
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    private static ActivityCallout mCurrentCallout;
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        if(launch != null)
+            startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        else {
+            Log.wtf(callout.getClass().getCanonicalName(), "I failed to return a valid intent, so something is probably very bad.");
+            Toast.makeText(this, "Callback for object type failed! " + callout.getClass().getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+        }
     }
 }

@@ -59,7 +59,7 @@ public class EditPhotoAction extends ObjAction {
         return (objType instanceof PictureObj);
     }
 
-    private class EditCallout implements ActivityCallout {
+    public static class EditCallout implements ActivityCallout {
         final JSONObject mJson;
         final byte[] mRaw;
         final Context mContext;

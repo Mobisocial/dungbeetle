@@ -113,19 +113,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             if (!appId.equals(SUPER_APP_ID)) {
                 return null;
             }
-            try {
-            	JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
 
-                long objId = mHelper.addToFeed(appId, "friend", values.getAsString(DbObject.TYPE),
-                    json);
-                Uri objUri = DbObject.uriForObj(objId);
-                resolver.notifyChange(Feed.uriForName("me"), null);
-                resolver.notifyChange(Feed.uriForName("friend"), null);
-                resolver.notifyChange(objUri, null);
-                return objUri;
-            } catch(JSONException e){
-                return null;
-            }
+            long objId = mHelper.addToFeed(appId, "friend", values);
+            Uri objUri = DbObject.uriForObj(objId);
+            resolver.notifyChange(Feed.uriForName("me"), null);
+            resolver.notifyChange(Feed.uriForName("friend"), null);
+            resolver.notifyChange(objUri, null);
+            return objUri;
         } else if (match(uri, "feeds", "friend", ".+")) {
             if (!appId.equals(SUPER_APP_ID)) {
                 return null;
@@ -165,10 +159,10 @@ public class DungBeetleContentProvider extends ContentProvider {
                 if (objHash != null) {
                     json.put(DbObjects.TARGET_HASH, Long.parseLong(objHash));
                     json.put(DbObjects.TARGET_RELATION, DbRelation.RELATION_PARENT);
+                    values.put(DbObject.JSON, json.toString());
                 }
 
-                long objId = mHelper.addToFeed(appId, feedName, values.getAsString(DbObject.TYPE),
-                        json);
+                long objId = mHelper.addToFeed(appId, feedName, values);
                 Uri objUri = DbObject.uriForObj(objId);
                 resolver.notifyChange(objUri, null);
                 notifyDependencies(mHelper, resolver, segs.get(1));

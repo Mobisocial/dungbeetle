@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import mobisocial.socialkit.Obj;
+
 import org.json.JSONObject;
 
 import android.content.ContentValues;
@@ -13,6 +15,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
@@ -125,6 +131,10 @@ public class Helpers {
        c.getContentResolver().update(url, values, Group._ID + "=" + groupId, null);
    }
 
+    /**
+     * @see Helpers#sendMessage(Context, Collection, DbObject)
+     */
+    @Deprecated
     public static void sendIM(final Context c, 
                               final Collection<Contact> contacts, 
                               final String msg){
@@ -138,16 +148,22 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void sendMessage(final Context c, long contactId, JSONObject obj, String type) {
+    @Deprecated
+    public static void sendMessage(final Context c, long contactId, JSONObject json, String type) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
+        Obj obj = DbObjects.convertOldJsonToObj(c, type, json);
         ContentValues values = new ContentValues();
-        values.put(DbObject.JSON, obj.toString());
         values.put(DbObject.TYPE, type);
+        values.put(DbObject.JSON, obj.getJson().toString());
+        if (obj.getRaw() != null) {
+            values.put(DbObject.RAW, obj.getRaw());
+        }
         String to = Long.toString(contactId);
         values.put(DbObject.DESTINATION, to);
         c.getContentResolver().insert(url, values);
     }
 
+    @Deprecated
     public static void sendMessage(final Context c,
                                    final Collection<Contact> contacts,
                                    final DbObject obj) {
@@ -155,6 +171,10 @@ public class Helpers {
         ContentValues values = new ContentValues();
         values.put(DbObject.JSON, obj.getJson().toString());
         values.put(DbObject.TYPE, obj.getType());
+        byte[] raw = obj.getRaw();
+        if (raw != null) {
+            values.put(DbObject.RAW, raw);
+        }
         String to = buildAddresses(contacts);
         values.put(DbObject.DESTINATION, to);
         c.getContentResolver().insert(url, values);
@@ -195,20 +215,42 @@ public class Helpers {
             Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
         }
     }
-    
-    
+
     /**
-     * Sends a message to the default user feed.
+     * @see Helpers#sendToFeed(Context, Obj, Uri)
      */
-    public static void sendToFeed(Context c, ContentValues values) {
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        c.getContentResolver().insert(url, values); 
-    }
-    
+    @Deprecated
     public static Uri sendToFeed(Context c, DbObject obj, Uri feed) {
         ContentValues values = new ContentValues();
-        values.put(DbObject.JSON, obj.getJson().toString());
+
         values.put(DbObject.TYPE, obj.getType());
+        DbEntryHandler objHandler = DbObjects.forType(obj.getType());
+        if (objHandler instanceof UnprocessedMessageHandler) {
+            Pair<JSONObject, byte[]> r = ((UnprocessedMessageHandler)objHandler)
+                    .handleUnprocessed(c, obj.getJson());
+            if(r != null) {
+                values.put(DbObject.JSON, r.first.toString());
+                values.put(DbObject.RAW, r.second);
+            } else {
+                values.put(DbObject.JSON, obj.getJson().toString());
+            }
+        } else {
+            values.put(DbObject.JSON, obj.getJson().toString());
+        }
+        return c.getContentResolver().insert(feed, values);
+    }
+
+    public static Uri sendToFeed(Context c, Obj obj, Uri feed) {
+        ContentValues values = new ContentValues();
+        values.put(DbObject.TYPE, obj.getType());
+        Object value = obj.getJson().toString();
+        if (value != null) {
+            values.put(DbObject.JSON, (String)value);
+        }
+        value = obj.getRaw();
+        if (value != null) {
+            values.put(DbObject.RAW, (byte[])value);
+        }
         return c.getContentResolver().insert(feed, values);
     }
 
@@ -217,11 +259,8 @@ public class Helpers {
      * TODO: This should be made much more efficient if it proves useful.
      */
     public static void sendToFeeds(Context c, DbObject obj, Collection<Uri> feeds) {
-        ContentValues values = new ContentValues();
-        values.put(DbObject.JSON, obj.getJson().toString());
-        values.put(DbObject.TYPE, obj.getType());
         for (Uri feed : feeds) {
-            c.getContentResolver().insert(feed, values); 
+            sendToFeed(c, obj, feed);
         }
     }
 
@@ -229,12 +268,10 @@ public class Helpers {
      * A convenience method for sending an object to multiple feeds.
      * TODO: This should be made much more efficient if it proves useful.
      */
-    public static void sendToFeeds(Context c, String type, JSONObject obj, Uri[] feeds) {
-        ContentValues values = new ContentValues();
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, type);
+    public static void sendToFeeds(Context c, String type, JSONObject json, Uri[] feeds) {
+        Obj obj = DbObjects.convertOldJsonToObj(c, type, json);
         for (Uri feed : feeds) {
-            c.getContentResolver().insert(feed, values); 
+            sendToFeed(c, obj, feed);
         }
     }
 
