@@ -5,8 +5,8 @@
 	      android:layout_height="fill_parent"
 	      android:padding="5dp"
 	      android:background="#000000">
-  <ImageView
-      android:id="@+id/image"
+  <Gallery
+      android:id="@+id/gallery"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       />

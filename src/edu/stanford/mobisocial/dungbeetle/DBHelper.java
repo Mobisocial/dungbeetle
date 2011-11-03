@@ -1240,7 +1240,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryLocalUser(String feed_name) {
         String table = MyInfo.TABLE;
-        String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        String[] columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
         String selection = null;
         String selectionArgs[] = null;
         String groupBy = null;

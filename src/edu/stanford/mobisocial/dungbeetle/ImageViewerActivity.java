@@ -27,6 +27,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
@@ -46,7 +48,13 @@ public class ImageViewerActivity extends Activity {
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.image_viewer);
+		
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        setContentView(R.layout.image_viewer);
+
 		im = (ImageView)findViewById(R.id.image);
 		im.setScaleType(ImageView.ScaleType.FIT_CENTER);
 		mIntent = getIntent();
@@ -97,7 +105,7 @@ public class ImageViewerActivity extends Activity {
                             if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, obj)) {
                                 //toast("Trying to go HD...");
                             }
-                            Log.d(TAG, "Trying to go HD...");
+                            // Log.d(TAG, "Trying to go HD...");
                             final Uri fileUri = ContentCorral
                                     .fetchContent(ImageViewerActivity.this, obj);
                             if (fileUri == null) {
@@ -108,7 +116,7 @@ public class ImageViewerActivity extends Activity {
                                 }
                                 return;
                             }
-                            Log.d(TAG, "Opening HD file " + fileUri);
+                            // Log.d(TAG, "Opening HD file " + fileUri);
 
                             InputStream is = getContentResolver().openInputStream(fileUri);
                             BitmapFactory.Options options = new BitmapFactory.Options();

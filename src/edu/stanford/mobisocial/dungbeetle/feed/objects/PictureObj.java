@@ -23,7 +23,7 @@ import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
+import edu.stanford.mobisocial.dungbeetle.ImageGalleryActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -177,15 +177,10 @@ public class PictureObj extends DbEntryHandler
 
 	@Override
     public void activate(Context context, SignedObj obj) {
-	    byte[] raw = obj.getRaw();
-	    String senderId = obj.getSender().getId(); 
 	    // TODO: set data uri for obj
-	    Intent intent = new Intent(context, ImageViewerActivity.class);
+	    Intent intent = new Intent(context, ImageGalleryActivity.class);
+	    intent.setData(obj.getContainingFeed().getUri());
 	    intent.putExtra("objHash", obj.getHash());
-	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
-	    if (raw != null) {
-	        intent.putExtra("bytes", raw);
-	    }
 	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
