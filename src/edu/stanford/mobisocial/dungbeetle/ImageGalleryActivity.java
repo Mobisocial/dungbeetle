@@ -24,6 +24,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -90,6 +91,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
     }
 
     private static class ImageGalleryAdapter extends CursorAdapter {
+        private final Context mContext;
         private final int mInitialSelection;
         private final int COL_JSON;
         private final int COL_ID;
@@ -127,6 +129,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
         private ImageGalleryAdapter(Context context, Cursor c, int init) {
             super(context, c);
+            mContext = context;
             mInitialSelection = init;
             COL_JSON = c.getColumnIndexOrThrow(DbObject.JSON);
             COL_ID = c.getColumnIndexOrThrow(DbObject._ID);
@@ -153,13 +156,22 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            ImageView im = new ImageView(context);
+            ImageView im = new ImageView(mContext);
             im.setLayoutParams(new Gallery.LayoutParams(
                     Gallery.LayoutParams.MATCH_PARENT,
                     Gallery.LayoutParams.MATCH_PARENT));
             im.setScaleType(ImageView.ScaleType.FIT_CENTER);
             im.setBackgroundColor(Color.BLACK);
             return im;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView != null) {
+                ImageView im = (ImageView) convertView;
+                ((BitmapDrawable)im.getDrawable()).getBitmap().recycle();
+            }
+            return super.getView(position, convertView, parent);
         }
     }
 
