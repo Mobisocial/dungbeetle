@@ -614,8 +614,15 @@ public class DBHelper extends SQLiteOpenHelper {
     
     
 
-    long addToFeed(String appId, String feedName, String type, JSONObject json) {
+    /**
+     * Inserts an object into the database and flags it to be sent by
+     * the transport layer.
+     */
+    long addToFeed(String appId, String feedName, ContentValues values) {
         try {
+            JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+            String type = values.getAsString(DbObject.TYPE);
+
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
             json.put(DbObjects.TYPE, type);
@@ -624,6 +631,7 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put(DbObjects.TIMESTAMP, timestamp);
             json.put(DbObjects.APP_ID, appId);
 
+            // Explicit column referencing avoids database errors.
             ContentValues cv = new ContentValues();
             cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
@@ -633,6 +641,9 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            if (values.containsKey(DbObject.RAW)) {
+                cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
+            }
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
@@ -1057,6 +1068,7 @@ public class DBHelper extends SQLiteOpenHelper {
             			  DbObject.JSON,
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
+                          DbObject.RAW,
                         },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},

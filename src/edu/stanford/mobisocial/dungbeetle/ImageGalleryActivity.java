@@ -16,15 +16,22 @@ import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Menu;
@@ -40,38 +47,40 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.obj.action.EditPhotoAction;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
-public class ImageGalleryActivity extends Activity {
+public class ImageGalleryActivity extends FragmentActivity implements LoaderCallbacks<Cursor>,
+        InstrumentedActivity {
     private static final String TAG = "imageGallery";
 
 	private final String extStorageDirectory =
 	        Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
 	private Gallery mGallery;
 	private ImageGalleryAdapter mAdapter;
+	private Uri mFeedUri;
+	private long mInitialObjId;
+	private int mInitialSelection = -1;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
                                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        //setContentView(R.layout.image_gallery);
 
-        Uri feedUri = getIntent().getData();
-        long objHash = getIntent().getLongExtra("objHash", -1);
-        mAdapter = ImageGalleryAdapter.forObj(this, feedUri, objHash);
-        
-        //mGallery = (Gallery)findViewById(R.id.gallery);
+        mFeedUri = getIntent().getData();
+        long hash = getIntent().getLongExtra("objHash", -1);
+        mInitialObjId = App.instance().getMusubi().objForHash(hash).getLocalId();
+
+        getSupportLoaderManager().initLoader(0, null, this);
         mGallery = new SlowGallery(this);
         mGallery.setBackgroundColor(Color.BLACK);
         addContentView(mGallery, CommonLayouts.FULL_SCREEN);
-        mGallery.setAdapter(mAdapter);
         if (savedInstanceState != null) {
-            mGallery.setSelection(savedInstanceState.getInt("selection"));
-        } else {
-            mGallery.setSelection(mAdapter.getInitialSelection());
+            mInitialSelection = savedInstanceState.getInt("selection");
         }
     }
 
@@ -82,26 +91,15 @@ public class ImageGalleryActivity extends Activity {
     }
 
     private static class ImageGalleryAdapter extends CursorAdapter {
+        private final Context mContext;
         private final int mInitialSelection;
         private final int COL_JSON;
         private final int COL_ID;
 
-        public static ImageGalleryAdapter forObj(Context context, Uri feedUri, long objHash) {
-            String selection = "type = ?";
-            String[] selectionArgs = new String[] { PictureObj.TYPE };
-            Cursor c = context.getContentResolver().query(feedUri, null,
-                    selection, selectionArgs, DbObject._ID + " DESC");
-
-            DbObj obj = App.instance().getMusubi().objForHash(objHash);
-            if (obj == null || !c.moveToFirst()) {
-                Log.w(TAG, "Could not find image for viewing");
-                return null;
-            }
-
-            int colId = c.getColumnIndexOrThrow(DbObject._ID);
-            long objId = obj.getLocalId();
-            int init = binarySearch(c, objId, colId);
-            return new ImageGalleryAdapter(context, c, init);
+        public static ImageGalleryAdapter forObj(Context context, Cursor cursor, long objId) {
+            int colId = cursor.getColumnIndexOrThrow(DbObject._ID);
+            int init = binarySearch(cursor, objId, colId);
+            return new ImageGalleryAdapter(context, cursor, init);
         }
 
         public int getInitialSelection() {
@@ -131,6 +129,7 @@ public class ImageGalleryActivity extends Activity {
 
         private ImageGalleryAdapter(Context context, Cursor c, int init) {
             super(context, c);
+            mContext = context;
             mInitialSelection = init;
             COL_JSON = c.getColumnIndexOrThrow(DbObject.JSON);
             COL_ID = c.getColumnIndexOrThrow(DbObject._ID);
@@ -157,7 +156,7 @@ public class ImageGalleryActivity extends Activity {
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            ImageView im = new ImageView(context);
+            ImageView im = new ImageView(mContext);
             im.setLayoutParams(new Gallery.LayoutParams(
                     Gallery.LayoutParams.MATCH_PARENT,
                     Gallery.LayoutParams.MATCH_PARENT));
@@ -165,22 +164,32 @@ public class ImageGalleryActivity extends Activity {
             im.setBackgroundColor(Color.BLACK);
             return im;
         }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView != null) {
+                ImageView im = (ImageView) convertView;
+                ((BitmapDrawable)im.getDrawable()).getBitmap().recycle();
+            }
+            return super.getView(position, convertView, parent);
+        }
     }
 
-    private final static int SAVE = 0;
-    private final static int SET_PROFILE = 1;
+    private static final int MENU_SAVE = 0;
+    private static final int MENU_SET_PROFILE = 1;
+    private static final int MENU_EDIT = 2;
 
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         menu.clear();
-        menu.add(0, SAVE, 0, "Download to SD Card");
-        menu.add(0, SET_PROFILE, 0, "Set as Profile");
-        //menu.add(1, ANON, 1, "Add anon profile");
+        menu.add(0, MENU_EDIT, 0, "Edit");
+        menu.add(0, MENU_SAVE, 0, "Save to SD Card");
+        menu.add(0, MENU_SET_PROFILE, 0, "Set as Profile");
         return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case SAVE: {
+            case MENU_SAVE: {
                 long objId = (Long)mGallery.getSelectedView().getTag();
                 DbObj obj = App.instance().getMusubi().objForId(objId);
 
@@ -227,7 +236,7 @@ public class ImageGalleryActivity extends Activity {
                 }
                 return true;
             }
-            case SET_PROFILE: {
+            case MENU_SET_PROFILE: {
                 new Thread() {
                     public void run() {
                         long objId = (Long)mGallery.getSelectedView().getTag();
@@ -237,6 +246,12 @@ public class ImageGalleryActivity extends Activity {
                         toast("Set profile picture.");
                     };
                 }.start(); 
+                return true;
+            }
+            case MENU_EDIT: {
+                long objId = (Long)mGallery.getSelectedView().getTag();
+                DbObj obj = App.instance().getMusubi().objForId(objId);
+                doActivityForResult(new EditPhotoAction.EditCallout(this, obj));
                 return true;
             }
             default:
@@ -327,5 +342,55 @@ public class ImageGalleryActivity extends Activity {
                 Toast.makeText(ImageGalleryActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String selection = "type = ?";
+        String[] selectionArgs = new String[] { PictureObj.TYPE };
+        String order = DbObject._ID + " DESC";
+        return new CursorLoader(this, mFeedUri, null, selection, selectionArgs, order);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        if (mAdapter == null) {
+            mAdapter = ImageGalleryAdapter.forObj(this, cursor, mInitialObjId);
+            mGallery.setAdapter(mAdapter);
+            mGallery.setSelection((mInitialSelection == -1)
+                    ? mAdapter.getInitialSelection() : mInitialSelection);
+        } else {
+            mAdapter.changeCursor(cursor);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> arg0) {
+    }
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    private static ActivityCallout mCurrentCallout;
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        if(launch != null)
+            startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        else {
+            Log.wtf(callout.getClass().getCanonicalName(), "I failed to return a valid intent, so something is probably very bad.");
+            Toast.makeText(this, "Callback for object type failed! " + callout.getClass().getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+        }
     }
 }
