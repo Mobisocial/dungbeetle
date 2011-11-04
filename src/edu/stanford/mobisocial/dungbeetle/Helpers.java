@@ -365,9 +365,10 @@ public class Helpers {
     public static void updateProfile(final Context c, final String name, final String about){
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = new ContentValues();
-        JSONObject obj = ProfileObj.json(name, about);
-        values.put(DbObject.JSON, obj.toString());
-        values.put(DbObject.TYPE, ProfileObj.TYPE);
+        //JSONObject obj = ProfileObj.json(name, about);
+        Obj profileObj = ProfileObj.forLocalUser(c, name, about);
+        values.put(DbObject.JSON, profileObj.getJson().toString());
+        values.put(DbObject.TYPE, profileObj.getType());
         c.getContentResolver().insert(url, values);
     }
 

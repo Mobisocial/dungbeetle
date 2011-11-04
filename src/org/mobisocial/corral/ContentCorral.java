@@ -1,3 +1,4 @@
+
 package org.mobisocial.corral;
 
 import java.io.ByteArrayInputStream;
@@ -17,16 +18,27 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
+import java.util.UUID;
 
+import mobisocial.comm.BluetoothDuplexSocket;
+import mobisocial.comm.DuplexSocket;
+import mobisocial.comm.StreamDuplexSocket;
+import mobisocial.comm.TcpDuplexSocket;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -40,48 +52,70 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 public class ContentCorral {
     public static final String OBJ_MIME_TYPE = "mimeType";
     public static final String OBJ_LOCAL_URI = "localUri";
+    private static final String PREF_CORRAL_BT_UUID = "corral_bt";
+    private static final int SERVER_PORT = 8224;
+    private static final String BT_CORRAL_NAME = "Content Corral";
 
-	private static final int SERVER_PORT = 8224;
-	private static final String TAG = "ContentCorral";
-	private static final boolean DBG = true;
-	private AcceptThread mAcceptThread;
-	private Context mContext;
+    private static final String TAG = "ContentCorral";
+    private static final boolean DBG = true;
 
-	public static final boolean CONTENT_CORRAL_ENABLED = true;
+    private BluetoothAcceptThread mBluetoothAcceptThread;
+    private HttpAcceptThread mHttpAcceptThread;
+    private Context mContext;
+    public static final boolean CONTENT_CORRAL_ENABLED = true;
 
-	public ContentCorral(Context context) {
-	    mContext = context;
-	}
-	/**
-	 * Starts the simple image server
-	 */
-	public synchronized void start() {
-		if (mAcceptThread != null) return;
-		
-		String ip = getLocalIpAddress();
-		if (ip == null) {
-			Toast.makeText(mContext, "Image server failed to start. Are you on a wifi network?",
-			        Toast.LENGTH_SHORT).show();
-			return;
-		}
-		mAcceptThread = new AcceptThread(SERVER_PORT);
-		mAcceptThread.start();
-	}
-	
-	public synchronized void stop() {
-		if (mAcceptThread != null) {
-			mAcceptThread.cancel();
-			mAcceptThread = null;
-		}
-	}
-	
-	private class AcceptThread extends Thread {
+    public ContentCorral(Context context) {
+        mContext = context;
+    }
+
+    public void start() {
+        startHttpServer();
+        startBluetoothService();
+    }
+
+    private void startBluetoothService() {
+        if (mBluetoothAcceptThread != null)
+            return;
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null || !adapter.isEnabled()) {
+            return;
+        }
+
+        mBluetoothAcceptThread = new BluetoothAcceptThread(adapter,
+                getLocalBluetoothServiceUuid(mContext));
+    }
+
+    /**
+     * Starts the simple image server
+     */
+    private synchronized void startHttpServer() {
+        if (mHttpAcceptThread != null)
+            return;
+
+        String ip = getLocalIpAddress();
+        if (ip == null) {
+            Toast.makeText(mContext, "Image server failed to start. Are you on a wifi network?",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mHttpAcceptThread = new HttpAcceptThread(SERVER_PORT);
+        mHttpAcceptThread.start();
+    }
+
+    public synchronized void stop() {
+        if (mHttpAcceptThread != null) {
+            mHttpAcceptThread.cancel();
+            mHttpAcceptThread = null;
+        }
+    }
+
+    private class HttpAcceptThread extends Thread {
         // The local server socket
         private final ServerSocket mmServerSocket;
 
-        public AcceptThread(int port) {
+        public HttpAcceptThread(int port) {
             ServerSocket tmp = null;
-            
+
             // Create a new listening server socket
             try {
                 tmp = new ServerSocket(port);
@@ -93,7 +127,7 @@ public class ContentCorral {
         }
 
         public void run() {
-            //Log.d(TAG, "BEGIN mAcceptThread" + this);
+            // Log.d(TAG, "BEGIN mAcceptThread" + this);
             setName("AcceptThread");
             Socket socket = null;
 
@@ -102,11 +136,11 @@ public class ContentCorral {
                 try {
                     // This is a blocking call and will only return on a
                     // successful connection or an exception
-                	//Log.d(TAG, "waiting for client...");
+                    // Log.d(TAG, "waiting for client...");
                     socket = mmServerSocket.accept();
-                    //Log.d(TAG, "Client connected!");
+                    // Log.d(TAG, "Client connected!");
                 } catch (SocketException e) {
-                	Log.e(TAG, "accept() failed", e);
+                    Log.e(TAG, "accept() failed", e);
                     break;
                 } catch (IOException e) {
                     Log.e(TAG, "accept() failed", e);
@@ -115,10 +149,18 @@ public class ContentCorral {
 
                 // If a connection was accepted
                 if (socket == null) {
-                	break;
+                    break;
                 }
-                
-                ConnectedThread conThread = new ConnectedThread(socket);
+
+                DuplexSocket duplex;
+                try {
+                    duplex = new StreamDuplexSocket(socket.getInputStream(),
+                            socket.getOutputStream());
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to connect to socket", e);
+                    return;
+                }
+                HttpConnectedThread conThread = new HttpConnectedThread(duplex);
                 conThread.start();
             }
             Log.d(TAG, "END mAcceptThread");
@@ -133,20 +175,80 @@ public class ContentCorral {
             }
         }
     }
-	
-	
+
+    private class BluetoothAcceptThread extends Thread {
+        // The local server socket
+        private final BluetoothServerSocket mmServerSocket;
+
+        public BluetoothAcceptThread(BluetoothAdapter adapter, UUID coralUuid) {
+            BluetoothServerSocket tmp = null;
+
+            // Create a new listening server socket
+            try {
+                tmp = adapter.listenUsingInsecureRfcommWithServiceRecord(BT_CORRAL_NAME, coralUuid);
+            } catch (IOException e) {
+                System.err.println("Could not open bt server socket");
+                e.printStackTrace(System.err);
+            }
+            mmServerSocket = tmp;
+        }
+
+        public void run() {
+            // Log.d(TAG, "BEGIN mAcceptThread" + this);
+            setName("AcceptThread");
+            BluetoothSocket socket = null;
+
+            // Listen to the server socket always
+            while (true) {
+                try {
+                    // This is a blocking call and will only return on a
+                    // successful connection or an exception
+                    // Log.d(TAG, "waiting for client...");
+                    socket = mmServerSocket.accept();
+
+                    // Log.d(TAG, "Client connected!");
+                } catch (SocketException e) {
+                    Log.e(TAG, "accept() failed", e);
+                    break;
+                } catch (IOException e) {
+                    Log.e(TAG, "accept() failed", e);
+                    break;
+                }
+
+                // If a connection was accepted
+                if (socket == null) {
+                    break;
+                }
+
+                DuplexSocket duplex = new BluetoothDuplexSocket(socket);
+                ObjExConnectedThread conThread = new ObjExConnectedThread(duplex);
+                conThread.start();
+            }
+            Log.d(TAG, "END mAcceptThread");
+        }
+
+        public void cancel() {
+            Log.d(TAG, "cancel " + this);
+            try {
+                mmServerSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "close() of server failed", e);
+            }
+        }
+    }
+
     /**
-     * This thread runs during a connection with a remote device.
-     * It handles all incoming and outgoing transmissions.
+     * This thread runs during a connection with a remote device. It supports
+     * incoming and outgoing transmissions over HTTP.
      */
-    private class ConnectedThread extends Thread {
-        private final Socket mmSocket;
+    private class HttpConnectedThread extends Thread {
+        private final DuplexSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
         private final int BUFFER_LENGTH = 1024;
 
-        public ConnectedThread(Socket socket) {
-            //Log.d(TAG, "create ConnectedThread");
+        public HttpConnectedThread(DuplexSocket socket) {
+            // Log.d(TAG, "create ConnectedThread");
 
             mmSocket = socket;
             InputStream tmpIn = null;
@@ -167,23 +269,24 @@ public class ContentCorral {
             Log.d(TAG, "BEGIN mConnectedThread");
             byte[] buffer = new byte[BUFFER_LENGTH];
             int bytes;
-            
-            if (mmInStream == null || mmOutStream == null) return;
-            
+
+            if (mmInStream == null || mmOutStream == null)
+                return;
+
             // Read header information, determine connection type
             try {
-            	bytes = mmInStream.read(buffer);
-            	Log.d(TAG, "read " + bytes + " header bytes");
-            	String header = new String(buffer, 0, bytes);
-            	
-            	// determine request type
-            	if (header.startsWith("GET ")) {
-            		doGetRequest(header);
-            	}
+                bytes = mmInStream.read(buffer);
+                Log.d(TAG, "read " + bytes + " header bytes");
+                String header = new String(buffer, 0, bytes);
+
+                // determine request type
+                if (header.startsWith("GET ")) {
+                    doGetRequest(header);
+                }
             } catch (Exception e) {
-            	Log.e(TAG, "Error reading connection header", e);
+                Log.e(TAG, "Error reading connection header", e);
             }
-            
+
             // No longer listening.
             cancel();
         }
@@ -191,15 +294,16 @@ public class ContentCorral {
         /**
          * TODO: This is completely and totally insecure. At the very least,
          * check to make sure the connector is a friend, and can verify
-         * cryptographically.
+         * over oauth or similar.
          */
         private void doGetRequest(String header) {
-        	String[] headers = header.split("\r\n");
-        	if (!headers[0].startsWith("GET ")) return;
-        	String[] request = headers[0].split(" ");
-        	Uri targetUri = Uri.parse("http://mock" + URLDecoder.decode(request[1]));
-        	if (targetUri.getQueryParameter("content") == null) {
-        	    try {
+            String[] headers = header.split("\r\n");
+            if (!headers[0].startsWith("GET "))
+                return;
+            String[] request = headers[0].split(" ");
+            Uri targetUri = Uri.parse("http://mock" + URLDecoder.decode(request[1]));
+            if (targetUri.getQueryParameter("content") == null) {
+                try {
                     mmOutStream.write(header("HTTP/1.1 404 NOT FOUND"));
                 } catch (IOException e) {
                 }
@@ -279,16 +383,16 @@ public class ContentCorral {
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
                         selectionArgs, sortOrder);
                 try {
-	
-	                if (!cursor.moveToPosition(objIndex)) {
-	                    Log.d(TAG, "No obj found for " + uri);
-	                    return;
-	                }
-	                String jsonStr = cursor.getString(1);
-	                bytes = jsonStr.getBytes();
-	                in = new ByteArrayInputStream(bytes);
+
+                    if (!cursor.moveToPosition(objIndex)) {
+                        Log.d(TAG, "No obj found for " + uri);
+                        return;
+                    }
+                    String jsonStr = cursor.getString(1);
+                    bytes = jsonStr.getBytes();
+                    in = new ByteArrayInputStream(bytes);
                 } finally {
-                	cursor.close();
+                    cursor.close();
                 }
             } catch (Exception e) {
                 Log.d(TAG, "Error opening obj", e);
@@ -335,20 +439,20 @@ public class ContentCorral {
                 String sortOrder = DbObject._ID + " ASC LIMIT 30";
                 Cursor cursor = mContext.getContentResolver().query(uri, projection, selection,
                         selectionArgs, sortOrder);
-                
+
                 try {
-	                if (!cursor.moveToFirst()) {
-	                    Log.d(TAG, "No objs found for " + uri);
-	                    return;
-	                }
-	                jsonArrayBuilder.append(cursor.getString(1));
-	                while (!cursor.isLast()) {
-	                    cursor.moveToNext();
-	                    String jsonStr = cursor.getString(1);
-	                    jsonArrayBuilder.append(",").append(jsonStr);
-	                }
+                    if (!cursor.moveToFirst()) {
+                        Log.d(TAG, "No objs found for " + uri);
+                        return;
+                    }
+                    jsonArrayBuilder.append(cursor.getString(1));
+                    while (!cursor.isLast()) {
+                        cursor.moveToNext();
+                        String jsonStr = cursor.getString(1);
+                        jsonArrayBuilder.append(",").append(jsonStr);
+                    }
                 } finally {
-                	cursor.close();
+                    cursor.close();
                 }
             } catch (Exception e) {
                 Log.d(TAG, "Error opening obj", e);
@@ -395,29 +499,91 @@ public class ContentCorral {
     }
 
     public static String getLocalIpAddress() {
-	    try {
-	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-	            NetworkInterface intf = en.nextElement();
-	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-	                InetAddress inetAddress = enumIpAddr.nextElement();
-	                if (!inetAddress.isLoopbackAddress()) {
-	                	// not ready for IPv6, apparently.
-	                	if (!inetAddress.getHostAddress().contains(":")) {
-	                		return inetAddress.getHostAddress().toString();
-	                	}
-	                }
-	            }
-	        }
-	    } catch (SocketException ex) {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en
+                    .hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr
+                        .hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress()) {
+                        // not ready for IPv6, apparently.
+                        if (!inetAddress.getHostAddress().contains(":")) {
+                            return inetAddress.getHostAddress().toString();
+                        }
+                    }
+                }
+            }
+        } catch (SocketException ex) {
 
-	    }
-	    return null;
-	}
+        }
+        return null;
+    }
 
-	private static Uri uriForContent(String host, String localContent) {
+    /**
+     * This thread runs during a connection with a remote device. It supports
+     * incoming and outgoing transmissions over HTTP.
+     */
+    private class ObjExConnectedThread extends Thread {
+        private final DuplexSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+        private final int BUFFER_LENGTH = 1024;
+
+        public ObjExConnectedThread(DuplexSocket socket) {
+            // Log.d(TAG, "create ConnectedThread");
+
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) {
+                Log.e(TAG, "temp sockets not created", e);
+            }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            Log.d(TAG, "BEGIN mConnectedThread");
+            byte[] buffer = new byte[BUFFER_LENGTH];
+            int bytes;
+
+            if (mmInStream == null || mmOutStream == null)
+                return;
+
+            // Read header information, determine connection type
+            try {
+                bytes = mmInStream.read(buffer);
+                Log.d(TAG, "read " + bytes + " header bytes");
+                String header = new String(buffer, 0, bytes);
+
+                // TODO
+                do something
+            } catch (Exception e) {
+                Log.e(TAG, "Error reading connection header", e);
+            }
+
+            // No longer listening.
+            cancel();
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    private static Uri uriForContent(String host, String localContent) {
         Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
         return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
-	}
+    }
 
     /**
      * Synchronized method that retrieves content by any possible transport, and
@@ -425,8 +591,7 @@ public class ContentCorral {
      * is available locally, or it has been determined that the file cannot
      * currently be fetched.
      */
-    public static Uri fetchContent(Context context, SignedObj obj)
-            throws IOException {
+    public static Uri fetchContent(Context context, SignedObj obj) throws IOException {
         if (!obj.getJson().has(OBJ_LOCAL_URI)) {
             if (DBG) {
                 Log.d(TAG, "no local uri for obj.");
@@ -436,6 +601,10 @@ public class ContentCorral {
         String localId = App.instance().getLocalPersonId();
         if (localId.equals(obj.getSender().getId())) {
             try {
+                // TODO: Objects shared out from the content corral should
+                // be accessible through the content corral. We don't have
+                // to copy all files but we should have the option to create
+                // a locate cache.
                 return Uri.parse(obj.getJson().getString(OBJ_LOCAL_URI));
             } catch (JSONException e) {
                 Log.e(TAG, "json exception getting local uri", e);
@@ -443,31 +612,71 @@ public class ContentCorral {
             }
         }
 
+        DbUser user = App.instance().getMusubi()
+                .userForGlobalId(obj.getContainingFeed().getUri(), obj.getSender().getId());
         File localFile = localFileForContent(context, obj);
         if (localFile.exists()) {
             return Uri.fromFile(localFile);
         }
 
-        // TODO: ipv6 compliance.
-        // TODO: Try multiple ip endpoints; multi-sourced download;
-        // torrent-style sharing
-        // (mobile, distributed CDN)
-        DbUser user = App.instance().getMusubi().userForGlobalId(obj.getContainingFeed().getUri(),
-                obj.getSender().getId());
-        String ip = DbContactAttributes.getAttribute(context, user.getLocalId(),
-                Contact.ATTR_LAN_IP);
-        if (ip == null) {
-            Log.d(TAG, "No known ip for user.");
-            return null;
+        try {
+            if (userAvailableOnLan(context, user)) {
+                return getFileOverLan(context, user, obj);
+            }
+        } catch (IOException e) {
         }
 
         try {
+            return getFileOverBluetooth(context, user, obj);
+        } catch (IOException e) {
+        }
+
+        if (!localFile.exists()) {
+            throw new IOException("Failed to fetch file");
+        }
+        return Uri.fromFile(localFile);
+    }
+
+    private static Uri getFileOverBluetooth(Context context, DbUser user, SignedObj obj)
+            throws IOException {
+        String macStr = DbContactAttributes.getAttribute(context, user.getLocalId(),
+                Contact.ATTR_BT_MAC);
+        if (macStr == null) {
+            throw new IOException("No bluetooth mac address for user");
+        }
+        String uuidStr = DbContactAttributes.getAttribute(context, user.getLocalId(),
+                Contact.ATTR_BT_CORRAL_UUID);
+        if (uuidStr == null) {
+            throw new IOException("No corral uuid for user");
+        }
+        UUID uuid = UUID.fromString(uuidStr);
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothDevice device = adapter.getRemoteDevice(macStr);
+        BluetoothSocket socket;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD_MR1) {
+            socket = device.createInsecureRfcommSocketToServiceRecord(uuid);
+        } else {
+            socket = device.createRfcommSocketToServiceRecord(uuid);
+        }
+
+        // TODO: Currently, socket expects HTTP. I think this is dumb!
+        // Custom wire protocol, look for header bits to map to protocol handler.
+        // but do something !
+        return null;
+        error bjd;
+    }
+
+    private static Uri getFileOverLan(Context context, DbUser user, SignedObj obj)
+            throws IOException {
+        try {
             // Remote
+            String ip = getUserLanIp(context, user);
             Uri remoteUri = uriForContent(ip, obj.getJson().getString(OBJ_LOCAL_URI));
             URL url = new URL(remoteUri.toString());
             if (DBG)
                 Log.d(TAG, "Attempting to pull file " + remoteUri);
 
+            File localFile = localFileForContent(context, obj);
             if (!localFile.exists()) {
                 try {
                     InputStream is = url.openConnection().getInputStream();
@@ -487,8 +696,21 @@ public class ContentCorral {
             }
             return Uri.fromFile(localFile);
         } catch (JSONException e) {
-            return null;
+            throw new IOException(e);
         }
+    }
+
+    private static boolean userAvailableOnLan(Context context, DbUser user) {
+        // TODO: ipv6 compliance.
+        // TODO: Try multiple ip endpoints; multi-sourced download;
+        // torrent-style sharing
+        // (mobile, distributed CDN)
+        return null == DbContactAttributes.getAttribute(context, user.getLocalId(),
+                Contact.ATTR_LAN_IP);
+    }
+
+    private static String getUserLanIp(Context context, DbUser user) {
+        return DbContactAttributes.getAttribute(context, user.getLocalId(), Contact.ATTR_LAN_IP);
     }
 
     private static File localFileForContent(Context context, SignedObj obj) {
@@ -506,23 +728,23 @@ public class ContentCorral {
         }
     }
 
-	private static String suffixForType(String type) {
-	    if (type == null) {
-	        return null;
-	    }
-	    if (type.equals("image/jpeg")) {
-	        return "jpg";
-	    }
-	    if (type.equals("video/3gpp")) {
-	        return "3gp";
-	    }
-	    return null;
-	}
+    private static String suffixForType(String type) {
+        if (type == null) {
+            return null;
+        }
+        if (type.equals("image/jpeg")) {
+            return "jpg";
+        }
+        if (type.equals("video/3gpp")) {
+            return "3gp";
+        }
+        return null;
+    }
 
     public static boolean fileAvailableLocally(Context context, SignedObj obj) {
         try {
-            DbUser dbUser = App.instance().getMusubi().userForGlobalId(
-                    obj.getContainingFeed().getUri(), obj.getSender().getId());
+            DbUser dbUser = App.instance().getMusubi()
+                    .userForGlobalId(obj.getContainingFeed().getUri(), obj.getSender().getId());
             long contactId = dbUser.getLocalId();
             if (contactId == Contact.MY_ID) {
                 return true;
@@ -535,7 +757,7 @@ public class ContentCorral {
         }
     }
 
-	private static class HashUtils {
+    private static class HashUtils {
         private static String convertToHex(byte[] data) {
             StringBuffer buf = new StringBuffer();
             for (int i = 0; i < data.length; i++) {
@@ -561,5 +783,15 @@ public class ContentCorral {
             sha1hash = md.digest();
             return convertToHex(sha1hash);
         }
+    }
+
+    public static UUID getLocalBluetoothServiceUuid(Context c) {
+        SharedPreferences prefs = c.getSharedPreferences("main", 0);
+        if (!prefs.contains(PREF_CORRAL_BT_UUID)) {
+            UUID btUuid = UUID.randomUUID();
+            prefs.edit().putString(PREF_CORRAL_BT_UUID, btUuid.toString()).commit();
+        }
+        String uuidStr = prefs.getString(PREF_CORRAL_BT_UUID, null);
+        return (uuidStr == null) ? null : UUID.fromString(uuidStr);
     }
 }
