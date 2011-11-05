@@ -558,12 +558,20 @@ public class ContentCorral {
 
             // Read header information, determine connection type
             try {
+                /**
+                 * TODO: SNEP-like protocol here, for ObjEx.
+                 * Remember, we have authenticated objs, ndef does not.
+                 * 
+                 * server: NONCE CHALLENGE
+                 * client: AUTHED REQUEST
+                 * server: AUTHED RESPONSE
+                 */
                 bytes = mmInStream.read(buffer);
                 Log.d(TAG, "read " + bytes + " header bytes");
                 String header = new String(buffer, 0, bytes);
 
                 // TODO
-                do something
+                Log.d(TAG, "BJD BLUETOOTH CORRAL NOT READY: ObjEx needs defining.");
             } catch (Exception e) {
                 Log.e(TAG, "Error reading connection header", e);
             }
@@ -659,11 +667,10 @@ public class ContentCorral {
             socket = device.createRfcommSocketToServiceRecord(uuid);
         }
 
-        // TODO: Currently, socket expects HTTP. I think this is dumb!
+        // TODO:
         // Custom wire protocol, look for header bits to map to protocol handler.
-        // but do something !
+        Log.d(TAG, "BJD BLUETOOTH CORRAL NOT READY: can't pull file over bluetooth.");
         return null;
-        error bjd;
     }
 
     private static Uri getFileOverLan(Context context, DbUser user, SignedObj obj)
