@@ -321,15 +321,15 @@
 </receiver>
 
 <!-- Broadcast Receiver that will process AppWidget updates -->
-<receiver android:name="org.mobisocial.WordWidget" android:label="Mobi Status">
+<receiver android:name="org.mobisocial.widget.StatusWidget" android:label=" Feed Status">
     <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
     </intent-filter>
-    <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_word" />
+    <meta-data android:name="android.appwidget.provider" android:resource="@xml/text_widget" />
 </receiver>
 
 <!-- Service to perform web API queries -->
-<service android:name=".WordWidget$UpdateService" />
+<service android:name="org.mobisocial.widget.StatusWidget$UpdateService" />
 
   </application>
 </manifest> 

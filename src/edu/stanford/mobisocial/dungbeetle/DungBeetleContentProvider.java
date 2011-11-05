@@ -433,15 +433,17 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
-        } else if(match(uri, "feeds", ".+")){
+        } else if(match(uri, "feeds", ".+")) {
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
+            if (Feed.FEED_NAME_GLOBAL.equals(feedName)) {
+                feedName = null;
+            }
             String select = isMe ? DBHelper.andClauses(selection, DbObject.CONTACT_ID + "="
                     + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeed(realAppId,
                     feedName, projection, select, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Feed.uriForName(feedName));
-            if (isMe) c.setNotificationUri(resolver, Feed.uriForName("me"));
+            c.setNotificationUri(resolver, uri);
             return c;
         } else if (match(uri, "feeds", "friend", ".+")) {
             Long contactId = Long.parseLong(segs.get(2));
@@ -555,6 +557,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         Uri feedUri = Feed.uriForName(feedName);
         if (DBG) Log.d(TAG, "notifying dependencies of  " + feedUri);
         resolver.notifyChange(feedUri, null);
+        resolver.notifyChange(Feed.uriForName(Feed.FEED_NAME_GLOBAL), null);
         if (feedName.contains(":")) {
             feedName = feedName.split(":")[0];
             resolver.notifyChange(Feed.uriForName(feedName), null);
