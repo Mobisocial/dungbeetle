@@ -319,5 +319,17 @@
         <action android:name="android.intent.action.MEDIA_BUTTON" />
     </intent-filter>
 </receiver>
+
+<!-- Broadcast Receiver that will process AppWidget updates -->
+<receiver android:name="org.mobisocial.WordWidget" android:label="Mobi Status">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+    </intent-filter>
+    <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_word" />
+</receiver>
+
+<!-- Service to perform web API queries -->
+<service android:name=".WordWidget$UpdateService" />
+
   </application>
 </manifest> 
