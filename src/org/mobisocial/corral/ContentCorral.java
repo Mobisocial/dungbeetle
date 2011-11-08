@@ -2,12 +2,15 @@
 package org.mobisocial.corral;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -24,6 +27,7 @@ import mobisocial.comm.BluetoothDuplexSocket;
 import mobisocial.comm.DuplexSocket;
 import mobisocial.comm.StreamDuplexSocket;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
@@ -47,6 +51,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
 public class ContentCorral {
     public static final String OBJ_MIME_TYPE = "mimeType";
@@ -186,8 +191,10 @@ public class ContentCorral {
             try {
                 tmp = adapter.listenUsingInsecureRfcommWithServiceRecord(BT_CORRAL_NAME, coralUuid);
             } catch (IOException e) {
-                System.err.println("Could not open bt server socket");
+                Log.e(TAG, "Could not open bt server socket");
                 e.printStackTrace(System.err);
+            } catch (NoSuchMethodError e) {
+                Log.e(TAG, "Bluetooth Corral not available for this Android version.");
             }
             mmServerSocket = tmp;
         }
@@ -303,13 +310,48 @@ public class ContentCorral {
             Uri targetUri = Uri.parse("http://mock" + URLDecoder.decode(request[1]));
             if (targetUri.getQueryParameter("content") == null) {
                 try {
-                    mmOutStream.write(header("HTTP/1.1 404 NOT FOUND"));
+                    mmOutStream.write(header("HTTP/1.1 404 NOT FOUND\r\n\r\n"));
+                    mmOutStream.close();
                 } catch (IOException e) {
                 }
                 return;
             }
-            Uri requestPath = Uri.parse(targetUri.getQueryParameter("content"));
+            if (targetUri.getQueryParameter("hash") == null) {
+                try {
+                    mmOutStream.write(header("HTTP/1.1 401 UNAUTHORIZED\r\n\r\n"));
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+                return;
+            }
 
+            // Verify the hash is for an obj with the given filepath.
+            // TODO: This is not secure. Require challenge/response authentication.
+            Long hash = Long.parseLong(targetUri.getQueryParameter("hash"));
+            String contentPath = targetUri.getQueryParameter("content");
+
+            DbObj obj = App.instance().getMusubi().objForHash(hash);
+            if (obj == null) {
+                try {
+                    mmOutStream.write(header("HTTP/1.1 410 GONE\r\n\r\n"));
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+                return;
+            }
+
+            String localPath = obj.getJson().optString(OBJ_LOCAL_URI);
+            if (!contentPath.equals(localPath)) {
+                try {
+                    mmOutStream.write(header("HTTP/1.1 400 BAD REQUEST\r\n\r\n"));
+                    mmOutStream.close();
+                } catch (IOException e) {
+                }
+                return;
+            }
+
+            // OK to download:
+            Uri requestPath = Uri.parse(contentPath);
             if ("content".equals(requestPath.getScheme())) {
                 Log.d(TAG, "Retrieving for " + requestPath.getAuthority());
                 if (DungBeetleContentProvider.AUTHORITY.equals(requestPath.getAuthority())) {
@@ -587,9 +629,17 @@ public class ContentCorral {
         }
     }
 
-    private static Uri uriForContent(String host, String localContent) {
-        Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
-        return baseUri.buildUpon().appendQueryParameter("content", localContent).build();
+    private static Uri uriForContent(String host, SignedObj obj) {
+        try {
+            String localContent = obj.getJson().getString(OBJ_LOCAL_URI);
+            Uri baseUri = Uri.parse("http://" + host + ":" + SERVER_PORT);
+            return baseUri.buildUpon()
+                    .appendQueryParameter("content", localContent)
+                    .appendQueryParameter("hash", "" + obj.getHash()).build();
+        } catch (Exception e) {
+            Log.d(TAG, "No uri for content " + obj.getHash() + "; " + obj.getJson());
+            return null;
+        }
     }
 
     /**
@@ -630,8 +680,11 @@ public class ContentCorral {
         try {
             if (userAvailableOnLan(context, user)) {
                 return getFileOverLan(context, user, obj);
+            } else {
+                if (DBG) Log.d(TAG, "User not avaialable on LAN.");
             }
         } catch (IOException e) {
+            if (DBG) Log.d(TAG, "Failed to pull LAN file", e);
         }
 
         try {
@@ -678,13 +731,14 @@ public class ContentCorral {
         try {
             // Remote
             String ip = getUserLanIp(context, user);
-            Uri remoteUri = uriForContent(ip, obj.getJson().getString(OBJ_LOCAL_URI));
+            Uri remoteUri = uriForContent(ip, obj);
             URL url = new URL(remoteUri.toString());
             if (DBG)
                 Log.d(TAG, "Attempting to pull file " + remoteUri);
 
             File localFile = localFileForContent(context, obj);
             if (!localFile.exists()) {
+                localFile.getParentFile().mkdirs();
                 try {
                     InputStream is = url.openConnection().getInputStream();
                     OutputStream out = new FileOutputStream(localFile);
@@ -702,7 +756,7 @@ public class ContentCorral {
                 }
             }
             return Uri.fromFile(localFile);
-        } catch (JSONException e) {
+        } catch (Exception e) {
             throw new IOException(e);
         }
     }
@@ -712,7 +766,7 @@ public class ContentCorral {
         // TODO: Try multiple ip endpoints; multi-sourced download;
         // torrent-style sharing
         // (mobile, distributed CDN)
-        return null == DbContactAttributes.getAttribute(context, user.getLocalId(),
+        return null != DbContactAttributes.getAttribute(context, user.getLocalId(),
                 Contact.ATTR_LAN_IP);
     }
 
@@ -723,12 +777,10 @@ public class ContentCorral {
     private static File localFileForContent(Context context, SignedObj obj) {
         try {
             JSONObject json = obj.getJson();
-            Uri remoteUri = uriForContent(json.getString(Contact.ATTR_LAN_IP),
-                    json.getString(OBJ_LOCAL_URI));
-
             String suffix = suffixForType(json.optString(OBJ_MIME_TYPE));
-            String fname = "sha-" + HashUtils.SHA1(remoteUri.toString()) + "." + suffix;
-            return new File(context.getExternalCacheDir(), fname);
+            File feedDir = new File(context.getExternalCacheDir(), obj.getFeedName());
+            String fname = hashToString(obj.getHash()) + "." + suffix;
+            return new File(feedDir, fname);
         } catch (Exception e) {
             Log.e(TAG, "Error looking up file name", e);
             return null;
@@ -736,8 +788,9 @@ public class ContentCorral {
     }
 
     private static String suffixForType(String type) {
+        final String DEFAULT = "dat";
         if (type == null) {
-            return null;
+            return DEFAULT;
         }
         if (type.equals("image/jpeg")) {
             return "jpg";
@@ -745,7 +798,7 @@ public class ContentCorral {
         if (type.equals("video/3gpp")) {
             return "3gp";
         }
-        return null;
+        return DEFAULT;
     }
 
     public static boolean fileAvailableLocally(Context context, SignedObj obj) {
@@ -766,7 +819,7 @@ public class ContentCorral {
     }
 
     private static class HashUtils {
-        private static String convertToHex(byte[] data) {
+        static String convertToHex(byte[] data) {
             StringBuffer buf = new StringBuffer();
             for (int i = 0; i < data.length; i++) {
                 int halfbyte = (data[i] >>> 4) & 0x0F;
@@ -801,5 +854,18 @@ public class ContentCorral {
         }
         String uuidStr = prefs.getString(PREF_CORRAL_BT_UUID, null);
         return (uuidStr == null) ? null : UUID.fromString(uuidStr);
+    }
+
+    private static String hashToString(long hash) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();  
+            DataOutputStream dos = new DataOutputStream(bos);  
+            dos.writeLong(hash);  
+            dos.writeInt(-4);  
+            byte[] data = bos.toByteArray();
+            return FastBase64.encodeToString(data).substring(0, 11);
+        } catch (IOException e) {
+            return null;
+        }
     }
 }
