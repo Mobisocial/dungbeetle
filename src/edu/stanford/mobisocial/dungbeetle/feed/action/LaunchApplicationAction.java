@@ -102,6 +102,7 @@ public class LaunchApplicationAction implements FeedAction {
         }
 
         ArrayList<String> names = new ArrayList<String>();
+        names.add("Find Apps...");
         for(ResolveInfo info : availableAppInfos){
             names.add(info.loadLabel(mgr).toString());
         }
@@ -111,6 +112,14 @@ public class LaunchApplicationAction implements FeedAction {
         builder.setTitle("Share application:");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
+                if (item-- == 0) {
+                    Intent webStore = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("http://musubi.us/apps"));
+
+                    context.startActivity(webStore);
+                    return;
+                }
+
                 final ResolveInfo info = availableAppInfos.get(item);
                 Intent i = new Intent();
                 i.setClassName(info.activityInfo.packageName, info.activityInfo.name);
