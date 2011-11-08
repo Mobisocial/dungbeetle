@@ -619,8 +619,9 @@ public class ContentCorral {
             }
         }
 
+        Uri feedName = Feed.uriForName(obj.getFeedName());
         DbUser user = App.instance().getMusubi()
-                .userForGlobalId(obj.getContainingFeed().getUri(), obj.getSender().getId());
+                .userForGlobalId(feedName, obj.getSender().getId());
         File localFile = localFileForContent(context, obj);
         if (localFile.exists()) {
             return Uri.fromFile(localFile);
@@ -749,8 +750,9 @@ public class ContentCorral {
 
     public static boolean fileAvailableLocally(Context context, SignedObj obj) {
         try {
+            Uri feedName = Feed.uriForName(obj.getFeedName());
             DbUser dbUser = App.instance().getMusubi()
-                    .userForGlobalId(obj.getContainingFeed().getUri(), obj.getSender().getId());
+                    .userForGlobalId(feedName, obj.getSender().getId());
             long contactId = dbUser.getLocalId();
             if (contactId == Contact.MY_ID) {
                 return true;
