@@ -53,6 +53,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -921,7 +922,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String[] selectionArgs, String sortOrder) {
         Log.d(TAG, "Querying feed: " + feedName);
         String objHashStr = null;
-        if (feedName.contains(":")) {
+        if (feedName != null && feedName.contains(":")) {
             String[] contentParts = feedName.split(":");
             if (contentParts.length != 2) {
                 Log.e(TAG, "Error parsing feed::: " + feedName);
@@ -937,7 +938,9 @@ public class DBHelper extends SQLiteOpenHelper {
         final String HASH = DbObject.HASH;
         final String OBJECT_ID_A = DbRelation.OBJECT_ID_A;
         final String OBJECT_ID_B = DbRelation.OBJECT_ID_B;
-        String select = andClauses(selection, DbObject.FEED_NAME + " = '" + feedName + "'");
+        if (feedName != null) {
+            selection = andClauses(selection, DbObject.FEED_NAME + " = '" + feedName + "'");
+        }
         if (objHashStr != null) {
             // sql injection security:
             Long objHash = Long.parseLong(objHashStr);
@@ -945,19 +948,35 @@ public class DBHelper extends SQLiteOpenHelper {
                     "(SELECT " + ID +
                     " FROM " + OBJECTS +
                     " WHERE " + HASH + " = " + objHash + ")";
-            select = andClauses(select, "(" + ID + " IN (SELECT " +
+            selection = andClauses(selection, "(" + ID + " IN (SELECT " +
                     OBJECT_ID_B + " FROM " + RELATIONS + " WHERE " +
                     OBJECT_ID_A + " = " + objIdSearch + " ) OR " + HASH + " = " + objHash + ")");
         } else {
-            select = andClauses(select, ID + " NOT IN (SELECT " +
+            selection = andClauses(selection, ID + " NOT IN (SELECT " +
                         DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE +
                         " WHERE " + DbRelation.RELATION_TYPE + " IN ('parent'))");
         }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
-            select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
+            boolean needAppId = false;
+            if (projection != null) {
+                needAppId = true;
+                for (String v : projection) {
+                    if (DbObject.APP_ID.equals(v)) {
+                        needAppId = false;
+                        break;
+                    }
+                }
+            }
+            if (needAppId) {
+                String[] projection2 = new String[projection.length + 1];
+                System.arraycopy(projection, 0, projection2, 0, projection.length);
+                projection2[projection.length] = DbObject.APP_ID;
+                projection = projection2;
+            }
+            selection = andClauses(selection, DbObject.APP_ID + "='" + realAppId + "'");
         }
         if (DBG) {
-            Log.d(TAG, "Running query " + select);
+            Log.d(TAG, "Running query " + selection);
             String args = "";
             if (selectionArgs != null) {
                 for (String arg : selectionArgs) {
@@ -966,7 +985,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 Log.d(TAG, "args: " + args.substring(2));
             }
         }
-        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs,
                 null, null, sortOrder, null);
         if (DBG) Log.d(TAG, "got " + c.getCount() + " items");
         return c;
@@ -1173,28 +1192,30 @@ public class DBHelper extends SQLiteOpenHelper {
             String feedName, String appId) {
         // TODO: Check appId against feed?
 
-        String[] realSelectionArgs = null;
-        String feedInnerQuery = new StringBuilder()
-            .append("SELECT M." + GroupMember.CONTACT_ID)
-            .append(" FROM " + GroupMember.TABLE + " M, ")
-            .append(Group.TABLE + " G")
-            .append(" WHERE ")
-            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
-            .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ?").toString();
-        String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
+        String[] realSelectionArgs = selectionArgs;
+        if (feedName != null && !feedName.equals(Feed.FEED_NAME_GLOBAL)) {
+            String feedInnerQuery = new StringBuilder()
+                .append("SELECT M." + GroupMember.CONTACT_ID)
+                .append(" FROM " + GroupMember.TABLE + " M, ")
+                .append(Group.TABLE + " G")
+                .append(" WHERE ")
+                .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+                .append(" AND ")
+                .append("G." + Group.FEED_NAME + " = ?").toString();
+            String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
 
-        if (selection == null) {
-            selection = forFeed;
-            realSelectionArgs = new String[] { feedName };
-        } else {
-            selection = andClauses(selection, forFeed);
-            if (selectionArgs == null) {
+            if (selection == null) {
+                selection = forFeed;
                 realSelectionArgs = new String[] { feedName };
             } else {
-                realSelectionArgs = new String[selectionArgs.length + 1];
-                System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
-                realSelectionArgs[selectionArgs.length] = feedName;
+                selection = andClauses(selection, forFeed);
+                if (selectionArgs == null) {
+                    realSelectionArgs = new String[] { feedName };
+                } else {
+                    realSelectionArgs = new String[selectionArgs.length + 1];
+                    System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
+                    realSelectionArgs[selectionArgs.length] = feedName;
+                }
             }
         }
 
