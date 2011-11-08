@@ -23,7 +23,6 @@ import java.util.UUID;
 import mobisocial.comm.BluetoothDuplexSocket;
 import mobisocial.comm.DuplexSocket;
 import mobisocial.comm.StreamDuplexSocket;
-import mobisocial.comm.TcpDuplexSocket;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbUser;
 
