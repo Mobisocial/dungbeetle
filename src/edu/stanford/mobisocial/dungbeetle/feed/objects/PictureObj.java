@@ -31,6 +31,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
@@ -178,7 +179,7 @@ public class PictureObj extends DbEntryHandler
     public void activate(Context context, SignedObj obj) {
 	    // TODO: set data uri for obj
 	    Intent intent = new Intent(context, ImageGalleryActivity.class);
-	    intent.setData(obj.getContainingFeed().getUri());
+	    intent.setData(Feed.uriForName(obj.getFeedName()));
 	    intent.putExtra("objHash", obj.getHash());
 	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

@@ -55,7 +55,11 @@ public class Contact implements Serializable{
 	public int hidden;
 	public android.graphics.Bitmap picture;
 
-    // TODO: Move to SocialKit.
+    // TODO: Move out of Contact and make more standard
+	public static final String ATTR_PROTOCOL_VERSION = "vnd.mobisocial.device/protocol_version";
+	public static final String ATTR_BT_CORRAL_UUID = "vnd.mobisocial.device/bt_corral";
+	public static final String ATTR_BT_MAC = "vnd.mobisocial.device/bt_mac";
+
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
 
 	private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();

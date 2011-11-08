@@ -120,20 +120,23 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
     @Override
     public void activate(Context context, SignedObj obj) {
+        if (!(obj instanceof DbObj)) {
+            Log.w(TAG, "Obj not ready yet!");
+            return;
+        }
         if (DBG) {
-            Uri feedUri = obj.getContainingFeed().getUri();
             JSONObject content = obj.getJson();
-            Log.d(TAG, "activating app " + content + " for " + feedUri + ", " + obj.getHash());
+            Log.d(TAG, "activating app " + content + " from " + obj.getHash());
         }
 
-        Intent launch = getLaunchIntent(context, obj);
+        Intent launch = getLaunchIntent(context, (DbObj)obj);
         if (!(context instanceof Activity)) {
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(launch);
     }
 
-    public static Intent getLaunchIntent(Context context, SignedObj obj) {
+    public static Intent getLaunchIntent(Context context, DbObj obj) {
         JSONObject content = obj.getJson(); 
         Uri appFeed = obj.getContainingFeed().getUri();
         String action = content.optString(ANDROID_ACTION);

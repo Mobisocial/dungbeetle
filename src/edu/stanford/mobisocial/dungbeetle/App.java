@@ -16,8 +16,13 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.ImageCache;
 
-
 public class App extends Application {
+    /**
+     * The protocol version we speak, affecting things like wire protocol
+     * format and physical network support, available features, app api, etc.
+     */
+    public static final int POSI_VERSION = 4;
+
     public static final String TAG = "musubi";
     public final ImageCache contactImages = new ImageCache(30);
     public final ImageCache objectImages = new ImageCache(30);
