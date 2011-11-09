@@ -62,27 +62,28 @@ public class DbObject implements Obj {
     private static final String TAG = "dbObject";
     private static final boolean DBG = true;
 
-    public static final String TABLE = "objects";
-    public static final String _ID = "_id";
-    public static final String TYPE = "type";
-    public static final String SEQUENCE_ID = "sequence_id";
-    public static final String FEED_NAME = "feed_name";
-    public static final String CONTACT_ID = "contact_id";
-    public static final String DESTINATION = "destination";
-    public static final String JSON = "json";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String APP_ID = "app_id";
-    public static final String SENT = "sent";
-	public static final String ENCODED = "encoded";
-	public static final String CHILD_FEED_NAME = "child_feed";
-	public static final String HASH = "hash";
-	public static final String DELETED = "deleted";
-
-	public static final String RAW = "raw";
+    public static final String TABLE = DbObj.TABLE;
+    public static final String _ID = DbObj.COL_ID;
+    public static final String TYPE = DbObj.COL_TYPE;
+    public static final String SEQUENCE_ID = DbObj.COL_SEQUENCE_ID;
+    public static final String FEED_NAME = DbObj.COL_FEED_NAME;
+    public static final String CONTACT_ID = DbObj.COL_CONTACT_ID;
+    public static final String DESTINATION = DbObj.COL_DESTINATION;
+    public static final String JSON = DbObj.COL_JSON;
+    public static final String TIMESTAMP = DbObj.COL_TIMESTAMP;
+    public static final String APP_ID = DbObj.COL_APP_ID;
+    public static final String SENT = DbObj.COL_SENT;
+	public static final String ENCODED = DbObj.COL_ENCODED;
+	public static final String CHILD_FEED_NAME = DbObj.COL_CHILD_FEED_NAME;
+	public static final String HASH = DbObj.COL_HASH;
+	public static final String DELETED = DbObj.COL_DELETED;
+	public static final String RAW = DbObj.COL_RAW;
+	public static final String KEY_INT = DbObj.COL_KEY_INT;
 
 	protected final String mType;
     protected JSONObject mJson;
     protected byte[] mRaw;
+    protected Integer mIntKey;
 
     private static OnClickViewProfile sViewProfileAction;
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
@@ -251,7 +252,7 @@ public class DbObject implements Obj {
                             boolean selfPost = false;
                             DBHelper helper = new DBHelper(context);
                             try {
-                                Cursor attachments = ((DbObj)renderingObj).getRelatedFeed()
+                                Cursor attachments = ((DbObj)renderingObj).getSubfeed()
                                         .query("type=?", new String[] { LikeObj.TYPE });
 	                            try {
 		                            attachmentCountText.setText("+" + attachments.getCount());
@@ -436,5 +437,10 @@ public class DbObject implements Obj {
     @Override
     public byte[] getRaw() {
         return mRaw;
+    }
+
+    @Override
+    public Integer getIntKey() {
+        return mIntKey;
     }
 }

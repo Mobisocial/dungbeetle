@@ -185,7 +185,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         DbObj dbParentObj = (DbObj) obj;
         String selection = "type = ?";
         String[] selectionArgs = new String[] { AppStateObj.TYPE };
-        Cursor cursor = dbParentObj.getRelatedFeed().query(selection, selectionArgs);
+        Cursor cursor = dbParentObj.getSubfeed().query(selection, selectionArgs);
         if (cursor.moveToFirst()) {
             DbObj dbObj = App.instance().getMusubi().objForCursor(cursor);
             AppState ref = new AppState(dbObj);
