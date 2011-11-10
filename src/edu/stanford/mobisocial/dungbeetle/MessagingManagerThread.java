@@ -68,6 +68,8 @@ public class MessagingManagerThread extends Thread {
     private IdentityProvider mIdent;
     private final MessageDropHandler mMessageDropHandler;
 
+    private static final String JSON_INT_KEY = "obj_intkey";
+
     public MessagingManagerThread(final Context context){
         mContext = context;
         mHelper = DBHelper.getGlobal(context);
@@ -127,6 +129,11 @@ public class MessagingManagerThread extends Thread {
         final long hash = incoming.hash();
         final String contents = localize(incoming.contents());
    
+        /**
+         * TODO: This needs to be updated with the POSI standards
+         * to accept a SignedObj.
+         */
+
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
         try {
             JSONObject in_obj = new JSONObject(contents);
@@ -166,7 +173,12 @@ public class MessagingManagerThread extends Thread {
                     return;
                 }
 
-                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
+                Integer intKey = null;
+                if (obj.has(JSON_INT_KEY)) {
+                    intKey = obj.getInt(JSON_INT_KEY);
+                    obj.remove(JSON_INT_KEY);
+                }
+                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw, intKey);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -281,20 +293,36 @@ public class MessagingManagerThread extends Thread {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
                     byte[] raw = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.RAW));
+                    Integer intKey = null;
+                    if (!objs.isNull(objs.getColumnIndexOrThrow(DbObj.COL_KEY_INT))) {
+                        intKey = objs.getInt(objs.getColumnIndexOrThrow(DbObj.COL_KEY_INT));
+                    }
 
                     max_sent = objId.longValue();
                     JSONObject json = null;
-                    try {
-                        json = new JSONObject(jsonSrc);
-                    } catch (JSONException e) {
-                        Log.e(TAG, "bad json", e);
+                    if (jsonSrc != null) {
+                        try {
+                            json = new JSONObject(jsonSrc);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "bad json", e);
+                        }
+                    } else {
+                        json = new JSONObject();
                     }
 
-                    if (raw != null && json != null) {
-                        // TODO: Hack in anticipation of new binary-friendly wire format.
-                        String type = objs.getString(objs.getColumnIndexOrThrow(DbObject.TYPE));
-                        DbEntryHandler e = DbObjects.forType(type);
-                        json = e.mergeRaw(json, raw);
+                    /**
+                     * TODO: Hacks in anticipation of new binary-friendly wire format.
+                     * This method will need some work!
+                     */
+                    if (json != null) {
+                        if (raw != null) {
+                            String type = objs.getString(objs.getColumnIndexOrThrow(DbObject.TYPE));
+                            DbEntryHandler e = DbObjects.forType(type);
+                            json = e.mergeRaw(json, raw);
+                        }
+                        if (intKey != null) {
+                            json.put(JSON_INT_KEY, intKey);
+                        }
                     }
 
                     if (json != null) {

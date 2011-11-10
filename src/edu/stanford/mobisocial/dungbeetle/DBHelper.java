@@ -73,7 +73,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 54;
+	public static final int VERSION = 56;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -299,8 +299,6 @@ public class DBHelper extends SQLiteOpenHelper {
       		} catch(JSONException e) {}
 	            c.close();
           	}
-            
-            
         }
         if(oldVersion <= 40) {
             Log.w(TAG, "Adding column 'E' to object table.");
@@ -361,7 +359,9 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 53) {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.HIDDEN + " INTEGER DEFAULT 0");
         }
-
+        if (oldVersion <= 55) {
+            db.execSQL("ALTER TABLE " + DbObj.TABLE + " ADD COLUMN " + DbObj.COL_KEY_INT + " INTEGER");
+        }
         db.setVersion(VERSION);
     }
 
@@ -432,13 +432,15 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.HASH, "INTEGER",
                         DbObject.ENCODED, "BLOB",
                         DbObject.CHILD_FEED_NAME, "TEXT",
-                        DbObject.RAW, "BLOB"
+                        DbObject.RAW, "BLOB",
+                        DbObject.KEY_INT, "INTEGER"
                         );
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
+            createIndex(db, "INDEX", "objects_by_int_key", DbObject.TABLE, DbObject.KEY_INT);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
@@ -645,6 +647,9 @@ public class DBHelper extends SQLiteOpenHelper {
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
             }
+            if (values.containsKey(DbObject.KEY_INT)) {
+                cv.put(DbObject.KEY_INT, values.getAsByteArray(DbObject.KEY_INT));
+            }
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
@@ -680,7 +685,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw){
+    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw, Integer intKey) {
         try{
             long objId = getNextId();
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
@@ -699,7 +704,12 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
-            cv.put(DbObject.RAW, raw);
+            if (raw != null) {
+                cv.put(DbObject.RAW, raw);
+            }
+            if (intKey != null) {
+                cv.put(DbObject.KEY_INT, intKey);
+            }
 
             // TODO: Deprecated!!
             if (json.has(DbObject.CHILD_FEED_NAME)) {
@@ -1088,6 +1098,7 @@ public class DBHelper extends SQLiteOpenHelper {
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
                           DbObject.RAW,
+                          DbObject.KEY_INT
                         },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},
