@@ -647,6 +647,9 @@ public class DBHelper extends SQLiteOpenHelper {
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
             }
+            if (values.containsKey(DbObject.KEY_INT)) {
+                cv.put(DbObject.KEY_INT, values.getAsByteArray(DbObject.KEY_INT));
+            }
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
