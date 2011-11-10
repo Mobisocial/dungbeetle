@@ -682,7 +682,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw){
+    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw, Integer intKey) {
         try{
             long objId = getNextId();
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
@@ -701,7 +701,12 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
-            cv.put(DbObject.RAW, raw);
+            if (raw != null) {
+                cv.put(DbObject.RAW, raw);
+            }
+            if (intKey != null) {
+                cv.put(DbObject.KEY_INT, intKey);
+            }
 
             // TODO: Deprecated!!
             if (json.has(DbObject.CHILD_FEED_NAME)) {
@@ -1090,6 +1095,7 @@ public class DBHelper extends SQLiteOpenHelper {
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
                           DbObject.RAW,
+                          DbObject.KEY_INT
                         },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},
