@@ -147,13 +147,17 @@ public class HomeActivity extends MusubiBaseActivity {
             Cursor mCursor = ringtoneManager.getCursor();
             mCursor.moveToFirst();
             String ringtoneUri = null;
+            String backupUri = null;
             while (!mCursor.isAfterLast()) {
             	String ringtone = mCursor.getString(RingtoneManager.TITLE_COLUMN_INDEX);
-            	if(ringtone.equalsIgnoreCase("Deneb")) {
+            	if(ringtone.equalsIgnoreCase("dDeneb")) {
             		ringtoneUri = mCursor.getString(RingtoneManager.URI_COLUMN_INDEX) + "/" + mCursor.getString(RingtoneManager.ID_COLUMN_INDEX); 
             	
             		break;
             	}
+            	if (backupUri == null) {
+            		backupUri = mCursor.getString(RingtoneManager.URI_COLUMN_INDEX) + "/" + mCursor.getString(RingtoneManager.ID_COLUMN_INDEX); 
+            	}           	
             	mCursor.moveToNext();
             }
             mCursor.close();
@@ -163,10 +167,9 @@ public class HomeActivity extends MusubiBaseActivity {
             	editor.putString("ringtone", ringtoneUri);
             }
             else {
-            	Uri uri = ringtoneManager.getValidRingtoneUri(this);
             	
-            	if(uri != null) {
-            		editor.putString("ringtone", uri.toString());
+            	if(backupUri != null) {
+            		editor.putString("ringtone", backupUri.toString());
             	}
             	else {
             		editor.putString("ringtone", "none");
