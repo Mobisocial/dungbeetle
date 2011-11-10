@@ -135,6 +135,12 @@ public class HomeActivity extends MusubiBaseActivity {
             alert.show();
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("firstLoad", false);
+            editor.putString("ringtone", "content://media/internal/audio/media/14");
+            editor.commit();
+        }
+        if(settings.getString("ringtone", null) == null) {
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putString("ringtone", "content://media/internal/audio/media/14");
             editor.commit();
         }
 

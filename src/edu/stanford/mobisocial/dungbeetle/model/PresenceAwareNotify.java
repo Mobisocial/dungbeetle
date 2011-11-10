@@ -95,7 +95,7 @@ public class PresenceAwareNotify {
         SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
         String uri = settings.getString("ringtone", null);
         
-        if(uri != null) {
+        if(!uri.equals("none")) {
         	notification.sound = Uri.parse(uri);
         }
         mNotificationManager.notify(NOTIFY_ID, notification);

@@ -56,15 +56,19 @@ public class SettingsActivity extends Activity {
 	    //TODO handle here. 
 	    if (resultCode == RESULT_OK) {
             Uri uri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-            if (uri != null) {
+            
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 
-                SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putString("ringtone", uri.toString());
-                editor.commit();
-                
+            SharedPreferences.Editor editor = settings.edit();
+            if (uri == null) {
+            	editor.putString("ringtone", "none");
             }
+            else {
+            editor.putString("ringtone", uri.toString());
+            }
+            editor.commit();
+            Log.w("settings", uri.toString());
+             
 }
 	}
 	
@@ -78,9 +82,9 @@ public class SettingsActivity extends Activity {
             intent.putExtra( RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Tone");
 
             SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-            uri = settings.getString("ringtone", null);
+            uri = settings.getString("ringtone", "none");
             
-            if( uri != null)
+            if(!uri.equals("none"))
             {
                  intent.putExtra( RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
             		 Uri.parse( uri));
