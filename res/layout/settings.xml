@@ -57,4 +57,11 @@
         android:id="@+id/vacuum_database" 
         android:layout_width="match_parent" 
         android:layout_height="wrap_content"/>
+    <TextView  
+        android:layout_margin="5px"
+        android:textAppearance="?android:attr/textAppearanceLarge" 
+        android:text="Set Ringtone" 
+        android:id="@+id/set_ringtone" 
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content"/>
 </LinearLayout>
