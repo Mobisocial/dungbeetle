@@ -45,8 +45,10 @@
 
       <intent-filter android:priority="100">
 	<action android:name="android.intent.action.VIEW" />
+	<category android:name="android.intent.category.BROWSABLE" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
+	<data android:scheme="musubi" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
       </intent-filter>
 
       <intent-filter android:priority="100">
