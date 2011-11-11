@@ -328,8 +328,15 @@
     <meta-data android:name="android.appwidget.provider" android:resource="@xml/text_widget" />
 </receiver>
 
-<!-- Service to perform web API queries -->
+<!-- Service to update ui from feed data -->
 <service android:name="org.mobisocial.widget.StatusWidget$UpdateService" />
+
+<!-- Configuration for widgets -->
+<activity android:name="org.mobisocial.widget.ShareConfigurator">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+    </intent-filter>
+</activity>
 
   </application>
 </manifest> 

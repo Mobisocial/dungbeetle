@@ -59,7 +59,7 @@ public class StatusWidget extends AppWidgetProvider {
             manager.updateAppWidget(thisWidget, updateViews);
         }
 
-        public RemoteViews buildUpdate(Context context) {
+        public static RemoteViews buildUpdate(Context context) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_message);
             String status;
 
