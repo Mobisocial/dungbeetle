@@ -73,7 +73,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 56;
+	public static final int VERSION = 57;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -362,6 +362,10 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 55) {
             db.execSQL("ALTER TABLE " + DbObj.TABLE + " ADD COLUMN " + DbObj.COL_KEY_INT + " INTEGER");
         }
+        if (oldVersion <= 56) {
+            db.execSQL("ALTER TABLE " + Group.TABLE+ " ADD COLUMN " + Group.PUBLIC_KEY + " BLOB");
+            db.execSQL("ALTER TABLE " + Group.TABLE+ " ADD COLUMN " + Group.PRIVATE_KEY + " BLOB");
+        }
         db.setVersion(VERSION);
     }
 
@@ -491,7 +495,9 @@ public class DBHelper extends SQLiteOpenHelper {
             Group.LAST_UPDATED, "INTEGER",
             Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
             Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
-            Group.NUM_UNREAD, "INTEGER DEFAULT 0"
+            Group.NUM_UNREAD, "INTEGER DEFAULT 0",
+            Group.PUBLIC_KEY, "BLOB",
+            Group.PRIVATE_KEY, "BLOB"
                 );
 	    createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
 	}
@@ -1351,7 +1357,7 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-	public Maybe<Group> groupForGroupId(long groupId){
+	public Group groupForGroupId(long groupId){
         Cursor c = getReadableDatabase().query(
             Group.TABLE,
             null,
@@ -1359,19 +1365,15 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{String.valueOf(groupId)},
             null,null,null);
         try {
-	        Maybe<Group> mg;
-	        if (!c.moveToFirst()) {
-	            mg = Maybe.unknown();
-	        } else { 
-	            mg = Maybe.definitely(new Group(c));
-	        }
-	        return mg;
+	        if (!c.moveToFirst())
+	        	return null;
+	        return new Group(c);
         } finally {
         	c.close();
         }
     }
 
-	public Maybe<Group> groupForFeedName(String feed){
+	public Group groupForFeedName(String feed){
 	    
         Cursor c = getReadableDatabase().query(
             Group.TABLE,
@@ -1380,28 +1382,9 @@ public class DBHelper extends SQLiteOpenHelper {
             new String[]{String.valueOf(feed)},
             null,null,null);
         try {
-	        Maybe<Group> mg;
-	        if (!c.moveToFirst()) {
-	            mg = Maybe.unknown();
-	        } else { 
-	            mg = Maybe.definitely(new Group(c));
-	        }
-	        return mg;
-        } finally {
-        	c.close();
-        }
-    }
-
-	public Maybe<Group> groupByFeedName(String feedName){
-        Cursor c = getReadableDatabase().query(
-            Group.TABLE,
-            null,
-            Group.FEED_NAME + "=?",
-            new String[]{feedName},
-            null,null,null);
-        try {
-	        if(!c.moveToFirst()) return Maybe.unknown();
-	        else return Maybe.definitely(new Group(c));
+	        if (!c.moveToFirst())
+	        	return null;
+	        return new Group(c);
         } finally {
         	c.close();
         }

@@ -18,7 +18,6 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
@@ -26,7 +25,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.mobisocial.db";
@@ -236,12 +234,11 @@ public class DungBeetleContentProvider extends ContentProvider {
             Uri gUri = Uri.parse(values.getAsString("uri"));
             GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
             String feedName = gp.feedName(gUri);
-            Maybe<Group> mg = mHelper.groupByFeedName(feedName);
+            Group g = mHelper.groupForFeedName(feedName);
             long id = -1;
-            try {
-                Group g = mg.get();
+            if(g != null) {
                 id = g.id;
-            } catch (Maybe.NoValError e) {
+            } else {
                 ContentValues cv = new ContentValues();
                 cv.put(Group.NAME, gp.groupName(gUri));
                 cv.put(Group.FEED_NAME, feedName);

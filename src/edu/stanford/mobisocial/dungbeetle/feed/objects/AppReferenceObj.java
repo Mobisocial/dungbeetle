@@ -225,9 +225,9 @@ public class AppReferenceObj extends DbEntryHandler
         if (content.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = content.optString(DbObject.CHILD_FEED_NAME);
             DBHelper helper = DBHelper.getGlobal(context);
-            Maybe<Group> mg = helper.groupByFeedName(feedName);
+            Group mg = helper.groupForFeedName(feedName);
             helper.close();
-            if (!mg.isKnown() && content.has(GROUP_URI)) {
+            if (mg != null && content.has(GROUP_URI)) {
                 Uri gUri = Uri.parse(content.optString(GROUP_URI));
                 Group.join(context, gUri);
             }

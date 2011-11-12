@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
 
 import java.lang.ref.SoftReference;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,21 +58,18 @@ public class Helpers {
 
     public static void deleteGroup(final Context c, 
                                    Long groupId){
-        Maybe<Group> mg = Group.forId(c, groupId);
-        try{
-            Group group = mg.get();
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + DbObject.TABLE),
-                DbObject.FEED_NAME + "=?", new String[]{group.feedName});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-                Group._ID + "=?", new String[]{ String.valueOf(groupId)});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
-                GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
-        }
-        catch(Exception e) {
-        }
+        Group g = Group.forId(c, groupId);
+        if(g == null)
+        	return;
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + DbObject.TABLE),
+            DbObject.FEED_NAME + "=?", new String[]{g.feedName});
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
+            Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+        c.getContentResolver().delete(
+            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
+            GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
     }
 
     public static void deleteContact(final Context c, 
@@ -97,15 +96,10 @@ public class Helpers {
         return c.getContentResolver().insert(url, values);
     }
 
-    public static Uri insertGroup(final Context c, 
-                                  String groupName, 
-                                  String dynUpdateUri, 
-                                  String feedName){
-        assert (groupName != null && dynUpdateUri != null && feedName != null);
+    public static Uri insertGroup(final Context c, Uri invitation) {
+        assert (invitation != null);
         ContentValues values = new ContentValues();
-        values.put(Group.NAME, groupName);
-        values.put(Group.DYN_UPDATE_URI, dynUpdateUri);
-        values.put(Group.FEED_NAME, feedName);
+        values.put("invitation", invitation.toString());
         return c.getContentResolver().insert(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), values);
     }
@@ -121,15 +115,6 @@ public class Helpers {
         values.put(GroupMember.GLOBAL_CONTACT_ID, idInGroup);
         c.getContentResolver().insert(url, values);
     }
-
-    public static void updateGroupVersion(final Context c,
-                                   final long groupId,
-                                   final int version){
-       Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups");
-       ContentValues values = new ContentValues();
-       values.put(Group.VERSION, version);
-       c.getContentResolver().update(url, values, Group._ID + "=" + groupId, null);
-   }
 
     /**
      * @see Helpers#sendMessage(Context, Collection, DbObject)
@@ -208,11 +193,11 @@ public class Helpers {
             ids[i] = me.id;
             i++;
         }
-        Maybe<Group> group = Group.forFeed(c, threadUri);
-        try {
-            sendGroupInvite(c, ids, group.get());
-        } catch (NoValError e) {
-            Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
+        Group group = Group.forFeed(c, threadUri);
+        if(group == null) {
+            Log.e(TAG, "Could not send group invite; no group for " + threadUri);
+        } else {
+            sendGroupInvite(c, ids, group);
         }
     }
 

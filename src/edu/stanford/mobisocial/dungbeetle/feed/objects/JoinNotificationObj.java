@@ -1,33 +1,20 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
-import java.util.Collection;
-
-import android.content.Context;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.model.Contact;
-
 import mobisocial.socialkit.Obj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import edu.stanford.mobisocial.dungbeetle.model.DbObject;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.GroupProvider;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import android.net.Uri;
-import android.util.Log;
+
+import android.content.Context;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
 public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMessageHandler, FeedRenderer {
     private static final String TAG = "dbJoin";
@@ -59,34 +46,10 @@ public class JoinNotificationObj extends DbEntryHandler implements UnprocessedMe
 
     @Override
     public Pair<JSONObject, byte[]> handleUnprocessed(final Context context, JSONObject obj) {
-        if (DBG) Log.i(TAG, "Message to update group. ");
-        String feedName = obj.optString("feedName");
-        final Uri uri = Uri.parse(obj.optString(JoinNotificationObj.URI));
-        final GroupProviders.GroupProvider h = GroupProviders.forUri(uri);
-        final DBHelper helper = DBHelper.getGlobal(context);
-        final IdentityProvider ident = new DBIdentityProvider(helper);
-        Maybe<Group> mg = helper.groupByFeedName(feedName);
-        try {
-            // group exists already, load view
-            final Group g = mg.get();
-
-            GroupProviders.runBackgroundGroupTask(g.id, new Runnable(){
-                public void run(){
-                	Collection<Contact> existingContacts = g.contactCollection(helper);
-                	
-                    h.handle(g.id, uri, context, g.version, false);
-                    
-	                Collection<Contact> newContacts = g.contactCollection(helper);
-	                newContacts.removeAll(existingContacts);
-                    Helpers.resendProfile(context, newContacts, true);
-                }
-            });
-        }
-        catch(Maybe.NoValError e) { }
-        ident.close();
-        
-        helper.close();
-        return null;
+    	//QQQQQQ: do we use the join notification obj for the distributed group protocol?
+    	//conceptually we should resend our profile when we add a new friend, but that was being done here...
+    	//maybe there is something else we should do here.
+		return null;
     }
 
 

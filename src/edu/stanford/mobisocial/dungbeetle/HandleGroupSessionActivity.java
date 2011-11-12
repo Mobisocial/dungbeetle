@@ -9,10 +9,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
-import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 
 public class HandleGroupSessionActivity extends Activity {
@@ -34,16 +32,9 @@ public class HandleGroupSessionActivity extends Activity {
             GroupProviders.GroupProvider gp1 = GroupProviders.forUri(uri);
             String feedName = gp1.feedName(uri);
             DBHelper helper = DBHelper.getGlobal(this);
-            Maybe<Group> mg = helper.groupByFeedName(feedName);
+            Group g = helper.groupForFeedName(feedName);
             long id = -1;
-            try {
-                // group exists already, load view
-                Group g = mg.get();
-                id = g.id;
-
-                Group.view(HandleGroupSessionActivity.this, g);
-                finish();
-            } catch(Maybe.NoValError e) {
+            if(g == null) {
                 // group does not exist yet, time to prompt for join
                 Log.i(TAG, "Read uri: " + uri);
                 GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
@@ -63,6 +54,12 @@ public class HandleGroupSessionActivity extends Activity {
                             finish();
                         }
                     });
+            } else {
+                // group exists already, load view
+                id = g.id;
+
+                Group.view(HandleGroupSessionActivity.this, g);
+                finish();
             }
 		} else {
 			Toast.makeText(this, "Received null url...", Toast.LENGTH_SHORT).show();

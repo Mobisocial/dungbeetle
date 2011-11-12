@@ -62,7 +62,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
 	private DBHelper mHelper;
-    private Maybe<Group> mGroup = Maybe.unknown();
+    private Group mGroup = null;
     private Uri mFeedUri;
     private String mFeedName;
 
@@ -81,23 +81,20 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         new Thread() {
             public void run() {
                 final IdentityProvider ident = new DBIdentityProvider(mHelper);
-                Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+                final Group g = mHelper.groupForFeedName(mFeedName);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {}
-                try {
-                    // group exists already, load view
-                    final Group g = mg.get();
-                    Collection<Contact> existingContacts = g.contactCollection(mHelper);
-                    //TODO: XXXXX these two won't do a thing because g.forceUpdate happens
-                    //in the background.....
-                    g.forceUpdate(context);
-                    Collection<Contact> newContacts = g.contactCollection(mHelper);
-                    newContacts.removeAll(existingContacts);
+                if(g == null)
+                	return;
+                Collection<Contact> existingContacts = g.contactCollection(mHelper);
+                //TODO: XXXXX these two won't do a thing because g.forceUpdate happens
+                //in the background.....
+                g.forceUpdate(context);
+                Collection<Contact> newContacts = g.contactCollection(mHelper);
+                newContacts.removeAll(existingContacts);
 
-                    Helpers.resendProfile(context, newContacts, true);
-                }
-                catch(Maybe.NoValError e) { }
+                Helpers.resendProfile(context, newContacts, true);
                 ident.close();
             };
         }.start();
@@ -267,9 +264,9 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == Activity.RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");
-                try {
-                    Helpers.sendGroupInvite(getActivity(), contactIds, mGroup.get());
-                } catch(Maybe.NoValError e) {}
+                if(mGroup == null)
+                	return;
+                Helpers.sendGroupInvite(getActivity(), contactIds, mGroup);
             }
         }
     }
@@ -295,12 +292,11 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
         mGroup = mHelper.groupForFeedName(mFeedName);
         
         long gid;
-        try {
-            gid = mGroup.get().id;
-        } catch (NoValError e) {
+        if(mGroup == null) {
             Log.e(TAG, "No group for feed.");
             return null;
         }
+    	gid = mGroup.id;
         Uri memberlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI +
                 "/group_contacts/" + gid);
         return new CursorLoader(getActivity(), memberlist, null, null, null, Contact.NAME + " COLLATE NOCASE ASC");

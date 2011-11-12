@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -180,6 +181,9 @@ public class DBIdentityProvider implements IdentityProvider {
 
     public static String publicKeyToString(PublicKey pubkey){
         return FastBase64.encodeToString(pubkey.getEncoded());
+    }
+    public static String privateKeyToString(PrivateKey privkey){
+        return FastBase64.encodeToString(privkey.getEncoded());
     }
 
     public static RSAPublicKey publicKeyFromString(String str){
