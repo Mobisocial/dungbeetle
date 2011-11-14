@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
 import java.security.interfaces.RSAPublicKey;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -24,6 +25,7 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
@@ -41,7 +43,7 @@ public class GroupControlObj extends DbEntryHandler {
     }
     //when replying to a group joim you send one of these
     //back to the original guy if you know of members he/she didn't
-    public static JSONObject json(Set<RSAPublicKey> new_members){
+    public static JSONObject json(Collection<RSAPublicKey> new_members){
         JSONObject obj = new JSONObject();
     	JSONArray json_new_members = new JSONArray();
     	for(RSAPublicKey k : new_members) {
@@ -57,7 +59,7 @@ public class GroupControlObj extends DbEntryHandler {
 
     //when you join a group, you send one of these to all of the members you know of
     //after you discover each new member
-    public static JSONObject json(RSAPublicKey reply_to, Set<RSAPublicKey> known_members){
+    public static JSONObject json(RSAPublicKey reply_to, Collection<RSAPublicKey> known_members){
         JSONObject obj = new JSONObject();
     	JSONArray json_known_members = new JSONArray();
     	for(RSAPublicKey k : known_members) {
@@ -127,7 +129,11 @@ public class GroupControlObj extends DbEntryHandler {
 					//no real ack required
 					if(known_members.isEmpty())
 						return false;
-					
+					ContentValues cv = new ContentValues();
+					cv.put(DbObject.JSON, json(known_members.values()).toString());
+					cv.put(DbObject.TYPE, TYPE);
+					cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
+					dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 				} else {
 					
 				}

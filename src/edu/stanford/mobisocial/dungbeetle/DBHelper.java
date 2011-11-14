@@ -629,7 +629,7 @@ public class DBHelper extends SQLiteOpenHelper {
      * Inserts an object into the database and flags it to be sent by
      * the transport layer.
      */
-    long addToFeed(String appId, String feedName, ContentValues values) {
+    public long addToFeed(String appId, String feedName, ContentValues values) {
         try {
             JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
             String type = values.getAsString(DbObject.TYPE);
