@@ -117,9 +117,9 @@ public class Contact implements Serializable{
         return new Contact(-1L, "NA", "NA", "NA", 1, 0, false, null, "NA", null, null, 0);
     }
 
-    public static Maybe<Contact> forId(Context context, long id) {
+    public static Contact forId(Context context, long id) {
         DBHelper helper = DBHelper.getGlobal(context);
-        Maybe<Contact> contact = helper.contactForContactId(id);
+        Contact contact = helper.contactForContactId(id);
         helper.close();
         return contact;
     }

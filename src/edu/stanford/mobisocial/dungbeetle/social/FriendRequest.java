@@ -104,18 +104,17 @@ public class FriendRequest {
     }
 
     public static void sendFriendRequest(Context context, long contactId, String capability) {
-        Maybe<Contact> contactSortOf = Contact.forId(context, contactId);
-        try {
-            Contact contact = contactSortOf.get();
-            Uri uri = getInvitationUri(context, false);
-            if (capability != null) {
-                uri = uri.buildUpon().appendQueryParameter("cap", capability).build();
-            }
-            DbObject obj = FriendAcceptObj.from(uri);
-            Helpers.sendMessage(context, contact, obj);
-            if (DBG) Log.d(TAG, "Sent friend request uri " + uri);
-        } catch (NoValError e) {
+        Contact contact = Contact.forId(context, contactId);
+        if(contact == null) {
             Log.e(TAG, "Could not locate contact " + contactId);
+            return;
         }
+        Uri uri = getInvitationUri(context, false);
+        if (capability != null) {
+            uri = uri.buildUpon().appendQueryParameter("cap", capability).build();
+        }
+        DbObject obj = FriendAcceptObj.from(uri);
+        Helpers.sendMessage(context, contact, obj);
+        if (DBG) Log.d(TAG, "Sent friend request uri " + uri);
     }
 }

@@ -112,11 +112,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         } else {
             String title = "Profile";
             Uri feedUri = null;
-            try {
-                Contact contact = Contact.forId(this, mContactId).get();
+            Contact contact = Contact.forId(this, mContactId);
+            if(contact != null) {
                 title = contact.name;
                 feedUri = contact.getFeedUri();
-            } catch (NoValError e) {}
+            }
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             doTitleBar(this, title);
             mLabels.add("Feed");
@@ -452,13 +452,13 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 }
             } else {
                 presence.setVisibility(View.GONE);
-                try {
-                    Contact contact = Contact.forId(getActivity(), mContactId).get();
+                Contact contact = Contact.forId(getActivity(), mContactId);
+                if(contact != null) {
                     mProfileName.setText(contact.name);
                     mProfileEmail.setText(contact.email);
                     mProfileAbout.setText(contact.status);
                     mIcon.setImageBitmap(contact.picture);
-                } catch (NoValError e) {}
+                }
             }
         }
 

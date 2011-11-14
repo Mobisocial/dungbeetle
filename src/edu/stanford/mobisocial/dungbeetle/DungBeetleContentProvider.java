@@ -315,8 +315,8 @@ public class DungBeetleContentProvider extends ContentProvider {
                     }
 
                     long cid = -1;
-                    Contact contact = mHelper.contactForPersonId(personId).otherwise(Contact.NA());
-                    if (contact.id > -1) {
+                    Contact contact = mHelper.contactForPersonId(personId);
+                    if (contact != null) {
                         cid = contact.id;
                     } else {
                         cid = mHelper.insertContact(db, cv);

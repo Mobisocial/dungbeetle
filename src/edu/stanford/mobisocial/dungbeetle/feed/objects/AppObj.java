@@ -74,11 +74,10 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         
         participantIds.put(App.instance().getLocalPersonId());
         for (long id : contactIds) {
-            Maybe<Contact> annoyingContact = Contact.forId(context, id);
-            try {
-                Contact contact = annoyingContact.get();
+            Contact contact = Contact.forId(context, id);
+            if(contact != null) {
                 participantIds.put(contact.personId);
-            } catch (NoValError e) {
+            } else {
                 participantIds.put(Contact.UNKNOWN);
             }
         }

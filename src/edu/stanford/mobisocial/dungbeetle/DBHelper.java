@@ -1307,16 +1307,16 @@ public class DBHelper extends SQLiteOpenHelper {
         return getReadableDatabase().query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
     }
 
-	public Maybe<Contact> contactForPersonId(String personId){
+	public Contact contactForPersonId(String personId){
         List<Contact> cs = contactsForPersonIds(Collections.singletonList(personId));
-        if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
-        else return Maybe.unknown();
+        if(!cs.isEmpty()) return cs.get(0);
+        else return null;
     }
 
-	public Maybe<Contact> contactForContactId(Long id) {
+	public Contact contactForContactId(Long id) {
         List<Contact> cs = contactsForContactIds(Collections.singletonList(id));
-        if(!cs.isEmpty()) return Maybe.definitely(cs.get(0));
-        else return Maybe.unknown();
+        if(!cs.isEmpty()) return cs.get(0);
+        else return null;
     }
 
 	public List<Contact> contactsForContactIds(Collection<Long> contactIds){
@@ -1484,12 +1484,11 @@ public class DBHelper extends SQLiteOpenHelper {
 	        	byte[] pk = c.getBlob(1);
 	        	byte[] ss = c.getBlob(2);
 	        	if(ss == null) {
-	        		Contact contact;
-					try {
-						contact = contactForContactId(c.getLong(0)).get();
+	        		Contact contact = contactForContactId(c.getLong(0));
+	        		if(contact != null) {
 		        		ss = SharedSecretObj.getOrPushSecret(mContext, contact);
-					} catch (NoValError e) {
-						e.printStackTrace();
+					} else {
+						new Exception("couldn't find contact").printStackTrace();
 					}
 	        	}
 	        	key_ss.put(pk, ss);
@@ -1518,13 +1517,11 @@ public class DBHelper extends SQLiteOpenHelper {
 	    	if(ss != null) {
 	        	return ss;	
 	        }
-			Contact contact;
-			try {
-				contact = contactForContactId(id).get();
+			Contact contact = contactForContactId(id);
+			if(contact != null)
 	    		return SharedSecretObj.getOrPushSecret(mContext, contact);
-			} catch (NoValError e) {
+			else 
 				return null;
-			}
         } finally {
         	c.close();
         }
@@ -1543,11 +1540,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	        	return null;
 	        }
 	    	long id = c.getLong(0);
-			try {
-				return contactForContactId(id).get();
-			} catch (NoValError e) {
-				return null;
-			}
+			return contactForContactId(id);
         } finally {
 	        c.close();
         }
