@@ -316,6 +316,10 @@
     
     </activity>
     
+    <activity android:name=".AppCorralActivity"
+	      android:label="@string/app_store_name">
+    </activity>
+    
     <receiver android:name=".RemoteControlReceiver">
     <intent-filter>
         <action android:name="android.intent.action.MEDIA_BUTTON" />

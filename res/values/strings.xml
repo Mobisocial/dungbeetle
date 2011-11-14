@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Musubi</string>
+    <string name="app_store_name">App Corral</string>
     <string name="start">Running...</string>
     <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>
