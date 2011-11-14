@@ -1,8 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.Musubi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -25,7 +28,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.setWebViewClient(webViewClient);
-        mWebView.addJavascriptInterface(new SocialKitInterface(this,
+        mWebView.addJavascriptInterface(new SocialKitJavascript(this,
                 (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), "SocialKit");
         mWebView.loadUrl("http://musubi.us/apps");
     }
@@ -58,21 +61,36 @@ public class AppCorralActivity extends MusubiBaseActivity {
         }
     }
 
-    class SocialKitInterface {
+    static class SocialKitJavascript {
         final Context mContext;
-        final Uri mFeedUri;
+        final Musubi mMusubi;
+        final DbFeed mDbFeed;
 
-        SocialKitInterface(Context c, Uri feedUri) {
-            mContext = c;
-            mFeedUri = feedUri;
+        SocialKitJavascript(Activity context, Uri feedUri) {
+            mContext = context;
+            mMusubi= Musubi.getInstance(context);
+            mDbFeed = mMusubi.getFeed(feedUri);
         }
 
         public void showToast(String toast) {
             Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
         }
 
-        public String getFeed() {
-            return mFeedUri.getLastPathSegment();
+        public Feed getFeed() {
+            return new Feed(mDbFeed.getUri().getLastPathSegment());
+        }
+
+        public class Feed {
+            public String name;
+            public Feed(String name) {
+                this.name = name;
+            }
+
+            public String getName() {
+                return name;
+            }
+
+            // TODO queryByType(); // return json part
         }
     }
 }
