@@ -388,14 +388,24 @@ public class MessagingManagerThread extends Thread {
         protected JSONObject mJson;
         protected byte[] mRaw;
         protected boolean mDeleteOnCommit;
+        protected RSAPrivateKey mSendAs;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
             DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
             mDeleteOnCommit = objHandler.discardOutboundObj();
+            byte[] key = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.SEND_AS));
+            if(key != null) { 
+            	mSendAs = DBIdentityProvider.privateKeyFromByteArray(key);
+            }
         }
 		@Override
 		public long getLocalUniqueId() {
 			return mObjectId;
+		}
+
+		@Override
+		public RSAPrivateKey getSendAs() {
+			return mSendAs;
 		}
         public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }

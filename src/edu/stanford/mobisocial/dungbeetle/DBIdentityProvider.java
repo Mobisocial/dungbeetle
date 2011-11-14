@@ -187,27 +187,13 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
     public static RSAPublicKey publicKeyFromString(String str){
-        try{
-            byte[] pubKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
-            return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
+        byte[] pubKeyBytes = FastBase64.decode(str);
+        return publicKeyFromByteArray(pubKeyBytes);
     }
 
     public static RSAPrivateKey privateKeyFromString(String str){
-        try{
-            byte[] privKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-            return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
+        byte[] privKeyBytes = FastBase64.decode(str);
+        return privateKeyFromByteArray(privKeyBytes);
     }
 
     @Override
@@ -215,4 +201,25 @@ public class DBIdentityProvider implements IdentityProvider {
     	mUnclosedException = null;
     	mHelper.close();
     }
+	public static RSAPublicKey publicKeyFromByteArray(byte[] pubKeyBytes) {
+        try{
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
+            return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
+        }
+        catch(Exception e){
+            throw new IllegalStateException("Error loading public key", e);
+        }
+	}
+
+	public static RSAPrivateKey privateKeyFromByteArray(byte[] privKeyBytes) {
+        try{
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
+            return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
+        }
+        catch(Exception e){
+            throw new IllegalStateException("Error loading private key", e);
+        }
+	}
 }

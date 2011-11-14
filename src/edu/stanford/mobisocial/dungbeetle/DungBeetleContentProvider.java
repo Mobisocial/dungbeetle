@@ -251,6 +251,10 @@ public class DungBeetleContentProvider extends ContentProvider {
             cv.put(Group.NAME, gp.human);
             cv.put(Group.FEED_NAME, feedName);
             cv.put(Group.DYN_UPDATE_URI, gUri.toString());
+            if(gp.owner != null)
+            	cv.put(Group.PRIVATE_KEY, gp.owner.getEncoded());
+            if(gp.name != null)
+            	cv.put(Group.PUBLIC_KEY, gp.owner.getEncoded());
 
             String table = DbObject.TABLE;
             String[] columns = new String[] { DbObject.FEED_NAME };
