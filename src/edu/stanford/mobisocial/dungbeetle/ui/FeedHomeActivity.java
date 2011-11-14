@@ -78,12 +78,11 @@ public class FeedHomeActivity extends MusubiBaseActivity
         if (intent.getType() != null && intent.getType().equals(Feed.MIME_TYPE)) {
             Uri feedUri = getIntent().getData();
             feed_name = feedUri.getLastPathSegment();
-            Maybe<Group> maybeG = Group.forFeedName(FeedHomeActivity.this, feed_name);
-            try {
-                Group g = maybeG.get();
-                mGroupName = g.name;
-                dyn_feed_uri = g.dynUpdateUri;
-            } catch (Exception e) {}
+            Group g = Group.forFeedName(FeedHomeActivity.this, feed_name);
+            if(g != null) {
+	            mGroupName = g.name;
+	            dyn_feed_uri = g.dynUpdateUri;
+            }
         }
 
         if (dyn_feed_uri != null) {

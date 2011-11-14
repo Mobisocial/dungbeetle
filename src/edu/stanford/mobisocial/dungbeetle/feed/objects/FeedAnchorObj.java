@@ -52,17 +52,13 @@ public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler 
             return;
         }
 
-        Maybe<Group> parentGroup = Group.forFeedName(context, parentFeedName);
-        if (!parentGroup.isKnown()) {
+        Group parentGroup = Group.forFeedName(context, parentFeedName);
+        if (parentGroup == null) {
             Log.e(TAG, "No parent entry found for " + parentFeedName);
             return;
         }
         Long parentId = -1l;
-        try {
-            parentId = parentGroup.get().id;
-        } catch (NoValError e) {
-        }
-
+        parentId = parentGroup.id;
         String feedName = feedUri.getLastPathSegment();
         Log.d(TAG, "Updating parent_feed_id for " + feedName);
         DBHelper mHelper = DBHelper.getGlobal(context);

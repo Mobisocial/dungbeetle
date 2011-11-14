@@ -71,34 +71,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 		super.onCreate(savedInstanceState);
 		mHelper = DBHelper.getGlobal(getActivity());
 		getLoaderManager().initLoader(0, null, this);
-
-		groupUpdateHack();
 	}
-
-    private void groupUpdateHack() {
-        final Context context = getActivity();
-       
-        new Thread() {
-            public void run() {
-                final IdentityProvider ident = new DBIdentityProvider(mHelper);
-                final Group g = mHelper.groupForFeedName(mFeedName);
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {}
-                if(g == null)
-                	return;
-                Collection<Contact> existingContacts = g.contactCollection(mHelper);
-                //TODO: XXXXX these two won't do a thing because g.forceUpdate happens
-                //in the background.....
-                g.forceUpdate(context);
-                Collection<Contact> newContacts = g.contactCollection(mHelper);
-                newContacts.removeAll(existingContacts);
-
-                Helpers.resendProfile(context, newContacts, true);
-                ident.close();
-            };
-        }.start();
-    }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;

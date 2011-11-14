@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import java.util.UUID;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -27,9 +29,9 @@ public class NewGroupActivity extends Activity {
                 String groupName = ((EditText)findViewById(R.id.newGroupName)).getText().toString();
                 Group g;
                 if(groupName.length() > 0) {
-                    g = Group.create(NewGroupActivity.this, groupName, mHelper);
+                    g = Group.create(NewGroupActivity.this, groupName);
                 } else {
-                    g = Group.create(NewGroupActivity.this);
+                    g = Group.create(NewGroupActivity.this, UUID.randomUUID().toString());
                 }
 
                 Uri feedUri = Feed.uriForName(g.feedName);

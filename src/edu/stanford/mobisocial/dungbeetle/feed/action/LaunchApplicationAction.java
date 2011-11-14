@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.action;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
@@ -177,7 +178,7 @@ public class LaunchApplicationAction implements FeedAction {
 
     private void launchAppWithArgument(Context context, Uri feedUri, String pkg, String arg) {
         // Start new application feed:
-        Group g = Group.create(context);
+        Group g = Group.create(context, UUID.randomUUID().toString());
         Uri appFeedUri = Feed.uriForName(g.feedName);
         DbObject anchor = FeedAnchorObj.create(feedUri.getLastPathSegment());
         Helpers.sendToFeed(context, anchor, appFeedUri);

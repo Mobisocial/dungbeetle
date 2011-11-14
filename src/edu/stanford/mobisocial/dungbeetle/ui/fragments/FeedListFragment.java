@@ -1,5 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import java.util.UUID;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -179,10 +181,10 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
                             String groupName = input.getText().toString();
                             Group g;
                             if(groupName.length() > 0) {
-                                g = Group.create(getActivity(), groupName, mHelper);
+                                g = Group.create(getActivity(), groupName);
                             }
                             else {
-                                g = Group.create(getActivity());
+                                g = Group.create(getActivity(), UUID.randomUUID().toString());
                             }
                             
                             Helpers.sendToFeed(getActivity(),

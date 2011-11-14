@@ -71,14 +71,10 @@ public class FeedRefObj extends DbEntryHandler implements FeedRenderer, Activato
 	@Override
 	public void activate(Context context, SignedObj obj) {
 	    Feed feedRef = new Feed(obj.getJson());
-	    Maybe<Group> mg = Group.forFeedName(context, feedRef.id());
-	    try {
-	        Group g = mg.get();
+	    Group g = Group.forFeedName(context, feedRef.id());
+	    if(g != null) {
             Group.view(context, g);
-	    } catch (NoValError e) {
-
-        }
-    }
+	    }     }
 
     @Override
     public void handleDirectMessage(Context context, Contact from, JSONObject msg) {

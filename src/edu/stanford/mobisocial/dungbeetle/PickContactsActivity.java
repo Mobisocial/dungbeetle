@@ -306,11 +306,11 @@ public class PickContactsActivity extends TabActivity {
             toastList();
             HashMap<Long, Contact> people = new HashMap<Long, Contact>();
             for(Group g : mResultGroups.values()) {
-                Maybe<Group> group = Group.forFeed(this, threadUri);
-                try {
-                	Helpers.sendGroupInvite(this, Feed.uriForName(g.feedName), group.get().name, Uri.parse(group.get().dynUpdateUri));
-                } catch (NoValError e) {
-                    Log.e(TAG, "Could not send group invite; no group for " + threadUri, e);
+                Group group = Group.forFeed(this, threadUri);
+                if(group == null) {
+                    Log.e(TAG, "Could not send group invite; no group for " + threadUri);
+                } else {
+                	Helpers.sendGroupInvite(this, Feed.uriForName(g.feedName), group.name, Uri.parse(group.dynUpdateUri));
                 }
             }
             if (mResultContacts.size() > 0) {

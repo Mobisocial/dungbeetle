@@ -15,6 +15,9 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import android.util.Log;
+
 import java.nio.channels.FileChannel;
 
 public class Util {
@@ -53,16 +56,20 @@ public class Util {
 		return buf.toString();
 	}
 
-	public static String SHA1(byte[] input) throws NoSuchAlgorithmException,
-                                                   UnsupportedEncodingException {
-		MessageDigest md;
-		md = MessageDigest.getInstance("SHA-1");
-
-		byte[] sha1hash = new byte[40];
-		md.update(input, 0, input.length);
-		sha1hash = md.digest();
-
-		return convertToHex(sha1hash);
+	public static String SHA1(byte[] input) {
+		try {
+			MessageDigest md;
+			md = MessageDigest.getInstance("SHA-1");
+	
+			byte[] sha1hash = new byte[40];
+			md.update(input, 0, input.length);
+			sha1hash = md.digest();
+	
+			return convertToHex(sha1hash);
+		} catch (Exception e) {
+			Log.e(TAG, "Bad algorithm or encoding", e);
+			return "SHA1 Missing";
+		}
 	}
 
     public static String MD5(String plaintext){

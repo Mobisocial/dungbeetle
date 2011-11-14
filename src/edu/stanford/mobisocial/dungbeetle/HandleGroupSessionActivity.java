@@ -10,7 +10,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.Group.GroupParameters;
+import edu.stanford.mobisocial.dungbeetle.model.Group.InvalidGroupUri;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 
 public class HandleGroupSessionActivity extends Activity {
@@ -28,41 +31,43 @@ public class HandleGroupSessionActivity extends Activity {
 		}
 
 		final Uri uri = intent.getData();
-		if(uri != null) {
-            GroupProviders.GroupProvider gp1 = GroupProviders.forUri(uri);
-            String feedName = gp1.feedName(uri);
-            DBHelper helper = DBHelper.getGlobal(this);
-            Group g = helper.groupForFeedName(feedName);
-            long id = -1;
-            if(g == null) {
-                // group does not exist yet, time to prompt for join
-                Log.i(TAG, "Read uri: " + uri);
-                GroupProviders.GroupProvider gp = GroupProviders.forUri(uri);
-                String groupName = gp.groupName(uri);
-                mNameText = (TextView)findViewById(R.id.text);
-                mNameText.setText("Would you like to join the group '" + groupName + "'?");
-                Button b1 = (Button)findViewById(R.id.yes_button);
-                b1.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            Group.join(HandleGroupSessionActivity.this, uri);
-                            finish();
-                        }
-                    });
-                Button b2 = (Button)findViewById(R.id.no_button);
-                b2.setOnClickListener(new OnClickListener() {
-                        public void onClick(View v) {
-                            finish();
-                        }
-                    });
-            } else {
-                // group exists already, load view
-                id = g.id;
-
-                Group.view(HandleGroupSessionActivity.this, g);
-                finish();
-            }
-		} else {
+		if(uri == null) {
 			Toast.makeText(this, "Received null url...", Toast.LENGTH_SHORT).show();
+			return;
 		}
+		GroupParameters gp;
+		try {
+			gp = Group.getGroupParameters(uri);
+		} catch (InvalidGroupUri e) {
+			Toast.makeText(this, "Received invalid group url...", Toast.LENGTH_SHORT).show();
+			Log.e(TAG, "invalid group url received", e);
+			return;
+		}
+        DBHelper helper = DBHelper.getGlobal(this);
+        Group g = helper.groupForFeedName(Util.SHA1(gp.name.getEncoded()));
+        if(g != null) {
+            // group exists already, load view
+            Group.view(HandleGroupSessionActivity.this, g);
+            finish();
+            return;
+        }
+        // group does not exist yet, time to prompt for join
+        Log.i(TAG, "Read uri: " + uri);
+        String groupName = gp.human;
+        mNameText = (TextView)findViewById(R.id.text);
+        mNameText.setText("Would you like to join the group '" + groupName + "'?");
+        Button b1 = (Button)findViewById(R.id.yes_button);
+        b1.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    Group.join(HandleGroupSessionActivity.this, uri);
+                    finish();
+                }
+            });
+        Button b2 = (Button)findViewById(R.id.no_button);
+        b2.setOnClickListener(new OnClickListener() {
+                public void onClick(View v) {
+                    finish();
+                }
+            });
 	}
 }

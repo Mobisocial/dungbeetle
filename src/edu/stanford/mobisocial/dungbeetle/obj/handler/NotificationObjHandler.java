@@ -56,7 +56,7 @@ public class NotificationObjHandler extends ObjHandler {
         	}
         	case Feed.FEED_GROUP: {
                 String feedName = feedUri.getLastPathSegment();
-                Maybe<Group> group = mHelper.groupForFeedName(feedName);
+                Group group = mHelper.groupForFeedName(feedName);
                 Intent launch = new Intent(Intent.ACTION_VIEW);
                 launch.setClass(context, FeedListActivity.class);
                 if(Build.VERSION.SDK_INT < 11)
@@ -66,13 +66,13 @@ public class NotificationObjHandler extends ObjHandler {
                 PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
                         launch, PendingIntent.FLAG_CANCEL_CURRENT);
         
-                try {
-                    (new PresenceAwareNotify(context)).notify("New Musubi message",
-                            "New Musubi message", "In " + ((Group) group.get()).name,
-                            contentIntent);
-                } catch (NoValError e) {
+                if(group == null) {
                     Log.e(TAG, "No group while notifying for " + feedName);
+                    break;
                 }
+                (new PresenceAwareNotify(context)).notify("New Musubi message",
+                        "New Musubi message", "In " + group.name,
+                        contentIntent);
         		break;
         	}
         	case Feed.FEED_RELATED: {

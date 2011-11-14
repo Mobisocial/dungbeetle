@@ -57,7 +57,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 	public static final String TAG = "ContactsActivity";
 
 	private DBHelper mHelper;
-    private Maybe<Group> mGroup = Maybe.unknown();
+    private Group mGroup = null;
 
     public void goHome(Context context) 
     {
@@ -109,16 +109,16 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         if (intent.hasExtra("group_id")) {    
     		setContentView(R.layout.group_contacts);
             long groupId = intent.getLongExtra("group_id", -1);
-            try {
-                mGroup = mHelper.groupForGroupId(groupId);
-                long gid = mGroup.get().id;
-                Cursor c = getContentResolver().query(
-                    Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
-                    null, Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
-                mContacts = new ContactListCursorAdapter(this, c);
-            } catch(Maybe.NoValError e) {
+            mGroup = mHelper.groupForGroupId(groupId);
+            if(mGroup == null) {
                 Log.i(TAG, "group not found!");
                 mContacts = new ContactListCursorAdapter(this, new MatrixCursor(new String[]{}));
+            } else {
+	            long gid = mGroup.id;
+	            Cursor c = getContentResolver().query(
+	                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_contacts/" + gid),
+	                null, Contact.HIDDEN + "=0", null, Contact.NAME + " COLLATE NOCASE ASC");
+	            mContacts = new ContactListCursorAdapter(this, c);
             }
         } else {
         	setContentView(R.layout.contacts);
@@ -285,9 +285,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");
-                try {
-                    Helpers.sendGroupInvite(this, contactIds, mGroup.get());
-                } catch(Maybe.NoValError e) {}
+                    Helpers.sendGroupInvite(this, contactIds, mGroup);
             }
         }
     }

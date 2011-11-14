@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.UUID;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
@@ -406,9 +407,9 @@ public class HomeActivity extends MusubiBaseActivity {
                         String groupName = input.getText().toString();
                         Group g;
                         if (groupName.length() > 0) {
-                            g = Group.create(HomeActivity.this, groupName, mHelper);
+                            g = Group.create(HomeActivity.this, groupName);
                         } else {
-                            g = Group.create(HomeActivity.this);
+                            g = Group.create(HomeActivity.this, UUID.randomUUID().toString());
                         }
 
                         Helpers.sendToFeed(HomeActivity.this,

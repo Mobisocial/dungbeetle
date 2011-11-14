@@ -64,11 +64,10 @@ public class FeedThumberActivity extends MusubiBaseActivity
     public void onPageSelected(int position) {
         Uri feedUri = mFeeds.getFeedUri(position);
         // Feed.colorFor(feedUri.getLastPathSegment());  // : )
-        Maybe<Group> g = Group.forFeed(this, feedUri);
-        try {
-            Log.d("musubi", "VIEWING FEED NAMED: " + g.get().name);
-        } catch (NoValError e) {
-        }
+        Group g = Group.forFeed(this, feedUri);
+        if(g != null) {
+            Log.d("musubi", "VIEWING FEED NAMED: " + g.name);
+        } 
     }
 
     private Loader<Cursor> mLoader;

@@ -13,6 +13,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.zxing.BarcodeFormat;
@@ -79,12 +80,11 @@ public class FeedActionsFragment extends Fragment {
         mFeedUri = getArguments().getParcelable(FeedViewFragment.ARG_FEED_URI);
         mDualPane = getArguments().getBoolean(FeedViewFragment.ARG_DUAL_PANE, false);
 
-        Maybe<Group> maybeG = Group.forFeedName(getActivity(), mFeedUri.getLastPathSegment());
-        try {
-            Group g = maybeG.get();
+        Group g = Group.forFeedName(getActivity(), mFeedUri.getLastPathSegment());
+        if(g != null) {
             mGroupName = g.name;
             mExternalFeedUri = Uri.parse(g.dynUpdateUri);
-        } catch (Exception e) {}
+        }
     }
 
     @Override
@@ -242,14 +242,18 @@ public class FeedActionsFragment extends Fragment {
 
     public void broadcastBluetooth() {
         // BluetoothNdef.share
-        Maybe<Group> group = Group.forFeed(getActivity(), mFeedUri);
-        try {
-            Group g = group.get();
+        Group g = Group.forFeed(getActivity(), mFeedUri);
+        if(g != null) {
             JSONObject json = new JSONObject();
-            json.put("name", g.name);
-            json.put("dynuri", g.dynUpdateUri);
-            BluetoothBeacon.share(getActivity(), json.toString().getBytes(), 300);
-        } catch (Exception e) {
+            try {
+				json.put("name", g.name);
+	            json.put("dynuri", g.dynUpdateUri);
+	            BluetoothBeacon.share(getActivity(), json.toString().getBytes(), 300);
+			} catch (JSONException e) {
+	            Log.e(TAG, "Could not send group invite; JSON failure", e);
+				e.printStackTrace();
+			}
+        } else {
             Log.e(TAG, "Could not send group invite; no group for " + mFeedUri);
         }
     }

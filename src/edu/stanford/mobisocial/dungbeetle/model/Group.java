@@ -121,10 +121,11 @@ public class Group{
         return new Group(-1L, "NA", "NA", "NA", -1, null, null);
     }
 
-    public static Group create(Context context, String groupName, DBHelper helper) {
+    public static Group create(Context context, String groupName) {
         KeyPair kp = DBIdentityProvider.generateKeyPair();
         RSAPublicKey pub = (RSAPublicKey)kp.getPrivate();
         RSAPrivateKey priv = (RSAPrivateKey)kp.getPrivate();
+        DBHelper helper = DBHelper.getGlobal(context);
         DBIdentityProvider ident = new DBIdentityProvider(helper);
         RSAPublicKey[] members = new RSAPublicKey[1];
         members[0] = ident.userPublicKey();
