@@ -21,6 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.GroupControlObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.IMObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToSharedAppFeedObj;
@@ -87,6 +88,7 @@ public final class DbObjects {
         objs.add(new DeleteObj());
         objs.add(new LikeObj());
         objs.add(new RemoteIntentObj());
+        objs.add(new GroupControlObj());
     }
 
 	public static FeedRenderer getFeedRenderer(String type) {
