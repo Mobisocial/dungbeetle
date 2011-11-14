@@ -311,8 +311,11 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                 int numBytes = getNumBytes(mContext, fileUri);
                 InputStream is = mContext.getContentResolver().openInputStream(fileUri);
                 BitmapFactory.Options options = new BitmapFactory.Options();
-                if (numBytes > 1024*1024) {
+                if (numBytes > 256*1024) {
+                    if (DBG) Log.d(TAG, "Resizing image of size " + numBytes);
                     options.inSampleSize = 4;
+                } else {
+                    if (DBG) Log.d(TAG, "Not resizing image of size " + numBytes);
                 }
 
                 Matrix matrix = new Matrix();
