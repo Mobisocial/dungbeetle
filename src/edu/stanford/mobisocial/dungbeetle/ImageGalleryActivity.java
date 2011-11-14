@@ -56,6 +56,7 @@ import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 public class ImageGalleryActivity extends FragmentActivity implements LoaderCallbacks<Cursor>,
         InstrumentedActivity {
     private static final String TAG = "imageGallery";
+    private static final boolean DBG = false;
 
 	private final String extStorageDirectory =
 	        Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
@@ -137,6 +138,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
+            if (DBG) Log.d(TAG, "binding view");
             ImageView im = (ImageView)view;
             im.setTag(cursor.getLong(COL_ID));
             try {
@@ -152,6 +154,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             byte[] bytes = obj.getRaw();
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             im.setImageBitmap(bitmap);
+            if (DBG) Log.d(TAG, "done binding view");
         }
 
         @Override
@@ -303,11 +306,14 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                     }
                     return;
                 }
-                // Log.d(TAG, "Opening HD file " + fileUri);
+                if (DBG) Log.d(TAG, "Opening HD file " + fileUri);
 
+                int numBytes = getNumBytes(mContext, fileUri);
                 InputStream is = mContext.getContentResolver().openInputStream(fileUri);
                 BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = 4;
+                if (numBytes > 1024*1024) {
+                    options.inSampleSize = 4;
+                }
 
                 Matrix matrix = new Matrix();
                 float rotation = PhotoTaker.rotationForImage(mContext, fileUri);
@@ -324,6 +330,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
                 bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+                if (DBG) Log.d(TAG, "created new bitmap, binding to view");
                 if ((Long)mImageView.getTag() == mObj.getLocalId()) {
                     mContext.runOnUiThread(new Runnable() {
                         @Override
@@ -337,6 +344,18 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             } catch (IOException e) {
                 Log.e(TAG, "Failed to get hd content", e);
             }
+        }
+
+        private int getNumBytes(Activity context, Uri fileUri) throws IOException {
+            InputStream in = context.getContentResolver().openInputStream(fileUri);
+            byte[] buff = new byte[1024];
+            int r;
+            int total = 0;
+            while ((r = in.read(buff)) > 0) {
+                total += r;
+            }
+            in.close();
+            return total;
         };
     }
 

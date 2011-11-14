@@ -1,6 +1,7 @@
 
 package org.mobisocial.corral;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -698,6 +699,39 @@ public class ContentCorral {
         return Uri.fromFile(localFile);
     }
 
+    public static Uri copyContent(Context context, Uri contentUri) {
+        File contentDir = new File(context.getExternalCacheDir(), "local");
+        int timestamp = (int) (System.currentTimeMillis() / 1000L);
+        String ext = suffixForType(context.getContentResolver().getType(contentUri));
+        String fname = timestamp + "-" + contentUri.getLastPathSegment() + "." + ext;
+        File copy = new File(contentDir, fname);
+        try {
+            Log.d(TAG, "trying to stash " + contentUri);
+            contentDir.mkdirs();
+            InputStream in = context.getContentResolver().openInputStream(contentUri);
+            BufferedInputStream bin = new BufferedInputStream(in);
+            byte[] buff = new byte[1024];
+            OutputStream out = new FileOutputStream(copy);
+            int r;
+            while ((r = bin.read(buff)) > 0) {
+                Log.d(TAG, "read " + r);
+                out.write(buff, 0, r);
+            }
+            Log.d(TAG, "closing");
+            out.close();
+            bin.close();
+            in.close();
+            Log.d(TAG, "returning " + copy);
+            return Uri.fromFile(copy);
+        } catch (IOException e) {
+            Log.w(TAG, "Error copying file", e);
+            if (copy.exists()) {
+                copy.delete();
+            }
+            return null;
+        }
+    }
+
     private static Uri getFileOverBluetooth(Context context, DbUser user, SignedObj obj)
             throws IOException {
         String macStr = DbContactAttributes.getAttribute(context, user.getLocalId(),
@@ -797,6 +831,9 @@ public class ContentCorral {
         }
         if (type.equals("video/3gpp")) {
             return "3gp";
+        }
+        if (type.equals("image/png")) {
+            return "png";
         }
         return DEFAULT;
     }

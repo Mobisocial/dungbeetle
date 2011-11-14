@@ -50,7 +50,7 @@ public class EditPhotoAction extends ObjAction {
     public void onAct(Context context, DbEntryHandler objType, DbObj obj) {
 
         ((InstrumentedActivity)context).doActivityForResult(
-                new EditCallout(context, obj));
+                new EditCallout((Activity)context, obj));
     }
 
     @Override
@@ -69,12 +69,12 @@ public class EditPhotoAction extends ObjAction {
     public static class EditCallout implements ActivityCallout {
         final JSONObject mJson;
         final byte[] mRaw;
-        final Context mContext;
+        final Activity mContext;
         final Uri mFeedUri;
         final Uri mHdUri;
         final long mHash;
 
-        public EditCallout(Context context, DbObj obj) {
+        public EditCallout(Activity context, DbObj obj) {
             mHash = obj.getHash();
             mJson = obj.getJson();
             mRaw = obj.getRaw();
@@ -167,20 +167,34 @@ public class EditPhotoAction extends ObjAction {
                     @Override
                     public void run() {
                         try {
-                            // TODO: mimeType; local_uri = data.toString();
-                            DbObject outboundObj = PictureObj.from(mContext, data.getData());
+                            Uri result = data.getData();
+                            Uri stored = ContentCorral.copyContent(mContext, result);
+                            if (stored == null) {
+                                Log.w(TAG, "Error storing content in corral");
+                                stored = result;
+                            }
+                            DbObject outboundObj = PictureObj.from(mContext, stored);
                             try {
                                 outboundObj.getJson().put(DbObjects.TARGET_HASH, mHash);
                                 outboundObj.getJson().put(DbObjects.TARGET_RELATION, DbRelation.RELATION_EDIT);
                             } catch (JSONException e) {}
                             Helpers.sendToFeed(mContext, outboundObj, mFeedUri);
                         } catch (IOException e) {
-                            Toast.makeText(mContext, "Error reading photo data.", Toast.LENGTH_SHORT).show();
                             Log.e(HomeActivity.TAG, "Error reading photo data.", e);
+                            toast("Error reading photo data.");
                         }
                     }
                 }.start();
             }
+        }
+
+        private final void toast(final String text) {
+            mContext.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 }
