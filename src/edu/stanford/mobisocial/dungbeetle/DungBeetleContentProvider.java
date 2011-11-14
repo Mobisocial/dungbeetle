@@ -23,8 +23,11 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.Group.GroupParameters;
+import edu.stanford.mobisocial.dungbeetle.model.Group.InvalidGroupUri;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class DungBeetleContentProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.mobisocial.db";
@@ -232,55 +235,59 @@ public class DungBeetleContentProvider extends ContentProvider {
                 return null;
             }
             Uri gUri = Uri.parse(values.getAsString("uri"));
-            GroupProviders.GroupProvider gp = GroupProviders.forUri(gUri);
-            String feedName = gp.feedName(gUri);
-            Group g = mHelper.groupForFeedName(feedName);
-            long id = -1;
-            if(g != null) {
-                id = g.id;
-            } else {
-                ContentValues cv = new ContentValues();
-                cv.put(Group.NAME, gp.groupName(gUri));
-                cv.put(Group.FEED_NAME, feedName);
-                cv.put(Group.DYN_UPDATE_URI, gUri.toString());
-
-                String table = DbObject.TABLE;
-                String[] columns = new String[] { DbObject.FEED_NAME };
-                String selection = DbObject.CHILD_FEED_NAME + " = ?";
-                String[] selectionArgs = new String[] { feedName };
-                Cursor parent = mHelper.getReadableDatabase().query(
-                        table, columns, selection, selectionArgs, null, null, null);
-                try {
-	                if (parent.moveToFirst()) {
-	                    String parentName = parent.getString(0);
-	                    table = Group.TABLE;
-	                    columns = new String[] { Group._ID };
-	                    selection = Group.FEED_NAME + " = ?";
-	                    selectionArgs = new String[] { parentName };
-	
-	                    Cursor parent2 = mHelper.getReadableDatabase().query(
-	                            table, columns, selection, selectionArgs, null, null, null);
-	                    try {
-		                    if (parent2.moveToFirst()) {
-		                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
-		                    } else {
-		                        Log.e(TAG, "Parent feed found but no id for " + parentName);
-		                    } 
-	                    } finally {
-	                    	parent2.close();
-	                    }
-	                } else {
-	                    Log.w(TAG, "No parent feed for " + feedName);
-	                }
-                } finally {
-                    parent.close();
-                }
-                id = mHelper.insertGroup(cv);
-                getContext().getContentResolver().notifyChange(
-                        Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
-                getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"),
-                        null);
+            GroupParameters gp;
+            try {
+            	gp = Group.getGroupParameters(gUri);
+            } catch(InvalidGroupUri e) {
+            	Log.e(TAG, "tried to join invalid group uri", e);
+            	return null;
             }
+            String feedName = Util.SHA1(gp.name.getEncoded());
+            Group g = mHelper.groupForFeedName(feedName);
+            if(g != null) {
+                return uriWithId(uri, g.id);
+            }
+            ContentValues cv = new ContentValues();
+            cv.put(Group.NAME, gp.human);
+            cv.put(Group.FEED_NAME, feedName);
+            cv.put(Group.DYN_UPDATE_URI, gUri.toString());
+
+            String table = DbObject.TABLE;
+            String[] columns = new String[] { DbObject.FEED_NAME };
+            String selection = DbObject.CHILD_FEED_NAME + " = ?";
+            String[] selectionArgs = new String[] { feedName };
+            Cursor parent = mHelper.getReadableDatabase().query(
+                    table, columns, selection, selectionArgs, null, null, null);
+            try {
+                if (parent.moveToFirst()) {
+                    String parentName = parent.getString(0);
+                    table = Group.TABLE;
+                    columns = new String[] { Group._ID };
+                    selection = Group.FEED_NAME + " = ?";
+                    selectionArgs = new String[] { parentName };
+
+                    Cursor parent2 = mHelper.getReadableDatabase().query(
+                            table, columns, selection, selectionArgs, null, null, null);
+                    try {
+	                    if (parent2.moveToFirst()) {
+	                        cv.put(Group.PARENT_FEED_ID, parent2.getLong(0));    
+	                    } else {
+	                        Log.e(TAG, "Parent feed found but no id for " + parentName);
+	                    } 
+                    } finally {
+                    	parent2.close();
+                    }
+                } else {
+                    Log.w(TAG, "No parent feed for " + feedName);
+                }
+            } finally {
+                parent.close();
+            }
+            long id = mHelper.insertGroup(cv);
+            getContext().getContentResolver().notifyChange(
+                    Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
+            getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"),
+                    null);
             return uriWithId(uri, id);
         }
 
