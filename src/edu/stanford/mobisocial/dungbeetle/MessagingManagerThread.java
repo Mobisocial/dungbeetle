@@ -49,6 +49,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.presence.TVModePresence;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
@@ -162,6 +163,11 @@ public class MessagingManagerThread extends Thread {
             final JSONObject obj = in_obj;
             final byte[] raw = extracted_data;
 
+            Group g = Group.forFeedName(mContext, feedName);
+            if(g != null && g.pub != null && contact == null && g.pub.equals(incoming.getSigner())) {
+            	//this is a group control message
+            	
+            }
             if (contact == null) {
                 Log.i(TAG, "Message from unknown contact. " + contents);
                 return;
