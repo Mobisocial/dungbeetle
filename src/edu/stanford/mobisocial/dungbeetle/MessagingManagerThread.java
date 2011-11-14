@@ -167,19 +167,25 @@ public class MessagingManagerThread extends Thread {
             if(g != null && g.pub != null && contact == null && g.pub.equals(incoming.getSigner())) {
             	//this is a group control message
             	
-            }
-            if (contact == null) {
+            } else if (contact == null) {
                 Log.i(TAG, "Message from unknown contact. " + contents);
                 return;
             }
             long objId;
-            long contactId = contact.id;
-            if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + contact.name  + ")");
-            // Insert into the database. (TODO: Handler, both android.os and musubi.core)
+            if(contact != null) {
+            	if (DBG) Log.d(TAG, "Msg from " + contact.id + " ( " + contact.name  + ")");
+            } else {
+            	if (DBG) Log.d(TAG, "Control Msg from " + g.feedName + ")");
+            }
+        	// Insert into the database. (TODO: Handler, both android.os and musubi.core)
 
             if (!objHandler.handleObjFromNetwork(mContext, contact, obj)) {
                 return;
             }
+            
+            //group messages will never be stored, though they may cause new messages to be send
+            if(contact == null)
+            	return;
 
             Integer intKey = null;
             if (obj.has(JSON_INT_KEY)) {
@@ -189,7 +195,7 @@ public class MessagingManagerThread extends Thread {
             objId = mHelper.addObjectByJson(contact.id, obj, hash, raw, intKey);
 			Uri feedUri;
             if (feedName.equals("friend")) {
-               feedUri = Feed.uriForName("friend/" + contactId);
+               feedUri = Feed.uriForName("friend/" + contact.id);
             } else {
                 feedUri = Feed.uriForName(feedName);
             }
