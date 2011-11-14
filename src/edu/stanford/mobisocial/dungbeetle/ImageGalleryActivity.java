@@ -316,6 +316,11 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                 }
                 bitmap = BitmapFactory.decodeStream(is, null, options);
 
+                if (bitmap == null) {
+                    Log.w(TAG, "failed to decode bitmap from " + fileUri);
+                    return;
+                }
+
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
                 bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
