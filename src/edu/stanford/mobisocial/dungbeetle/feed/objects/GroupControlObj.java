@@ -75,6 +75,7 @@ public class GroupControlObj extends DbEntryHandler {
         return obj;
     }
 
+    //QQQQQ: this should use the dynamic_group_member content provider insert point
 	public boolean handleObjFromNetwork(Context context, Contact from, JSONObject obj) {
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
@@ -104,8 +105,8 @@ public class GroupControlObj extends DbEntryHandler {
 						//since we added this member then they won't have a profile already
 			        	LinkedList<Contact> contacts = new LinkedList<Contact>();
 			        	contacts.add(new_member);
-			        	//we know they have our key, once they get our profile, they will
-			        	//send their profile
+			        	//we know they have our key so we send our profile
+			        	//once they get our profile, they will send their profile
 						Helpers.resendProfile(context, contacts, true);
 					}
 					//HMM... wtf is the id in group
@@ -159,39 +160,7 @@ public class GroupControlObj extends DbEntryHandler {
 					//no real ack required
 					if(new_members.isEmpty())
 						return false;
-					
-					for(RSAPublicKey k : new_members) {
-						String person_id = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(k);
-						Contact new_member = dbh.contactForPersonId(person_id);
-						if(new_member == null) {
-					        Uri uri = Helpers.insertContact(context, obj.getString(REPLY_TO), "New Group Member", "new@group.member");
-							new_member = dbh.contactForPersonId(person_id);
-							if(new_member == null) {
-								Toast.makeText(context, "Failure adding friend for group join response", Toast.LENGTH_SHORT).show();
-								Log.e(TAG, "adding member to friends list failed on response!");
-								//we just try the next option even though this shouldn't happen sans 
-								//horrible internal failure
-								continue;
-							}
-							//in this case, the new members won't yet have our key, so we 
-							//can't send them a profile.  we wait for them to add us and ask for the profile
-						}
-						//add the member to the group now that we know they are a contact
-						//HMM... wtf is the id in group
-						Helpers.insertGroupMember(context, g.id, new_member.id, new_member.personId);
-						
-						//post the join message to the feed with our new view of the membership
-						DBIdentityProvider idp = new DBIdentityProvider(dbh);
-						try {
-							ContentValues cv = new ContentValues();
-							cv.put(DbObject.JSON, json(idp.userPublicKey(), known_members.values()).toString());
-							cv.put(DbObject.TYPE, TYPE);
-							cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
-							dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
-						} finally {
-							idp.close();
-						}
-					}
+					insertNewMembers(context, dbh, g, new_members, known_members.values());
 					
 				}
 			} finally {
@@ -210,4 +179,41 @@ public class GroupControlObj extends DbEntryHandler {
 	public boolean discardOutboundObj() {
 		return true;
 	};
-}
+	
+	public static void insertNewMembers(Context context, DBHelper dbh, Group g, Collection<RSAPublicKey> new_members, Collection<RSAPublicKey> known_members) {
+		DBIdentityProvider idp = new DBIdentityProvider(dbh); 
+		RSAPublicKey me;
+		try {
+			me = idp.userPublicKey();
+		} finally {
+			idp.close();
+		}
+		for(RSAPublicKey k : new_members) {
+			String person_id = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(k);
+			Contact new_member = dbh.contactForPersonId(person_id);
+			if(new_member == null) {
+		        Uri uri = Helpers.insertContact(context, DBIdentityProvider.publicKeyToString(k), "New Group Member", "new@group.member");
+				new_member = dbh.contactForPersonId(person_id);
+				if(new_member == null) {
+					Toast.makeText(context, "Failure adding friend for group join response", Toast.LENGTH_SHORT).show();
+					Log.e(TAG, "adding member to friends list failed on response!");
+					//we just try the next option even though this shouldn't happen sans 
+					//horrible internal failure
+					continue;
+				}
+				//in this case, the new members won't yet have our key, so we 
+				//can't send them a profile.  we wait for them to add us and ask for the profile
+			}
+			//add the member to the group now that we know they are a contact
+			//HMM... wtf is the id in group
+			Helpers.insertGroupMember(context, g.id, new_member.id, new_member.personId);
+			
+			//post the join message to the feed with our new view of the membership
+			ContentValues cv = new ContentValues();
+			cv.put(DbObject.JSON, json(idp.userPublicKey(), known_members).toString());
+			cv.put(DbObject.TYPE, TYPE);
+			cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
+			dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
+		}
+	}
+} 

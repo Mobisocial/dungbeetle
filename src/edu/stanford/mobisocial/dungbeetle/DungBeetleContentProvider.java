@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
@@ -17,6 +18,7 @@ import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.GroupControlObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -292,6 +294,12 @@ public class DungBeetleContentProvider extends ContentProvider {
                     Uri.parse(CONTENT_URI + "/dynamic_groups"), null);
             getContext().getContentResolver().notifyChange(Uri.parse(CONTENT_URI + "/groups"),
                     null);
+            
+            ArrayList<RSAPublicKey> l = new ArrayList<RSAPublicKey>();
+            for(RSAPublicKey k : gp.members) {
+            	l.add(k);
+            }
+            GroupControlObj.insertNewMembers(getContext(), mHelper, Group.forId(getContext(), id), l, l);
             return uriWithId(uri, id);
         }
 
