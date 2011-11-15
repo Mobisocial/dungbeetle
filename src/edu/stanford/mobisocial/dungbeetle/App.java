@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Application;
 import android.content.BroadcastReceiver;
@@ -9,8 +10,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -21,6 +24,7 @@ public class App extends Application {
      * The protocol version we speak, affecting things like wire protocol
      * format and physical network support, available features, app api, etc.
      */
+    public static final String PREF_POSI_VERSION = "posi_version";
     public static final int POSI_VERSION = 4;
 
     public static final String TAG = "musubi";
@@ -58,6 +62,14 @@ public class App extends Application {
         getApplicationContext().registerReceiver(mScreenState, filter);
         secureRandom = new SecureRandom();
         mMusubi = Musubi.getInstance(getApplicationContext());
+
+        // Hello, Friends
+        SharedPreferences prefs = getSharedPreferences("main", 0);
+        int oldVersion = prefs.getInt(PREF_POSI_VERSION, 0);
+        if (oldVersion <= POSI_VERSION) {
+            Obj updateObj = ProfileObj.getLocalProperties(this);
+            Helpers.sendToEveryone(this, updateObj);
+        }
 	}
 
 	@Override

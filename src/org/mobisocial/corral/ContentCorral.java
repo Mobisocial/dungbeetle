@@ -190,7 +190,12 @@ public class ContentCorral {
 
             // Create a new listening server socket
             try {
-                tmp = adapter.listenUsingInsecureRfcommWithServiceRecord(BT_CORRAL_NAME, coralUuid);
+                try {
+                    tmp = adapter.listenUsingInsecureRfcommWithServiceRecord(
+                            BT_CORRAL_NAME, coralUuid);
+                } catch (NoSuchMethodError e) {
+                    // Let's not deal with pairing UI.
+                }
             } catch (IOException e) {
                 Log.e(TAG, "Could not open bt server socket");
                 e.printStackTrace(System.err);
@@ -228,7 +233,7 @@ public class ContentCorral {
                 }
 
                 DuplexSocket duplex = new BluetoothDuplexSocket(socket);
-                ObjExConnectedThread conThread = new ObjExConnectedThread(duplex);
+                CorralConnectedThread conThread = new CorralConnectedThread(duplex);
                 conThread.start();
             }
             Log.d(TAG, "END mAcceptThread");
@@ -566,13 +571,13 @@ public class ContentCorral {
      * This thread runs during a connection with a remote device. It supports
      * incoming and outgoing transmissions over HTTP.
      */
-    private class ObjExConnectedThread extends Thread {
+    private class CorralConnectedThread extends Thread {
         private final DuplexSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
         private final int BUFFER_LENGTH = 1024;
 
-        public ObjExConnectedThread(DuplexSocket socket) {
+        public CorralConnectedThread(DuplexSocket socket) {
             // Log.d(TAG, "create ConnectedThread");
 
             mmSocket = socket;
@@ -611,6 +616,18 @@ public class ContentCorral {
                 bytes = mmInStream.read(buffer);
                 Log.d(TAG, "read " + bytes + " header bytes");
                 String header = new String(buffer, 0, bytes);
+
+                /**
+                 * Your task is to find out which friends are nearby.
+                 * We're just going to try to connect to all of their
+                 * CORRAL_BLUETOOTH ports and send a quick HELLO.
+                 * 
+                 * First visual is to show this in a "nearby" list.
+                 * We'll easily up-convert to groups.
+                 * 
+                 * Dumb algorithm for now just iterates over MACs and
+                 * tries to connect, following protocol.
+                 */
 
                 // TODO
                 Log.d(TAG, "BJD BLUETOOTH CORRAL NOT READY: ObjEx needs defining.");

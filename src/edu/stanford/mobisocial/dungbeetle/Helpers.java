@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.musubi.DbObj;
 
 import org.json.JSONObject;
 
@@ -367,11 +368,14 @@ public class Helpers {
         ContentValues values = new ContentValues();
         //JSONObject obj = ProfileObj.json(name, about);
         Obj profileObj = ProfileObj.forLocalUser(c, name, about);
-        values.put(DbObject.JSON, profileObj.getJson().toString());
-        values.put(DbObject.TYPE, profileObj.getType());
-        c.getContentResolver().insert(url, values);
+        c.getContentResolver().insert(url, DbObj.toContentValues(profileObj));
     }
 
+    public static void sendToEveryone(final Context c, Obj obj){
+        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        ContentValues values = DbObj.toContentValues(obj);
+        c.getContentResolver().insert(url, values);
+    }
     
 
     public static void updatePicture(final Context c, final byte[] data) {

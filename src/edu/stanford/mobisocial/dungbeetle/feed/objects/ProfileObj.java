@@ -78,4 +78,20 @@ public class ProfileObj extends DbEntryHandler {
         }catch(JSONException e){}
         return new MemObj(TYPE, obj);
     }
+
+    public static Obj getLocalProperties(Context c) {
+        JSONObject obj = new JSONObject();
+        try {
+            // TODO: Framework.
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (btAdapter != null) {
+                UUID btUuid = ContentCorral.getLocalBluetoothServiceUuid(c);
+                String btMac = btAdapter.getAddress();
+                obj.put(Contact.ATTR_BT_MAC, btMac);
+                obj.put(Contact.ATTR_BT_CORRAL_UUID, btUuid.toString());
+            }
+            obj.put(Contact.ATTR_PROTOCOL_VERSION, App.POSI_VERSION);
+        } catch(JSONException e){}
+        return new MemObj("userAttributes", obj);
+    }
 }

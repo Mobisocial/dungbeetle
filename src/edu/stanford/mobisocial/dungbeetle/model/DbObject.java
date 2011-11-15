@@ -440,7 +440,7 @@ public class DbObject implements Obj {
     }
 
     @Override
-    public Integer getIntKey() {
+    public Integer getInt() {
         return mIntKey;
     }
 }
