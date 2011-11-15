@@ -12,7 +12,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 
-public class FriendAcceptObj extends DbEntryHandler implements UnprocessedMessageHandler {
+public class FriendAcceptObj extends DbEntryHandler {
     public static final String TYPE = "friend_accept";
     public static final String URI = "uri";
 
@@ -34,20 +34,18 @@ public class FriendAcceptObj extends DbEntryHandler implements UnprocessedMessag
         return obj;
     }
 
-    public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
-
-    }
-
     /**
      * Inserts a friend into the list of contacts based on a received
      * DungBeetle message, typically sent in response to peer accepting
      * a friend request.
      */
     @Override
-    public Pair<JSONObject, byte[]> handleUnprocessed(Context context, JSONObject msg) {
-        Uri uri = Uri.parse(msg.optString(URI));
+    public boolean handleObjFromNetwork(Context context, Contact contact,
+    		JSONObject obj) {
+        Uri uri = Uri.parse(obj.optString(URI));
         // TODO: prompt instead of auto-acccept?
-        FriendRequest.acceptFriendRequest(context, uri, true);
-        return null;
+        FriendRequest.acceptFriendRequest(context, uri);
+    	return false;
     }
+
 }

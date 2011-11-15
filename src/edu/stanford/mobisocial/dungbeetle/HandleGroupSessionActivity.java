@@ -24,11 +24,6 @@ public class HandleGroupSessionActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.handle_group);
 		Intent intent = getIntent();
-		final String scheme=intent.getScheme();
-		if (!HomeActivity.GROUP_SESSION_SCHEME.equals(scheme)) {
-		    Toast.makeText(this, "Failed to receive url :(", Toast.LENGTH_SHORT).show();
-		    return;
-		}
 
 		final Uri uri = intent.getData();
 		if(uri == null) {

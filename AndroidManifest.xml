@@ -44,15 +44,15 @@
       </intent-filter>
 
       <intent-filter android:priority="100">
-	<action android:name="android.intent.action.VIEW" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
+		<action android:name="android.intent.action.VIEW" />
+		<category android:name="android.intent.category.DEFAULT" />
+		<data android:scheme="musubi"/>
       </intent-filter>
 
       <intent-filter android:priority="100">
     <action android:name="android.nfc.action.NDEF_DISCOVERED" />
     <category android:name="android.intent.category.DEFAULT" />
-    <data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/musubi" />
+    <data android:scheme="musubi"/>
       </intent-filter>
  
     </activity>
@@ -105,7 +105,7 @@
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<category android:name="android.intent.category.BROWSABLE" />
-	<data android:scheme="db-share-contact" android:host="dungbeetle" />
+	<data android:scheme="musubi" android:host="dungbeetle" />
       </intent-filter>
     </activity>
 
@@ -204,21 +204,7 @@
             android:label="@string/title_nearby"
             android:noHistory="true"
             />
-
-    <activity
-	android:label="DungBeetle"
-	android:name="edu.stanford.mobisocial.dungbeetle.WebContentHandler">
-      
-      <!-- See DungBeetleActivity. Sorry!
-      <intent-filter>
-	<action android:name="android.intent.action.VIEW" />
-	<category android:name="android.intent.category.DEFAULT" />
-	<data android:scheme="http" android:host="mobisocial.stanford.edu" android:pathPrefix="/dungbeetle" />
-      </intent-filter>
-      -->
-    </activity>
-    
-    
+   
     
     <activity android:name="edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity"
 	      android:label="Group Session Invite"
@@ -234,13 +220,13 @@
 	<action android:name="android.intent.action.VIEW" />
 	<category android:name="android.intent.category.DEFAULT" />
 	<category android:name="android.intent.category.BROWSABLE" />
-	<data android:scheme="dungbeetle-group-session"/>
+	<data android:scheme="musubi" android:host="group" android:pathPrefix="/invite"/>
       </intent-filter>
 
       <intent-filter>
 	<action android:name="android.nfc.action.NDEF_DISCOVERED" />
 	<category android:name="android.intent.category.DEFAULT" />
-	<data android:scheme="dungbeetle-group-session"/>
+    <data android:scheme="musubi" android:host="group" android:pathPrefix="/invite"/>
       </intent-filter>
 
     </activity>

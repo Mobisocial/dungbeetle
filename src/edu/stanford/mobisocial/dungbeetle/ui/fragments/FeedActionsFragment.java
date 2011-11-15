@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +40,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.PickContactsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.Group.InvalidGroupParameters;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -81,9 +85,19 @@ public class FeedActionsFragment extends Fragment {
         mDualPane = getArguments().getBoolean(FeedViewFragment.ARG_DUAL_PANE, false);
 
         Group g = Group.forFeedName(getActivity(), mFeedUri.getLastPathSegment());
+        DBHelper dbh = DBHelper.getGlobal(getActivity());
+        DBIdentityProvider idp = new DBIdentityProvider(dbh);
+        RSAPublicKey me = idp.userPublicKey();
+        idp.close();
+        dbh.close();
         if(g != null) {
             mGroupName = g.name;
-            mExternalFeedUri = Uri.parse(g.dynUpdateUri);
+            try {
+				mExternalFeedUri = Group.makeUriForInvite(g.name, new RSAPublicKey[] {me}, g.pub, g.priv);
+			} catch (InvalidGroupParameters e) {
+				Toast.makeText(getActivity(), "failed to create group invite", Toast.LENGTH_SHORT).show();
+				Log.e(TAG, "failed to create group invite", e);
+			}
         }
     }
 
@@ -168,8 +182,7 @@ public class FeedActionsFragment extends Fragment {
 
     private void sendToExternalFriend() {
         Intent share = new Intent(Intent.ACTION_SEND);
-        share.putExtra(Intent.EXTRA_TEXT, "Join me in a Musubi thread: " +
-                ThreadRequest.getInvitationUri(getActivity(), mExternalFeedUri));
+        share.putExtra(Intent.EXTRA_TEXT, "Join me in a Musubi thread: " + mExternalFeedUri);
         share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
         share.setType("text/plain");
         startActivity(share);
@@ -202,8 +215,7 @@ public class FeedActionsFragment extends Fragment {
         Intent qrIntent = new Intent(Intents.Encode.ACTION);
         qrIntent.setClass(getActivity(), EncodeActivity.class);
         qrIntent.putExtra(Intents.Encode.TYPE, Contents.Type.TEXT);
-        qrIntent.putExtra(Intents.Encode.DATA, ThreadRequest.getInvitationUri(
-                getActivity(), mExternalFeedUri).toString());
+        qrIntent.putExtra(Intents.Encode.DATA, mExternalFeedUri);
         startActivity(qrIntent);
     }
 

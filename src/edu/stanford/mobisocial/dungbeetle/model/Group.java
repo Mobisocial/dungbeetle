@@ -17,6 +17,8 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class Group{
@@ -170,7 +172,7 @@ public class Group{
      */
     public static Uri makeUriForInvite(final String human, final RSAPublicKey members[], 
     		final RSAPublicKey name, final RSAPrivateKey owner)  throws InvalidGroupParameters {
-    	Uri uri = Uri.parse("musubi://group/invite");
+    	Uri uri = Uri.parse(HomeActivity.SCHEME + ThreadRequest.PREFIX_JOIN);
     	Uri.Builder b = uri.buildUpon();
     	b.appendQueryParameter("human", human);
     	;

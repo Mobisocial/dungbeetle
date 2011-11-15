@@ -102,6 +102,7 @@ public class GroupControlObj extends DbEntryHandler {
 							Log.e(TAG, "adding member to friends list failed!");
 							return false;
 						}
+				        Helpers.insertSubscriber(context, new_member.id, "friend");
 						//since we added this member then they won't have a profile already
 			        	LinkedList<Contact> contacts = new LinkedList<Contact>();
 			        	contacts.add(new_member);
@@ -202,6 +203,7 @@ public class GroupControlObj extends DbEntryHandler {
 					//horrible internal failure
 					continue;
 				}
+		        Helpers.insertSubscriber(context, new_member.id, "friend");
 				//in this case, the new members won't yet have our key, so we 
 				//can't send them a profile.  we wait for them to add us and ask for the profile
 			}

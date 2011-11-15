@@ -35,7 +35,7 @@ public class HandleNfcContact extends Activity {
 		mutualFriendsButton.setVisibility(View.GONE);
 
 		if (uri != null && 
-		        (uri.getScheme().equals(HomeActivity.SHARE_SCHEME) ||
+		        (uri.getScheme().equals(HomeActivity.SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
 			
 	        mEmail = uri.getQueryParameter("email");
@@ -56,7 +56,7 @@ public class HandleNfcContact extends Activity {
             TextView nameView = (TextView)findViewById(R.id.name_text);
             nameView.setText("Would you like to be friends with " + mName + "?");
 
-            final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri, false);
+            final long cid = FriendRequest.acceptFriendRequest(HandleNfcContact.this, uri);
 		    saveButton.setOnClickListener(new OnClickListener() {
 				    public void onClick(View v) {
                         DBHelper helper = DBHelper.getGlobal(HandleNfcContact.this);
@@ -71,7 +71,7 @@ public class HandleNfcContact extends Activity {
 
                         // If asymmetric friend request, send public key.
                         if (!NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
-                            FriendRequest.sendFriendRequest(HandleNfcContact.this, cid, uri.getQueryParameter("cap"));
+                            FriendRequest.sendFriendRequest(HandleNfcContact.this, cid, uri);
                         }
 
                         Toast.makeText(HandleNfcContact.this, "Added " + mName + " as a friend.", Toast.LENGTH_SHORT).show();

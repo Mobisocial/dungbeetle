@@ -50,12 +50,9 @@ import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 public class HomeActivity extends MusubiBaseActivity {
     public static final boolean DBG = true;
     public static final String TAG = "DungBeetleActivity";
-    public static final String SHARE_SCHEME = "db-share-contact";
-    public static final String GROUP_SESSION_SCHEME = "dungbeetle-group-session";
-    public static final String GROUP_SCHEME = "dungbeetle-group";
-    public static final String AUTO_UPDATE_URL_BASE = "http://mobisocial.stanford.edu/files";
-    public static final String AUTO_UPDATE_METADATA_FILE = "dungbeetle_version.json";
-    public static final String AUTO_UPDATE_APK_FILE = "dungbeetle-debug.apk";
+    public static final String SCHEME = "musubi";
+    public static final String FRIEND_INVITE_BASE = "musubi://friend/invite";
+    public static final String GROUP_SESSION_BASE = "musubi://group/invite";
 
     public static final String PREFS_NAME = "DungBeetlePrefsFile";
     
@@ -259,15 +256,16 @@ public class HomeActivity extends MusubiBaseActivity {
             Log.w(TAG, "Null uri scheme for " + uri);
         }
         
-        if(uri.getScheme().equals(SHARE_SCHEME)
-                || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.setClass(this, HandleNfcContact.class);
-            startActivity(intent);
-        } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
-            Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
-            intent.setData(uri);
-            startActivity(intent);
+        if(uri.getScheme().equals(SCHEME)) {
+        	if(uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
+	            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+	            intent.setClass(this, HandleNfcContact.class);
+	            startActivity(intent);
+        	} else if(uri.getSchemeSpecificPart().startsWith(ThreadRequest.PREFIX_JOIN)) {
+        		Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
+	            intent.setData(uri);
+	            startActivity(intent);
+        	}
         } else if (uri.getScheme().equals("content")) {
             if (uri.getAuthority().equals("vnd.mobisocial.db")) {
                 if (uri.getPath().startsWith("/feed")) {
@@ -281,8 +279,6 @@ public class HomeActivity extends MusubiBaseActivity {
                     return;
                 }
     		}
-        } else if  (!acceptInboundContactInfo()) {
-            Toast.makeText(this, "Unrecognized uri scheme: " + uri.getScheme(), Toast.LENGTH_SHORT).show();
         }
 
         // Re-push the contact info ndef
@@ -319,26 +315,6 @@ public class HomeActivity extends MusubiBaseActivity {
     	Uri uri = FriendRequest.getInvitationUri(this);
     	if (DBG) Log.w(TAG, "pushing " + uri.toString());
         mNfc.share(NdefFactory.fromUri(uri));
-    }
-
-    public boolean acceptInboundContactInfo() {
-        if (getIntent().getData() == null) {
-            // TODO: convert if(getFoo().doBar()) into if (getFoo() != null && getFoo().doBar())
-            return false;
-        }
-        if (getIntent().getData().getAuthority().equals("mobisocial.stanford.edu")) {
-            Uri uri = getIntent().getData();
-            List<String> segments = uri.getPathSegments();
-            if (segments.contains("join")) {
-                FriendRequest.acceptFriendRequest(this, getIntent().getData(), false);
-                return true;
-            } else if (segments.contains("thread")) {
-                ThreadRequest.acceptThreadRequest(this, getIntent().getData());
-                return true;
-            }
-            // TODO, update bigtime
-        }
-        return false;
     }
 
     @Override
