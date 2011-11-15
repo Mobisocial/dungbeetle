@@ -490,7 +490,12 @@ public class DungBeetleContentProvider extends ContentProvider {
                     segs.get(0), projection, selection, selectionArgs, null, null, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/" + segs.get(0)));
             return c;
-        } else{
+        } else if (match(uri, "users"))  {
+            if(!realAppId.equals(SUPER_APP_ID)) return null;
+            Cursor c = mHelper.getReadableDatabase().query(
+                    Contact.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            return c;
+        } else {
             Log.d(TAG, "Unrecognized query: " + uri);
             return null;
         }

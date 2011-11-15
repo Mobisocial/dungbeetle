@@ -68,6 +68,7 @@ public class App extends Application {
         int oldVersion = prefs.getInt(PREF_POSI_VERSION, 0);
         if (oldVersion <= POSI_VERSION) {
             Obj updateObj = ProfileObj.getLocalProperties(this);
+            Log.d(TAG, "Broadcasting new profile attributes: " + updateObj.getJson());
             Helpers.sendToEveryone(this, updateObj);
         }
 	}

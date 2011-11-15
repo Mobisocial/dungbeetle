@@ -278,6 +278,7 @@ public class MessagingManagerThread extends Thread {
 
     @Override
     public void run() {
+        ProfileScanningObjHandler profileScanningObjHandler = new ProfileScanningObjHandler();
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         Set<Long> notSendingObjects = new HashSet<Long>();
         if (DBG) Log.i(TAG, "Running...");
@@ -288,7 +289,7 @@ public class MessagingManagerThread extends Thread {
             mOco.clearChanged();
             Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {
-                Log.i(TAG, objs.getCount() + " objects...");
+                Log.i(TAG, "Sending " + objs.getCount() + " objects...");
                 if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
@@ -335,13 +336,16 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
+                        DbObj signedObj = App.instance().getMusubi().objForId(objId);
                         DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
-                            DbObj signedObj = App.instance().getMusubi().objForId(objId);
                             ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
                         }
+                        // TODO: Constraint error thrown for now b/c local user not in contacts
+                        profileScanningObjHandler.handleObj(mContext, h, signedObj);
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
+                    if (DBG) Log.d(TAG, "Sending to: " + to);
                     if (to != null) {
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending direct message " + m);

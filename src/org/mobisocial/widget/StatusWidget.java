@@ -74,6 +74,9 @@ public class StatusWidget extends AppWidgetProvider {
             PendingIntent pendingIntent;
             if (c.moveToFirst()) {
                 DbObj obj = App.instance().getMusubi().objForCursor(c);
+                if (obj == null || obj.getSender() == null) {
+                    return null;
+                }
                 status = obj.getSender().getName() + ": " +
                         obj.getJson().optString(StatusObj.TEXT);
 

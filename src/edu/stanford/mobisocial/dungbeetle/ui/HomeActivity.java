@@ -35,6 +35,7 @@ import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.NearbyActivity;
 import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
@@ -435,7 +436,7 @@ public class HomeActivity extends MusubiBaseActivity {
                 break;
             case R.id.home_btn_nearby:
                 Intent launch = new Intent();
-                launch.setClass(this, NearbyGroupsActivity.class);
+                launch.setClass(this, NearbyActivity.class);
                 startActivity(launch);
                 break;
             default:
