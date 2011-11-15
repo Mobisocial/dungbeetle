@@ -102,6 +102,9 @@ public class Contact implements Serializable {
     private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
     static {
         sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
+        sWellKnownAttrs.add(Contact.ATTR_BT_MAC);
+        sWellKnownAttrs.add(Contact.ATTR_BT_CORRAL_UUID);
+        sWellKnownAttrs.add(Contact.ATTR_PROTOCOL_VERSION);
     }
 
     public static boolean isWellKnownAttribute(String attr) {
