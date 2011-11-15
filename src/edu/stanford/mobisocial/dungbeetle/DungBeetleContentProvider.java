@@ -556,6 +556,8 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     private String getCallingActivityId(){
         int pid = Binder.getCallingPid();
+        if(pid == android.os.Process.myPid())
+        	return SUPER_APP_ID;
         ActivityManager am = (ActivityManager) 
             getContext().getSystemService(Activity.ACTIVITY_SERVICE); 
         List<ActivityManager.RunningAppProcessInfo> lstAppInfo = 

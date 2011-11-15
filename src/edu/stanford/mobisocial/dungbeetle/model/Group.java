@@ -132,6 +132,7 @@ public class Group{
         RSAPublicKey[] members = new RSAPublicKey[1];
         members[0] = ident.userPublicKey();
         ident.close();
+        helper.close();
         Uri invitation;
 		try {
 			invitation = makeUriForInvite(groupName, members, pub, priv);
