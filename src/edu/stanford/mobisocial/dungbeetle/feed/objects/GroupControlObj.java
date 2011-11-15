@@ -4,6 +4,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -122,7 +123,7 @@ public class GroupControlObj extends DbEntryHandler {
 								String public_key_hash_string = joiner_known_members.getString(i);
 								known_members.remove(public_key_hash_string);
 							} catch(JSONException e) {
-								Log.e(TAG, "group control member array parsing error", e);
+								Log.e(TAG, "group control request member array parsing error", e);
 							}
 						}
 					}
@@ -135,6 +136,62 @@ public class GroupControlObj extends DbEntryHandler {
 					cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
 					dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 				} else {
+					//now compare our membership list with theirs
+					JSONArray peer_new_members = obj.optJSONArray(NEW_MEMBERS);
+					
+					//make a list of all the new members that we don't already know about
+					List<RSAPublicKey> new_members = new LinkedList<RSAPublicKey>();
+					if(peer_new_members != null) {
+						for(int i = 0; i < peer_new_members.length(); ++i) {
+							try {
+								String public_key_string = peer_new_members.getString(i);
+								String public_key_hash_string = Util.SHA1(FastBase64.decode(public_key_string));
+								if(!known_members.containsKey(public_key_hash_string)) {
+									RSAPublicKey key = DBIdentityProvider.publicKeyFromString(public_key_string);
+									new_members.add(key);
+									known_members.put(public_key_hash_string, key);
+								}
+							} catch(JSONException e) {
+								Log.e(TAG, "group control response member array parsing error", e);
+							}
+						}
+					}
+					//no real ack required
+					if(new_members.isEmpty())
+						return false;
+					
+					for(RSAPublicKey k : new_members) {
+						String person_id = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(k);
+						Contact new_member = dbh.contactForPersonId(person_id);
+						if(new_member == null) {
+					        Uri uri = Helpers.insertContact(context, obj.getString(REPLY_TO), "New Group Member", "new@group.member");
+							new_member = dbh.contactForPersonId(person_id);
+							if(new_member == null) {
+								Toast.makeText(context, "Failure adding friend for group join response", Toast.LENGTH_SHORT).show();
+								Log.e(TAG, "adding member to friends list failed on response!");
+								//we just try the next option even though this shouldn't happen sans 
+								//horrible internal failure
+								continue;
+							}
+							//in this case, the new members won't yet have our key, so we 
+							//can't send them a profile.  we wait for them to add us and ask for the profile
+						}
+						//add the member to the group now that we know they are a contact
+						//HMM... wtf is the id in group
+						Helpers.insertGroupMember(context, g.id, new_member.id, new_member.personId);
+						
+						//post the join message to the feed with our new view of the membership
+						DBIdentityProvider idp = new DBIdentityProvider(dbh);
+						try {
+							ContentValues cv = new ContentValues();
+							cv.put(DbObject.JSON, json(idp.userPublicKey(), known_members.values()).toString());
+							cv.put(DbObject.TYPE, TYPE);
+							cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
+							dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
+						} finally {
+							idp.close();
+						}
+					}
 					
 				}
 			} finally {
