@@ -223,7 +223,7 @@ public class Group{
 	    	try {
 	    		gp.owner = DBIdentityProvider.privateKeyFromString(owner_string);
 	    	} catch(Exception e) {
-	    		throw new InvalidGroupUri("group uri had bad public key", e);
+	    		throw new InvalidGroupUri("group uri had bad private key", e);
 	    	}
     	}
     	

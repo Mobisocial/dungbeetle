@@ -57,7 +57,7 @@ public class FriendRequest {
 	        PublicKey pubKey = ident.userPublicKey();
 	        helper.close();
 	
-	        Uri uri = Uri.parse(HomeActivity.SCHEME + FriendRequest.PREFIX_JOIN);
+	        Uri uri = Uri.parse(HomeActivity.SCHEME + ":" + FriendRequest.PREFIX_JOIN);
 	        Uri.Builder b = uri.buildUpon();
             b.appendQueryParameter("email", email);
             b.appendQueryParameter("public", DBIdentityProvider.publicKeyToString(pubKey));
