@@ -125,7 +125,7 @@ public class Group{
 
     public static Group create(Context context, String groupName) {
         KeyPair kp = DBIdentityProvider.generateKeyPair();
-        RSAPublicKey pub = (RSAPublicKey)kp.getPrivate();
+        RSAPublicKey pub = (RSAPublicKey)kp.getPublic();
         RSAPrivateKey priv = (RSAPrivateKey)kp.getPrivate();
         DBHelper helper = DBHelper.getGlobal(context);
         DBIdentityProvider ident = new DBIdentityProvider(helper);
