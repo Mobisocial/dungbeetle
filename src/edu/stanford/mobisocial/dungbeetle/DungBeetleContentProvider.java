@@ -471,6 +471,13 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "members", ".+")) {
+            if (match(uri, "members", "friend")) {
+                // TODO: This is a hack so we can us SocialKit
+                // to get the sender of a mass message.
+                if(!realAppId.equals(SUPER_APP_ID)) return null;
+                return mHelper.getReadableDatabase().query(Contact.TABLE, projection,
+                        selection, selectionArgs, null, null, sortOrder);
+            }
             String feedName = segs.get(1);
             Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, feedName, realAppId);
             c.setNotificationUri(resolver, uri);

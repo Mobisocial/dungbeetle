@@ -73,7 +73,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 56;
+	public static final int VERSION = 57;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -362,6 +362,10 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 55) {
             db.execSQL("ALTER TABLE " + DbObj.TABLE + " ADD COLUMN " + DbObj.COL_KEY_INT + " INTEGER");
         }
+        if (oldVersion <= 56) {
+            db.execSQL("DROP INDEX attrs_by_contact_id");
+            createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
+        }
         db.setVersion(VERSION);
     }
 
@@ -528,7 +532,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	        colDefs[j++] = colTypes[i];
 	    }
 	    createTable(db, DbContactAttributes.TABLE, null, colDefs);
-        createIndex(db, "UNIQUE INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
+        createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
 	}
 
 	private final void addRelationIndexes(SQLiteDatabase db) {

@@ -30,7 +30,7 @@ public class ProfileScanningObjHandler implements IObjHandler {
             String attr = iter.next();
             try {
                 if (Contact.isWellKnownAttribute(attr)) {
-                    if (DBG) Log.d(TAG, "Inserting attribute " + attr);
+                    if (DBG) Log.d(TAG, "Inserting attribute " + attr + " for " + obj.getSender());
                     String val = json.getString(attr);
                     DbContactAttributes.update(context, obj.getSender().getLocalId(), attr, val);
                 }

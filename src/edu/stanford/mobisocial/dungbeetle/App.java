@@ -63,13 +63,14 @@ public class App extends Application {
         secureRandom = new SecureRandom();
         mMusubi = Musubi.getInstance(getApplicationContext());
 
-        // Hello, Friends
+        // Sync profile information.
         SharedPreferences prefs = getSharedPreferences("main", 0);
         int oldVersion = prefs.getInt(PREF_POSI_VERSION, 0);
         if (oldVersion <= POSI_VERSION) {
             Obj updateObj = ProfileObj.getLocalProperties(this);
             Log.d(TAG, "Broadcasting new profile attributes: " + updateObj.getJson());
             Helpers.sendToEveryone(this, updateObj);
+            prefs.edit().putInt(PREF_POSI_VERSION, POSI_VERSION).commit();
         }
 	}
 
