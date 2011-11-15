@@ -152,19 +152,23 @@ public class Helpers {
             final Collection<Contact> contacts,
             final DbObject obj) {
     	
-    	sendMessage(c, contacts, obj, null);
+    	sendMessage(c, contacts, obj, null, null);
     }
     @Deprecated
     public static void sendMessage(final Context c,
                                    final Collection<Contact> contacts,
                                    final DbObject obj, 
-                                   final RSAPrivateKey send_as) {
+                                   final RSAPrivateKey send_as,
+                                   final RSAPublicKey send_for) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         ContentValues values = new ContentValues();
         values.put(DbObject.JSON, obj.getJson().toString());
         values.put(DbObject.TYPE, obj.getType());
         if(send_as != null) {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
+        }
+        if(send_for != null) {
+        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
         }
         byte[] raw = obj.getRaw();
         if (raw != null) {
@@ -212,14 +216,14 @@ public class Helpers {
     }
 
     public static Uri sendToFeed(Context c, DbObject obj, Uri feed) {
-        return sendToFeed(c, obj, feed, null);
+        return sendToFeed(c, obj, feed, null, null);
     }
 
     /**
      * @see Helpers#sendToFeed(Context, Obj, Uri)
      */
     @Deprecated
-    public static Uri sendToFeed(Context c, DbObject obj, Uri feed, RSAPrivateKey send_as) {
+    public static Uri sendToFeed(Context c, DbObject obj, Uri feed, RSAPrivateKey send_as, RSAPublicKey send_for) {
         ContentValues values = new ContentValues();
 
         values.put(DbObject.TYPE, obj.getType());
@@ -239,6 +243,9 @@ public class Helpers {
         if(send_as != null) {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
         }
+        if(send_for != null) {
+        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
+        }
         return c.getContentResolver().insert(feed, values);
     }
 
@@ -246,7 +253,7 @@ public class Helpers {
     	return sendToFeed(c, obj, feed);
     }
     
-    public static Uri sendToFeed(Context c, Obj obj, Uri feed, RSAPrivateKey send_as) {
+    public static Uri sendToFeed(Context c, Obj obj, Uri feed, RSAPrivateKey send_as, RSAPublicKey send_for) {
         ContentValues values = new ContentValues();
         values.put(DbObject.TYPE, obj.getType());
         Object value = obj.getJson().toString();
@@ -259,6 +266,9 @@ public class Helpers {
         }
         if(send_as != null) {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
+        }
+        if(send_for != null) {
+        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
         }
         return c.getContentResolver().insert(feed, values);
     }

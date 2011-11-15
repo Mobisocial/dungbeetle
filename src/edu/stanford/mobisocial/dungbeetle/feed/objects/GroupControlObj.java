@@ -135,6 +135,7 @@ public class GroupControlObj extends DbEntryHandler {
 					cv.put(DbObject.JSON, json(known_members.values()).toString());
 					cv.put(DbObject.TYPE, TYPE);
 					cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
+					cv.put(DbObject.SEND_FOR, DBIdentityProvider.publicKeyToString(g.pub));
 					dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 				} else {
 					//now compare our membership list with theirs
@@ -213,6 +214,7 @@ public class GroupControlObj extends DbEntryHandler {
 			cv.put(DbObject.JSON, json(idp.userPublicKey(), known_members).toString());
 			cv.put(DbObject.TYPE, TYPE);
 			cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
+			cv.put(DbObject.SEND_FOR, DBIdentityProvider.publicKeyToString(g.pub));
 			dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 		}
 	}

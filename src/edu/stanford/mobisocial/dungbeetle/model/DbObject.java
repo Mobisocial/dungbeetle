@@ -80,6 +80,7 @@ public class DbObject implements Obj {
 	public static final String RAW = DbObj.COL_RAW;
 	public static final String KEY_INT = DbObj.COL_KEY_INT;
 	public static final String SEND_AS = "send_as";
+	public static final String SEND_FOR = "send_for";
 
 	protected final String mType;
     protected JSONObject mJson;

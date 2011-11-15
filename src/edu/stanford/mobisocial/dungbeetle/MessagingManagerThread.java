@@ -407,6 +407,7 @@ public class MessagingManagerThread extends Thread {
         protected byte[] mRaw;
         protected boolean mDeleteOnCommit;
         protected RSAPrivateKey mSendAs;
+        protected RSAPublicKey mSendFor;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
             DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
@@ -414,6 +415,10 @@ public class MessagingManagerThread extends Thread {
             byte[] key = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.SEND_AS));
             if(key != null) { 
             	mSendAs = DBIdentityProvider.privateKeyFromByteArray(key);
+            }
+            key = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.SEND_FOR));
+            if(key != null) { 
+            	mSendFor = DBIdentityProvider.publicKeyFromByteArray(key);
             }
         }
 		@Override
@@ -492,6 +497,8 @@ public class MessagingManagerThread extends Thread {
             subs.close();
 
             mPubKeys = mIdent.publicKeysForContactIds(ids);
+            if(mSendFor != null)
+            	mPubKeys.add(mSendFor);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
 				mJson = json;
@@ -513,6 +520,8 @@ public class MessagingManagerThread extends Thread {
                 Log.w(TAG, "Bad destination found: '" + to + "'");
                 mPubKeys = new ArrayList<RSAPublicKey>();
             }
+            if(mSendFor != null)
+            	mPubKeys.add(mSendFor);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
 				mJson = json;
