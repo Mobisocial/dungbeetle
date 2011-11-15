@@ -8,6 +8,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -20,6 +21,7 @@ import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+import edu.stanford.mobisocial.dungbeetle.util.Util;
 
 public class Group{
 	private static final String TAG = "Group";
@@ -127,23 +129,14 @@ public class Group{
         KeyPair kp = DBIdentityProvider.generateKeyPair();
         RSAPublicKey pub = (RSAPublicKey)kp.getPublic();
         RSAPrivateKey priv = (RSAPrivateKey)kp.getPrivate();
-        DBHelper helper = DBHelper.getGlobal(context);
-        DBIdentityProvider ident = new DBIdentityProvider(helper);
-        RSAPublicKey[] members = new RSAPublicKey[1];
-        members[0] = ident.userPublicKey();
-        ident.close();
-        helper.close();
-        Uri invitation;
-		try {
-			invitation = makeUriForInvite(groupName, members, pub, priv);
-	        Uri gUri = Helpers.insertGroup(context, invitation);
-	        long id = Long.valueOf(gUri.getLastPathSegment());
-	        return Group.forId(context, id);
-		} catch (InvalidGroupParameters e) {
-			Toast.makeText(context, "Failed to create group invitation on group create", Toast.LENGTH_SHORT).show();
-			Log.e(TAG, "failed to create group", e);
-			return null;
-		}
+		ContentValues cv = new ContentValues();
+		cv.put(Group.FEED_NAME, Util.SHA1(pub.getEncoded()));
+        cv.put(Group.NAME, groupName);
+        cv.put(Group.PUBLIC_KEY, pub.getEncoded());
+        cv.put(Group.PRIVATE_KEY, priv.getEncoded());
+        Uri gUri = Helpers.insertGroup(context, cv);
+        long id = Long.valueOf(gUri.getLastPathSegment());
+        return Group.forId(context, id);
     }
 
     /**

@@ -96,10 +96,8 @@ public class Helpers {
         return c.getContentResolver().insert(url, values);
     }
 
-    public static Uri insertGroup(final Context c, Uri invitation) {
-        assert (invitation != null);
-        ContentValues values = new ContentValues();
-        values.put("invitation", invitation.toString());
+    public static Uri insertGroup(final Context c, ContentValues values) {
+        assert (values != null);
         return c.getContentResolver().insert(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), values);
     }
