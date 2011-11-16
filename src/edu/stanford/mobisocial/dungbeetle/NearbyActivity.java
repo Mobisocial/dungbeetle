@@ -44,6 +44,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
@@ -51,6 +52,7 @@ public class NearbyActivity extends ListActivity {
     ArrayList<NearbyItem> mGroupList = new ArrayList<NearbyItem>();
     
     String TAG = "Nearby";
+    private static final boolean DBG = true;
     private static final int RESULT_BT_ENABLE = 1;
 
     private NearbyAdapter mAdapter;
@@ -61,6 +63,13 @@ public class NearbyActivity extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nearby);
+        findViewById(R.id.go).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scanNearby();
+            }
+        });
+        MusubiBaseActivity.doTitleBar(this, "Nearby");
         mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mGroupList);
         setListAdapter(mAdapter);
         scanNearby();
@@ -107,7 +116,7 @@ public class NearbyActivity extends ListActivity {
             while (!mmLocationScanComplete) {
                 synchronized (mmLocationResult) {
                     try {
-                        Log.d(TAG, "Waiting for location results...");
+                        if (DBG) Log.d(TAG, "Waiting for location results...");
                         mmLocationResult.wait();
                     } catch (InterruptedException e) {}
                 }
@@ -122,13 +131,14 @@ public class NearbyActivity extends ListActivity {
                     mGroupList.add(i);
                 }
             }
+            Log.d(TAG, "I so updated, " + mGroupList.size());
             mAdapter.notifyDataSetChanged();
         }
 
         private final MyLocation.LocationResult mmLocationResult = new MyLocation.LocationResult() {
             @Override
             public void gotLocation(final Location location) {
-                Log.d(TAG, "got location, searching for nearby feeds...");
+                if (DBG) Log.d(TAG, "got location, searching for nearby feeds...");
                 if (isCancelled()) {
                     synchronized (mmLocationResult) {
                         mmLocationResult.notify();
@@ -175,7 +185,8 @@ public class NearbyActivity extends ListActivity {
 
                     String response = sb.toString();
                     JSONArray groupsJSON = new JSONArray(response);
-                    List<NearbyItem> results = new ArrayList<NearbyItem>();
+                    List<NearbyItem> results = new ArrayList<NearbyItem>(groupsJSON.length());
+                    if (DBG) Log.d(TAG, "Got " + groupsJSON.length() + " groups");
                     for (int i = 0; i < groupsJSON.length(); i++) {
                         JSONObject group = new JSONObject(groupsJSON.get(i).toString());
                         results.add(new NearbyItem(group.optString("group_name"), group.optString("feed_uri")));
@@ -187,6 +198,7 @@ public class NearbyActivity extends ListActivity {
                     }
                 }
                 catch(Exception e) {
+                    if (DBG) Log.d(TAG, "Error searching nearby feeds", e);
                 }
             }
         };
@@ -233,9 +245,10 @@ public class NearbyActivity extends ListActivity {
             mAdapter.notifyDataSetChanged();
         }
     }
-    
+
     private class NearbyItem {
         public String group_name, feed_uri;
+
         public NearbyItem(String name, String uri) {
             group_name = name;
             feed_uri = uri;

@@ -25,11 +25,21 @@
             android:onClick="onClickRefresh" />
     </LinearLayout>
 
+        <RelativeLayout android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    >
+        <Button android:id="@+id/go" 
+            android:text="Go"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true" />
         <EditText android:id="@+id/password"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:hint="Group passphrase..."/>
-
+            android:hint="Group passphrase..."
+            android:layout_toLeftOf="@id/go"/>
+</RelativeLayout>
     <ListView  
         android:id="@android:id/list"
         android:layout_width="fill_parent" 
