@@ -187,11 +187,15 @@ public class DBIdentityProvider implements IdentityProvider {
     }
 
     public static RSAPublicKey publicKeyFromString(String str){
+		if(str == null)
+			return null;
         byte[] pubKeyBytes = FastBase64.decode(str);
         return publicKeyFromByteArray(pubKeyBytes);
     }
 
     public static RSAPrivateKey privateKeyFromString(String str){
+		if(str == null)
+			return null;
         byte[] privKeyBytes = FastBase64.decode(str);
         return privateKeyFromByteArray(privKeyBytes);
     }
@@ -202,24 +206,30 @@ public class DBIdentityProvider implements IdentityProvider {
     	mHelper.close();
     }
 	public static RSAPublicKey publicKeyFromByteArray(byte[] pubKeyBytes) {
+		if(pubKeyBytes == null)
+			return null;
         try{
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
             return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
         }
         catch(Exception e){
-            throw new IllegalStateException("Error loading public key", e);
+            Log.e(TAG, "error parsing public key", e);
+            return null;
         }
 	}
 
 	public static RSAPrivateKey privateKeyFromByteArray(byte[] privKeyBytes) {
+		if(privKeyBytes == null)
+			return null;
         try{
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
             return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
         }
         catch(Exception e){
-            throw new IllegalStateException("Error loading private key", e);
+            Log.e(TAG, "error parsing private key", e);
+            return null;
         }
 	}
 }

@@ -49,31 +49,6 @@ public class Group{
     public final int version;
     public final RSAPublicKey pub;
     public final RSAPrivateKey priv;
-    
-    static RSAPublicKey createRSAPublicKeyFromByteArray(byte[] d) {
-    	if(d == null)
-    		return null;
-        try {
-	        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-	        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(d);
-			return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}                
-    }
-    static RSAPrivateKey createRSAPrivateKeyFromByteArray(byte[] d) {
-    	if(d == null)
-    		return null;
-        try {
-	        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-	        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(d);
-	        return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}                
-    }
 
     public Group(Cursor c){
         this(c.getLong(c.getColumnIndexOrThrow(_ID)),
@@ -81,8 +56,8 @@ public class Group{
              c.getString(c.getColumnIndexOrThrow(DYN_UPDATE_URI)),
              c.getString(c.getColumnIndexOrThrow(FEED_NAME)),
              c.getInt(c.getColumnIndexOrThrow(VERSION)),
-             createRSAPublicKeyFromByteArray(c.getBlob(c.getColumnIndexOrThrow(PUBLIC_KEY))),
-             createRSAPrivateKeyFromByteArray(c.getBlob(c.getColumnIndexOrThrow(PRIVATE_KEY)))
+             DBIdentityProvider.publicKeyFromByteArray(c.getBlob(c.getColumnIndexOrThrow(PUBLIC_KEY))),
+             DBIdentityProvider.privateKeyFromByteArray(c.getBlob(c.getColumnIndexOrThrow(PRIVATE_KEY)))
              );
     }
 
@@ -166,10 +141,12 @@ public class Group{
      */
     public static Uri makeUriForInvite(final String human, final RSAPublicKey members[], 
     		final RSAPublicKey name, final RSAPrivateKey owner)  throws InvalidGroupParameters {
+    	if(name == null) {
+    		throw new InvalidGroupParameters("group invitations must are only possible for keyed groups");
+    	}
     	Uri uri = Uri.parse(HomeActivity.SCHEME + ":" + ThreadRequest.PREFIX_JOIN);
     	Uri.Builder b = uri.buildUpon();
     	b.appendQueryParameter("human", human);
-    	;
     	b.appendQueryParameter("name", DBIdentityProvider.publicKeyToString(name));
     	//some time we may allow people to join groups without them being an owner
     	//this requires that the "ack" from the joiner must go back to one of the members

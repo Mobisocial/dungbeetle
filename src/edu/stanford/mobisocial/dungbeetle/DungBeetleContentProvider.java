@@ -256,7 +256,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             if(gp.owner != null)
             	cv.put(Group.PRIVATE_KEY, gp.owner.getEncoded());
             if(gp.name != null)
-            	cv.put(Group.PUBLIC_KEY, gp.owner.getEncoded());
+            	cv.put(Group.PUBLIC_KEY, gp.name.getEncoded());
 
             String table = DbObject.TABLE;
             String[] columns = new String[] { DbObject.FEED_NAME };
