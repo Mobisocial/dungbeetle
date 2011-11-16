@@ -272,6 +272,9 @@ public class Contact implements Serializable {
         public Bitmap getPicture() {
             return mPicture;
         }
-        
+
+        public Long getLocalId() {
+            return mLocalId;
+        }
     }
 }
