@@ -80,10 +80,6 @@
 	      android:label="Dungbeetle Status">
     </activity>
 
-    <activity android:name=".ui.ContactsActivity"
-	      android:label="@string/title_friends">
-    </activity>
-
     <provider android:name=".DungBeetleContentProvider"
 	      android:authorities="org.mobisocial.db" />
 
@@ -127,9 +123,6 @@
               android:taskAffinity=""></activity>         
     <activity android:name="DropboxBackupActivity" android:theme="@android:style/Theme.Dialog" ></activity> 
     <activity android:name="FeedActivity"  android:label="@string/title_group" ></activity> 
-    <activity android:name=".ui.ViewContactActivity"
-    	android:label="@string/title_profile" 
-    	android:windowSoftInputMode="stateHidden" /> 
     <activity android:name="AddGroupActivity"  android:label="@string/app_name" ></activity> 
     <activity android:name="FriendsActivity"  android:label="@string/title_friends" ></activity>
     <activity android:name="GroupsActivity"  android:label="@string/title_groups" ></activity> 
@@ -149,7 +142,9 @@
 		      <data android:mimeType="vnd.mobisocial.db/feed" />
 	      </intent-filter>
       </activity> 
-    <activity android:name="ViewContactActivity"  android:label="@string/title_friend" >
+    <activity android:name=".ui.ViewContactActivity"
+    	android:label="@string/title_profile" 
+    	android:windowSoftInputMode="stateHidden">
        <intent-filter>
 	      <action android:name="android.intent.action.VIEW"/>
 	      <category android:name="android.intent.category.DEFAULT" />

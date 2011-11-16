@@ -57,7 +57,7 @@ public class NearbyActivity extends ListActivity {
 
     private NearbyAdapter mAdapter;
     private GpsScannerTask mGpsScanner;
-    //private BluetoothScannerTask mBtScanner;
+    private BluetoothScannerTask mBtScanner;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,15 +84,15 @@ public class NearbyActivity extends ListActivity {
     private void scanNearby() {
         if (mGpsScanner != null) {
             mGpsScanner.cancel(true);
-            //mBtScanner.cancel(true);
+            mBtScanner.cancel(true);
         }
 
         String password = ((EditText)findViewById(R.id.password)).getText().toString();
         mGpsScanner = new GpsScannerTask(password);
-        //mBtScanner = new BluetoothScannerTask();
+        mBtScanner = new BluetoothScannerTask();
 
         mGpsScanner.execute();
-        //mBtScanner.execute();
+        mBtScanner.execute();
     }
 
     private class GpsScannerTask extends AsyncTask<Void, Void, List<NearbyItem>> {
@@ -189,7 +189,8 @@ public class NearbyActivity extends ListActivity {
                     if (DBG) Log.d(TAG, "Got " + groupsJSON.length() + " groups");
                     for (int i = 0; i < groupsJSON.length(); i++) {
                         JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        results.add(new NearbyItem(group.optString("group_name"), group.optString("feed_uri")));
+                        results.add(new NearbyItem(group.optString("group_name"),
+                                Uri.parse(group.optString("feed_uri")), null));
                     }
                     mmResults = results;
                     mmLocationScanComplete = true;
@@ -215,10 +216,10 @@ public class NearbyActivity extends ListActivity {
 
             List<CursorUser> users = DbContactAttributes.getUsersWithAttribute(
                     NearbyActivity.this, Contact.ATTR_BT_CORRAL_UUID);
-            Log.d(TAG, "checking " + users.size() + " users to see who's nearby.");
+            if (DBG) Log.d(TAG, "checking " + users.size() + " users to see who's nearby.");
             String mac = null;
             for (CursorUser u : users) {
-                Log.d(TAG, "Checking " + u.getName());
+                if (DBG) Log.d(TAG, "Checking " + u.getName());
                 try {
                     long contactId = u.getLocalId();
                     mac = DbContactAttributes.getAttribute(
@@ -229,7 +230,8 @@ public class NearbyActivity extends ListActivity {
                     BluetoothSocket socket = BluetoothAdapter.getDefaultAdapter()
                             .getRemoteDevice(mac).createInsecureRfcommSocketToServiceRecord(uuid);
                     socket.close();
-                    publishProgress(new NearbyItem(u.getName(), "needFeedUriHere"));
+                    publishProgress(new NearbyItem(u.getName(),
+                            Contact.uriFor(contactId), Contact.MIME_TYPE));
                 } catch (IOException e) {
                     Log.d(TAG, "no connection for " + mac);
                 } catch (IllegalArgumentException e) {
@@ -247,11 +249,14 @@ public class NearbyActivity extends ListActivity {
     }
 
     private class NearbyItem {
-        public String group_name, feed_uri;
+        public final String name;
+        public final Uri feedUri;
+        public final String mimeType;
 
-        public NearbyItem(String name, String uri) {
-            group_name = name;
-            feed_uri = uri;
+        public NearbyItem(String name, Uri uri, String mimeType) {
+            this.name = name;
+            this.feedUri = uri;
+            this.mimeType = mimeType;
         }
     }
 
@@ -283,13 +288,12 @@ public class NearbyActivity extends ListActivity {
             }
             final NearbyItem g = nearby.get(position);
             TextView text = (TextView) row.findViewById(R.id.name_text);
-            text.setText(g.group_name);
+            text.setText(g.name);
 
             row.setOnClickListener(new OnClickListener() {
                 public void onClick(View arg0) {
-                    Log.w(TAG, g.feed_uri);
-                    Intent intent = new Intent(getApplicationContext(), HandleGroupSessionActivity.class);
-                    intent.setData(Uri.parse(g.feed_uri));
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(g.feedUri, g.mimeType);
                     startActivity(intent);
                 }
             });
@@ -324,7 +328,9 @@ public class NearbyActivity extends ListActivity {
                                             try {
                                                 JSONObject obj = new JSONObject(new String(data));
                                                 mGroupList.add(new NearbyItem(
-                                                        obj.getString("name"), obj.getString("dynuri")));
+                                                        obj.getString("name"),
+                                                        Uri.parse(obj.getString("dynuri")),
+                                                        null));
                                                 mAdapter.notifyDataSetChanged();
                                             } catch (JSONException e) {
                                                 Log.e(TAG, "Error getting group info over bluetooth", e);
