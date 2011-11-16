@@ -166,7 +166,7 @@ public class Group{
      */
     public static Uri makeUriForInvite(final String human, final RSAPublicKey members[], 
     		final RSAPublicKey name, final RSAPrivateKey owner)  throws InvalidGroupParameters {
-    	Uri uri = Uri.parse(HomeActivity.SCHEME + ThreadRequest.PREFIX_JOIN);
+    	Uri uri = Uri.parse(HomeActivity.SCHEME + ":" + ThreadRequest.PREFIX_JOIN);
     	Uri.Builder b = uri.buildUpon();
     	b.appendQueryParameter("human", human);
     	;
