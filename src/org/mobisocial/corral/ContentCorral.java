@@ -14,6 +14,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.UUID;
 
@@ -69,6 +71,7 @@ public class ContentCorral {
 
         mBluetoothAcceptThread = new BluetoothAcceptThread(adapter,
                 getLocalBluetoothServiceUuid(mContext));
+        mBluetoothAcceptThread.start();
     }
 
     /**
@@ -205,7 +208,9 @@ public class ContentCorral {
             // Create a new listening server socket
             try {
                 try {
-                    tmp = adapter.listenUsingInsecureRfcommWithServiceRecord(
+                    if (DBG) Log.d(TAG, "Bluetooth corral listening on " +
+                            adapter.getAddress() + ":" + coralUuid);
+                    tmp = adapter.listenUsingRfcommWithServiceRecord(
                             BT_CORRAL_NAME, coralUuid);
                 } catch (NoSuchMethodError e) {
                     // Let's not deal with pairing UI.
@@ -229,10 +234,9 @@ public class ContentCorral {
                 try {
                     // This is a blocking call and will only return on a
                     // successful connection or an exception
-                    // Log.d(TAG, "waiting for client...");
+                    if (DBG) Log.d(TAG, "Corral bluetooth server waiting for client...");
                     socket = mmServerSocket.accept();
-
-                    // Log.d(TAG, "Client connected!");
+                    if (DBG) Log.d(TAG, "Corral bluetooth server connected!");
                 } catch (SocketException e) {
                     Log.e(TAG, "accept() failed", e);
                     break;
@@ -593,7 +597,7 @@ public class ContentCorral {
         private final int BUFFER_LENGTH = 1024;
 
         public CorralConnectedThread(DuplexSocket socket) {
-            // Log.d(TAG, "create ConnectedThread");
+            if (DBG) Log.d(TAG, "create CorralConnectedThread");
 
             mmSocket = socket;
             InputStream tmpIn = null;
@@ -611,7 +615,7 @@ public class ContentCorral {
         }
 
         public void run() {
-            Log.d(TAG, "BEGIN mConnectedThread");
+            Log.d(TAG, "BEGIN CorralConnectedThread");
             byte[] buffer = new byte[BUFFER_LENGTH];
             int bytes;
 
@@ -620,6 +624,9 @@ public class ContentCorral {
 
             // Read header information, determine connection type
             try {
+                PosiServerProtocol protocol = new PosiServerProtocol(mmSocket);
+                CorralRequestHandler handler = protocol.getRequestHandler();
+
                 /**
                  * TODO: SNEP-like protocol here, for ObjEx.
                  * Remember, we have authenticated objs, ndef does not.
@@ -670,5 +677,60 @@ public class ContentCorral {
         }
         String uuidStr = prefs.getString(PREF_CORRAL_BT_UUID, null);
         return (uuidStr == null) ? null : UUID.fromString(uuidStr);
+    }
+
+    static class PosiServerProtocol {
+        public static final int POSI_MARKER = 0x504f5349;
+        public static final int POSI_VERSION = 0x01;
+
+        static SecureRandom sSecureRandom;
+        private final DuplexSocket mmDuplexSocket;
+
+        public PosiServerProtocol(DuplexSocket socket) {
+            if (sSecureRandom == null) {
+                sSecureRandom = new SecureRandom();
+            }
+            mmDuplexSocket = socket;
+        }
+
+        private byte[] getHeader() {
+            byte[] header = new byte[16];
+            ByteBuffer buffer = ByteBuffer.wrap(header);
+            buffer.putInt(POSI_MARKER);
+            buffer.putInt(POSI_VERSION);
+            buffer.putLong(sSecureRandom.nextLong());
+            return header;
+        }
+
+        // TODO:
+        public CorralRequestHandler getRequestHandler() throws IOException {
+            if (DBG) Log.d(TAG, "Getting request handler for posi session");
+            OutputStream out = mmDuplexSocket.getOutputStream();
+            byte[] header = getHeader();
+            if (DBG) Log.d(TAG, "Writing header " + new String(header));
+            out.write(header);
+            if (DBG) Log.d(TAG, "Flushing header bytes");
+            out.flush();
+            if (DBG) Log.d(TAG, "Done writing header.");
+            /**
+             * TODO:
+             * SignedObj obj = ObjDecoder.decode(readObj())
+             * Authenticate signer and select protocol.
+             *   Authentication verifies nonce and ensures timestamp is more
+             *   recent than the users' last transmitted obj's timestamp.
+             */
+            return new NonceRequestHandler();
+        }
+    }
+
+    /**
+     * The trivial request handler that sends a nonce and hangs up.
+     *
+     */
+    static class NonceRequestHandler implements CorralRequestHandler {
+        // Does nothing.
+    }
+
+    interface CorralRequestHandler {
     }
 }

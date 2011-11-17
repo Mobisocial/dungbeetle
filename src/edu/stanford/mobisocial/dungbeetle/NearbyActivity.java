@@ -52,7 +52,7 @@ public class NearbyActivity extends ListActivity {
     ArrayList<NearbyItem> mGroupList = new ArrayList<NearbyItem>();
     
     String TAG = "Nearby";
-    private static final boolean DBG = true;
+    private boolean DBG = true;
     private static final int RESULT_BT_ENABLE = 1;
 
     private NearbyAdapter mAdapter;
@@ -69,6 +69,7 @@ public class NearbyActivity extends ListActivity {
                 scanNearby();
             }
         });
+        DBG = MusubiBaseActivity.isDeveloperModeEnabled(this);
         MusubiBaseActivity.doTitleBar(this, "Nearby");
         mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mGroupList);
         setListAdapter(mAdapter);
@@ -210,8 +211,8 @@ public class NearbyActivity extends ListActivity {
         @Override
         protected Void doInBackground(Void... params) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD_MR1) {
-                Log.w(TAG, "insecure bluetooth not supported.");
-                return null;
+                if (DBG) Log.w(TAG, "insecure bluetooth not supported.");
+                //return null;
             }
 
             List<CursorUser> users = DbContactAttributes.getUsersWithAttribute(
@@ -229,15 +230,28 @@ public class NearbyActivity extends ListActivity {
                     UUID uuid = UUID.fromString(uuidStr);
                     BluetoothSocket socket = BluetoothAdapter.getDefaultAdapter()
                             .getRemoteDevice(mac).createInsecureRfcommSocketToServiceRecord(uuid);
-                    socket.close();
+                    if (DBG) Log.d(TAG, "Bluetooth connecting to " + mac + ":" + uuid);
+                    socket.connect();
+                    if (DBG) Log.d(TAG, "Bluetooth connected!");
+                    if (DBG) Log.d(TAG, "Bluetooth reading...");
+                    byte[] headerBytes = new byte[16];
+                    int r = socket.getInputStream().read(headerBytes);
+                    if (r != headerBytes.length) {
+                        throw new IOException("Too few bytes.");
+                    }
+                    if (DBG) Log.d(TAG, "Read " + new String(headerBytes));
                     publishProgress(new NearbyItem(u.getName(),
                             Contact.uriFor(contactId), Contact.MIME_TYPE));
+                    if (DBG) Log.d(TAG, "Bluetooth closing.");
+                    socket.close();
+                    if (DBG) Log.d(TAG, "Bluetooth closed.");
                 } catch (IOException e) {
-                    Log.d(TAG, "no connection for " + mac);
+                    if (DBG) Log.d(TAG, "no connection for " + mac);
                 } catch (IllegalArgumentException e) {
-                    Log.d(TAG, "Bad uuid", e);
+                    if (DBG) Log.d(TAG, "Bad uuid", e);
                 }
             }
+            if (DBG) Log.d(TAG, "Done checking bluetooth devices.");
             return null;
         }
 
