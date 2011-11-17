@@ -1,7 +1,6 @@
 
 package edu.stanford.mobisocial.dungbeetle.obj.action;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import mobisocial.socialkit.musubi.Musubi;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.content.Context;
@@ -81,9 +81,10 @@ public class EditPhotoAction extends ObjAction {
             mContext = context;
             mFeedUri = obj.getContainingFeed().getUri();
             Uri hd = null;
-            if (ContentCorral.fileAvailableLocally(context, obj)) {
+            CorralClient client = CorralClient.getInstance(context);
+            if (client.fileAvailableLocally(obj)) {
                 try {
-                    hd = ContentCorral.fetchContent(context, obj);
+                    hd = client.fetchContent(obj);
                 } catch (IOException e) {}
             }
             mHdUri = hd;
@@ -168,7 +169,7 @@ public class EditPhotoAction extends ObjAction {
                     public void run() {
                         try {
                             Uri result = data.getData();
-                            Uri stored = ContentCorral.copyContent(mContext, result);
+                            Uri stored = ContentCorral.storeContent(mContext, result);
                             if (stored == null) {
                                 Log.w(TAG, "Error storing content in corral");
                                 stored = result;

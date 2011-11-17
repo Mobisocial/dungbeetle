@@ -13,7 +13,7 @@ import mobisocial.socialkit.musubi.DbObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -65,6 +65,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 	private Uri mFeedUri;
 	private long mInitialObjId;
 	private int mInitialSelection = -1;
+	private CorralClient mCorralClient;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -72,6 +73,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
                                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+        mCorralClient = CorralClient.getInstance(this);
         mFeedUri = getIntent().getData();
         long hash = getIntent().getLongExtra("objHash", -1);
         mInitialObjId = App.instance().getMusubi().objForHash(hash).getLocalId();
@@ -143,7 +145,7 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             im.setTag(cursor.getLong(COL_ID));
             try {
                 JSONObject json = new JSONObject(cursor.getString(COL_JSON));
-                if (json.has(ContentCorral.OBJ_LOCAL_URI)) {
+                if (json.has(CorralClient.OBJ_LOCAL_URI)) {
                     DbObj obj = App.instance().getMusubi().objForCursor(cursor);
                     new CorralLoaderThread((Activity)context, im, obj).start();
                 }
@@ -202,9 +204,9 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
                 File fileDirectory = new File(extStorageDirectory);
                 fileDirectory.mkdirs();
 
-                if (ContentCorral.fileAvailableLocally(this, obj)) {
+                if (mCorralClient.fileAvailableLocally(obj)) {
                     try {
-                        Uri fileUri = ContentCorral.fetchContent(this, obj);
+                        Uri fileUri = mCorralClient.fetchContent(obj);
                         InputStream is = this.getContentResolver().openInputStream(fileUri);
                         FileOutputStream out = new FileOutputStream(file);
                         byte[] buf = new byte[1024];
@@ -286,21 +288,23 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         final ImageView mImageView;
         final Activity mContext;
         Bitmap bitmap;
+        final CorralClient mCorralClient;
 
         public CorralLoaderThread(Activity context, ImageView imageView, DbObj obj) {
             mObj = obj;
             mImageView = imageView;
             mContext = context;
+            mCorralClient = CorralClient.getInstance(context);
         }
 
         public void run() {
             try {
-                final Uri fileUri = ContentCorral.fetchContent(mContext, mObj);
+                final Uri fileUri = mCorralClient.fetchContent(mObj);
                 JSONObject json = mObj.getJson();
                 if (fileUri == null) {
                     try {
                         Log.d(TAG, "Failed to go HD for " +
-                                json.getString(ContentCorral.OBJ_LOCAL_URI));
+                                json.getString(CorralClient.OBJ_LOCAL_URI));
                     } catch (JSONException e) {
                         Log.d(TAG, "Failed to go HD for " + json);
                     }

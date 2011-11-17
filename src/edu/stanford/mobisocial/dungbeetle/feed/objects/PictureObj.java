@@ -9,6 +9,7 @@ import mobisocial.socialkit.SignedObj;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -128,8 +129,8 @@ public class PictureObj extends DbEntryHandler
                     // TODO: Security breach.
                     // Send to trusted users only.
                     base.put(Contact.ATTR_LAN_IP, localIp);
-                    base.put(ContentCorral.OBJ_LOCAL_URI, imageUri.toString());
-                    base.put(ContentCorral.OBJ_MIME_TYPE, cr.getType(imageUri));
+                    base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
+                    base.put(CorralClient.OBJ_MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }

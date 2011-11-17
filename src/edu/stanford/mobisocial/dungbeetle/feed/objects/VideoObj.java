@@ -5,11 +5,11 @@ import java.io.InputStream;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
-import mobisocial.socialkit.User;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -159,11 +159,11 @@ public class VideoObj extends DbEntryHandler
 	@Override
     public void activate(final Context context, final SignedObj obj) {
 	    if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-	        User sender = obj.getSender();
+	        final CorralClient client = CorralClient.getInstance(context);
 	        Log.d(TAG, "Corraling video");
-	        if (ContentCorral.fileAvailableLocally(context, obj)) {
+	        if (client.fileAvailableLocally(obj)) {
 	            try {
-	                Uri contentUri = ContentCorral.fetchContent(context, obj);
+	                Uri contentUri = client.fetchContent(obj);
 	                startViewer(context, contentUri);
                 } catch (IOException e) {
                     Log.e(TAG, "The corral tricked me", e);
@@ -174,7 +174,7 @@ public class VideoObj extends DbEntryHandler
 	                @Override
 	                public void run() {
 	                    try {
-                            Uri contentUri = ContentCorral.fetchContent(context, obj);
+                            Uri contentUri = client.fetchContent(obj);
                             startViewer(context, contentUri);
                         } catch (IOException e) {
                             Log.e(TAG, "Failed to corral", e);
