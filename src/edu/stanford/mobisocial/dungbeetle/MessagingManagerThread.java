@@ -407,7 +407,7 @@ public class MessagingManagerThread extends Thread {
         protected byte[] mRaw;
         protected boolean mDeleteOnCommit;
         protected RSAPrivateKey mSendAs;
-        protected RSAPublicKey mSendFor;
+        protected RSAPublicKey mSendAsPublic;
         protected OutgoingMsg(Cursor objs) {
         	mObjectId = objs.getLong(0 /*DbObject._ID*/);
             DbEntryHandler objHandler = DbObjects.forType(objs.getString(2));
@@ -416,9 +416,9 @@ public class MessagingManagerThread extends Thread {
             if(key != null) { 
             	mSendAs = DBIdentityProvider.privateKeyFromByteArray(key);
             }
-            key = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.SEND_FOR));
+            key = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.SEND_AS_PUB));
             if(key != null) { 
-            	mSendFor = DBIdentityProvider.publicKeyFromByteArray(key);
+            	mSendAsPublic = DBIdentityProvider.publicKeyFromByteArray(key);
             }
         }
 		@Override
@@ -429,6 +429,10 @@ public class MessagingManagerThread extends Thread {
 		@Override
 		public RSAPrivateKey getSendAs() {
 			return mSendAs;
+		}
+		@Override
+		public RSAPublicKey getSendAsPublic() {
+			return mSendAsPublic;
 		}
         public List<RSAPublicKey> toPublicKeys(){ return mPubKeys; }
         public String contents(){ return mBody; }
@@ -497,8 +501,6 @@ public class MessagingManagerThread extends Thread {
             subs.close();
 
             mPubKeys = mIdent.publicKeysForContactIds(ids);
-            if(mSendFor != null)
-            	mPubKeys.add(mSendFor);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
 				mJson = json;
@@ -520,8 +522,6 @@ public class MessagingManagerThread extends Thread {
                 Log.w(TAG, "Bad destination found: '" + to + "'");
                 mPubKeys = new ArrayList<RSAPublicKey>();
             }
-            if(mSendFor != null)
-            	mPubKeys.add(mSendFor);
             //this obj is not yet encoded
             if(objs.getInt(1) == 0) {
 				mJson = json;

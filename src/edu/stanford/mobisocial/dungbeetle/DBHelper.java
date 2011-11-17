@@ -366,7 +366,7 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Group.TABLE+ " ADD COLUMN " + Group.PUBLIC_KEY + " BLOB");
             db.execSQL("ALTER TABLE " + Group.TABLE+ " ADD COLUMN " + Group.PRIVATE_KEY + " BLOB");
             db.execSQL("ALTER TABLE " + DbObject.TABLE+ " ADD COLUMN " + DbObject.SEND_AS + " BLOB");
-            db.execSQL("ALTER TABLE " + DbObject.TABLE+ " ADD COLUMN " + DbObject.SEND_FOR + " BLOB");
+            db.execSQL("ALTER TABLE " + DbObject.TABLE+ " ADD COLUMN " + DbObject.SEND_AS_PUB + " BLOB");
         }
         db.setVersion(VERSION);
     }
@@ -441,7 +441,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.RAW, "BLOB",
                         DbObject.KEY_INT, "INTEGER",
                         DbObject.SEND_AS, "BLOB",
-                        DbObject.SEND_FOR, "BLOB"
+                        DbObject.SEND_AS_PUB, "BLOB"
                         );
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
@@ -658,9 +658,9 @@ public class DBHelper extends SQLiteOpenHelper {
             if(send_as != null) {
             	cv.put(DbObject.SEND_AS, send_as);
             }
-            byte[] send_for = values.getAsByteArray(DbObject.SEND_FOR);
+            byte[] send_for = values.getAsByteArray(DbObject.SEND_AS_PUB);
             if(send_for != null) {
-            	cv.put(DbObject.SEND_FOR, send_for);
+            	cv.put(DbObject.SEND_AS_PUB, send_for);
             }
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
@@ -1118,7 +1118,7 @@ public class DBHelper extends SQLiteOpenHelper {
                           DbObject.RAW,
                           DbObject.KEY_INT,
                           DbObject.SEND_AS,
-                          DbObject.SEND_FOR,
+                          DbObject.SEND_AS_PUB,
                         },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},

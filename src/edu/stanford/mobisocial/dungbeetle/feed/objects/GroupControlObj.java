@@ -48,7 +48,7 @@ public class GroupControlObj extends DbEntryHandler {
         JSONObject obj = new JSONObject();
     	JSONArray json_new_members = new JSONArray();
     	for(RSAPublicKey k : new_members) {
-    		json_new_members.put(FastBase64.encode(k.getEncoded()));
+    		json_new_members.put(FastBase64.encodeToString(k.getEncoded()));
     	}
     	try {
 			obj.put(NEW_MEMBERS, json_new_members);
@@ -67,7 +67,7 @@ public class GroupControlObj extends DbEntryHandler {
     		json_known_members.put(Util.SHA1(k.getEncoded()));
     	}
     	try {
-    		obj.put(REPLY_TO, FastBase64.encode(reply_to.getEncoded()));
+    		obj.put(REPLY_TO, FastBase64.encodeToString(reply_to.getEncoded()));
 			obj.put(KNOWN_MEMBERS, json_known_members);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -112,6 +112,7 @@ public class GroupControlObj extends DbEntryHandler {
 					}
 					//HMM... wtf is the id in group
 					Helpers.insertGroupMember(context, g.id, new_member.id, new_member.personId);
+					Helpers.insertSubscriber(context, new_member.id, g.feedName);
 					
 					//now compare our membership list with theirs
 					JSONArray joiner_known_members = obj.optJSONArray(KNOWN_MEMBERS);
@@ -136,7 +137,7 @@ public class GroupControlObj extends DbEntryHandler {
 					cv.put(DbObject.JSON, json(known_members.values()).toString());
 					cv.put(DbObject.TYPE, TYPE);
 					cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
-					cv.put(DbObject.SEND_FOR, DBIdentityProvider.publicKeyToString(g.pub));
+					cv.put(DbObject.SEND_AS_PUB, DBIdentityProvider.publicKeyToString(g.pub));
 					dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 				} else {
 					//now compare our membership list with theirs
@@ -210,13 +211,14 @@ public class GroupControlObj extends DbEntryHandler {
 			//add the member to the group now that we know they are a contact
 			//HMM... wtf is the id in group
 			Helpers.insertGroupMember(context, g.id, new_member.id, new_member.personId);
+			Helpers.insertSubscriber(context, new_member.id, g.feedName);
 			
 			//post the join message to the feed with our new view of the membership
 			ContentValues cv = new ContentValues();
 			cv.put(DbObject.JSON, json(idp.userPublicKey(), known_members).toString());
 			cv.put(DbObject.TYPE, TYPE);
-			cv.put(DbObject.SEND_AS, DBIdentityProvider.privateKeyToString(g.priv));
-			cv.put(DbObject.SEND_FOR, DBIdentityProvider.publicKeyToString(g.pub));
+			cv.put(DbObject.SEND_AS, g.priv.getEncoded());
+			cv.put(DbObject.SEND_AS_PUB, g.pub.getEncoded());
 			dbh.addToFeed(DungBeetleContentProvider.SUPER_APP_ID, g.feedName, cv);
 		}
 	}

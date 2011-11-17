@@ -166,7 +166,7 @@ public class Helpers {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
         }
         if(send_for != null) {
-        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
+        	values.put(DbObject.SEND_AS_PUB, send_for.getEncoded());
         }
         byte[] raw = obj.getRaw();
         if (raw != null) {
@@ -242,7 +242,7 @@ public class Helpers {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
         }
         if(send_for != null) {
-        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
+        	values.put(DbObject.SEND_AS_PUB, send_for.getEncoded());
         }
         return c.getContentResolver().insert(feed, values);
     }
@@ -266,7 +266,7 @@ public class Helpers {
         	values.put(DbObject.SEND_AS, send_as.getEncoded());
         }
         if(send_for != null) {
-        	values.put(DbObject.SEND_FOR, send_for.getEncoded());
+        	values.put(DbObject.SEND_AS_PUB, send_for.getEncoded());
         }
         return c.getContentResolver().insert(feed, values);
     }
