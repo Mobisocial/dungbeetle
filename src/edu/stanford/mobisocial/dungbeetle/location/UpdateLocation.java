@@ -169,8 +169,8 @@ public class UpdateLocation extends Service {
 		int friendCount = 0; // to keep track of how many friends there are who actually have a diffie helman key
 		// calculate the encrypted location for each friend
 		for (Long friend:friendsList){
-			dhkey = idToSharedKeyMap.get(friend).toString();
-			Log.d("UpdateLocation.java","FriendID: " + idToSharedKeyMap.get(friend) + " with key: " + dhkey);
+			dhkey = new BigInteger(idToSharedKeyMap.get(friend)).toString();
+			Log.d("UpdateLocation.java","FriendID: " + friend + " with key: " + dhkey);
 			if (dhkey != null){
 				friendIDs.add(friend); // put the array in the map
 				// Generate k_1 and k_2 using toEncrypt variable, each friend has a different k_1 and k_2 and each round in the loop is a different k_1 and k_2

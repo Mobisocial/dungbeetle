@@ -100,6 +100,8 @@ public class Contact implements Serializable{
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
 
 	private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
+
+	public static final String PUBLIC_KEY_HASH_64 = "pub_key_hash";
     static {
         sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
         sWellKnownAttrs.add(Contact.ATTR_BT_MAC);
