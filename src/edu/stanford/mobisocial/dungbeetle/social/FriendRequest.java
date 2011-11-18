@@ -5,9 +5,11 @@ import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import edu.stanford.mobisocial.dungbeetle.App;
@@ -37,14 +39,19 @@ public class FriendRequest {
 
     public static final String PREFIX_JOIN = "//friend/invite";
 
-    public static Uri getInvitationUri(Context c) {
-    	return getInvitationUri(c, true);
+    public static Uri getInvitationUri(Context c, String tag) {
+    	return getInvitationUri(c, tag, true);
     }
 
-    private static Uri getInvitationUri(Context c, boolean need_key) {
+    private static Uri getInvitationUri(Context c, String tag, boolean need_key) {
     	Group g = null;
     	if(need_key) {
-    		g = Group.create(c, "invitation " + new Date().toString());
+        	if(tag == null) {
+        		Calendar cal = Calendar.getInstance();
+        		tag = "Invitation " + cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + 
+        			" " + cal.get(Calendar.DAY_OF_MONTH);
+        	}
+    		g = Group.create(c, tag);
     		//QQQQQ: mark this group as deleted/not visible/etc
     	}
         DBHelper helper = DBHelper.getGlobal(c);
@@ -105,7 +112,7 @@ public class FriendRequest {
         DBIdentityProvider idp = new DBIdentityProvider(dbh);
         try {
 	        RSAPrivateKey trusted = DBIdentityProvider.privateKeyFromString(invitation.getQueryParameter("key"));
-	        Uri uri = getInvitationUri(context, false);
+	        Uri uri = getInvitationUri(context, null, false);
 	        DbObject obj = FriendAcceptObj.from(uri);
 	        List<Contact> cs = new LinkedList<Contact>();
 	        Helpers.sendMessage(context, cs, obj, trusted, null);

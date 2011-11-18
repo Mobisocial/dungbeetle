@@ -55,6 +55,7 @@ public class HomeActivity extends MusubiBaseActivity {
     public static final String GROUP_SESSION_BASE = "musubi://group/invite";
 
     public static final String PREFS_NAME = "DungBeetlePrefsFile";
+    public static final String NFC_INVITE_URI = "NFCInviteURI";
     
     private Nfc mNfc;
 	private Intent DBServiceIntent;
@@ -312,7 +313,17 @@ public class HomeActivity extends MusubiBaseActivity {
     }
 
     public void pushContactInfoViaNfc() {
-    	Uri uri = FriendRequest.getInvitationUri(this);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, 0);
+        String uri_string = prefs.getString(NFC_INVITE_URI, null);
+        Uri uri = null;
+        if (uri_string != null) {
+        	uri = Uri.parse(uri_string);
+        }
+        if(uri == null) {
+        	uri = FriendRequest.getInvitationUri(this, "NFC Invitation");
+        	prefs.edit().putString(NFC_INVITE_URI, uri.toString()).commit();
+        }
+
     	if (DBG) Log.w(TAG, "pushing " + uri.toString());
         mNfc.share(NdefFactory.fromUri(uri));
     }

@@ -92,7 +92,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
 
     public void onClickNew(View v) {
         Intent share = new Intent(Intent.ACTION_SEND);
-        Uri friendRequest = FriendRequest.getInvitationUri(this);
+        Uri friendRequest = FriendRequest.getInvitationUri(this, null);
         share.putExtra(Intent.EXTRA_TEXT,
                 "Be my friend on Musubi! Click here from your Android device: "
                 + friendRequest);
