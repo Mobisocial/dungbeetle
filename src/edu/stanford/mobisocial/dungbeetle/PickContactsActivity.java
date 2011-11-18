@@ -428,6 +428,3 @@ public class PickContactsActivity extends TabActivity {
         if (mNfc.onNewIntent(this, intent)) return;
     }
 }
-
-
-

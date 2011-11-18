@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -20,6 +21,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.AppCorralActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -32,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedAnchorObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 
@@ -102,6 +105,7 @@ public class LaunchApplicationAction implements FeedAction {
         }
 
         ArrayList<String> names = new ArrayList<String>();
+        names.add("Find Apps...");
         for(ResolveInfo info : availableAppInfos){
             names.add(info.loadLabel(mgr).toString());
         }
@@ -111,6 +115,13 @@ public class LaunchApplicationAction implements FeedAction {
         builder.setTitle("Share application:");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
+                if (item-- == 0) {
+                    Intent webStore = new Intent(context, AppCorralActivity.class);
+                    webStore.putExtra(Musubi.EXTRA_FEED_URI, feedUri);
+                    context.startActivity(webStore);
+                    return;
+                }
+
                 final ResolveInfo info = availableAppInfos.get(item);
                 Intent i = new Intent();
                 i.setClassName(info.activityInfo.packageName, info.activityInfo.name);

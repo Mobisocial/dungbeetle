@@ -3,22 +3,22 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnKeyListener;
-import android.content.pm.ActivityInfo;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,10 +39,63 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class SettingsActivity extends Activity {
+	
+
+    public static final String PREFS_NAME = "DungBeetlePrefsFile";
+	
 	private final class VacuumDatabaseListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
 			new VacuumDatabase().execute();
+		}
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	    super.onActivityResult(requestCode, resultCode, data);
+	    //TODO handle here. 
+	    if (resultCode == RESULT_OK) {
+            Uri uri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+            
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+
+            SharedPreferences.Editor editor = settings.edit();
+            if (uri == null) {
+            	editor.putString("ringtone", "none");
+            }
+            else {
+            editor.putString("ringtone", uri.toString());
+            }
+            editor.commit();
+            Log.w("settings", uri.toString());
+             
+}
+	}
+	
+	private final class SetRingtoneListener implements OnClickListener {
+		@Override
+		public void onClick(View v) {
+			String uri = null;
+            Intent intent = new Intent( RingtoneManager.ACTION_RINGTONE_PICKER);
+            intent.putExtra( RingtoneManager.EXTRA_RINGTONE_TYPE,
+            RingtoneManager.TYPE_NOTIFICATION);
+            intent.putExtra( RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Tone");
+
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+            uri = settings.getString("ringtone", "none");
+            
+            if(!uri.equals("none"))
+            {
+                 intent.putExtra( RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+            		 Uri.parse( uri));
+            }
+
+            else
+            {
+                 intent.putExtra( RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                		 (Uri)null);
+            }
+        	startActivityForResult(intent, 999);
 		}
 	}
 
@@ -202,6 +255,8 @@ public class SettingsActivity extends Activity {
 	Button secondaryColor_;
 	Button info_;
 	TextView vacuumDatabase_;
+	TextView setRingtone_;
+	
 	CheckedTextView globalTVMode_;
 
 	/*** Dashboard stuff ***/
@@ -251,10 +306,12 @@ public class SettingsActivity extends Activity {
 		secondaryColor_ = (Button) findViewById(R.id.secondary_color);
 		globalTVMode_ = (CheckedTextView) findViewById(R.id.global_tv_mode);
 		vacuumDatabase_ = (TextView) findViewById(R.id.vacuum_database);
+		setRingtone_ = (TextView) findViewById(R.id.set_ringtone);
 
 		// connect the global tv mode toggle to the shared preferences
 		globalTVMode_.setOnClickListener(new GlobalTVModeListener());
 		vacuumDatabase_.setOnClickListener(new VacuumDatabaseListener());
+		setRingtone_.setOnClickListener(new SetRingtoneListener());
 		
 		// hook up the color picker dialogs to the buttons
 		primaryColor_.setOnClickListener(new PrimaryColorListener());

@@ -51,7 +51,6 @@ import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
-import edu.stanford.mobisocial.dungbeetle.obj.handler.FeedModifiedObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.ProfileScanningObjHandler;
@@ -68,6 +67,8 @@ public class MessagingManagerThread extends Thread {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
     private final MessageDropHandler mMessageDropHandler;
+
+    private static final String JSON_INT_KEY = "obj_intkey";
 
     public MessagingManagerThread(final Context context){
         mContext = context;
@@ -128,6 +129,11 @@ public class MessagingManagerThread extends Thread {
         final long hash = incoming.hash();
         final String contents = localize(incoming.contents());
    
+        /**
+         * TODO: This needs to be updated with the POSI standards
+         * to accept a SignedObj.
+         */
+
         if (DBG) Log.i(TAG, "Localized contents: " + contents);
         try {
             JSONObject in_obj = new JSONObject(contents);
@@ -167,7 +173,12 @@ public class MessagingManagerThread extends Thread {
                     return;
                 }
 
-                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw);
+                Integer intKey = null;
+                if (obj.has(JSON_INT_KEY)) {
+                    intKey = obj.getInt(JSON_INT_KEY);
+                    obj.remove(JSON_INT_KEY);
+                }
+                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw, intKey);
 				Uri feedUri;
                 if (feedName.equals("friend")) {
                    feedUri = Feed.uriForName("friend/" + contactId);
@@ -210,8 +221,8 @@ public class MessagingManagerThread extends Thread {
             mFromNetworkHandlers.addHandler(TVModePresence.getInstance());
             mFromNetworkHandlers.addHandler(Push2TalkPresence.getInstance());
             mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
-            mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
             mFromNetworkHandlers.addHandler(new ProfileScanningObjHandler());
+            mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
         }
         return mFromNetworkHandlers;
     }
@@ -267,6 +278,7 @@ public class MessagingManagerThread extends Thread {
 
     @Override
     public void run() {
+        ProfileScanningObjHandler profileScanningObjHandler = new ProfileScanningObjHandler();
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         Set<Long> notSendingObjects = new HashSet<Long>();
         if (DBG) Log.i(TAG, "Running...");
@@ -277,21 +289,43 @@ public class MessagingManagerThread extends Thread {
             mOco.clearChanged();
             Cursor objs = mHelper.queryUnsentObjects(max_sent);
             try {
-            	int i = 0;
-                Log.i(TAG, objs.getCount() + " objects...");
+                Log.i(TAG, "Sending " + objs.getCount() + " objects...");
                 if(objs.moveToFirst()) do {
                     Long objId = objs.getLong(objs.getColumnIndexOrThrow(DbObject._ID));
-                    String feedName = objs.getString(objs.getColumnIndexOrThrow(DbObject.FEED_NAME));
                     String jsonSrc = objs.getString(objs.getColumnIndexOrThrow(DbObject.JSON));
-                    max_sent = objId.longValue();
-
-                    Uri feedUri = Feed.uriForName(feedName);
-                    JSONObject json = null;
-                    try {
-                        json = new JSONObject(jsonSrc);
-                    } catch (JSONException e) {
-                        Log.e(TAG, "bad json", e);
+                    byte[] raw = objs.getBlob(objs.getColumnIndexOrThrow(DbObject.RAW));
+                    Integer intKey = null;
+                    if (!objs.isNull(objs.getColumnIndexOrThrow(DbObj.COL_KEY_INT))) {
+                        intKey = objs.getInt(objs.getColumnIndexOrThrow(DbObj.COL_KEY_INT));
                     }
+
+                    max_sent = objId.longValue();
+                    JSONObject json = null;
+                    if (jsonSrc != null) {
+                        try {
+                            json = new JSONObject(jsonSrc);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "bad json", e);
+                        }
+                    } else {
+                        json = new JSONObject();
+                    }
+
+                    /**
+                     * TODO: Hacks in anticipation of new binary-friendly wire format.
+                     * This method will need some work!
+                     */
+                    if (json != null) {
+                        if (raw != null) {
+                            String type = objs.getString(objs.getColumnIndexOrThrow(DbObject.TYPE));
+                            DbEntryHandler e = DbObjects.forType(type);
+                            json = e.mergeRaw(json, raw);
+                        }
+                        if (intKey != null) {
+                            json.put(JSON_INT_KEY, intKey);
+                        }
+                    }
+
                     if (json != null) {
                         /*if you update latest feed here then there is a race condition between
                          * when you put a message into your db,
@@ -302,13 +336,16 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
+                        DbObj signedObj = App.instance().getMusubi().objForId(objId);
                         DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
-                            DbObj signedObj = App.instance().getMusubi().objForId(objId);
                             ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
                         }
+                        // TODO: Constraint error thrown for now b/c local user not in contacts
+                        profileScanningObjHandler.handleObj(mContext, h, signedObj);
                     }
                     String to = objs.getString(objs.getColumnIndexOrThrow(DbObject.DESTINATION));
+                    if (DBG) Log.d(TAG, "Sending to: " + to);
                     if (to != null) {
                         OutgoingMessage m = new OutgoingDirectObjectMsg(objs, json);
                         if (DBG) Log.i(TAG, "Sending direct message " + m);

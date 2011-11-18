@@ -87,6 +87,14 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         
         findViewById(R.id.btn_broadcast).setVisibility(View.GONE);
         mContactId = getIntent().getLongExtra("contact_id", -1);
+        if (mContactId == -1) {
+            Uri data = getIntent().getData();
+            if (data != null) {
+                try {
+                    mContactId = Long.parseLong(data.getLastPathSegment());
+                } catch (NumberFormatException e) {}
+            }
+        }
         
         Bundle args = new Bundle();
         args.putLong("contact_id", mContactId);

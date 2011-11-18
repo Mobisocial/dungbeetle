@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Musubi</string>
+    <string name="app_store_name">App Corral</string>
     <string name="start">Running...</string>
     <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>
@@ -30,7 +31,7 @@
     <string name="title_groups">Groups</string>
     <string name="title_group">Group</string>
     <string name="title_new_group">New Group</string>
-    <string name="title_nearby">Nearby Groups</string>
+    <string name="title_nearby">Nearby</string>
     <string name="title_settings">Settings</string>
 
     <string name="default_intro">This is the default content view for an activity. Be sure to change your activity\'s onCreate method. Use setContentView on a custom layout.</string>

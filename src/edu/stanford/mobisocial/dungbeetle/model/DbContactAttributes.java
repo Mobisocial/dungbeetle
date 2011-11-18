@@ -1,10 +1,17 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import mobisocial.socialkit.User;
+import mobisocial.socialkit.musubi.DbUser;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
+import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 
 public class DbContactAttributes /* extends DbTable */ {
     public static final String TABLE = "contact_attributes";
@@ -68,6 +75,34 @@ public class DbContactAttributes /* extends DbTable */ {
                 return c.getString(0);
             }
             return null;
+        } finally {
+            c.close();
+            helper.close();
+        }
+    }
+
+    public static List<CursorUser> getUsersWithAttribute(Context context, String attr) {
+        DBHelper helper = new DBHelper(context);
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        String sql = "SELECT c.*"
+                + "   FROM contacts c, contact_attributes ca"
+                + "   WHERE c._id = ca.contact_id"
+                + "   AND   ca.attr_name = ?";
+        String[] selectionArgs = new String[] { attr };
+        Cursor c = db.rawQuery(sql, selectionArgs);
+        try {
+            if (!c.moveToFirst()) {
+                return new ArrayList<CursorUser>(0);
+            }
+            List<CursorUser> users = new ArrayList<CursorUser>(c.getCount());
+            while (true) {
+                users.add(Contact.userFromCursor(c));
+                if (!c.moveToNext()) {
+                    break;
+                }
+            }
+            return users;
         } finally {
             c.close();
             helper.close();

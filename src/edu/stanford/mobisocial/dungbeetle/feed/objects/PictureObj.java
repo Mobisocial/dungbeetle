@@ -9,6 +9,7 @@ import mobisocial.socialkit.SignedObj;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -23,7 +24,7 @@ import android.util.Pair;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import edu.stanford.mobisocial.dungbeetle.ImageViewerActivity;
+import edu.stanford.mobisocial.dungbeetle.ImageGalleryActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
@@ -31,6 +32,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.OutgoingMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
@@ -76,8 +78,7 @@ public class PictureObj extends DbEntryHandler
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;
 		BitmapFactory.decodeStream(cr.openInputStream(imageUri), null, options);
-		
-		
+
 		int targetSize = 200;
 		int xScale = (options.outWidth  + targetSize - 1) / targetSize;
 		int yScale = (options.outHeight + targetSize - 1) / targetSize;
@@ -128,8 +129,8 @@ public class PictureObj extends DbEntryHandler
                     // TODO: Security breach.
                     // Send to trusted users only.
                     base.put(Contact.ATTR_LAN_IP, localIp);
-                    base.put(ContentCorral.OBJ_LOCAL_URI, imageUri.toString());
-                    base.put(ContentCorral.OBJ_MIME_TYPE, cr.getType(imageUri));
+                    base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
+                    base.put(CorralClient.OBJ_MIME_TYPE, cr.getType(imageUri));
                 } catch (JSONException e) {
                     Log.e(TAG, "impossible json error possible!");
                 }
@@ -177,15 +178,10 @@ public class PictureObj extends DbEntryHandler
 
 	@Override
     public void activate(Context context, SignedObj obj) {
-	    byte[] raw = obj.getRaw();
-	    String senderId = obj.getSender().getId(); 
 	    // TODO: set data uri for obj
-	    Intent intent = new Intent(context, ImageViewerActivity.class);
+	    Intent intent = new Intent(context, ImageGalleryActivity.class);
+	    intent.setData(Feed.uriForName(obj.getFeedName()));
 	    intent.putExtra("objHash", obj.getHash());
-	    intent.putExtra("contactId", senderId); // TODO: corral is broken.
-	    if (raw != null) {
-	        intent.putExtra("bytes", raw);
-	    }
 	    if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }

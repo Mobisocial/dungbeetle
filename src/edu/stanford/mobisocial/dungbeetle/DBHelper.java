@@ -57,6 +57,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -76,7 +77,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 55;
+	public static final int VERSION = 58;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -302,8 +303,6 @@ public class DBHelper extends SQLiteOpenHelper {
       		} catch(JSONException e) {}
 	            c.close();
           	}
-            
-            
         }
         if(oldVersion <= 40) {
             Log.w(TAG, "Adding column 'E' to object table.");
@@ -364,8 +363,14 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion <= 53) {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.HIDDEN + " INTEGER DEFAULT 0");
         }
-
-        if(oldVersion <= 54) {
+        if (oldVersion <= 55) {
+            db.execSQL("ALTER TABLE " + DbObj.TABLE + " ADD COLUMN " + DbObj.COL_KEY_INT + " INTEGER");
+        }
+        if (oldVersion <= 56) {
+            db.execSQL("DROP INDEX attrs_by_contact_id");
+            createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
+        }
+        if(oldVersion <= 57) {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PUBLIC_KEY_HASH_64 + " INTEGER DEFAULT 0");
             createIndex(db, "INDEX", "contacts_by_pkp", Contact.TABLE, Contact.PUBLIC_KEY_HASH_64);
             Cursor peeps = db.rawQuery("SELECT " + Contact._ID + "," + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE, null);
@@ -447,13 +452,15 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.HASH, "INTEGER",
                         DbObject.ENCODED, "BLOB",
                         DbObject.CHILD_FEED_NAME, "TEXT",
-                        DbObject.RAW, "BLOB"
+                        DbObject.RAW, "BLOB",
+                        DbObject.KEY_INT, "INTEGER"
                         );
             db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
             createIndex(db, "INDEX", "objects_by_feed_name", DbObject.TABLE, DbObject.FEED_NAME);
             db.execSQL("CREATE INDEX objects_by_creator_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.SENT + ")");
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
+            createIndex(db, "INDEX", "objects_by_int_key", DbObject.TABLE, DbObject.KEY_INT);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
@@ -543,7 +550,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	        colDefs[j++] = colTypes[i];
 	    }
 	    createTable(db, DbContactAttributes.TABLE, null, colDefs);
-        createIndex(db, "UNIQUE INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
+        createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
 	}
 
 	private final void addRelationIndexes(SQLiteDatabase db) {
@@ -632,8 +639,15 @@ public class DBHelper extends SQLiteOpenHelper {
     
     
 
-    long addToFeed(String appId, String feedName, String type, JSONObject json) {
+    /**
+     * Inserts an object into the database and flags it to be sent by
+     * the transport layer.
+     */
+    long addToFeed(String appId, String feedName, ContentValues values) {
         try{
+            JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
+            String type = values.getAsString(DbObject.TYPE);
+
             long nextSeqId = getFeedMaxSequenceId(Contact.MY_ID, feedName) + 1;
             long timestamp = new Date().getTime();
             json.put(DbObjects.TYPE, type);
@@ -642,6 +656,7 @@ public class DBHelper extends SQLiteOpenHelper {
             json.put(DbObjects.TIMESTAMP, timestamp);
             json.put(DbObjects.APP_ID, appId);
 
+            // Explicit column referencing avoids database errors.
             ContentValues cv = new ContentValues();
             cv.put(DbObject._ID, getNextId());
             cv.put(DbObject.APP_ID, appId);
@@ -651,6 +666,12 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            if (values.containsKey(DbObject.RAW)) {
+                cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
+            }
+            if (values.containsKey(DbObject.KEY_INT)) {
+                cv.put(DbObject.KEY_INT, values.getAsInteger(DbObject.KEY_INT));
+            }
             if (json.has(DbObject.CHILD_FEED_NAME)) {
                 cv.put(DbObject.CHILD_FEED_NAME, json.optString(DbObject.CHILD_FEED_NAME));
             }
@@ -686,7 +707,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
-    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw){
+    long addObjectByJson(long contactId, JSONObject json, long hash, byte[] raw, Integer intKey) {
         try{
             long objId = getNextId();
             long seqId = json.optLong(DbObjects.SEQUENCE_ID);
@@ -705,7 +726,12 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
+            if (raw != null) {
             cv.put(DbObject.RAW, raw);
+            }
+            if (intKey != null) {
+                cv.put(DbObject.KEY_INT, intKey);
+            }
 
             // TODO: Deprecated!!
             if (json.has(DbObject.CHILD_FEED_NAME)) {
@@ -929,7 +955,7 @@ public class DBHelper extends SQLiteOpenHelper {
             String[] selectionArgs, String sortOrder) {
         Log.d(TAG, "Querying feed: " + feedName);
         String objHashStr = null;
-        if (feedName.contains(":")) {
+        if (feedName != null && feedName.contains(":")) {
             String[] contentParts = feedName.split(":");
             if (contentParts.length != 2) {
                 Log.e(TAG, "Error parsing feed::: " + feedName);
@@ -945,7 +971,9 @@ public class DBHelper extends SQLiteOpenHelper {
         final String HASH = DbObject.HASH;
         final String OBJECT_ID_A = DbRelation.OBJECT_ID_A;
         final String OBJECT_ID_B = DbRelation.OBJECT_ID_B;
-        String select = andClauses(selection, DbObject.FEED_NAME + "='" + feedName + "'");
+        if (feedName != null) {
+            selection = andClauses(selection, DbObject.FEED_NAME + " = '" + feedName + "'");
+        }
         if (objHashStr != null) {
             // sql injection security:
             Long objHash = Long.parseLong(objHashStr);
@@ -953,19 +981,35 @@ public class DBHelper extends SQLiteOpenHelper {
                     "(SELECT " + ID +
                     " FROM " + OBJECTS +
                     " WHERE " + HASH + " = " + objHash + ")";
-            select = andClauses(select, "(" + ID + " IN (SELECT " +
+            selection = andClauses(selection, "(" + ID + " IN (SELECT " +
                     OBJECT_ID_B + " FROM " + RELATIONS + " WHERE " +
                     OBJECT_ID_A + " = " + objIdSearch + " ) OR " + HASH + " = " + objHash + ")");
         } else {
-            select = andClauses(select, ID + " NOT IN (SELECT " +
+            selection = andClauses(selection, ID + " NOT IN (SELECT " +
                         DbRelation.OBJECT_ID_B + " FROM " + DbRelation.TABLE +
                         " WHERE " + DbRelation.RELATION_TYPE + " IN ('parent'))");
         }
         if (!realAppId.equals(DungBeetleContentProvider.SUPER_APP_ID)) {
-            select = andClauses(select, DbObject.APP_ID + "='" + realAppId + "'");
+            boolean needAppId = false;
+            if (projection != null) {
+                needAppId = true;
+                for (String v : projection) {
+                    if (DbObject.APP_ID.equals(v)) {
+                        needAppId = false;
+                        break;
+        }
+                }
+            }
+            if (needAppId) {
+                String[] projection2 = new String[projection.length + 1];
+                System.arraycopy(projection, 0, projection2, 0, projection.length);
+                projection2[projection.length] = DbObject.APP_ID;
+                projection = projection2;
+            }
+            selection = andClauses(selection, DbObject.APP_ID + "='" + realAppId + "'");
         }
         if (DBG) {
-            Log.d(TAG, "Running query " + select);
+            Log.d(TAG, "Running query " + selection);
             String args = "";
             if (selectionArgs != null) {
                 for (String arg : selectionArgs) {
@@ -974,7 +1018,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 Log.d(TAG, "args: " + args.substring(2));
             }
         }
-        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, select, selectionArgs,
+        Cursor c = getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs,
                 null, null, sortOrder, null);
         if (DBG) Log.d(TAG, "got " + c.getCount() + " items");
         return c;
@@ -1076,6 +1120,8 @@ public class DBHelper extends SQLiteOpenHelper {
             			  DbObject.JSON,
                           DbObject.DESTINATION,
                           DbObject.FEED_NAME,
+                          DbObject.RAW,
+                          DbObject.KEY_INT
                         },
             DbObject.CONTACT_ID + "=? AND " + DbObject.SENT + "=? AND " + DbObject._ID + ">?",
             new String[]{ String.valueOf(Contact.MY_ID), String.valueOf(0), String.valueOf(max_sent)},
@@ -1180,7 +1226,8 @@ public class DBHelper extends SQLiteOpenHelper {
             String feedName, String appId) {
         // TODO: Check appId against feed?
 
-        String[] realSelectionArgs = null;
+        String[] realSelectionArgs = selectionArgs;
+        if (feedName != null && !feedName.equals(Feed.FEED_NAME_GLOBAL)) {
         String feedInnerQuery = new StringBuilder()
             .append("SELECT M." + GroupMember.CONTACT_ID)
             .append(" FROM " + GroupMember.TABLE + " M, ")
@@ -1203,6 +1250,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
                 realSelectionArgs[selectionArgs.length] = feedName;
             }
+        }
         }
 
         String groupBy = null;
@@ -1259,7 +1307,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor queryLocalUser(String feed_name) {
         String table = MyInfo.TABLE;
-        String[] columns = new String[] { MyInfo._ID, MyInfo.NAME, MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        String[] columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
         String selection = null;
         String selectionArgs[] = null;
         String groupBy = null;

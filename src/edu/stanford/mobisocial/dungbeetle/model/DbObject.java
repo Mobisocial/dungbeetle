@@ -44,46 +44,74 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.RelativeDate;
 
+/**
+ * <p>DO NOT USE AS A REPRESENTATION OF A MUSUBI OBJ.
+ * <ul>
+ * <li>Obj is an interface for basic Musubi content.
+ * <li>MemObj is a concrete implementation stored in memory.
+ * <li>SignedObj represents an obj that has been signed for sending by some user.
+ * <li>DbObj represents an obj that has been sent or received and is held
+ * in Musubi's database.
+ * </ul></p>
+ * 
+ * <p>Note that this class used as both a representation of Objs, and a set of
+ * utility methods and constants. Only the use as an Obj is deprecated,
+ * the rest will be moved to a new class.</p>
+ */
 public class DbObject implements Obj {
     private static final String TAG = "dbObject";
     private static final boolean DBG = true;
 
-    public static final String TABLE = "objects";
-    public static final String _ID = "_id";
-    public static final String TYPE = "type";
-    public static final String SEQUENCE_ID = "sequence_id";
-    public static final String FEED_NAME = "feed_name";
-    public static final String CONTACT_ID = "contact_id";
-    public static final String DESTINATION = "destination";
-    public static final String JSON = "json";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String APP_ID = "app_id";
-    public static final String SENT = "sent";
-	public static final String ENCODED = "encoded";
-	public static final String CHILD_FEED_NAME = "child_feed";
-	public static final String HASH = "hash";
-	public static final String DELETED = "deleted";
-
-	public static final String RAW = "raw";
+    public static final String TABLE = DbObj.TABLE;
+    public static final String _ID = DbObj.COL_ID;
+    public static final String TYPE = DbObj.COL_TYPE;
+    public static final String SEQUENCE_ID = DbObj.COL_SEQUENCE_ID;
+    public static final String FEED_NAME = DbObj.COL_FEED_NAME;
+    public static final String CONTACT_ID = DbObj.COL_CONTACT_ID;
+    public static final String DESTINATION = DbObj.COL_DESTINATION;
+    public static final String JSON = DbObj.COL_JSON;
+    public static final String TIMESTAMP = DbObj.COL_TIMESTAMP;
+    public static final String APP_ID = DbObj.COL_APP_ID;
+    public static final String SENT = DbObj.COL_SENT;
+	public static final String ENCODED = DbObj.COL_ENCODED;
+	public static final String CHILD_FEED_NAME = DbObj.COL_CHILD_FEED_NAME;
+	public static final String HASH = DbObj.COL_HASH;
+	public static final String DELETED = DbObj.COL_DELETED;
+	public static final String RAW = DbObj.COL_RAW;
+	public static final String KEY_INT = DbObj.COL_KEY_INT;
 
 	protected final String mType;
     protected JSONObject mJson;
     protected byte[] mRaw;
+    protected Integer mIntKey;
 
     private static OnClickViewProfile sViewProfileAction;
     private static final int sDeletedColor = Color.parseColor("#66FF3333");
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public DbObject(String type, JSONObject json, byte[] raw) {
         mType = type;
         mJson = json;
         mRaw = raw;
     }
+
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public DbObject(String type, JSONObject json) {
         mType = type;
         mJson = json;
         mRaw = null;
     }
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     private DbObject(Cursor c) {
         mType = c.getString(c.getColumnIndexOrThrow(DbObject.TYPE));
         String jsonStr = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
@@ -107,6 +135,10 @@ public class DbObject implements Obj {
         return mJson;
     }
 
+    /**
+     * Use SocialKit Obj implementations.
+     */
+    @Deprecated
     public static DbObject fromCursor(Cursor c) {
         try {
             return new DbObject(c);
@@ -220,7 +252,7 @@ public class DbObject implements Obj {
                             boolean selfPost = false;
                             DBHelper helper = new DBHelper(context);
                             try {
-                                Cursor attachments = ((DbObj)renderingObj).getRelatedFeed()
+                                Cursor attachments = ((DbObj)renderingObj).getSubfeed()
                                         .query("type=?", new String[] { LikeObj.TYPE });
 	                            try {
 		                            attachmentCountText.setText("+" + attachments.getCount());
@@ -405,5 +437,10 @@ public class DbObject implements Obj {
     @Override
     public byte[] getRaw() {
         return mRaw;
+    }
+
+    @Override
+    public Integer getInt() {
+        return mIntKey;
     }
 }

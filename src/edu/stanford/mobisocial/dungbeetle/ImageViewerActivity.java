@@ -14,6 +14,7 @@ import mobisocial.socialkit.musubi.DbObj;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mobisocial.corral.ContentCorral;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -27,6 +28,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
@@ -43,10 +46,17 @@ public class ImageViewerActivity extends Activity {
 	private final String extStorageDirectory =
 	        Environment.getExternalStorageDirectory().toString() + "/MusubiPictures/";
 	private Intent mIntent;
+	private CorralClient mCorralClient;
 
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.image_viewer);
+		
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        setContentView(R.layout.image_viewer);
+        mCorralClient = CorralClient.getInstance(this);
 		im = (ImageView)findViewById(R.id.image);
 		im.setScaleType(ImageView.ScaleType.FIT_CENTER);
 		mIntent = getIntent();
@@ -89,26 +99,25 @@ public class ImageViewerActivity extends Activity {
             long objHash = mIntent.getLongExtra("objHash", -1);
             final DbObj obj = App.instance().getMusubi().objForHash(objHash);
             final JSONObject json = obj.getJson();
-            if (json.has(ContentCorral.OBJ_LOCAL_URI)) {
+            if (json.has(CorralClient.OBJ_LOCAL_URI)) {
                 // TODO: this is a proof-of-concept.
                 new Thread() {
                     public void run() {
                         try {
-                            if (!ContentCorral.fileAvailableLocally(ImageViewerActivity.this, obj)) {
+                            if (!mCorralClient.fileAvailableLocally(obj)) {
                                 //toast("Trying to go HD...");
                             }
-                            Log.d(TAG, "Trying to go HD...");
-                            final Uri fileUri = ContentCorral
-                                    .fetchContent(ImageViewerActivity.this, obj);
+                            // Log.d(TAG, "Trying to go HD...");
+                            final Uri fileUri = mCorralClient.fetchContent(obj);
                             if (fileUri == null) {
                                 try {
-                                    Log.d(TAG, "Failed to go HD for " + json.getString(ContentCorral.OBJ_LOCAL_URI));
+                                    Log.d(TAG, "Failed to go HD for " + json.getString(CorralClient.OBJ_LOCAL_URI));
                                 } catch (JSONException e) {
                                     Log.d(TAG, "Failed to go HD for " + json);
                                 }
                                 return;
                             }
-                            Log.d(TAG, "Opening HD file " + fileUri);
+                            // Log.d(TAG, "Opening HD file " + fileUri);
 
                             InputStream is = getContentResolver().openInputStream(fileUri);
                             BitmapFactory.Options options = new BitmapFactory.Options();
@@ -221,6 +230,7 @@ public class ImageViewerActivity extends Activity {
         }
     }
 
+    @SuppressWarnings("unused")
     private final void toast(final String text) {
         runOnUiThread(new Runnable() {
             @Override

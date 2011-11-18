@@ -3,17 +3,18 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
-import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
+import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
+import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class PresenceAwareNotify {
     private static final String TAG = "musubi";
@@ -21,6 +22,8 @@ public class PresenceAwareNotify {
 	private NotificationManager mNotificationManager;
 	private final long[] VIBRATE = new long[] {0, 250, 80, 100, 80, 80, 80, 250};
 	Context mContext;
+
+    public static final String PREFS_NAME = "DungBeetlePrefsFile";
 
     public PresenceAwareNotify(Context context) {
         mContext = context;
@@ -88,6 +91,13 @@ public class PresenceAwareNotify {
             notificationSubMsg, 
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
+
+        SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
+        String uri = settings.getString("ringtone", null);
+        
+        if(!uri.equals("none")) {
+        	notification.sound = Uri.parse(uri);
+        }
         mNotificationManager.notify(NOTIFY_ID, notification);
     }
 

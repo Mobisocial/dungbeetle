@@ -17,6 +17,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.nfc.FormatException;
 import android.nfc.NdefMessage;
@@ -33,6 +35,7 @@ import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
+import edu.stanford.mobisocial.dungbeetle.NearbyActivity;
 import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
@@ -140,8 +143,48 @@ public class HomeActivity extends MusubiBaseActivity {
             alert.show();
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("firstLoad", false);
+            editor.putString("ringtone", "content://media/internal/audio/media/14");
             editor.commit();
         }
+        if (settings.getString("ringtone", null) == null) {
+
+        	RingtoneManager ringtoneManager = new RingtoneManager(this);
+            ringtoneManager.setType(RingtoneManager.TYPE_NOTIFICATION);
+            Cursor mCursor = ringtoneManager.getCursor();
+            mCursor.moveToFirst();
+            String ringtoneUri = null;
+            String backupUri = null;
+            while (!mCursor.isAfterLast()) {
+            	String ringtone = mCursor.getString(RingtoneManager.TITLE_COLUMN_INDEX);
+            	if(ringtone.equalsIgnoreCase("dDeneb")) {
+            		ringtoneUri = mCursor.getString(RingtoneManager.URI_COLUMN_INDEX) + "/" + mCursor.getString(RingtoneManager.ID_COLUMN_INDEX); 
+            	
+            		break;
+            	}
+            	if (backupUri == null) {
+            		backupUri = mCursor.getString(RingtoneManager.URI_COLUMN_INDEX) + "/" + mCursor.getString(RingtoneManager.ID_COLUMN_INDEX); 
+            	}           	
+            	mCursor.moveToNext();
+            }
+            mCursor.close();
+
+            SharedPreferences.Editor editor = settings.edit();
+            if (ringtoneUri != null) {
+            	editor.putString("ringtone", ringtoneUri);
+            }
+            else {
+            	
+            	if(backupUri != null) {
+            		editor.putString("ringtone", backupUri.toString());
+            	}
+            	else {
+            		editor.putString("ringtone", "none");
+            	}
+            }
+            editor.commit();
+        }
+        
+        
 
         mNfc = new Nfc(this);
         // TODO: Combine doHandleInput calls in onNewIntent.
@@ -398,7 +441,7 @@ public class HomeActivity extends MusubiBaseActivity {
                 break;
             case R.id.home_btn_nearby:
                 Intent launch = new Intent();
-                launch.setClass(this, NearbyGroupsActivity.class);
+                launch.setClass(this, NearbyActivity.class);
                 startActivity(launch);
                 break;
             default:
