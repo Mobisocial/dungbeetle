@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
@@ -70,6 +71,7 @@ public class FriendRequest {
             b.appendQueryParameter("public", DBIdentityProvider.publicKeyToString(pubKey));
             b.appendQueryParameter("profile", profile);
             if(need_key) {
+            	b.appendQueryParameter("invite", DBIdentityProvider.publicKeyToString(g.pub));
             	b.appendQueryParameter("key", DBIdentityProvider.privateKeyToString(g.priv));
             }
 	        return b.build();
@@ -95,6 +97,8 @@ public class FriendRequest {
 
         String privKeyStr = friendRequest.getQueryParameter("key");
         DBIdentityProvider.privateKeyFromString(privKeyStr); // may throw
+        String inviteKeyStr = friendRequest.getQueryParameter("invite");
+        DBIdentityProvider.publicKeyFromString(inviteKeyStr); // may throw
 
         Uri uri = Helpers.insertContact(c, pubKeyStr, name, email);
         long contactId = Long.valueOf(uri.getLastPathSegment());
@@ -112,10 +116,12 @@ public class FriendRequest {
         DBIdentityProvider idp = new DBIdentityProvider(dbh);
         try {
 	        RSAPrivateKey trusted = DBIdentityProvider.privateKeyFromString(invitation.getQueryParameter("key"));
+	        RSAPublicKey trusted_pub = DBIdentityProvider.publicKeyFromString(invitation.getQueryParameter("invite"));
 	        Uri uri = getInvitationUri(context, null, false);
 	        DbObject obj = FriendAcceptObj.from(uri);
 	        List<Contact> cs = new LinkedList<Contact>();
-	        Helpers.sendMessage(context, cs, obj, trusted, null);
+	        cs.add(contact);
+	        Helpers.sendMessage(context, cs, obj, trusted, trusted_pub);
 	        if (DBG) Log.d(TAG, "Sent friend request uri " + uri);
         } finally {
         	idp.close();
