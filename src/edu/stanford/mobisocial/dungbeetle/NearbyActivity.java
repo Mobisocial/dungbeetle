@@ -18,6 +18,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
@@ -44,6 +47,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
+import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
@@ -67,6 +71,12 @@ public class NearbyActivity extends ListActivity {
             @Override
             public void onClick(View v) {
                 scanNearby();
+            }
+        });
+        findViewById(R.id.qr).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                IntentIntegrator.initiateScan(NearbyActivity.this);
             }
         });
         DBG = MusubiBaseActivity.isDeveloperModeEnabled(this);
@@ -276,6 +286,19 @@ public class NearbyActivity extends ListActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult result =
+                IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null && result.getContents() != null) {
+            try {
+                Uri uri = Uri.parse(result.getContents());
+                Intent i = new Intent(Intent.ACTION_VIEW, uri);
+                i.setPackage(getPackageName());
+                startActivity(i);
+                finish();
+            } catch (IllegalArgumentException e) {
+            }
+            return;
+        }
         if (requestCode == RESULT_BT_ENABLE){
             if (resultCode == Activity.RESULT_CANCELED) {
                 finish();

@@ -34,11 +34,21 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true" />
+        <ImageButton android:id="@+id/qr"
+            android:src="@drawable/qr"
+            android:cropToPadding="true"
+            android:scaleType="fitXY"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/go"
+            android:layout_alignTop="@id/go"
+            android:layout_alignParentLeft="true" />
         <EditText android:id="@+id/password"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="Group passphrase..."
-            android:layout_toLeftOf="@id/go"/>
+            android:layout_toLeftOf="@id/go"
+            android:layout_toRightOf="@id/qr" />
 </RelativeLayout>
     <ListView  
         android:id="@android:id/list"

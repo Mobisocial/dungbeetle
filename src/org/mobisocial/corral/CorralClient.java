@@ -1,6 +1,5 @@
 package org.mobisocial.corral;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
