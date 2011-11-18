@@ -271,6 +271,9 @@
    -->
 
     <activity 
+    	android:name=".ui.ContactsActivity" />
+
+    <activity 
     	android:name=".PickContactsActivity"
     	android:theme="@style/Theme.D1dialog">
     
