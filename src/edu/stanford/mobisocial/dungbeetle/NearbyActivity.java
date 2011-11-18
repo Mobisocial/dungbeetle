@@ -47,7 +47,6 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
-import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
@@ -95,7 +94,7 @@ public class NearbyActivity extends ListActivity {
     private void scanNearby() {
         if (mGpsScanner != null) {
             mGpsScanner.cancel(true);
-            mBtScanner.cancel(true);
+            // mBtScanner.cancel(true);
         }
 
         String password = ((EditText)findViewById(R.id.password)).getText().toString();
@@ -103,7 +102,7 @@ public class NearbyActivity extends ListActivity {
         mBtScanner = new BluetoothScannerTask();
 
         mGpsScanner.execute();
-        mBtScanner.execute();
+        // mBtScanner.execute();
     }
 
     private class GpsScannerTask extends AsyncTask<Void, Void, List<NearbyItem>> {
