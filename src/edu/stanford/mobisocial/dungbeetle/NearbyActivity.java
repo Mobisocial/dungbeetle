@@ -99,7 +99,7 @@ public class NearbyActivity extends ListActivity {
 
         String password = ((EditText)findViewById(R.id.password)).getText().toString();
         mGpsScanner = new GpsScannerTask(password);
-        mBtScanner = new BluetoothScannerTask();
+        // mBtScanner = new BluetoothScannerTask();
 
         mGpsScanner.execute();
         // mBtScanner.execute();

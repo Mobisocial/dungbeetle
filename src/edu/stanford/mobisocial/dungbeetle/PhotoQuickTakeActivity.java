@@ -1,6 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
 
 
+import java.io.IOException;
+
+import mobisocial.socialkit.Obj;
+
+import org.mobisocial.corral.ContentCorral;
+
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -11,6 +17,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -55,8 +62,15 @@ public class PhotoQuickTakeActivity extends Activity implements InstrumentedActi
                 context, 
                 new PhotoTaker.ResultHandler() {
                     @Override
-                    public void onResult(byte[] data) {
-                        DbObject obj = PictureObj.from(data);
+                    public void onResult(Uri imageUri, byte[] data) {
+                        Obj obj;
+                        Uri storedUri = ContentCorral.storeContent(context, imageUri, "image/jpeg");
+                        try {
+                            obj = PictureObj.from(context, storedUri);
+                        } catch (IOException e) {
+                            Log.w("CameraAction", "failed to capture image", e);
+                            obj = PictureObj.from(data);
+                        }
                         Helpers.sendToFeed(
                             context, obj, feedUri);
                         ((PhotoQuickTakeActivity)context).finish();

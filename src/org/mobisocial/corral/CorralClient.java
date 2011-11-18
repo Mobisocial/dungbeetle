@@ -215,7 +215,7 @@ public class CorralClient {
     private File localFileForContent(SignedObj obj) {
         try {
             JSONObject json = obj.getJson();
-            String suffix = suffixForType(json.optString(OBJ_MIME_TYPE));
+            String suffix = extensionForType(json.optString(OBJ_MIME_TYPE));
             File feedDir = new File(mContext.getExternalCacheDir(), obj.getFeedName());
             String fname = hashToString(obj.getHash()) + "." + suffix;
             return new File(feedDir, fname);
@@ -225,7 +225,7 @@ public class CorralClient {
         }
     }
 
-    static String suffixForType(String type) {
+    static String extensionForType(String type) {
         final String DEFAULT = "dat";
         if (type == null) {
             return DEFAULT;
@@ -240,6 +240,22 @@ public class CorralClient {
             return "png";
         }
         return DEFAULT;
+    }
+
+    static String typeForExtension(String ext) {
+        if (ext == null) {
+            return null;
+        }
+        if (ext.equals("jpg")) {
+            return "image/jpeg";
+        }
+        if (ext.equals("3gp")) {
+            return "video/3gp";
+        }
+        if (ext.equals("png")) {
+            return "image/png";
+        }
+        return null;
     }
 
     private static class HashUtils {

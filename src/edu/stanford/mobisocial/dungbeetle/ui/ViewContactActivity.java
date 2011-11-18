@@ -358,7 +358,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         ((InstrumentedActivity) mActivity).doActivityForResult(new PhotoTaker(
                         		mActivity, new PhotoTaker.ResultHandler() {
                                     @Override
-                                    public void onResult(byte[] data) {
+                                    public void onResult(Uri imageUri, byte[] data) {
                                         Helpers.updatePicture(mActivity, data);
                                         // updateProfileToGroups();
                                     }

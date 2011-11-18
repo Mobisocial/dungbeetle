@@ -99,13 +99,16 @@ public class ContentCorral {
     }
 
     public static Uri storeContent(Context context, Uri contentUri) {
+        return storeContent(context, contentUri, context.getContentResolver().getType(contentUri));
+    }
+
+    public static Uri storeContent(Context context, Uri contentUri, String type) {
         File contentDir = new File(context.getExternalCacheDir(), "local");
         int timestamp = (int) (System.currentTimeMillis() / 1000L);
-        String ext = CorralClient.suffixForType(context.getContentResolver().getType(contentUri));
+        String ext = CorralClient.extensionForType(type);
         String fname = timestamp + "-" + contentUri.getLastPathSegment() + "." + ext;
         File copy = new File(contentDir, fname);
         try {
-            Log.d(TAG, "trying to stash " + contentUri);
             contentDir.mkdirs();
             InputStream in = context.getContentResolver().openInputStream(contentUri);
             BufferedInputStream bin = new BufferedInputStream(in);
@@ -113,14 +116,11 @@ public class ContentCorral {
             OutputStream out = new FileOutputStream(copy);
             int r;
             while ((r = bin.read(buff)) > 0) {
-                Log.d(TAG, "read " + r);
                 out.write(buff, 0, r);
             }
-            Log.d(TAG, "closing");
             out.close();
             bin.close();
             in.close();
-            Log.d(TAG, "returning " + copy);
             return Uri.fromFile(copy);
         } catch (IOException e) {
             Log.w(TAG, "Error copying file", e);
@@ -158,9 +158,9 @@ public class ContentCorral {
                 try {
                     // This is a blocking call and will only return on a
                     // successful connection or an exception
-                    // Log.d(TAG, "waiting for client...");
+                    if (DBG) Log.d(TAG, "corral waiting for client...");
                     socket = mmServerSocket.accept();
-                    // Log.d(TAG, "Client connected!");
+                    if (DBG) Log.d(TAG, "corral client connected!");
                 } catch (SocketException e) {
                     Log.e(TAG, "accept() failed", e);
                     break;
@@ -307,9 +307,9 @@ public class ContentCorral {
             // Read header information, determine connection type
             try {
                 bytes = mmInStream.read(buffer);
-                Log.d(TAG, "read " + bytes + " header bytes");
+                if (DBG) Log.d(TAG, "read " + bytes + " header bytes");
                 String header = new String(buffer, 0, bytes);
-
+                if (DBG) Log.d(TAG, header);
                 // determine request type
                 if (header.startsWith("GET ")) {
                     doGetRequest(header);
@@ -377,8 +377,9 @@ public class ContentCorral {
 
             // OK to download:
             Uri requestPath = Uri.parse(contentPath);
-            if ("content".equals(requestPath.getScheme())) {
-                Log.d(TAG, "Retrieving for " + requestPath.getAuthority());
+            String scheme = requestPath.getScheme();
+            if ("content".equals(scheme) || "file".equals(scheme)) {
+                if (DBG) Log.d(TAG, "Retrieving for " + requestPath.getAuthority());
                 if (DungBeetleContentProvider.AUTHORITY.equals(requestPath.getAuthority())) {
                     if (requestPath.getQueryParameter("obj") != null) {
                         int objIndex = Integer.parseInt(requestPath.getQueryParameter("obj"));
@@ -412,11 +413,19 @@ public class ContentCorral {
                 while ((r = in.read(buffer)) > 0) {
                     size += r;
                 }
-
+                String type = mContext.getContentResolver().getType(requestPath);
+                if (type == null) {
+                    int p = requestPath.toString().lastIndexOf(".");
+                    if (p > 0) {
+                        String ext = requestPath.toString().substring(p + 1);
+                        type = CorralClient.typeForExtension(ext);
+                    }
+                }
                 in = mContext.getContentResolver().openInputStream(requestPath);
                 mmOutStream.write(header("HTTP/1.1 200 OK"));
-                mmOutStream.write(header("Content-Type: "
-                        + mContext.getContentResolver().getType(requestPath)));
+                if (type != null) {
+                    mmOutStream.write(header("Content-Type: " + type));
+                }
                 mmOutStream.write(header("Content-Length: " + size));
                 // mmOutStream.write(header("Content-Disposition: attachment; filename=\""+filename+"\""));
                 mmOutStream.write(header(""));

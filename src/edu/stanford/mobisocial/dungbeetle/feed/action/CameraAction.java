@@ -1,7 +1,14 @@
 package edu.stanford.mobisocial.dungbeetle.feed.action;
 
+import java.io.IOException;
+
+import mobisocial.socialkit.Obj;
+
+import org.mobisocial.corral.ContentCorral;
+
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedAction;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
@@ -22,8 +29,15 @@ public class CameraAction implements FeedAction {
                 context, 
                 new PhotoTaker.ResultHandler() {
                     @Override
-                    public void onResult(byte[] data) {
-                        DbObject obj = PictureObj.from(data);
+                    public void onResult(Uri imageUri, byte[] data) {
+                        Obj obj;
+                        Uri storedUri = ContentCorral.storeContent(context, imageUri, "image/jpeg");
+                        try {
+                            obj = PictureObj.from(context, storedUri);
+                        } catch (IOException e) {
+                            Log.w("CameraAction", "failed to capture image", e);
+                            obj = PictureObj.from(data);
+                        }
                         Helpers.sendToFeed(
                             context, obj, feedUri);
                     }

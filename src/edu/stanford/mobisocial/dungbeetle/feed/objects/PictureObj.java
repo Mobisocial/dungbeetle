@@ -123,17 +123,19 @@ public class PictureObj extends DbEntryHandler
 
         JSONObject base = new JSONObject();
         if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-            String localIp = ContentCorral.getLocalIpAddress();
-            if (localIp != null) {
-                try {
-                    // TODO: Security breach.
-                    // Send to trusted users only.
-                    base.put(Contact.ATTR_LAN_IP, localIp);
-                    base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
-                    base.put(CorralClient.OBJ_MIME_TYPE, cr.getType(imageUri));
-                } catch (JSONException e) {
-                    Log.e(TAG, "impossible json error possible!");
+            try {
+                String type = cr.getType(imageUri);
+                if (type == null) {
+                    type = "image/jpeg";
                 }
+                base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
+                base.put(CorralClient.OBJ_MIME_TYPE, type);
+                String localIp = ContentCorral.getLocalIpAddress();
+                if (localIp != null) {
+                    base.put(Contact.ATTR_LAN_IP, localIp);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "impossible json error possible!");
             }
         }
         return from(base, data);

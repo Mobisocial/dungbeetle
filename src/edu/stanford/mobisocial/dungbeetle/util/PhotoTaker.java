@@ -58,13 +58,12 @@ public class PhotoTaker implements ActivityCallout {
 			path.mkdir();
 		}
 
-		file = new File(path, "image.tmp");
+		file = getTempFile(mContext);
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
 			options.inJustDecodeBounds = true;
 			BitmapFactory.decodeStream(new FileInputStream(file), null, options);
-			
-			
+
 			int targetSize = mSize;
 			int xScale = (options.outWidth + targetSize - 1) / targetSize;
 			int yScale = (options.outHeight + targetSize - 1) / targetSize;
@@ -114,14 +113,14 @@ public class PhotoTaker implements ActivityCallout {
 			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
 			byte[] data = baos.toByteArray();
 
-			mResultHandler.onResult(data);
+			mResultHandler.onResult(Uri.fromFile(file), data);
 		} catch (Exception e) {
 			Log.wtf(TAG, "failed snapshot exception", e);
 		}
 	}
 
 	public interface ResultHandler {
-		public void onResult(byte[] data);
+		public void onResult(Uri imageUri, byte[] thumbnail);
 	}
 
 	private static File getTempFile(Context context) {
