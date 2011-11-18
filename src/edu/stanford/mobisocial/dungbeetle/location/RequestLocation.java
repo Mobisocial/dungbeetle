@@ -133,7 +133,7 @@ public class RequestLocation extends Service {
 	    	    			ArrayList<BigInteger> three_k_2 = new ArrayList<BigInteger>();
 	    	    			
 	    	    			// Get Diffie-Helman key corresponding to each friend id
-	    	    			dhkey = idToSharedKeyMap.get(friend).toString();
+	    	    			dhkey = new BigInteger(idToSharedKeyMap.get(friend)).toString();
 	    		      
 	    	    			// Calculate what to encrypt (time that B-side also encrypted). So here, we match the times of A and B
 	    	    			curDate = new Date();
