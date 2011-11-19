@@ -578,7 +578,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
     long addToOutgoing(String appId, String to, String type, JSONObject json){
         return addToOutgoing(getWritableDatabase(), 
-                             appId, to, type, json);
+                             appId, to, type, json, null, null);
+    }
+    long addToOutgoing(String appId, String to, String type, JSONObject json, byte[] send_as, byte[] send_as_pub){
+        return addToOutgoing(getWritableDatabase(), 
+                             appId, to, type, json, send_as, send_as_pub);
     }
 
     void prepareForSending(JSONObject json, String type, long timestamp, String appId)
@@ -589,8 +593,12 @@ public class DBHelper extends SQLiteOpenHelper {
         json.put("appId", appId);
     }
 
+	long addToOutgoing(
+	        SQLiteDatabase db, String appId, String to, String type, JSONObject json) {
+		return addToOutgoing(db, appId, to, type, json, null, null);
+	}
     long addToOutgoing(
-        SQLiteDatabase db, String appId, String to, String type, JSONObject json) {
+        SQLiteDatabase db, String appId, String to, String type, JSONObject json, byte[] send_as, byte[] send_as_pub) {
         if (DBG) {
             Log.d(TAG, "Adding to outgoing; to: " + to + ", json: " + json);
         }
@@ -607,6 +615,8 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.SEQUENCE_ID, 0);
             cv.put(DbObject.TIMESTAMP, timestamp);
+            cv.put(DbObject.SEND_AS, send_as);
+            cv.put(DbObject.SEND_AS_PUB, send_as_pub);
             if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
             	throw new RuntimeException("Messasge size is too large for sending");
             db.insertOrThrow(DbObject.TABLE, null, cv);

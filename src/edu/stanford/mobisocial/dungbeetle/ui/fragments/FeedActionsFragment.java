@@ -34,6 +34,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -182,9 +183,9 @@ public class FeedActionsFragment extends Fragment {
 
     private void sendToExternalFriend() {
         Intent share = new Intent(Intent.ACTION_SEND);
-        share.putExtra(Intent.EXTRA_TEXT, "Join me in a Musubi thread: " + mExternalFeedUri);
+        share.setType("text/html");
+        share.putExtra(Intent.EXTRA_TEXT, Html.fromHtml("Join me in a <a href=\"" + mExternalFeedUri + "\">Musubi thread</a>"));
         share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
-        share.setType("text/plain");
         startActivity(share);
     }
 

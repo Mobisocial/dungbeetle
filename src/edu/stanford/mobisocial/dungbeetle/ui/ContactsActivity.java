@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -93,11 +94,10 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void onClickNew(View v) {
         Intent share = new Intent(Intent.ACTION_SEND);
         Uri friendRequest = FriendRequest.getInvitationUri(this, null);
-        share.putExtra(Intent.EXTRA_TEXT,
-                "Be my friend on Musubi! Click here from your Android device: "
-                + friendRequest);
+        share.setType("text/html");
+        share.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(
+                "Be my friend on Musubi! <a href=\"" + friendRequest + "\">Click here from your Android device</a>"));
         share.putExtra(Intent.EXTRA_SUBJECT, "Join me on Musubi!");
-        share.setType("text/plain");
         startActivity(share);
     }
 

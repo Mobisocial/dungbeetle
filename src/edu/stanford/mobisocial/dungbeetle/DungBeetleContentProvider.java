@@ -179,7 +179,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             try {
                 JSONObject obj = new JSONObject(values.getAsString("json"));
                 mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
-                        values.getAsString(DbObject.TYPE), obj);
+                        values.getAsString(DbObject.TYPE), obj, values.getAsByteArray(DbObject.SEND_AS), values.getAsByteArray(DbObject.SEND_AS_PUB));
                 resolver.notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
                 return Uri.parse(uri.toString());
             }

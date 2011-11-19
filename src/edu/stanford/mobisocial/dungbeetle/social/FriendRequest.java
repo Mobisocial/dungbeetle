@@ -94,12 +94,6 @@ public class FriendRequest {
         String pubKeyStr = friendRequest.getQueryParameter("public");
         DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw
                                                            // exception
-
-        String privKeyStr = friendRequest.getQueryParameter("key");
-        DBIdentityProvider.privateKeyFromString(privKeyStr); // may throw
-        String inviteKeyStr = friendRequest.getQueryParameter("invite");
-        DBIdentityProvider.publicKeyFromString(inviteKeyStr); // may throw
-
         Uri uri = Helpers.insertContact(c, pubKeyStr, name, email);
         long contactId = Long.valueOf(uri.getLastPathSegment());
         Helpers.insertSubscriber(c, contactId, "friend");

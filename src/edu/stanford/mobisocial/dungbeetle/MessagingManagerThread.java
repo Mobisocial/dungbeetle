@@ -163,7 +163,7 @@ public class MessagingManagerThread extends Thread {
             final JSONObject obj = in_obj;
             final byte[] raw = extracted_data;
 
-            Group g = Group.forFeedName(mContext, feedName);
+            Group g = Group.forFeedName(mContext, Util.SHA1(incoming.getSigner().getEncoded()));
             if(g != null && g.pub != null && contact == null && g.pub.equals(incoming.getSigner())) {
             	//this is a group control message
             	
