@@ -1,11 +1,17 @@
+
 package edu.stanford.mobisocial.dungbeetle;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.http.HttpResponse;
@@ -18,9 +24,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
-
 import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
@@ -32,6 +35,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.MulticastLock;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,26 +46,35 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
+import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
 public class NearbyActivity extends ListActivity {
-    ArrayList<NearbyItem> mGroupList = new ArrayList<NearbyItem>();
-    
-    String TAG = "Nearby";
+    private static final String TAG = "Nearby";
     private boolean DBG = true;
-    private static final int RESULT_BT_ENABLE = 1;
 
     private NearbyAdapter mAdapter;
+    private ArrayList<NearbyItem> mNearbyList = new ArrayList<NearbyItem>();
+    private static final int RESULT_BT_ENABLE = 1;
+   
     private GpsScannerTask mGpsScanner;
     private BluetoothScannerTask mBtScanner;
+    private MulticastScannerTask mMulticastScanner;
+    private MulticastBroadcastTask mMulticastBroadcaster;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -69,7 +83,7 @@ public class NearbyActivity extends ListActivity {
         findViewById(R.id.go).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                scanNearby();
+                onClickRefresh(null);
             }
         });
         findViewById(R.id.qr).setOnClickListener(new OnClickListener() {
@@ -80,13 +94,39 @@ public class NearbyActivity extends ListActivity {
         });
         DBG = MusubiBaseActivity.isDeveloperModeEnabled(this);
         MusubiBaseActivity.doTitleBar(this, "Nearby");
-        mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mGroupList);
+        mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mNearbyList);
         setListAdapter(mAdapter);
-        scanNearby();
+
+        if (!MusubiBaseActivity.isDeveloperModeEnabled(this)) {
+            findViewById(R.id.social).setVisibility(View.GONE);
+        } else {
+            CheckBox checkbox = (CheckBox)findViewById(R.id.social);
+            mMulticastBroadcaster = MulticastBroadcastTask.getInstance(NearbyActivity.this);
+            if (mMulticastBroadcaster.isRunning()) {
+                checkbox.setChecked(true);
+            }
+            checkbox.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        // TODO: Generalize to NearbyBroadcaster; do multicast, bt, gps, dns
+                        if (buttonView.isChecked()) {
+                            if (mMulticastBroadcaster == null) {
+                                mMulticastBroadcaster =
+                                        MulticastBroadcastTask.getInstance(NearbyActivity.this);
+                            }
+                            mMulticastBroadcaster.execute();
+                        } else {
+                            mMulticastBroadcaster.cancel(true);
+                            mMulticastBroadcaster = null;
+                        }
+                    }
+                });
+        }
     }
 
     public void onClickRefresh(View view) {
-        mGroupList.clear();
+        mNearbyList.clear();
         mAdapter.notifyDataSetChanged();
         scanNearby();
     }
@@ -94,18 +134,42 @@ public class NearbyActivity extends ListActivity {
     private void scanNearby() {
         if (mGpsScanner != null) {
             mGpsScanner.cancel(true);
+            mMulticastScanner.cancel(true);
             // mBtScanner.cancel(true);
         }
 
-        String password = ((EditText)findViewById(R.id.password)).getText().toString();
+        String password = ((EditText) findViewById(R.id.password)).getText().toString();
         mGpsScanner = new GpsScannerTask(password);
+        mMulticastScanner = new MulticastScannerTask();
         // mBtScanner = new BluetoothScannerTask();
 
         mGpsScanner.execute();
+        mMulticastScanner.execute();
         // mBtScanner.execute();
     }
 
-    private class GpsScannerTask extends AsyncTask<Void, Void, List<NearbyItem>> {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        scanNearby();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (mGpsScanner != null) {
+            mGpsScanner.cancel(true);
+            mMulticastScanner.cancel(true);
+            // mBtScanner.cancel(true);
+
+            mGpsScanner = null;
+            mMulticastScanner = null;
+            // mBtScanner = null;
+        }
+    }
+
+    private class GpsScannerTask extends AsyncTask<Void, NearbyItem, List<NearbyItem>> {
         private final String mmPassword;
         private final MyLocation mmMyLocation;
         private boolean mmLocationScanComplete = false;
@@ -126,29 +190,21 @@ public class NearbyActivity extends ListActivity {
             while (!mmLocationScanComplete) {
                 synchronized (mmLocationResult) {
                     try {
-                        if (DBG) Log.d(TAG, "Waiting for location results...");
+                        if (DBG)
+                            Log.d(TAG, "Waiting for location results...");
                         mmLocationResult.wait();
-                    } catch (InterruptedException e) {}
+                    } catch (InterruptedException e) {
+                    }
                 }
             }
             return mmResults;
         }
 
-        @Override
-        protected void onPostExecute(List<NearbyItem> result) {
-            if (result != null) {
-                for (NearbyItem i : result) {
-                    mGroupList.add(i);
-                }
-            }
-            Log.d(TAG, "I so updated, " + mGroupList.size());
-            mAdapter.notifyDataSetChanged();
-        }
-
         private final MyLocation.LocationResult mmLocationResult = new MyLocation.LocationResult() {
             @Override
             public void gotLocation(final Location location) {
-                if (DBG) Log.d(TAG, "got location, searching for nearby feeds...");
+                if (DBG)
+                    Log.d(TAG, "got location, searching for nearby feeds...");
                 if (isCancelled()) {
                     synchronized (mmLocationResult) {
                         mmLocationResult.notify();
@@ -156,20 +212,20 @@ public class NearbyActivity extends ListActivity {
                     return;
                 }
 
-                //Got the location!
+                // Got the location!
                 try {
-                    Uri uri = new Uri.Builder()
-                        .scheme("http")
-                        .authority("suif.stanford.edu")
-                        .path("dungbeetle/nearby.php").build();
+                    Uri uri = new Uri.Builder().scheme("http").authority("suif.stanford.edu")
+                            .path("dungbeetle/nearby.php").build();
 
                     StringBuffer sb = new StringBuffer();
                     DefaultHttpClient client = new DefaultHttpClient();
                     HttpPost httpPost = new HttpPost(uri.toString());
 
                     List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location.getLatitude())));
-                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location.getLongitude())));
+                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location
+                            .getLatitude())));
+                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location
+                            .getLongitude())));
                     nameValuePairs.add(new BasicNameValuePair("password", mmPassword));
                     httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                     try {
@@ -178,95 +234,269 @@ public class NearbyActivity extends ListActivity {
                         BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
                         String s = "";
                         while ((s = buffer.readLine()) != null) {
-
                             if (isCancelled()) {
                                 synchronized (mmLocationResult) {
                                     mmLocationResult.notify();
                                 }
                                 return;
                             }
-
                             sb.append(s);
                         }
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
                     String response = sb.toString();
                     JSONArray groupsJSON = new JSONArray(response);
                     List<NearbyItem> results = new ArrayList<NearbyItem>(groupsJSON.length());
-                    if (DBG) Log.d(TAG, "Got " + groupsJSON.length() + " groups");
+                    if (DBG)
+                        Log.d(TAG, "Got " + groupsJSON.length() + " groups");
                     for (int i = 0; i < groupsJSON.length(); i++) {
                         JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        results.add(new NearbyItem(group.optString("group_name"),
-                                Uri.parse(group.optString("feed_uri")), null));
+                        results.add(new NearbyItem(group.optString("group_name"), Uri.parse(group
+                                .optString("feed_uri")), null));
                     }
                     mmResults = results;
                     mmLocationScanComplete = true;
                     synchronized (mmLocationResult) {
                         mmLocationResult.notify();
                     }
-                }
-                catch(Exception e) {
-                    if (DBG) Log.d(TAG, "Error searching nearby feeds", e);
+                } catch (Exception e) {
+                    if (DBG)
+                        Log.d(TAG, "Error searching nearby feeds", e);
                 }
             }
         };
     }
 
-    private class BluetoothScannerTask extends AsyncTask<Void, NearbyItem, Void> {
-
+    /**
+     * Scans known bluetooth mac addresses to see if any are nearby.
+     * TODO: This is badly broken, use sdp instead.
+     *
+     */
+    private class BluetoothScannerTask extends NearbyTask {
         @Override
-        protected Void doInBackground(Void... params) {
+        protected List<NearbyItem> doInBackground(Void... params) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD_MR1) {
-                if (DBG) Log.w(TAG, "insecure bluetooth not supported.");
-                //return null;
+                if (DBG)
+                    Log.w(TAG, "insecure bluetooth not supported.");
+                // return null;
             }
 
-            List<CursorUser> users = DbContactAttributes.getUsersWithAttribute(
-                    NearbyActivity.this, Contact.ATTR_BT_CORRAL_UUID);
-            if (DBG) Log.d(TAG, "checking " + users.size() + " users to see who's nearby.");
+            List<CursorUser> users = DbContactAttributes.getUsersWithAttribute(NearbyActivity.this,
+                    Contact.ATTR_BT_CORRAL_UUID);
+            if (DBG)
+                Log.d(TAG, "checking " + users.size() + " users to see who's nearby.");
             String mac = null;
             for (CursorUser u : users) {
-                if (DBG) Log.d(TAG, "Checking " + u.getName());
+                if (DBG)
+                    Log.d(TAG, "Checking " + u.getName());
                 try {
                     long contactId = u.getLocalId();
-                    mac = DbContactAttributes.getAttribute(
-                            NearbyActivity.this, contactId, Contact.ATTR_BT_MAC);
-                    String uuidStr = DbContactAttributes.getAttribute(
-                            NearbyActivity.this, contactId, Contact.ATTR_BT_CORRAL_UUID);
+                    mac = DbContactAttributes.getAttribute(NearbyActivity.this, contactId,
+                            Contact.ATTR_BT_MAC);
+                    String uuidStr = DbContactAttributes.getAttribute(NearbyActivity.this,
+                            contactId, Contact.ATTR_BT_CORRAL_UUID);
                     UUID uuid = UUID.fromString(uuidStr);
                     BluetoothSocket socket = BluetoothAdapter.getDefaultAdapter()
                             .getRemoteDevice(mac).createInsecureRfcommSocketToServiceRecord(uuid);
-                    if (DBG) Log.d(TAG, "Bluetooth connecting to " + mac + ":" + uuid);
+                    if (DBG)
+                        Log.d(TAG, "Bluetooth connecting to " + mac + ":" + uuid);
                     socket.connect();
-                    if (DBG) Log.d(TAG, "Bluetooth connected!");
-                    if (DBG) Log.d(TAG, "Bluetooth reading...");
+                    if (DBG)
+                        Log.d(TAG, "Bluetooth connected!");
+                    if (DBG)
+                        Log.d(TAG, "Bluetooth reading...");
                     byte[] headerBytes = new byte[16];
                     int r = socket.getInputStream().read(headerBytes);
                     if (r != headerBytes.length) {
                         throw new IOException("Too few bytes.");
                     }
-                    if (DBG) Log.d(TAG, "Read " + new String(headerBytes));
-                    publishProgress(new NearbyItem(u.getName(),
-                            Contact.uriFor(contactId), Contact.MIME_TYPE));
-                    if (DBG) Log.d(TAG, "Bluetooth closing.");
+                    if (DBG)
+                        Log.d(TAG, "Read " + new String(headerBytes));
+                    publishProgress(new NearbyItem(u.getName(), Contact.uriFor(contactId),
+                            Contact.MIME_TYPE));
+                    if (DBG)
+                        Log.d(TAG, "Bluetooth closing.");
                     socket.close();
-                    if (DBG) Log.d(TAG, "Bluetooth closed.");
+                    if (DBG)
+                        Log.d(TAG, "Bluetooth closed.");
                 } catch (IOException e) {
-                    if (DBG) Log.d(TAG, "no connection for " + mac);
+                    if (DBG)
+                        Log.d(TAG, "no connection for " + mac);
                 } catch (IllegalArgumentException e) {
-                    if (DBG) Log.d(TAG, "Bad uuid", e);
+                    if (DBG)
+                        Log.d(TAG, "Bad uuid", e);
                 }
             }
-            if (DBG) Log.d(TAG, "Done checking bluetooth devices.");
+            if (DBG)
+                Log.d(TAG, "Done checking bluetooth devices.");
             return null;
+        }
+    }
+
+    private class MulticastScannerTask extends NearbyTask {
+        static final String NEARBY_GROUP = "239.5.5.0";
+        static final int NEARBY_PORT = 9178;
+
+        private final Set<Uri> mSeenUris = new HashSet<Uri>();
+        private MulticastSocket mSocket;
+        private MulticastLock mLock;
+
+        @Override
+        protected void onPreExecute() {
+            WifiManager wifi = (WifiManager)getSystemService( Context.WIFI_SERVICE );
+            if (wifi == null) {
+                Log.d(TAG, "No wifi available.");
+                return;
+            }
+            mLock = wifi.createMulticastLock("msb-scanner");
+            mLock.acquire();
+
+            try {
+                mSocket = new MulticastSocket(NEARBY_PORT);
+            } catch (IOException e) {
+                Log.w(TAG, "error multicasting", e);
+                mSocket = null;
+            }
+
+            // Ignore this device's profile:
+            mSeenUris.add(FriendRequest.getMusubiUri(NearbyActivity.this));
         }
 
         @Override
+        protected List<NearbyItem> doInBackground(Void... params) {
+            try {
+                mSocket.joinGroup(InetAddress.getByName(NEARBY_GROUP));
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to listen on multicast", e);
+                mSocket = null;
+            }
+            while (mSocket != null) {
+                if (isCancelled()) {
+                    break;
+                }
+                try {
+                    byte[] buf = new byte[2048];
+                    DatagramPacket recv = new DatagramPacket(buf, buf.length);
+                    mSocket.receive(recv);
+
+                    Uri friendUri = null;
+                    try {
+                        String uriStr = new String(recv.getData(), 0, recv.getLength());
+                        friendUri = Uri.parse(uriStr);
+                    } catch (Exception e) {
+                        continue;
+                    }
+
+                    if (mSeenUris.contains(friendUri)) {
+                        continue;
+                    }
+
+                    // TODO: User user = FriendRequest.parseUri(friendUri);
+                    String name = "Unknown";
+                    try {
+                        JSONObject o = new JSONObject(friendUri.getQueryParameter("profile"));
+                        name = o.getString("name");
+                    } catch (Exception e) {
+                    }
+                    publishProgress(new NearbyItem(name, friendUri, null));
+                    mSeenUris.add(friendUri);
+                } catch (IOException e) {
+                    Log.e(TAG, "Error receiving multicast", e);
+                    mSocket = null;
+                }
+            }
+            Log.d(TAG, "Done scanning lan");
+            mLock.release();
+            return null;
+        }
+    }
+
+    private static class MulticastBroadcastTask extends AsyncTask<Void, Void, Void> {
+        private static MulticastBroadcastTask sInstance;
+        private static final int SEVEN_SECONDS = 7000;
+
+        private InetAddress mNearbyGroup;
+        private MulticastSocket mSocket;
+        private final byte[] mBroadcastMsg;
+        private boolean mRunning;
+        private boolean mDone;
+
+        private MulticastBroadcastTask(Context context) {
+            mBroadcastMsg = FriendRequest.getMusubiUri(context).toString().getBytes();
+        }
+
+        public static MulticastBroadcastTask getInstance(Context context) {
+            if (sInstance == null || sInstance.mDone) {
+                sInstance = new MulticastBroadcastTask(context);
+            }
+            return sInstance;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            try {
+                mRunning = true;
+                mDone = false;
+                mNearbyGroup = InetAddress.getByName(MulticastScannerTask.NEARBY_GROUP);
+                mSocket = new MulticastSocket(MulticastScannerTask.NEARBY_PORT);
+            } catch (IOException e) {
+                Log.w(TAG, "error multicasting", e);
+                mSocket = null;
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                mSocket.joinGroup(mNearbyGroup);
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to connect to multicast", e);
+            }
+            while (mSocket != null) {
+                if (isCancelled()) {
+                    mSocket.disconnect();
+                    break;
+                }
+                try {
+                    DatagramPacket profile = new DatagramPacket(mBroadcastMsg,
+                            mBroadcastMsg.length, mNearbyGroup, MulticastScannerTask.NEARBY_PORT);
+                    Log.d(TAG, "Sending packet");
+                    mSocket.send(profile);
+                    try {
+                        Thread.sleep(SEVEN_SECONDS);
+                    } catch (InterruptedException e) {}
+                } catch (IOException e) {
+                    mSocket = null;
+                }
+            }
+            mRunning = false;
+            mDone = true;
+            return null;
+        }
+
+        public boolean isRunning() {
+            return mRunning;
+        }
+    }
+
+    private abstract class NearbyTask extends AsyncTask<Void, NearbyItem, List<NearbyItem>> {
+        @Override
         protected void onProgressUpdate(NearbyItem... values) {
-            mGroupList.add(values[0]);
+            if (!isCancelled()) {
+                mNearbyList.add(values[0]);
+                mAdapter.notifyDataSetChanged();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(List<NearbyItem> result) {
+            if (!isCancelled() && result != null) {
+                for (NearbyItem i : result) {
+                    mNearbyList.add(i);
+                }
+            }
             mAdapter.notifyDataSetChanged();
         }
     }
@@ -285,8 +515,7 @@ public class NearbyActivity extends ListActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        IntentResult result =
-                IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (result != null && result.getContents() != null) {
             try {
                 Uri uri = Uri.parse(result.getContents());
@@ -298,7 +527,7 @@ public class NearbyActivity extends ListActivity {
             }
             return;
         }
-        if (requestCode == RESULT_BT_ENABLE){
+        if (requestCode == RESULT_BT_ENABLE) {
             if (resultCode == Activity.RESULT_CANCELED) {
                 finish();
             } else {
@@ -309,7 +538,7 @@ public class NearbyActivity extends ListActivity {
 
     private class NearbyAdapter extends ArrayAdapter<NearbyItem> {
         private ArrayList<NearbyItem> nearby;
-        
+
         public NearbyAdapter(Context context, int textViewResourceId, ArrayList<NearbyItem> groups) {
             super(context, textViewResourceId, groups);
             this.nearby = groups;
@@ -318,7 +547,7 @@ public class NearbyActivity extends ListActivity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View row = convertView;
-            if(convertView == null) {
+            if (convertView == null) {
                 LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 row = vi.inflate(R.layout.nearby_groups_item, null);
             }
@@ -330,6 +559,7 @@ public class NearbyActivity extends ListActivity {
                 public void onClick(View arg0) {
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setDataAndType(g.feedUri, g.mimeType);
+                    intent.setPackage(getPackageName());
                     startActivity(intent);
                 }
             });
@@ -363,20 +593,22 @@ public class NearbyActivity extends ListActivity {
                                         public void run() {
                                             try {
                                                 JSONObject obj = new JSONObject(new String(data));
-                                                mGroupList.add(new NearbyItem(
-                                                        obj.getString("name"),
-                                                        Uri.parse(obj.getString("dynuri")),
-                                                        null));
+                                                mNearbyList.add(new NearbyItem(
+                                                        obj.getString("name"), Uri.parse(obj
+                                                                .getString("dynuri")), null));
                                                 mAdapter.notifyDataSetChanged();
                                             } catch (JSONException e) {
-                                                Log.e(TAG, "Error getting group info over bluetooth", e);
+                                                Log.e(TAG,
+                                                        "Error getting group info over bluetooth",
+                                                        e);
                                             }
                                         }
                                     });
                                 }
                             };
                             // Get the BluetoothDevice object from the Intent
-                            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            BluetoothDevice device = intent
+                                    .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                             BluetoothBeacon.discover(NearbyActivity.this, device, discovered);
                         };
                     }.start();
@@ -386,8 +618,9 @@ public class NearbyActivity extends ListActivity {
                 }
             }
         };
-        
-        registerReceiver(receiver, filter); // Don't forget to unregister during onDestroy   
+
+        registerReceiver(receiver, filter); // Don't forget to unregister during
+                                            // onDestroy
         BluetoothAdapter.getDefaultAdapter().startDiscovery();
         Toast.makeText(this, "Scanning Bluetooth...", 500).show();
     }
@@ -402,4 +635,3 @@ public class NearbyActivity extends ListActivity {
         });
     }
 }
-

@@ -7,6 +7,7 @@
 	  >
     <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="12" />
 
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -205,6 +206,7 @@
       <activity android:name=".NearbyActivity"
             android:theme="@style/Theme.D1"
             android:label="@string/title_nearby"
+            android:windowSoftInputMode="stateHidden"
             />
 
     <activity

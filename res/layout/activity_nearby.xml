@@ -49,15 +49,21 @@
             android:hint="Group passphrase..."
             android:layout_toLeftOf="@id/go"
             android:layout_toRightOf="@id/qr" />
-</RelativeLayout>
+
+    <CheckBox android:id="@+id/social"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|left"
+        android:text="Go Social"
+        android:textSize="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"/>
     <ListView  
         android:id="@android:id/list"
         android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        />
-    <TextView android:id="@android:id/empty"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
+        android:layout_below="@id/qr"
+        android:layout_above="@id/social"
         />
+</RelativeLayout>
 </LinearLayout>

@@ -261,9 +261,15 @@ public class HomeActivity extends MusubiBaseActivity {
         
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.setClass(this, HandleNfcContact.class);
-            startActivity(intent);
+            long contactId = FriendRequest.getExistingContactId(this, uri);
+            if (contactId != -1) {
+                Contact.view(this, contactId);
+                return;
+            } else {
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                intent.setClass(this, HandleNfcContact.class);
+                startActivity(intent);
+            }
         } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
             Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
             intent.setData(uri);

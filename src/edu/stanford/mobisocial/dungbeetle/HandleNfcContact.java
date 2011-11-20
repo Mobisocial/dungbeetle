@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
@@ -26,9 +27,10 @@ public class HandleNfcContact extends Activity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.handle_give);
 		Intent intent = getIntent();
-        final Uri uri = intent.getData();
+		final Uri uri = intent.getData();
+
+		setContentView(R.layout.handle_give);
 		Button saveButton = (Button)findViewById(R.id.save_contact_button);
 		Button cancelButton = (Button)findViewById(R.id.cancel_button);
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
@@ -37,7 +39,7 @@ public class HandleNfcContact extends Activity {
 		if (uri != null && 
 		        (uri.getScheme().equals(HomeActivity.SHARE_SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
-			
+
 	        mEmail = uri.getQueryParameter("email");
 	        mName = mEmail;
 
@@ -104,11 +106,10 @@ public class HandleNfcContact extends Activity {
                     finish();
                 }
             });
-			Toast.makeText(this, "Failed to receive contact :(", 
+			Toast.makeText(this, "Failed to receive contact.", 
                            Toast.LENGTH_SHORT).show();
 			Log.d(TAG, "Failed to handle " + uri);
 		}
-
 	}
 
 

@@ -9,6 +9,7 @@ import java.util.UUID;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
@@ -16,8 +17,10 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 
@@ -29,6 +32,14 @@ public class FriendRequest {
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
     public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/join";
+
+    /**
+     * Returns a friending uri under the 'musubi' scheme.
+     */
+    public static Uri getMusubiUri(Context c) {
+        Uri uri = getInvitationUri(c, true);
+        return uri.buildUpon().scheme("musubi").build();
+    }
 
     public static Uri getInvitationUri(Context c) {
         return getInvitationUri(c, true);
@@ -63,6 +74,24 @@ public class FriendRequest {
         } finally {
         	ident.close();
         }
+    }
+
+    /**
+     * Returns the contact id for the contact associated with the given uri,
+     * or -1 if no such contact exists.
+     */
+    public static long getExistingContactId(Context context, Uri friendRequest) {
+        String pubKeyStr = friendRequest.getQueryParameter("publicKey");
+        Uri uri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
+        String[] projection = new String[] { Contact._ID };
+        String selection = Contact.PUBLIC_KEY + " = ?";
+        String[] selectionArgs = new String[] { pubKeyStr };
+        String sortOrder = null;
+        Cursor c = context.getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+        if (!c.moveToFirst()) {
+            return -1;
+        }
+        return c.getLong(0);
     }
 
     public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
