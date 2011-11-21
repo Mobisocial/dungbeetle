@@ -1045,18 +1045,26 @@ public class DBHelper extends SQLiteOpenHelper {
             select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
         }
 
-        // Don't allow custom projection. Just grab everything.
-        String[] projection = new String[]{
-            "o." + DbObject._ID + " as " + DbObject._ID,
-            "o." + DbObject.TYPE + " as " + DbObject.TYPE,
-            "o." + DbObject.SEQUENCE_ID + " as " + DbObject.SEQUENCE_ID,
-            "o." + DbObject.FEED_NAME + " as " + DbObject.FEED_NAME,
-            "o." + DbObject.CONTACT_ID + " as " + DbObject.CONTACT_ID,
-            "o." + DbObject.DESTINATION + " as " + DbObject.DESTINATION,
-            "o." + DbObject.JSON + " as " + DbObject.JSON,
-            "o." + DbObject.TIMESTAMP + " as " + DbObject.TIMESTAMP,
-            "o." + DbObject.APP_ID + " as " + DbObject.APP_ID
-        };
+        String[] projection;
+        if (proj == null) {
+            projection = new String[]{
+                "o." + DbObject._ID + " as " + DbObject._ID,
+                "o." + DbObject.TYPE + " as " + DbObject.TYPE,
+                "o." + DbObject.SEQUENCE_ID + " as " + DbObject.SEQUENCE_ID,
+                "o." + DbObject.FEED_NAME + " as " + DbObject.FEED_NAME,
+                "o." + DbObject.CONTACT_ID + " as " + DbObject.CONTACT_ID,
+                "o." + DbObject.DESTINATION + " as " + DbObject.DESTINATION,
+                "o." + DbObject.JSON + " as " + DbObject.JSON,
+                "o." + DbObject.RAW + " as " + DbObject.RAW,
+                "o." + DbObject.TIMESTAMP + " as " + DbObject.TIMESTAMP,
+                "o." + DbObject.APP_ID + " as " + DbObject.APP_ID
+            };
+        } else {
+            projection = new String[proj.length];
+            for (int i = 0; i < proj.length; i++) {
+                projection[i] = "o." + proj[i] + " as " + proj[i];
+            }
+        }
 
         // Double this because select appears twice in full query
         String[] selectArgs = selectionArgs == null ? 

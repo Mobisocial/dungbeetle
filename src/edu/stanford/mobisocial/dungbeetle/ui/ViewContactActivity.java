@@ -31,18 +31,15 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FilterView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -346,11 +343,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             	mIdent.close();
             }
             if (mContactId == Contact.MY_ID) {
-            	if(c.picture == null) {
-            		mIcon.setImageResource(R.drawable.anonymous);        		
-            	} else {
-                	mIcon.setImageBitmap(c.picture);
-            	}
+                if (c.picture == null) {
+                    mIcon.setImageResource(R.drawable.anonymous);
+                } else {
+                    mIcon.setImageBitmap(c.picture);
+                }
                 mIcon.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                         Toast.makeText(mActivity, "Loading camera...", Toast.LENGTH_SHORT)
@@ -385,31 +382,24 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         		return;
             Spinner presence = (Spinner) view.findViewById(R.id.presence);
             if (mContactId == Contact.MY_ID) {
-                Cursor c = getActivity().getContentResolver().query(
-                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
-                        DbObject.TYPE + "= ? AND " + DbObject.CONTACT_ID + "= ?", new String[] {
-                                "profile", Long.toString(mContactId)
-                        }, DbObject.TIMESTAMP + " DESC");
+                final DBHelper mHelper = DBHelper.getGlobal(mActivity);
+                final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+                Contact c = null;
                 try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
-	                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
-	                    try {
-	                        JSONObject obj = new JSONObject(jsonSrc);
-	                        String name = obj.optString("name");
-	                        String about = obj.optString("about");
-	                        mProfileName.setText(name);
-	                        mProfileEmail.setText(mIdent.userEmail());
-	                        mProfileAbout.setText(about);
-	                    } catch (JSONException e) {
-	                    } finally {
-	                    	mIdent.close();
-	                    	mHelper.close();
-	                    }
-	                }
+                    c = mIdent.contactForUser();
                 } finally {
-                	c.close();
+                    mHelper.close();
+                    mIdent.close();
+                }
+
+                try {
+                    mProfileName.setText(c.name);
+                    mProfileEmail.setText(c.email);
+                    mProfileAbout.setText(c.status);
+                    mIcon.setImageBitmap(c.picture);
+                } finally {
+                    mIdent.close();
+                    mHelper.close();
                 }
 
                 presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener(getActivity()));
@@ -418,14 +408,14 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 presence.setAdapter(adapter);
 
-                c = getActivity().getContentResolver().query(
+                Cursor cursor = getActivity().getContentResolver().query(
                         Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"), null,
                         DbObject.TYPE + "=?", new String[] {
                             PresenceObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
                 try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                if (cursor.moveToFirst()) {
+	                    String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(DbObject.JSON));
 	                    try {
 	                        JSONObject obj = new JSONObject(jsonSrc);
 	                        int myPresence = Integer.parseInt(obj.optString("presence"));
@@ -434,29 +424,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 	                    }
 	                }
                 } finally {
-                	c.close();
-                }
-
-                Uri profileUri = Uri
-                        .parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head");
-                c = getActivity().getContentResolver().query(profileUri, null, DbObject.TYPE + "=?",
-                        new String[] {
-                            ProfilePictureObj.TYPE
-                        }, DbObject.TIMESTAMP + " DESC");
-                try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	
-	                    try {
-	                        JSONObject obj = new JSONObject(jsonSrc);
-	                        String bytes = obj.optString(ProfilePictureObj.DATA);
-	                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
-	                                bytes.hashCode(), bytes, mIcon);
-	                    } catch (JSONException e) {
-	                    }
-	                }
-                } finally {
-                	c.close();
+                    cursor.close();
                 }
             } else {
                 presence.setVisibility(View.GONE);
