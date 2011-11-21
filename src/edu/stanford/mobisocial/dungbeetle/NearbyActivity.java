@@ -175,11 +175,11 @@ public class NearbyActivity extends ListActivity {
         }
     }
 
-    private class GpsScannerTask extends AsyncTask<Void, NearbyItem, List<NearbyItem>> {
+    private class GpsScannerTask extends NearbyTask {
         private final String mmPassword;
         private final MyLocation mmMyLocation;
         private boolean mmLocationScanComplete = false;
-        private List<NearbyItem> mmResults;
+        private Location mmLocation = null;
 
         GpsScannerTask(String password) {
             mmPassword = password;
@@ -196,80 +196,70 @@ public class NearbyActivity extends ListActivity {
             while (!mmLocationScanComplete) {
                 synchronized (mmLocationResult) {
                     try {
-                        if (DBG)
-                            Log.d(TAG, "Waiting for location results...");
+                        if (DBG) Log.d(TAG, "Waiting for location results...");
                         mmLocationResult.wait();
                     } catch (InterruptedException e) {
                     }
                 }
             }
-            return mmResults;
+            if (DBG) Log.d(TAG, "Got location " + mmLocation);
+            if (isCancelled()) {
+                return null;
+            }
+
+            try {
+                if (DBG) Log.d(TAG, "Querying gps server...");
+                Uri uri = new Uri.Builder().scheme("http").authority("suif.stanford.edu")
+                        .path("dungbeetle/nearby.php").build();
+
+                StringBuffer sb = new StringBuffer();
+                DefaultHttpClient client = new DefaultHttpClient();
+                HttpPost httpPost = new HttpPost(uri.toString());
+
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                nameValuePairs.add(new BasicNameValuePair("lat",
+                        Double.toString(mmLocation.getLatitude())));
+                nameValuePairs.add(new BasicNameValuePair("lng",
+                        Double.toString(mmLocation.getLongitude())));
+                nameValuePairs.add(new BasicNameValuePair("password", mmPassword));
+                httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                try {
+                    HttpResponse execute = client.execute(httpPost);
+                    InputStream content = execute.getEntity().getContent();
+                    BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                    String s = "";
+                    while ((s = buffer.readLine()) != null) {
+                        if (isCancelled()) {
+                            return null;
+                        }
+                        sb.append(s);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                String response = sb.toString();
+                JSONArray groupsJSON = new JSONArray(response);
+                if (DBG) Log.d(TAG, "Got " + groupsJSON.length() + " groups");
+                for (int i = 0; i < groupsJSON.length(); i++) {
+                    JSONObject group = new JSONObject(groupsJSON.get(i).toString());
+                    publishProgress(new NearbyItem(NearbyItem.Type.FEED, group.optString("group_name"),
+                            Uri.parse(group.optString("feed_uri")), null));
+                }
+            } catch (Exception e) {
+                if (DBG) Log.d(TAG, "Error searching nearby feeds", e);
+            }
+            return null;
         }
 
         private final MyLocation.LocationResult mmLocationResult = new MyLocation.LocationResult() {
             @Override
             public void gotLocation(final Location location) {
-                if (DBG)
-                    Log.d(TAG, "got location, searching for nearby feeds...");
-                if (isCancelled()) {
-                    synchronized (mmLocationResult) {
-                        mmLocationResult.notify();
-                    }
-                    return;
-                }
-
-                // Got the location!
-                try {
-                    Uri uri = new Uri.Builder().scheme("http").authority("suif.stanford.edu")
-                            .path("dungbeetle/nearby.php").build();
-
-                    StringBuffer sb = new StringBuffer();
-                    DefaultHttpClient client = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost(uri.toString());
-
-                    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location
-                            .getLatitude())));
-                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location
-                            .getLongitude())));
-                    nameValuePairs.add(new BasicNameValuePair("password", mmPassword));
-                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-                    try {
-                        HttpResponse execute = client.execute(httpPost);
-                        InputStream content = execute.getEntity().getContent();
-                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                        String s = "";
-                        while ((s = buffer.readLine()) != null) {
-                            if (isCancelled()) {
-                                synchronized (mmLocationResult) {
-                                    mmLocationResult.notify();
-                                }
-                                return;
-                            }
-                            sb.append(s);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    String response = sb.toString();
-                    JSONArray groupsJSON = new JSONArray(response);
-                    List<NearbyItem> results = new ArrayList<NearbyItem>(groupsJSON.length());
-                    if (DBG)
-                        Log.d(TAG, "Got " + groupsJSON.length() + " groups");
-                    for (int i = 0; i < groupsJSON.length(); i++) {
-                        JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        results.add(new NearbyItem(NearbyItem.Type.FEED, group.optString("group_name"),
-                                Uri.parse(group.optString("feed_uri")), null));
-                    }
-                    mmResults = results;
-                    mmLocationScanComplete = true;
-                    synchronized (mmLocationResult) {
-                        mmLocationResult.notify();
-                    }
-                } catch (Exception e) {
-                    if (DBG)
-                        Log.d(TAG, "Error searching nearby feeds", e);
+                if (DBG) Log.d(TAG, "got location");
+                mmLocation = location;
+                mmLocationScanComplete = true;
+                synchronized (mmLocationResult) {
+                    mmLocationResult.notify();
                 }
             }
         };
