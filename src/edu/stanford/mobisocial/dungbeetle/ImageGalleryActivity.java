@@ -67,6 +67,10 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 	private int mInitialSelection = -1;
 	private CorralClient mCorralClient;
 
+	String mSelection = "type = ?";
+    String[] mSelectionArgs = new String[] { PictureObj.TYPE };
+    String mSortOrder = DbObject._ID + " DESC";
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -93,41 +97,35 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         outState.putInt("selection", mGallery.getSelectedItemPosition());
     }
 
+    // Cursor must be ordered DESC.
+    // The sort order and search order are opposite!
+    private static int binarySearch(Cursor c, long id, int colId) {
+        long test;
+        int first = 0;
+        int max = c.getCount();
+        while (first < max) {
+            int mid = (first + max) / 2;
+            c.moveToPosition(mid);
+            test = c.getLong(colId);
+            if (id > test) {
+                max = mid;
+            } else if (id < test) {
+                first = mid + 1;
+            } else {
+                return mid;
+            }
+        }
+        return 0;
+    }
+
     private static class ImageGalleryAdapter extends CursorAdapter {
         private final Context mContext;
         private final int mInitialSelection;
         private final int COL_JSON;
         private final int COL_ID;
 
-        public static ImageGalleryAdapter forObj(Context context, Cursor cursor, long objId) {
-            int colId = cursor.getColumnIndexOrThrow(DbObject._ID);
-            int init = binarySearch(cursor, objId, colId);
-            return new ImageGalleryAdapter(context, cursor, init);
-        }
-
         public int getInitialSelection() {
             return mInitialSelection;
-        }
-
-        // Cursor must be ordered DESC.
-        // The sort order and search order are opposite!
-        private static int binarySearch(Cursor c, long id, int colId) {
-            long test;
-            int first = 0;
-            int max = c.getCount();
-            while (first < max) {
-                int mid = (first + max) / 2;
-                c.moveToPosition(mid);
-                test = c.getLong(colId);
-                if (id > test) {
-                    max = mid;
-                } else if (id < test) {
-                    first = mid + 1;
-                } else {
-                    return mid;
-                }
-            }
-            return 0;
         }
 
         private ImageGalleryAdapter(Context context, Cursor c, int init) {
@@ -377,16 +375,18 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        String selection = "type = ?";
-        String[] selectionArgs = new String[] { PictureObj.TYPE };
-        String order = DbObject._ID + " DESC";
-        return new CursorLoader(this, mFeedUri, null, selection, selectionArgs, order);
+        return new CursorLoader(this, mFeedUri, null, mSelection, mSelectionArgs, mSortOrder);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (mAdapter == null) {
-            mAdapter = ImageGalleryAdapter.forObj(this, cursor, mInitialObjId);
+            String[] projection = new String[] { DbObj.COL_ID };
+            Cursor hashes = getContentResolver().query(
+                    mFeedUri, projection, mSelection, mSelectionArgs, mSortOrder);
+            int init = binarySearch(hashes, mInitialObjId, 0);
+            Log.d(TAG, "did a binary search and got " + init);
+            mAdapter = new ImageGalleryAdapter(this, cursor, init);
             mGallery.setAdapter(mAdapter);
             mGallery.setSelection((mInitialSelection == -1)
                     ? mAdapter.getInitialSelection() : mInitialSelection);
