@@ -385,7 +385,6 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             Cursor hashes = getContentResolver().query(
                     mFeedUri, projection, mSelection, mSelectionArgs, mSortOrder);
             int init = binarySearch(hashes, mInitialObjId, 0);
-            Log.d(TAG, "did a binary search and got " + init);
             mAdapter = new ImageGalleryAdapter(this, cursor, init);
             mGallery.setAdapter(mAdapter);
             mGallery.setSelection((mInitialSelection == -1)
