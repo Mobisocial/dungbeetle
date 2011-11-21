@@ -6,6 +6,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.UUID;
 
+import edu.stanford.mobisocial.bumblebee.util.Util;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
@@ -81,11 +82,18 @@ public class FriendRequest {
      * or -1 if no such contact exists.
      */
     public static long getExistingContactId(Context context, Uri friendRequest) {
-        String pubKeyStr = friendRequest.getQueryParameter("publicKey");
+        String personId = null;
+        try {
+            String pubKeyStr = friendRequest.getQueryParameter("publicKey");
+            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            personId = Util.makePersonIdForPublicKey(key);
+        } catch (Exception e) {
+            return -1;
+        }
         Uri uri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
         String[] projection = new String[] { Contact._ID };
-        String selection = Contact.PUBLIC_KEY + " = ?";
-        String[] selectionArgs = new String[] { pubKeyStr };
+        String selection = Contact.PERSON_ID + " = ?";
+        String[] selectionArgs = new String[] { personId };
         String sortOrder = null;
         Cursor c = context.getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
         if (!c.moveToFirst()) {

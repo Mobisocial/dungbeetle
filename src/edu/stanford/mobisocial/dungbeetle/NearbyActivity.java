@@ -33,6 +33,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -49,6 +50,8 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +65,7 @@ import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class NearbyActivity extends ListActivity {
     private static final String TAG = "Nearby";
@@ -253,8 +257,8 @@ public class NearbyActivity extends ListActivity {
                         Log.d(TAG, "Got " + groupsJSON.length() + " groups");
                     for (int i = 0; i < groupsJSON.length(); i++) {
                         JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        results.add(new NearbyItem(group.optString("group_name"), Uri.parse(group
-                                .optString("feed_uri")), null));
+                        results.add(new NearbyItem(NearbyItem.Type.FEED, group.optString("group_name"),
+                                Uri.parse(group.optString("feed_uri")), null));
                     }
                     mmResults = results;
                     mmLocationScanComplete = true;
@@ -314,7 +318,7 @@ public class NearbyActivity extends ListActivity {
                     }
                     if (DBG)
                         Log.d(TAG, "Read " + new String(headerBytes));
-                    publishProgress(new NearbyItem(u.getName(), Contact.uriFor(contactId),
+                    publishProgress(new NearbyItem(NearbyItem.Type.PERSON, u.getName(), Contact.uriFor(contactId),
                             Contact.MIME_TYPE));
                     if (DBG)
                         Log.d(TAG, "Bluetooth closing.");
@@ -400,7 +404,7 @@ public class NearbyActivity extends ListActivity {
                         name = o.getString("name");
                     } catch (Exception e) {
                     }
-                    publishProgress(new NearbyItem(name, friendUri, null));
+                    publishProgress(new NearbyItem(NearbyItem.Type.PERSON, name, friendUri, null));
                     mSeenUris.add(friendUri);
                 } catch (IOException e) {
                     Log.e(TAG, "Error receiving multicast", e);
@@ -501,14 +505,18 @@ public class NearbyActivity extends ListActivity {
         }
     }
 
-    private class NearbyItem {
+    private static class NearbyItem {
+        static enum Type { PERSON, FEED };
+
+        public final Type type;
         public final String name;
-        public final Uri feedUri;
+        public final Uri uri;
         public final String mimeType;
 
-        public NearbyItem(String name, Uri uri, String mimeType) {
+        public NearbyItem(Type type, String name, Uri uri, String mimeType) {
+            this.type = type;
             this.name = name;
-            this.feedUri = uri;
+            this.uri = uri;
             this.mimeType = mimeType;
         }
     }
@@ -555,16 +563,33 @@ public class NearbyActivity extends ListActivity {
             TextView text = (TextView) row.findViewById(R.id.name_text);
             text.setText(g.name);
 
-            row.setOnClickListener(new OnClickListener() {
-                public void onClick(View arg0) {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(g.feedUri, g.mimeType);
-                    intent.setPackage(getPackageName());
-                    startActivity(intent);
+            if (g.type == NearbyItem.Type.PERSON) {
+                long cid = FriendRequest.getExistingContactId(NearbyActivity.this, g.uri);
+                if (cid != -1) {
+                    try {
+                        Bitmap img = Contact.forId(NearbyActivity.this, cid).get().picture;
+                        ((ImageView)row.findViewById(R.id.icon)).setImageBitmap(img);
+                    } catch (NoValError e) {}
                 }
-            });
+            }
             return row;
         }
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        NearbyItem g = mAdapter.getItem(position);
+        if (g.type == NearbyItem.Type.PERSON) {
+            long cid = FriendRequest.getExistingContactId(this, g.uri);
+            if (cid != -1) {
+                Contact.view(this, cid);
+            }
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(g.uri, g.mimeType);
+        intent.setPackage(getPackageName());
+        startActivity(intent);
     }
 
     private void findBluetooth() {
@@ -593,7 +618,7 @@ public class NearbyActivity extends ListActivity {
                                         public void run() {
                                             try {
                                                 JSONObject obj = new JSONObject(new String(data));
-                                                mNearbyList.add(new NearbyItem(
+                                                mNearbyList.add(new NearbyItem(NearbyItem.Type.FEED,
                                                         obj.getString("name"), Uri.parse(obj
                                                                 .getString("dynuri")), null));
                                                 mAdapter.notifyDataSetChanged();
