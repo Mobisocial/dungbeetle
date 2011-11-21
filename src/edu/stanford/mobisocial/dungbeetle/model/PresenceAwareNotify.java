@@ -32,58 +32,22 @@ public class PresenceAwareNotify {
     }
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
-    	Log.w(TAG, "notify me");
-    	boolean doVibrate = true;
+    	boolean doAlert = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
             return;
         }
                 
         if (Push2TalkPresence.getInstance().isOnCall()) {
-        	doVibrate = false;
+        	doAlert = false;
         }
 
         if (MusubiBaseActivity.getInstance().amResumed()) {
             // TODO: Filter per getInstance().getFeedUri(), but how do we get info here?
-        	doVibrate = false;
+        	doAlert = false;
         }
 
         Notification notification = new Notification(
-            R.drawable.icon, notificationTitle, System.currentTimeMillis());
-        
-        if(doVibrate) {
-        	notification.vibrate = VIBRATE;
-        	
-        	// Disable vibrate if busy
-            Cursor c = mContext.getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-                null, 
-                DbObject.TYPE + "=?", 
-                new String[]{ "presence"}, 
-                DbObject.TIMESTAMP + " DESC");
-            if (c == null) {
-                Log.e(TAG, "Error querying feeds/me/head");
-                return;
-            }
-            try {
-            	if(c.moveToFirst()) {
-	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                try{
-	                    JSONObject obj = new JSONObject(jsonSrc);
-	                    int myPresence = Integer.parseInt(obj.optString("presence"));
-	                    if(myPresence == Presence.BUSY) {
-	                        notification.vibrate = null;
-	                    }
-	                }catch(JSONException e){}
-	            }
-            } finally {
-            	c.close();
-            }
-    	}
-        else {
-        	notification.vibrate = null;
-        }
-
-        
+            R.drawable.icon, notificationTitle, System.currentTimeMillis());        
 
         notification.setLatestEventInfo(
             mContext, 
@@ -92,11 +56,16 @@ public class PresenceAwareNotify {
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
 
-        SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
-        String uri = settings.getString("ringtone", null);
-        
-        if(!uri.equals("none")) {
-        	notification.sound = Uri.parse(uri);
+        if (doAlert) {
+            SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
+            String uri = settings.getString("ringtone", null);
+
+            if (uri.equals("dungbeetle")) {
+                notification.vibrate = VIBRATE;
+            }
+            if(!uri.equals("none")) {
+            	notification.sound = Uri.parse(uri);
+            }
         }
         mNotificationManager.notify(NOTIFY_ID, notification);
     }
