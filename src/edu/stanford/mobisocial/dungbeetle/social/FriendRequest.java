@@ -59,13 +59,13 @@ public class FriendRequest {
         try {
 	        // String name = ident.userName();
 	        String email = ident.userEmail();
-	        String profile = "{name:" + ident.userName() + "}";
+	        String name = ident.userName();
 	
 	        PublicKey pubKey = ident.userPublicKey();
 	        helper.close();
 	
 	        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
-	                .path("musubi/join").appendQueryParameter("profile", profile)
+	                .path("musubi/join").appendQueryParameter("name", name)
 	                .appendQueryParameter("email", email)
 	                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
 	        if (appendCapability) {
@@ -104,14 +104,11 @@ public class FriendRequest {
 
     public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
         String email = friendRequest.getQueryParameter("email");
-        String name = email;
-
-        try {
-            JSONObject o = new JSONObject(friendRequest.getQueryParameter("profile"));
-            name = o.getString("name");
-            // picture = FastBase64.decode(o.getString("picture"));
-        } catch (Exception e) {
+        String name = friendRequest.getQueryParameter("name");
+        if (name == null) {
+            name = email;
         }
+        
 
         String pubKeyStr = friendRequest.getQueryParameter("publicKey");
         DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw

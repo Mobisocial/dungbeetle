@@ -197,11 +197,6 @@
             android:label="@string/title_settings"
             
             />
-      <activity android:name=".NearbyGroupsActivity"
-            android:theme="@style/Theme.D1"
-            android:label="@string/title_nearby"
-            android:noHistory="true"
-            />
 
       <activity android:name=".NearbyActivity"
             android:theme="@style/Theme.D1"

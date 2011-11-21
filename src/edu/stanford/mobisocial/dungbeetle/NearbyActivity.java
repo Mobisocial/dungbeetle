@@ -400,11 +400,9 @@ public class NearbyActivity extends ListActivity {
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);
-                    String name = "Unknown";
-                    try {
-                        JSONObject o = new JSONObject(friendUri.getQueryParameter("profile"));
-                        name = o.getString("name");
-                    } catch (Exception e) {
+                    String name = friendUri.getQueryParameter("name");
+                    if (name == null) {
+                        name = "Unknown";
                     }
                     publishProgress(new NearbyItem(NearbyItem.Type.PERSON, name, friendUri, null));
                     mSeenUris.add(friendUri);
@@ -468,7 +466,6 @@ public class NearbyActivity extends ListActivity {
                 try {
                     DatagramPacket profile = new DatagramPacket(mBroadcastMsg,
                             mBroadcastMsg.length, mNearbyGroup, MulticastScannerTask.NEARBY_PORT);
-                    Log.d(TAG, "Sending packet");
                     mSocket.send(profile);
                     try {
                         Thread.sleep(SEVEN_SECONDS);
