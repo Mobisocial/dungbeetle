@@ -14,8 +14,10 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.Gravity;
@@ -35,6 +37,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
@@ -182,6 +185,8 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
             return;
         }
 
+        // TODO: obj.getLatestChild().render();
+
         DbObj dbParentObj = (DbObj) obj;
         String selection = "type = ?";
         String[] selectionArgs = new String[] { AppStateObj.TYPE };
@@ -227,13 +232,16 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         if (!rendered) {
+            PackageManager pm = context.getPackageManager();
+            Drawable icon = null;
             String appName;
             Intent launch = getLaunchIntent(context, dbParentObj);
-            List<ResolveInfo> infos = context.getPackageManager().queryIntentActivities(launch, 0);
+            List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
             if (infos.size() > 0) {
                 ResolveInfo info = infos.get(0);
                 if (info.activityInfo.labelRes != 0) {
-                    appName = info.activityInfo.loadLabel(context.getPackageManager()).toString();
+                    appName = info.activityInfo.loadLabel(pm).toString();
+                    icon = info.loadIcon(pm);
                 } else {
                     appName = info.activityInfo.name;
                 }
@@ -243,7 +251,20 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
                     appName = appName.substring(appName.lastIndexOf(".") + 1);
                 }
             }
-            String text = "New application: " + appName + ".";
+
+            String text;
+            if (icon != null) {
+                ImageView iv = new ImageView(context);
+                iv.setImageDrawable(icon);
+                iv.setAdjustViewBounds(true);
+                iv.setMaxWidth(60);
+                iv.setMaxHeight(60);
+                iv.setLayoutParams(CommonLayouts.WRAPPED);
+                frame.addView(iv);
+                text = appName;
+            } else {
+                text = "New application: " + appName + ".";
+            }
             // TODO: Show Market icon or app icon.
             TextView valueTV = new TextView(context);
             valueTV.setText(text);
