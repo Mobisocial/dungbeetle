@@ -155,6 +155,8 @@ public class NearbyActivity extends ListActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mNearbyList.clear();
+        mAdapter.notifyDataSetChanged();
         scanNearby();
     }
 
