@@ -34,6 +34,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -551,6 +552,7 @@ public class NearbyActivity extends ListActivity {
             final NearbyItem g = nearby.get(position);
             TextView text = (TextView) row.findViewById(R.id.name_text);
             text.setText(g.name);
+            ((ImageView)row.findViewById(R.id.icon)).setImageResource(R.drawable.anonymous);
 
             if (g.type == NearbyItem.Type.PERSON) {
                 long cid = FriendRequest.getExistingContactId(NearbyActivity.this, g.uri);
