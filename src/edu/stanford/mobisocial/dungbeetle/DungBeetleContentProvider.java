@@ -2,6 +2,8 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -432,6 +434,18 @@ public class DungBeetleContentProvider extends ContentProvider {
                     select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
+            return c;
+        } else if(match(uri, "app", ".+")) {
+            String table = DbObj.TABLE;
+            String select = DbObj.COL_APP_ID + " = ?";
+            String[] selectArgs = new String[] { realAppId };
+            String[] columns = projection;
+            String groupBy = null;
+            String having = null;
+            String orderBy = null;
+            Cursor c = mHelper.getReadableDatabase().query(
+                    table, columns, select, selectArgs, groupBy, having, orderBy);
+            c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "feeds", ".+")) {
             boolean isMe = segs.get(1).equals("me");
