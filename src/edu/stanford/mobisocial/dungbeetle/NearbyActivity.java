@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xbill.DNS.MBRecord;
 
 import android.app.Activity;
 import android.app.ListActivity;
@@ -70,7 +72,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class NearbyActivity extends ListActivity {
     private static final String TAG = "Nearby";
-    private boolean DBG = true;
+    private static boolean DBG = true;
 
     private NearbyAdapter mAdapter;
     private ArrayList<NearbyItem> mNearbyList = new ArrayList<NearbyItem>();
@@ -80,11 +82,13 @@ public class NearbyActivity extends ListActivity {
     private BluetoothScannerTask mBtScanner;
     private MulticastScannerTask mMulticastScanner;
     private MulticastBroadcastTask mMulticastBroadcaster;
+    private Context mContext;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nearby);
+        mContext = this;
         findViewById(R.id.go).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -379,15 +383,42 @@ public class NearbyActivity extends ListActivity {
                     mSocket.receive(recv);
 
                     Uri friendUri = null;
+                    boolean acceptFriend = false;
+                    ByteBuffer packet = ByteBuffer.wrap(recv.getData());
+                    int protocol = packet.getInt();
                     try {
-                        String uriStr = new String(recv.getData(), 0, recv.getLength());
-                        friendUri = Uri.parse(uriStr);
+                        switch (protocol) {
+                            case MulticastBroadcastTask.PROTOCOL_BROADCAST_URI: {
+                                byte[] rest = new byte[recv.getLength() - 4];
+                                packet.get(rest);
+                                friendUri = Uri.parse(new String(rest));
+                                break;
+                            }
+                            /*case MulticastBroadcastTask.PROTOCOL_FRIEND_REQUEST: {
+                                acceptFriend = true;
+                                byte[] rest = new byte[recv.getLength() - 4];
+                                packet.get(rest);
+                                friendUri = Uri.parse(new String(rest));
+                                break;
+                            }*/
+                            default: {
+                                String uriStr = new String(recv.getData(), 0, recv.getLength());
+                                friendUri = Uri.parse(uriStr);
+                            }
+                        }
                     } catch (Exception e) {
+                        if (DBG) Log.e(TAG, "Error processing packet", e);
+                    }
+
+                    if (friendUri == null || mSeenUris.contains(friendUri)) {
                         continue;
                     }
 
-                    if (mSeenUris.contains(friendUri)) {
-                        continue;
+                    if (acceptFriend) {
+                        long cid = FriendRequest.getExistingContactId(mContext, friendUri);
+                        if (cid == -1) {
+                            FriendRequest.acceptFriendRequest(mContext, friendUri, false);
+                        }
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);
@@ -418,8 +449,14 @@ public class NearbyActivity extends ListActivity {
         private boolean mRunning;
         private boolean mDone;
 
+        static final int PROTOCOL_BROADCAST_URI = 0x853000;
+
         private MulticastBroadcastTask(Context context) {
-            mBroadcastMsg = FriendRequest.getMusubiUri(context).toString().getBytes();
+            String requestStr = FriendRequest.getMusubiUri(context).toString();
+            mBroadcastMsg = new byte[4 + requestStr.length()];
+            ByteBuffer buf = ByteBuffer.wrap(mBroadcastMsg);
+            buf.putInt(PROTOCOL_BROADCAST_URI);
+            buf.put(requestStr.getBytes());
         }
 
         public static MulticastBroadcastTask getInstance(Context context) {
@@ -457,6 +494,7 @@ public class NearbyActivity extends ListActivity {
                 try {
                     DatagramPacket profile = new DatagramPacket(mBroadcastMsg,
                             mBroadcastMsg.length, mNearbyGroup, MulticastScannerTask.NEARBY_PORT);
+                    // if (DBG) Log.d(TAG, "sending multicast packet");
                     mSocket.send(profile);
                     try {
                         Thread.sleep(SEVEN_SECONDS);
@@ -570,9 +608,16 @@ public class NearbyActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         NearbyItem g = mAdapter.getItem(position);
+
         if (g.type == NearbyItem.Type.PERSON) {
             long cid = FriendRequest.getExistingContactId(this, g.uri);
             if (cid != -1) {
+                Contact.view(this, cid);
+            } else {
+                toast("Added new friend...");
+                cid = FriendRequest.acceptFriendRequest(mContext, g.uri, false);
+                String cap = g.uri.getQueryParameter("cap");
+                FriendRequest.sendFriendRequest(mContext, cid, cap);
                 Contact.view(this, cid);
             }
             return;

@@ -24,12 +24,13 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
 public class FriendRequest {
     private static final String TAG = "DbFriendRequest";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
     public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/join";
