@@ -236,10 +236,9 @@ public class UpdateLocation extends Service {
 		    }
 		   	stopSelf();
 		 }
-		// Get my id from saved pref
-		SharedPreferences mySavedID = getSharedPreferences("myID", MODE_PRIVATE); 
-	    myID = mySavedID.getLong("myID", 0L);
-		
+		// Get my id from saved database
+	    myID = dbh.getPublicKeyPrint();
+		System.err.println("UpdateLocation.java (B-side), ID being sent to server: " + myID);
 		for (int i = 0; i < 3; i++)
 			gridLocation[i] = BigInteger.valueOf(0);
 		
