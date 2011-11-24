@@ -24,9 +24,9 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xbill.DNS.MBRecord;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -36,7 +36,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -49,6 +48,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -61,16 +61,25 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.GroupProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-public class NearbyActivity extends ListActivity {
+public class NearbyActivity extends ListActivity implements
+        AdapterView.OnItemLongClickListener, InstrumentedActivity {
     private static final String TAG = "Nearby";
     private static boolean DBG = true;
 
@@ -105,6 +114,7 @@ public class NearbyActivity extends ListActivity {
         MusubiBaseActivity.doTitleBar(this, "Nearby");
         mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mNearbyList);
         setListAdapter(mAdapter);
+        getListView().setOnItemLongClickListener(this);
 
         if (!MusubiBaseActivity.isDeveloperModeEnabled(this)) {
             findViewById(R.id.social).setVisibility(View.GONE);
@@ -200,10 +210,12 @@ public class NearbyActivity extends ListActivity {
         protected List<NearbyItem> doInBackground(Void... params) {
             while (!mmLocationScanComplete) {
                 synchronized (mmLocationResult) {
-                    try {
-                        if (DBG) Log.d(TAG, "Waiting for location results...");
-                        mmLocationResult.wait();
-                    } catch (InterruptedException e) {
+                    if (!mmLocationScanComplete) {
+                        try {
+                            if (DBG) Log.d(TAG, "Waiting for location results...");
+                            mmLocationResult.wait();
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
             }
@@ -550,7 +562,12 @@ public class NearbyActivity extends ListActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+            return;
+        }
+
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (result != null && result.getContents() != null) {
             try {
@@ -628,6 +645,38 @@ public class NearbyActivity extends ListActivity {
         startActivity(intent);
     }
 
+    @Override
+    public boolean onItemLongClick(AdapterView<?> adapterView, View v, int position, long id) {
+        NearbyItem nearby = mAdapter.nearby.get(position);
+        Uri nearbyFeed = null;
+        if (NearbyItem.Type.PERSON == nearby.type) {
+            long cid = FriendRequest.getExistingContactId(this, nearby.uri);
+            if (cid != -1) {
+                try {
+                    Contact contact = Contact.forId(this, cid).get();
+                    nearbyFeed = contact.getFeedUri();
+                } catch (NoValError e) {
+                    Log.e(TAG, "Maybe, maybe not.");
+                }
+            }
+        } else if (NearbyItem.Type.FEED == nearby.type) {
+            GroupProvider gp1 = GroupProviders.forUri(nearby.uri);
+            String feedName = gp1.feedName(nearby.uri);
+            DBHelper helper = DBHelper.getGlobal(this);
+            Maybe<Group> mg = helper.groupByFeedName(feedName);
+            try {
+                Group g = mg.get();
+                nearbyFeed = Feed.uriForName(g.feedName);
+            } catch(Maybe.NoValError e) {}
+        }
+        if (nearbyFeed != null) {
+            LaunchApplicationAction.promptForApplication(NearbyActivity.this, nearbyFeed);
+        } else {
+            Log.w(TAG, "No feed for " + nearby.uri);
+        }
+        return true;
+    }
+
     private void findBluetooth() {
         if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
             Intent bt = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -686,7 +735,6 @@ public class NearbyActivity extends ListActivity {
         Toast.makeText(this, "Scanning Bluetooth...", 500).show();
     }
 
-    @SuppressWarnings("unused")
     private void toast(final String text) {
         runOnUiThread(new Runnable() {
             @Override
@@ -694,5 +742,19 @@ public class NearbyActivity extends ListActivity {
                 Toast.makeText(NearbyActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    ActivityCallout mCurrentCallout;
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
     }
 }

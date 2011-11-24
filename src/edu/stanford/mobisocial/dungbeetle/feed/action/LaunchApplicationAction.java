@@ -53,7 +53,7 @@ public class LaunchApplicationAction implements FeedAction {
         promptForApplication(context, feedUri);
     }
 
-    private void promptForApplication(final Context context, final Uri feedUri) {
+    public static void promptForApplication(final Context context, final Uri feedUri) {
         final PackageManager mgr = context.getPackageManager();
         final List<ResolveInfo> availableAppInfos = new ArrayList<ResolveInfo>();
         Intent i = new Intent();
@@ -177,7 +177,7 @@ public class LaunchApplicationAction implements FeedAction {
         return true;
     }
 
-    private void launchAppWithArgument(Context context, Uri feedUri, String pkg, String arg) {
+    private static void launchAppWithArgument(Context context, Uri feedUri, String pkg, String arg) {
         // Start new application feed:
         Group g = Group.create(context);
         Uri appFeedUri = Feed.uriForName(g.feedName);
@@ -202,7 +202,7 @@ public class LaunchApplicationAction implements FeedAction {
      * Callout used to select members for a new mutliplayer session
      * and then launch the application upon choosing them.
      */
-    class MembersSelectedCallout implements ActivityCallout {
+    static class MembersSelectedCallout implements ActivityCallout {
         private final Context mContext;
         private final Uri mFeedUri;
         private final String mAction;
@@ -244,7 +244,7 @@ public class LaunchApplicationAction implements FeedAction {
      * for the obj to be signed and sent before interacting with it.
      *
      */
-    private class ObjObserver extends ContentObserver {
+    private static class ObjObserver extends ContentObserver {
         private final Uri mUri;
         private final Context mContext;
         private final Activator mActivator;
