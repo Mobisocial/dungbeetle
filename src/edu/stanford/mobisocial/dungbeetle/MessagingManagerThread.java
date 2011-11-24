@@ -336,6 +336,9 @@ public class MessagingManagerThread extends Thread {
                          * DBHelper.java addToFeed();
                          */
                         //mFeedModifiedObjHandler.handleObj(mContext, feedUri, objId);
+
+                        // TODO: Don't be fooled! This is not truly an EncodedObj
+                        // and does not yet have a hash.
                         DbObj signedObj = App.instance().getMusubi().objForId(objId);
                         DbEntryHandler h = DbObjects.getObjHandler(json);
                         if (h != null && h instanceof FeedMessageHandler) {
