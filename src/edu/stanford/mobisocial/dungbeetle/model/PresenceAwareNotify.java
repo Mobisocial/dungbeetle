@@ -60,9 +60,9 @@ public class PresenceAwareNotify {
             SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
             String uri = settings.getString("ringtone", null);
 
-            if (uri.equals("dungbeetle")) {
+            //if (uri.equals("dungbeetle")) {
                 notification.vibrate = VIBRATE;
-            }
+            //}
             if(!uri.equals("none")) {
             	notification.sound = Uri.parse(uri);
             }
