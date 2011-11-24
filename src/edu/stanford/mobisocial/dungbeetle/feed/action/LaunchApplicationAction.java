@@ -233,6 +233,7 @@ public class LaunchApplicationAction implements FeedAction {
                 // Create and share new application instance
                 DbObject obj = AppObj.fromPickerResult(mContext, action, mResolveInfo, data);
                 Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
+
                 mContext.getContentResolver().registerContentObserver(objUri, false,
                         new ObjObserver(mContext, new AppObj(), objUri));
             }
@@ -261,6 +262,7 @@ public class LaunchApplicationAction implements FeedAction {
             mContext.getContentResolver().unregisterContentObserver(this);
             Long objId = Long.parseLong(mUri.getLastPathSegment());
             DbObj obj = App.instance().getMusubi().objForId(objId);
+            Log.d(TAG, "Launching app obj " + obj + " for " + objId);
             mActivator.activate(mContext, obj);
         }
     }

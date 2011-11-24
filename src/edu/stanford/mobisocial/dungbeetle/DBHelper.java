@@ -603,8 +603,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
             	throw new RuntimeException("Messasge size is too large for sending");
-            db.insertOrThrow(DbObject.TABLE, null, cv);
-            return 0;
+            return db.insertOrThrow(DbObject.TABLE, null, cv);
         }
         catch(Exception e){
             // TODO, too spammy

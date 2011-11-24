@@ -139,9 +139,9 @@ public class DungBeetleContentProvider extends ContentProvider {
                 long contactId = Long.parseLong(segs.get(2));
                 String type = values.getAsString(DbObject.TYPE);
                 JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-                Helpers.sendMessage(getContext(), contactId, json, type);
+                Uri objUri = Helpers.sendMessage(getContext(), contactId, json, type);
                 resolver.notifyChange(uri, null);
-                return uri;
+                return objUri;
             }
             catch(JSONException e){
                 return null;
@@ -175,10 +175,10 @@ public class DungBeetleContentProvider extends ContentProvider {
         } else if(match(uri, "out")) {
             try {
                 JSONObject obj = new JSONObject(values.getAsString("json"));
-                mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
+                long objId = mHelper.addToOutgoing(appId, values.getAsString(DbObject.DESTINATION),
                         values.getAsString(DbObject.TYPE), obj);
                 resolver.notifyChange(Uri.parse(CONTENT_URI + "/out"), null);
-                return Uri.parse(uri.toString());
+                return DbObject.uriForObj(objId);
             }
             catch(JSONException e){
                 return null;
