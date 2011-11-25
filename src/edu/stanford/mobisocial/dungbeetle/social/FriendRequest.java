@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
+import mobisocial.socialkit.musubi.RSACrypto;
+
 import org.json.JSONObject;
 
 public class FriendRequest {
@@ -86,7 +88,7 @@ public class FriendRequest {
         String personId = null;
         try {
             String pubKeyStr = friendRequest.getQueryParameter("publicKey");
-            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
             personId = Util.makePersonIdForPublicKey(key);
         } catch (Exception e) {
             return -1;
@@ -112,8 +114,7 @@ public class FriendRequest {
         
 
         String pubKeyStr = friendRequest.getQueryParameter("publicKey");
-        DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw
-                                                           // exception
+        RSACrypto.publicKeyFromString(pubKeyStr); // may throw exception
         String cap = friendRequest.getQueryParameter("cap");
         if (requireCapability) {
             if (cap == null) {

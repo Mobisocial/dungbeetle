@@ -2,6 +2,8 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
+import mobisocial.socialkit.musubi.RSACrypto;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -296,7 +298,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             try {
                 ContentValues cv = new ContentValues();
                 String pubKeyStr = values.getAsString(Contact.PUBLIC_KEY);
-                RSAPublicKey k = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+                RSAPublicKey k = RSACrypto.publicKeyFromString(pubKeyStr);
                 String personId = mIdent.personIdForPublicKey(k);
                 if (!personId.equals(mIdent.userPersonId())) {
                     cv.put(Contact.PUBLIC_KEY, values.getAsString(Contact.PUBLIC_KEY));
@@ -467,7 +469,7 @@ public class DungBeetleContentProvider extends ContentProvider {
         } else if(match(uri, "local_user", ".+")) {
             // currently available to any local app with a feed id.
             String feed_name = uri.getLastPathSegment();
-            Cursor c = mHelper.queryLocalUser(feed_name);
+            Cursor c = mHelper.queryLocalUser(realAppId, feed_name);
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "members", ".+")) {

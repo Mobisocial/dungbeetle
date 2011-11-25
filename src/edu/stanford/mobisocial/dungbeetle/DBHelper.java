@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONException;
@@ -791,7 +792,7 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.i(TAG, "Inserting contact: " + cv);
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
-            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
             String tag = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
             String name = cv.getAsString(Contact.NAME);
@@ -1293,10 +1294,16 @@ public class DBHelper extends SQLiteOpenHelper {
         return c;
     }
 
-    public Cursor queryLocalUser(String feed_name) {
+    public Cursor queryLocalUser(String appId, String feed_name) {
         String table = MyInfo.TABLE;
-        String[] columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
-                MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        String[] columns;
+        if (DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                    MyInfo.PICTURE, MyInfo.PUBLIC_KEY, MyInfo.PRIVATE_KEY };
+        } else {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                    MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        }
         String selection = null;
         String selectionArgs[] = null;
         String groupBy = null;
