@@ -81,18 +81,6 @@
 	      android:label="Dungbeetle Status">
     </activity>
 
-     <!-- 
-        <activity android:name=".PhotoSeshActivity"
-	      android:label="@string/photo_sesh"
-	      android:icon="@android:drawable/ic_menu_camera"
-	      >
-      <intent-filter>
-	    <action android:name="mobisocial.intent.action.CONNECTED" />
-	    <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-      </activity>
-       -->
-
     <provider android:name=".DungBeetleContentProvider"
 	      android:authorities="org.mobisocial.db" />
 

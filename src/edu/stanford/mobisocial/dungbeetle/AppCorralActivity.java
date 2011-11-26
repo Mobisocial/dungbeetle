@@ -5,11 +5,10 @@ import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -29,7 +28,8 @@ public class AppCorralActivity extends MusubiBaseActivity {
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.setWebViewClient(webViewClient);
         mWebView.addJavascriptInterface(new SocialKitJavascript(this,
-                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), "SocialKit");
+                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)),
+                "Musubi_android_platform");
         mWebView.loadUrl("http://musubi.us/apps");
     }
 
@@ -91,6 +91,18 @@ public class AppCorralActivity extends MusubiBaseActivity {
             }
 
             // TODO queryByType(); // return json part
+        }
+
+        public boolean isDeveloperModeEnabled() {
+            return MusubiBaseActivity.isDeveloperModeEnabled(mContext);
+        }
+
+        public void _runCommand(String className, String methodName, Object parameters, Object callback) {
+            Log.d(TAG, "SOCIALKIT-ANDROID RAN " + className + "::" + methodName);
+        }
+
+        public void log(String text) {
+            Log.d("socialkit.js", text);
         }
     }
 }
