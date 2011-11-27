@@ -1,5 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -15,6 +18,7 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class AppCorralActivity extends MusubiBaseActivity {
+    private static final String MUSUBI_JS = "Musubi_android_platform";
     WebView mWebView;
 
     @Override
@@ -28,8 +32,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.setWebViewClient(webViewClient);
         mWebView.addJavascriptInterface(new SocialKitJavascript(this,
-                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)),
-                "Musubi_android_platform");
+                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), MUSUBI_JS);
         mWebView.loadUrl("http://musubi.us/apps");
     }
 
@@ -59,6 +62,29 @@ public class AppCorralActivity extends MusubiBaseActivity {
             startActivity(intent);
             return true;
         }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            if (DBG) Log.d(TAG, "Page loaded, launching musubi app...");
+
+            SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
+            SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
+            SocialKitJavascript.App app = new SocialKitJavascript.App("appid", feed, obj);
+            SocialKitJavascript.User user = new SocialKitJavascript.User();
+            String initSocialKit = new StringBuilder("javascript:")
+                .append("Musubi._launchApp(")
+                .append(app.toJson() + ", " + user.toJson() + ")").toString();
+            Log.d(TAG, "Android calling " + initSocialKit);
+            mWebView.loadUrl(initSocialKit);
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description,
+                String failingUrl) {
+            if (DBG) {
+                Log.d(TAG, "socialkit.js error: " + errorCode + ", " + description);
+            }
+        }
     }
 
     static class SocialKitJavascript {
@@ -80,19 +106,6 @@ public class AppCorralActivity extends MusubiBaseActivity {
             return new Feed(mDbFeed.getUri().getLastPathSegment());
         }
 
-        public class Feed {
-            public String name;
-            public Feed(String name) {
-                this.name = name;
-            }
-
-            public String getName() {
-                return name;
-            }
-
-            // TODO queryByType(); // return json part
-        }
-
         public boolean isDeveloperModeEnabled() {
             return MusubiBaseActivity.isDeveloperModeEnabled(mContext);
         }
@@ -103,6 +116,112 @@ public class AppCorralActivity extends MusubiBaseActivity {
 
         public void log(String text) {
             Log.d("socialkit.js", text);
+        }
+
+
+        /**
+         * JSON representations of common Musubi classes.
+         */
+
+        static class User implements Jsonable {
+            String name;
+            String id;
+            String personId;
+
+            public User() {
+                name = "dummyuser";
+                id = "dummyid";
+                personId = "dummydumbdumb";
+            }
+
+            @Override
+            public JSONObject toJson() {
+                JSONObject o = new JSONObject();
+                try {
+                    o.put("name", name);
+                    o.put("id", id);
+                    o.put("personId", personId);
+                } catch (JSONException e) {}
+                return o;
+            }
+            
+        }
+
+        static class Obj implements Jsonable {
+            public String type;
+            public String data;
+
+            public Obj() {
+                type = "dumbtype";
+                data = "smartdata";
+            }
+
+            @Override
+            public JSONObject toJson() {
+                JSONObject json = new JSONObject();
+                try {
+                    json.put("type", type);
+                    json.put("data", data);
+                } catch (JSONException e) {}
+                return json;
+            }
+        }
+
+        static class Feed implements Jsonable {
+            public String name;
+            public String uri;
+            public String session;
+            public String key;
+
+            public Feed(String name) {
+                this.name = name;
+                this.uri = "feeduri";
+                this.session = "feedsession";
+                this.key = "feedkey";
+            }
+
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public JSONObject toJson() {
+                JSONObject o = new JSONObject();
+                try {
+                    o.put("name", name);
+                    o.put("uri", uri);
+                    o.put("session", session);
+                    o.put("key", key);
+                } catch (JSONException e) {}
+                return o;
+            }
+        }
+
+        static class App implements Jsonable {
+            final String id;
+            final Feed feed;
+            final Obj obj;
+
+            public App(String id, Feed feed, Obj obj) {
+                this.id = id;
+                this.feed = feed;
+                this.obj = obj;
+            }
+
+            @Override
+            public JSONObject toJson() {
+                JSONObject json = new JSONObject();
+                try {
+                    json.put("id", id);
+                    json.put("feed", feed.toJson());
+                    json.put("obj", obj.toJson());
+                } catch (JSONException e) {}
+                return json;
+            }
+        }
+
+        interface Jsonable {
+            public JSONObject toJson();
         }
     }
 }

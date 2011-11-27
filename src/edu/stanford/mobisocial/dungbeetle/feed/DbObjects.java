@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mobisocial.socialkit.Obj;
-import mobisocial.socialkit.musubi.MemObj;
+import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONObject;
 

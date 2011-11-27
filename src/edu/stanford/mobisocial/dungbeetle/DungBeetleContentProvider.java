@@ -2,6 +2,7 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONException;
@@ -414,15 +415,24 @@ public class DungBeetleContentProvider extends ContentProvider {
 
         List<String> segs = uri.getPathSegments();
         if (match(uri, "obj", ".+")) {
+            if (!SUPER_APP_ID.equals(realAppId)) {
+                return null;
+            }
             // objects by database id
             String objId = uri.getLastPathSegment();
             selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { objId });
             selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "obj")) {
+            if (!SUPER_APP_ID.equals(realAppId)) {
+                String selection2 = DbObj.COL_APP_ID + " = ?";
+                String[] selectionArgs2 = new String[] { realAppId };
+                selection = DBHelper.andClauses(selection, selection2);
+                selectionArgs = DBHelper.andArguments(selectionArgs, selectionArgs2);
+            }
             return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         } else if(match(uri, "feedlist")) {
-            Cursor c = mHelper.queryFeedList(projection, selection, selectionArgs, sortOrder);
+            Cursor c = mHelper.queryFeedList(realAppId, projection, selection, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feedlist"));
             return c;
         } else if(match(uri, "feeds", ".+", "head")){

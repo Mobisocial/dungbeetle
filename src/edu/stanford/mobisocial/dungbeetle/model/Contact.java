@@ -268,7 +268,6 @@ public class Contact implements Serializable {
             return mName;
         }
 
-        @Override
         public Bitmap getPicture() {
             return mPicture;
         }

@@ -907,8 +907,8 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
-            String sortOrder){
+    public Cursor queryFeedList(String realAppId, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder){
 
         /*return getReadableDatabase().rawQuery("SELECT * 
             FROM Group.TABLE, DBObject.TABLE
@@ -919,9 +919,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
         String tables = Group.TABLE + ", " + DbObject.TABLE;
         String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
-                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
+                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " +
+                DbObject.TABLE + "." + DbObject._ID + " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
+        String[] selectionArgs2 = new String[] { realAppId };
         selection = andClauses(selection, selection2);
-        selectionArgs = null;
+        selectionArgs = andArguments(selectionArgs2, selectionArgs);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }

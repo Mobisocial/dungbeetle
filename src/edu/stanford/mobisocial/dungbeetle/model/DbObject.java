@@ -9,7 +9,7 @@ import java.util.List;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.MemObj;
+import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
