@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.Collections;
 
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
@@ -28,7 +29,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.AboutActivity;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
@@ -38,10 +38,12 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
+import edu.stanford.mobisocial.dungbeetle.util.ContactPickerCallout;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
 /**
@@ -50,7 +52,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  * from this group. Otherwise, lists all known contacts.
  *
  */
-public class ContactsActivity extends ListActivity implements OnItemClickListener{
+public class ContactsActivity extends ListActivity implements OnItemClickListener, InstrumentedActivity {
 	private ContactListCursorAdapter mContacts;
 	protected final BitmapManager mBitmaps = new BitmapManager(20);
 	private static final int REQUEST_INVITE_TO_GROUP = 471;
@@ -91,6 +93,16 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onClickNew(View v) {
+        ActivityCallout callout = new ContactPickerCallout(this) {
+            @Override
+            public void handleResult(int resultCode, Intent data) {
+                doSharing(data);
+            }
+        };
+        doActivityForResult(callout);
+    }
+
+    private void doSharing(Intent data) {
         Intent share = new Intent(Intent.ACTION_SEND);
         Uri friendRequest = FriendRequest.getInvitationUri(this);
         share.putExtra(Intent.EXTRA_TEXT,
@@ -280,8 +292,31 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
         mHelper.close();
     }
 
+    private static int REQUEST_ACTIVITY_CALLOUT = 34;
+    private static ActivityCallout mCurrentCallout;
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show();
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        if(launch != null)
+            startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
+        else {
+            Log.wtf(callout.getClass().getCanonicalName(), "I failed to return a valid intent, so something is probably very bad.");
+            Toast.makeText(this, "Callback for object type failed! " + callout.getClass().getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+            return;
+        }
         if (requestCode == REQUEST_INVITE_TO_GROUP) {
             if (resultCode == RESULT_OK) {
                 long[] contactIds = data.getLongArrayExtra("contacts");

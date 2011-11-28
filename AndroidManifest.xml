@@ -269,6 +269,8 @@
 
     <activity 
     	android:name=".ui.ContactsActivity" />
+    <activity
+        android:name=".util.AddressBookPicker" />
 
     <activity 
     	android:name=".PickContactsActivity"
