@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Musubi</string>
     <string name="app_store_name">App Corral</string>
+    <string name="photo_sesh">Photo Sesh</string>
     <string name="start">Running...</string>
     <string name="stopping">Shutting down...</string>
     <string name="active">Is Active.</string>

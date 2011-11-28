@@ -24,12 +24,15 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
+
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONObject;
 
 public class FriendRequest {
     private static final String TAG = "DbFriendRequest";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
     public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/join";
@@ -59,13 +62,13 @@ public class FriendRequest {
         try {
 	        // String name = ident.userName();
 	        String email = ident.userEmail();
-	        String profile = "{name:" + ident.userName() + "}";
+	        String name = ident.userName();
 	
 	        PublicKey pubKey = ident.userPublicKey();
 	        helper.close();
 	
 	        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
-	                .path("musubi/join").appendQueryParameter("profile", profile)
+	                .path("musubi/join").appendQueryParameter("name", name)
 	                .appendQueryParameter("email", email)
 	                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
 	        if (appendCapability) {
@@ -85,7 +88,7 @@ public class FriendRequest {
         String personId = null;
         try {
             String pubKeyStr = friendRequest.getQueryParameter("publicKey");
-            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
             personId = Util.makePersonIdForPublicKey(key);
         } catch (Exception e) {
             return -1;
@@ -104,18 +107,14 @@ public class FriendRequest {
 
     public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
         String email = friendRequest.getQueryParameter("email");
-        String name = email;
-
-        try {
-            JSONObject o = new JSONObject(friendRequest.getQueryParameter("profile"));
-            name = o.getString("name");
-            // picture = FastBase64.decode(o.getString("picture"));
-        } catch (Exception e) {
+        String name = friendRequest.getQueryParameter("name");
+        if (name == null) {
+            name = email;
         }
+        
 
         String pubKeyStr = friendRequest.getQueryParameter("publicKey");
-        DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw
-                                                           // exception
+        RSACrypto.publicKeyFromString(pubKeyStr); // may throw exception
         String cap = friendRequest.getQueryParameter("cap");
         if (requireCapability) {
             if (cap == null) {

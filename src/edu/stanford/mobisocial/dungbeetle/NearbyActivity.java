@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -46,6 +48,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -58,18 +61,27 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
+import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.GroupProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
+import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-public class NearbyActivity extends ListActivity {
+public class NearbyActivity extends ListActivity implements
+        AdapterView.OnItemLongClickListener, InstrumentedActivity {
     private static final String TAG = "Nearby";
-    private boolean DBG = true;
+    private static boolean DBG = true;
 
     private NearbyAdapter mAdapter;
     private ArrayList<NearbyItem> mNearbyList = new ArrayList<NearbyItem>();
@@ -79,11 +91,13 @@ public class NearbyActivity extends ListActivity {
     private BluetoothScannerTask mBtScanner;
     private MulticastScannerTask mMulticastScanner;
     private MulticastBroadcastTask mMulticastBroadcaster;
+    private Context mContext;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nearby);
+        mContext = this;
         findViewById(R.id.go).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -100,6 +114,7 @@ public class NearbyActivity extends ListActivity {
         MusubiBaseActivity.doTitleBar(this, "Nearby");
         mAdapter = new NearbyAdapter(this, R.layout.nearby_groups_item, mNearbyList);
         setListAdapter(mAdapter);
+        getListView().setOnItemLongClickListener(this);
 
         if (!MusubiBaseActivity.isDeveloperModeEnabled(this)) {
             findViewById(R.id.social).setVisibility(View.GONE);
@@ -175,11 +190,11 @@ public class NearbyActivity extends ListActivity {
         }
     }
 
-    private class GpsScannerTask extends AsyncTask<Void, NearbyItem, List<NearbyItem>> {
+    private class GpsScannerTask extends NearbyTask {
         private final String mmPassword;
         private final MyLocation mmMyLocation;
         private boolean mmLocationScanComplete = false;
-        private List<NearbyItem> mmResults;
+        private Location mmLocation = null;
 
         GpsScannerTask(String password) {
             mmPassword = password;
@@ -195,81 +210,73 @@ public class NearbyActivity extends ListActivity {
         protected List<NearbyItem> doInBackground(Void... params) {
             while (!mmLocationScanComplete) {
                 synchronized (mmLocationResult) {
-                    try {
-                        if (DBG)
-                            Log.d(TAG, "Waiting for location results...");
-                        mmLocationResult.wait();
-                    } catch (InterruptedException e) {
+                    if (!mmLocationScanComplete) {
+                        try {
+                            if (DBG) Log.d(TAG, "Waiting for location results...");
+                            mmLocationResult.wait();
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
             }
-            return mmResults;
+            if (DBG) Log.d(TAG, "Got location " + mmLocation);
+            if (isCancelled()) {
+                return null;
+            }
+
+            try {
+                if (DBG) Log.d(TAG, "Querying gps server...");
+                Uri uri = new Uri.Builder().scheme("http").authority("suif.stanford.edu")
+                        .path("dungbeetle/nearby.php").build();
+
+                StringBuffer sb = new StringBuffer();
+                DefaultHttpClient client = new DefaultHttpClient();
+                HttpPost httpPost = new HttpPost(uri.toString());
+
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                nameValuePairs.add(new BasicNameValuePair("lat",
+                        Double.toString(mmLocation.getLatitude())));
+                nameValuePairs.add(new BasicNameValuePair("lng",
+                        Double.toString(mmLocation.getLongitude())));
+                nameValuePairs.add(new BasicNameValuePair("password", mmPassword));
+                httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                try {
+                    HttpResponse execute = client.execute(httpPost);
+                    InputStream content = execute.getEntity().getContent();
+                    BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+                    String s = "";
+                    while ((s = buffer.readLine()) != null) {
+                        if (isCancelled()) {
+                            return null;
+                        }
+                        sb.append(s);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                String response = sb.toString();
+                JSONArray groupsJSON = new JSONArray(response);
+                if (DBG) Log.d(TAG, "Got " + groupsJSON.length() + " groups");
+                for (int i = 0; i < groupsJSON.length(); i++) {
+                    JSONObject group = new JSONObject(groupsJSON.get(i).toString());
+                    publishProgress(new NearbyItem(NearbyItem.Type.FEED, group.optString("group_name"),
+                            Uri.parse(group.optString("feed_uri")), null));
+                }
+            } catch (Exception e) {
+                if (DBG) Log.d(TAG, "Error searching nearby feeds", e);
+            }
+            return null;
         }
 
         private final MyLocation.LocationResult mmLocationResult = new MyLocation.LocationResult() {
             @Override
             public void gotLocation(final Location location) {
-                if (DBG)
-                    Log.d(TAG, "got location, searching for nearby feeds...");
-                if (isCancelled()) {
-                    synchronized (mmLocationResult) {
-                        mmLocationResult.notify();
-                    }
-                    return;
-                }
-
-                // Got the location!
-                try {
-                    Uri uri = new Uri.Builder().scheme("http").authority("suif.stanford.edu")
-                            .path("dungbeetle/nearby.php").build();
-
-                    StringBuffer sb = new StringBuffer();
-                    DefaultHttpClient client = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost(uri.toString());
-
-                    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                    nameValuePairs.add(new BasicNameValuePair("lat", Double.toString(location
-                            .getLatitude())));
-                    nameValuePairs.add(new BasicNameValuePair("lng", Double.toString(location
-                            .getLongitude())));
-                    nameValuePairs.add(new BasicNameValuePair("password", mmPassword));
-                    httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-                    try {
-                        HttpResponse execute = client.execute(httpPost);
-                        InputStream content = execute.getEntity().getContent();
-                        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                        String s = "";
-                        while ((s = buffer.readLine()) != null) {
-                            if (isCancelled()) {
-                                synchronized (mmLocationResult) {
-                                    mmLocationResult.notify();
-                                }
-                                return;
-                            }
-                            sb.append(s);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    String response = sb.toString();
-                    JSONArray groupsJSON = new JSONArray(response);
-                    List<NearbyItem> results = new ArrayList<NearbyItem>(groupsJSON.length());
-                    if (DBG)
-                        Log.d(TAG, "Got " + groupsJSON.length() + " groups");
-                    for (int i = 0; i < groupsJSON.length(); i++) {
-                        JSONObject group = new JSONObject(groupsJSON.get(i).toString());
-                        results.add(new NearbyItem(NearbyItem.Type.FEED, group.optString("group_name"),
-                                Uri.parse(group.optString("feed_uri")), null));
-                    }
-                    mmResults = results;
-                    mmLocationScanComplete = true;
-                    synchronized (mmLocationResult) {
-                        mmLocationResult.notify();
-                    }
-                } catch (Exception e) {
-                    if (DBG)
-                        Log.d(TAG, "Error searching nearby feeds", e);
+                if (DBG) Log.d(TAG, "got location");
+                mmLocation = location;
+                mmLocationScanComplete = true;
+                synchronized (mmLocationResult) {
+                    mmLocationResult.notify();
                 }
             }
         };
@@ -388,23 +395,48 @@ public class NearbyActivity extends ListActivity {
                     mSocket.receive(recv);
 
                     Uri friendUri = null;
+                    boolean acceptFriend = false;
+                    ByteBuffer packet = ByteBuffer.wrap(recv.getData());
+                    int protocol = packet.getInt();
                     try {
-                        String uriStr = new String(recv.getData(), 0, recv.getLength());
-                        friendUri = Uri.parse(uriStr);
+                        switch (protocol) {
+                            case MulticastBroadcastTask.PROTOCOL_BROADCAST_URI: {
+                                byte[] rest = new byte[recv.getLength() - 4];
+                                packet.get(rest);
+                                friendUri = Uri.parse(new String(rest));
+                                break;
+                            }
+                            /*case MulticastBroadcastTask.PROTOCOL_FRIEND_REQUEST: {
+                                acceptFriend = true;
+                                byte[] rest = new byte[recv.getLength() - 4];
+                                packet.get(rest);
+                                friendUri = Uri.parse(new String(rest));
+                                break;
+                            }*/
+                            default: {
+                                String uriStr = new String(recv.getData(), 0, recv.getLength());
+                                friendUri = Uri.parse(uriStr);
+                            }
+                        }
                     } catch (Exception e) {
+                        if (DBG) Log.e(TAG, "Error processing packet", e);
+                    }
+
+                    if (friendUri == null || mSeenUris.contains(friendUri)) {
                         continue;
                     }
 
-                    if (mSeenUris.contains(friendUri)) {
-                        continue;
+                    if (acceptFriend) {
+                        long cid = FriendRequest.getExistingContactId(mContext, friendUri);
+                        if (cid == -1) {
+                            FriendRequest.acceptFriendRequest(mContext, friendUri, false);
+                        }
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);
-                    String name = "Unknown";
-                    try {
-                        JSONObject o = new JSONObject(friendUri.getQueryParameter("profile"));
-                        name = o.getString("name");
-                    } catch (Exception e) {
+                    String name = friendUri.getQueryParameter("name");
+                    if (name == null) {
+                        name = "Unknown";
                     }
                     publishProgress(new NearbyItem(NearbyItem.Type.PERSON, name, friendUri, null));
                     mSeenUris.add(friendUri);
@@ -429,8 +461,14 @@ public class NearbyActivity extends ListActivity {
         private boolean mRunning;
         private boolean mDone;
 
+        static final int PROTOCOL_BROADCAST_URI = 0x853000;
+
         private MulticastBroadcastTask(Context context) {
-            mBroadcastMsg = FriendRequest.getMusubiUri(context).toString().getBytes();
+            String requestStr = FriendRequest.getMusubiUri(context).toString();
+            mBroadcastMsg = new byte[4 + requestStr.length()];
+            ByteBuffer buf = ByteBuffer.wrap(mBroadcastMsg);
+            buf.putInt(PROTOCOL_BROADCAST_URI);
+            buf.put(requestStr.getBytes());
         }
 
         public static MulticastBroadcastTask getInstance(Context context) {
@@ -468,7 +506,7 @@ public class NearbyActivity extends ListActivity {
                 try {
                     DatagramPacket profile = new DatagramPacket(mBroadcastMsg,
                             mBroadcastMsg.length, mNearbyGroup, MulticastScannerTask.NEARBY_PORT);
-                    Log.d(TAG, "Sending packet");
+                    // if (DBG) Log.d(TAG, "sending multicast packet");
                     mSocket.send(profile);
                     try {
                         Thread.sleep(SEVEN_SECONDS);
@@ -524,7 +562,12 @@ public class NearbyActivity extends ListActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_ACTIVITY_CALLOUT) {
+            mCurrentCallout.handleResult(resultCode, data);
+            return;
+        }
+
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (result != null && result.getContents() != null) {
             try {
@@ -564,6 +607,7 @@ public class NearbyActivity extends ListActivity {
             final NearbyItem g = nearby.get(position);
             TextView text = (TextView) row.findViewById(R.id.name_text);
             text.setText(g.name);
+            ((ImageView)row.findViewById(R.id.icon)).setImageResource(R.drawable.anonymous);
 
             if (g.type == NearbyItem.Type.PERSON) {
                 long cid = FriendRequest.getExistingContactId(NearbyActivity.this, g.uri);
@@ -581,9 +625,16 @@ public class NearbyActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         NearbyItem g = mAdapter.getItem(position);
+
         if (g.type == NearbyItem.Type.PERSON) {
             long cid = FriendRequest.getExistingContactId(this, g.uri);
             if (cid != -1) {
+                Contact.view(this, cid);
+            } else {
+                toast("Added new friend...");
+                cid = FriendRequest.acceptFriendRequest(mContext, g.uri, false);
+                String cap = g.uri.getQueryParameter("cap");
+                FriendRequest.sendFriendRequest(mContext, cid, cap);
                 Contact.view(this, cid);
             }
             return;
@@ -592,6 +643,38 @@ public class NearbyActivity extends ListActivity {
         intent.setDataAndType(g.uri, g.mimeType);
         intent.setPackage(getPackageName());
         startActivity(intent);
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> adapterView, View v, int position, long id) {
+        NearbyItem nearby = mAdapter.nearby.get(position);
+        Uri nearbyFeed = null;
+        if (NearbyItem.Type.PERSON == nearby.type) {
+            long cid = FriendRequest.getExistingContactId(this, nearby.uri);
+            if (cid != -1) {
+                try {
+                    Contact contact = Contact.forId(this, cid).get();
+                    nearbyFeed = contact.getFeedUri();
+                } catch (NoValError e) {
+                    Log.e(TAG, "Maybe, maybe not.");
+                }
+            }
+        } else if (NearbyItem.Type.FEED == nearby.type) {
+            GroupProvider gp1 = GroupProviders.forUri(nearby.uri);
+            String feedName = gp1.feedName(nearby.uri);
+            DBHelper helper = DBHelper.getGlobal(this);
+            Maybe<Group> mg = helper.groupByFeedName(feedName);
+            try {
+                Group g = mg.get();
+                nearbyFeed = Feed.uriForName(g.feedName);
+            } catch(Maybe.NoValError e) {}
+        }
+        if (nearbyFeed != null) {
+            LaunchApplicationAction.promptForApplication(NearbyActivity.this, nearbyFeed);
+        } else {
+            Log.w(TAG, "No feed for " + nearby.uri);
+        }
+        return true;
     }
 
     private void findBluetooth() {
@@ -652,7 +735,6 @@ public class NearbyActivity extends ListActivity {
         Toast.makeText(this, "Scanning Bluetooth...", 500).show();
     }
 
-    @SuppressWarnings("unused")
     private void toast(final String text) {
         runOnUiThread(new Runnable() {
             @Override
@@ -660,5 +742,19 @@ public class NearbyActivity extends ListActivity {
                 Toast.makeText(NearbyActivity.this, text, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private static int REQUEST_ACTIVITY_CALLOUT = 39;
+    ActivityCallout mCurrentCallout;
+
+    @Override
+    public void showDialog(Dialog dialog) {
+        dialog.show(); // TODO: Figure out how to preserve dialog during screen rotation.
+    }
+
+    public void doActivityForResult(ActivityCallout callout) {
+        mCurrentCallout = callout;
+        Intent launch = callout.getStartIntent();
+        startActivityForResult(launch, REQUEST_ACTIVITY_CALLOUT);
     }
 }

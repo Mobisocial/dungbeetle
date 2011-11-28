@@ -48,8 +48,7 @@ import edu.stanford.mobisocial.dungbeetle.util.RemoteControlRegistrar;
  */
 
 public abstract class MusubiBaseActivity extends FragmentActivity implements InstrumentedActivity {
-    @SuppressWarnings("unused")
-    private static final String TAG = "msb-dashbaord";
+    protected static final String TAG = "MusubiActivity";
     private static int REQUEST_ACTIVITY_CALLOUT = 39;
     private static ActivityCallout mCurrentCallout;
     private static MusubiBaseActivity sInstance;

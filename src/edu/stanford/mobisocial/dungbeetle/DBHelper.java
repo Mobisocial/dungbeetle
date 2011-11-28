@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONException;
@@ -603,8 +604,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
             	throw new RuntimeException("Messasge size is too large for sending");
-            db.insertOrThrow(DbObject.TABLE, null, cv);
-            return 0;
+            return db.insertOrThrow(DbObject.TABLE, null, cv);
         }
         catch(Exception e){
             // TODO, too spammy
@@ -792,7 +792,7 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.i(TAG, "Inserting contact: " + cv);
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
-            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
             String tag = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
             String name = cv.getAsString(Contact.NAME);
@@ -907,8 +907,8 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
-            String sortOrder){
+    public Cursor queryFeedList(String realAppId, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder){
 
         /*return getReadableDatabase().rawQuery("SELECT * 
             FROM Group.TABLE, DBObject.TABLE
@@ -919,9 +919,11 @@ public class DBHelper extends SQLiteOpenHelper {
 
         String tables = Group.TABLE + ", " + DbObject.TABLE;
         String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
-                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
+                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " +
+                DbObject.TABLE + "." + DbObject._ID + " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
+        String[] selectionArgs2 = new String[] { realAppId };
         selection = andClauses(selection, selection2);
-        selectionArgs = null;
+        selectionArgs = andArguments(selectionArgs2, selectionArgs);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
@@ -1294,10 +1296,16 @@ public class DBHelper extends SQLiteOpenHelper {
         return c;
     }
 
-    public Cursor queryLocalUser(String feed_name) {
+    public Cursor queryLocalUser(String appId, String feed_name) {
         String table = MyInfo.TABLE;
-        String[] columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
-                MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        String[] columns;
+        if (DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                    MyInfo.PICTURE, MyInfo.PUBLIC_KEY, MyInfo.PRIVATE_KEY };
+        } else {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                    MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        }
         String selection = null;
         String selectionArgs[] = null;
         String groupBy = null;

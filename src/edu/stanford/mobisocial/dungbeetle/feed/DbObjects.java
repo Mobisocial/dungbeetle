@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mobisocial.socialkit.Obj;
-import mobisocial.socialkit.musubi.MemObj;
+import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONObject;
 
@@ -142,7 +142,6 @@ public final class DbObjects {
         for (String type : types) {
             allowed.append(",'").append(type).append("'");
         }
-        Log.w("DbObjects", DbObject.TYPE + " in (" + allowed.substring(1) + ")");
         return DbObject.TYPE + " in (" + allowed.substring(1) + ")";
     }
 

@@ -7,9 +7,6 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
-import android.util.Pair;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -30,7 +27,6 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
 
     public static JSONObject json(byte[] data, boolean reply){
         String encoded = FastBase64.encodeToString(data);
-        Log.w(TAG, "encoded: " + encoded);
         JSONObject obj = new JSONObject();
         try{
             obj.put(DATA, encoded);

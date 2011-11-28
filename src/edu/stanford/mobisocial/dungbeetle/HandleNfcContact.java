@@ -41,18 +41,11 @@ public class HandleNfcContact extends Activity {
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
 
 	        mEmail = uri.getQueryParameter("email");
-	        mName = mEmail;
 
-            String mProfile = uri.getQueryParameter("profile");
-
-            //byte[] mPicture = new byte[0];
+	        mName = uri.getQueryParameter("name");
+            if (mName == null) {
+                mName = mEmail;
             
-            try{
-                JSONObject o = new JSONObject(mProfile);
-                mName = o.getString("name");
-                //mPicture = FastBase64.decode(o.getString("picture"));
-            }
-            catch(Exception e){
             }
 
             TextView nameView = (TextView)findViewById(R.id.name_text);

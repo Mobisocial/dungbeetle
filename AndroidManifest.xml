@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="78"
-	  android:versionName="0.3.8"
+	  android:versionCode="79"
+	  android:versionName="0.3.9"
 	  android:installLocation="auto"
 	  >
     <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="12" />
@@ -196,11 +196,6 @@
             android:theme="@style/Theme.D1"
             android:label="@string/title_settings"
             
-            />
-      <activity android:name=".NearbyGroupsActivity"
-            android:theme="@style/Theme.D1"
-            android:label="@string/title_nearby"
-            android:noHistory="true"
             />
 
       <activity android:name=".NearbyActivity"

@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import java.lang.ref.SoftReference;
 import java.util.List;
 
 import mobisocial.socialkit.Obj;
@@ -14,8 +15,10 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.Gravity;
@@ -29,12 +32,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
@@ -182,58 +187,30 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
             return;
         }
 
+        // TODO: obj.getLatestChild().render();
+
         DbObj dbParentObj = (DbObj) obj;
-        String selection = "type = ?";
-        String[] selectionArgs = new String[] { AppStateObj.TYPE };
+        String selection = getRenderableClause();
+        String[] selectionArgs = null;
         Cursor cursor = dbParentObj.getSubfeed().query(selection, selectionArgs);
         if (cursor.moveToFirst()) {
             DbObj dbObj = App.instance().getMusubi().objForCursor(cursor);
-            AppState ref = new AppState(dbObj);
-            String thumbnail = ref.getThumbnailImage();
-            if (thumbnail != null) {
-                rendered = true;
-                ImageView imageView = new ImageView(context);
-                imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                              LinearLayout.LayoutParams.WRAP_CONTENT,
-                                              LinearLayout.LayoutParams.WRAP_CONTENT));
-                App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
-                frame.addView(imageView);
-            }
-    
-            thumbnail = ref.getThumbnailText();
-            if (thumbnail != null) {
-                rendered = true;
-                TextView valueTV = new TextView(context);
-                valueTV.setText(thumbnail);
-                valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-                frame.addView(valueTV);
-            }
-    
-            thumbnail = ref.getThumbnailHtml();
-            if (thumbnail != null) {
-                rendered = true;
-                WebView webview = new WebView(context);
-                webview.loadData(thumbnail, "text/html", "UTF-8");
-                webview.setLayoutParams(new LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                Object o = frame.getTag(R.id.object_entry);
-                webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
-                frame.addView(webview);
-            }
+            DbObjects.getFeedRenderer(dbObj.getType())
+                    .render(context, frame, dbObj, allowInteractions);
+            rendered = true;
         }
 
         if (!rendered) {
+            PackageManager pm = context.getPackageManager();
+            Drawable icon = null;
             String appName;
             Intent launch = getLaunchIntent(context, dbParentObj);
-            List<ResolveInfo> infos = context.getPackageManager().queryIntentActivities(launch, 0);
+            List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
             if (infos.size() > 0) {
                 ResolveInfo info = infos.get(0);
                 if (info.activityInfo.labelRes != 0) {
-                    appName = info.activityInfo.loadLabel(context.getPackageManager()).toString();
+                    appName = info.activityInfo.loadLabel(pm).toString();
+                    icon = info.loadIcon(pm);
                 } else {
                     appName = info.activityInfo.name;
                 }
@@ -243,7 +220,20 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
                     appName = appName.substring(appName.lastIndexOf(".") + 1);
                 }
             }
-            String text = "New application: " + appName + ".";
+
+            String text;
+            if (icon != null) {
+                ImageView iv = new ImageView(context);
+                iv.setImageDrawable(icon);
+                iv.setAdjustViewBounds(true);
+                iv.setMaxWidth(60);
+                iv.setMaxHeight(60);
+                iv.setLayoutParams(CommonLayouts.WRAPPED);
+                frame.addView(iv);
+                text = appName;
+            } else {
+                text = "New application: " + appName + ".";
+            }
             // TODO: Show Market icon or app icon.
             TextView valueTV = new TextView(context);
             valueTV.setText(text);
@@ -255,41 +245,23 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
     }
 
-    private class WebViewClickListener implements View.OnTouchListener {
-        private int position;
-        private ViewGroup vg;
-        private ViewGroup frame;
-        private ListView lv;
-
-        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
-            this.vg = vg;
-            this.position = position;
-        }
-
-        public boolean onTouch(View v, MotionEvent event) {
-            int action = event.getAction();
-            switch (action) {
-                case MotionEvent.ACTION_CANCEL:
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    sendClick();
-                    return true;
+    static SoftReference<String> mRenderableClause;
+    private String getRenderableClause() {
+        if (mRenderableClause != null) {
+            String renderable = mRenderableClause.get();
+            if (renderable != null) {
+                return renderable;
             }
-
-            return false;
         }
-
-        public void sendClick() {
-            if (lv == null) {
-                while (!(vg instanceof ListView)) {
-                    if (null != vg.getTag(R.id.object_entry)) {
-                        frame = vg;
-                    }
-                    vg = (ViewGroup)vg.getParent();
-                }
-                lv = (ListView) vg;
+        StringBuffer allowed = new StringBuffer();
+        String[] types = DbObjects.getRenderableTypes();
+        for (String type : types) {
+            if (!AppObj.TYPE.equals(type)) {
+                allowed.append(",'").append(type).append("'");
             }
-            lv.performItemClick(frame, position, 0);
         }
+        String clause = DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+        mRenderableClause = new SoftReference<String>(clause);
+        return clause;
     }
 }

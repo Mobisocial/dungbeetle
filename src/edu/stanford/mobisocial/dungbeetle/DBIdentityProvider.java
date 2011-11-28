@@ -1,14 +1,13 @@
 package edu.stanford.mobisocial.dungbeetle;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
+
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,8 +54,9 @@ public class DBIdentityProvider implements IdentityProvider {
 	        }
 	
 	        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
-	        mPubKey = publicKeyFromString(mPubKeyString);
-	        mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
+	        mPubKey = RSACrypto.publicKeyFromString(mPubKeyString);
+	        mPrivKey = RSACrypto.privateKeyFromString(
+	                c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
 	        mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
 	        mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
 	        mPubKeyTag = personIdForPublicKey(mPubKey);
@@ -137,8 +137,8 @@ public class DBIdentityProvider implements IdentityProvider {
 	            return null;
 	        }
 	
-	        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
-	            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
+	        RSAPublicKey k = RSACrypto.publicKeyFromString(
+	                c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
 	        return k;
         } finally {
         	c.close();
@@ -152,7 +152,7 @@ public class DBIdentityProvider implements IdentityProvider {
 			s.bindLong(1, id.longValue());
 			try {
 				String pks = s.simpleQueryForString();
-				result.add(publicKeyFromString(pks));
+				result.add(RSACrypto.publicKeyFromString(pks));
 			} catch (SQLiteDoneException e) {
 				Log.e(TAG, "Data consisteny error: unknown contact id " + id);
 			}
@@ -161,53 +161,29 @@ public class DBIdentityProvider implements IdentityProvider {
 		return result;
     }
 
-    public String personIdForPublicKey(RSAPublicKey key){
-        return edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
-    }
-
-    public static KeyPair generateKeyPair(){
-        try {
-            // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(1024);
-            return keyGen.genKeyPair();        
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Failed to generate key pair! " + e);
-        }
-    }
-
+	public static KeyPair generateKeyPair() {
+	    try {
+	        // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
+	        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+	        keyGen.initialize(1024);
+	        return keyGen.genKeyPair();
+	    } catch (java.security.NoSuchAlgorithmException e) {
+	        throw new IllegalStateException("Failed to generate key pair! " + e);
+	    }
+	}
 
     public static String publicKeyToString(PublicKey pubkey){
         return FastBase64.encodeToString(pubkey.getEncoded());
-    }
-
-    public static RSAPublicKey publicKeyFromString(String str){
-        try{
-            byte[] pubKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
-            return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
-    }
-
-    public static RSAPrivateKey privateKeyFromString(String str){
-        try{
-            byte[] privKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-            return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
     }
 
     @Override
     public void close() {
     	mUnclosedException = null;
     	mHelper.close();
+    }
+
+    @Override
+    public String personIdForPublicKey(RSAPublicKey key) {
+        return RSACrypto.makePersonIdForPublicKey(key);
     }
 }

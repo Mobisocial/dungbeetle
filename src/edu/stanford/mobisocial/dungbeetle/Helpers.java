@@ -150,7 +150,7 @@ public class Helpers {
     }
 
     @Deprecated
-    public static void sendMessage(final Context c, long contactId, JSONObject json, String type) {
+    public static Uri sendMessage(final Context c, long contactId, JSONObject json, String type) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         Obj obj = DbObjects.convertOldJsonToObj(c, type, json);
         ContentValues values = new ContentValues();
@@ -161,7 +161,7 @@ public class Helpers {
         }
         String to = Long.toString(contactId);
         values.put(DbObject.DESTINATION, to);
-        c.getContentResolver().insert(url, values);
+        return c.getContentResolver().insert(url, values);
     }
 
     @Deprecated

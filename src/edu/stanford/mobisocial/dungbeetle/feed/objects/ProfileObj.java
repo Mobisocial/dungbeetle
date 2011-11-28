@@ -3,7 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.UUID;
 
 import mobisocial.socialkit.Obj;
-import mobisocial.socialkit.musubi.MemObj;
+import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;

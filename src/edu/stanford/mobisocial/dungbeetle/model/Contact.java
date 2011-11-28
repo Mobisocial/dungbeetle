@@ -268,13 +268,17 @@ public class Contact implements Serializable {
             return mName;
         }
 
-        @Override
         public Bitmap getPicture() {
             return mPicture;
         }
 
         public Long getLocalId() {
             return mLocalId;
+        }
+
+        @Override
+        public String getAttribute(String attr) {
+            return null;
         }
     }
 }
