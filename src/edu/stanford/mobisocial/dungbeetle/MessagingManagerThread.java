@@ -162,51 +162,67 @@ public class MessagingManagerThread extends Thread {
             final JSONObject obj = in_obj;
             final byte[] raw = extracted_data;
 
-            if (contact.isKnown()) {
-                long objId;
-                final Contact realContact = contact.get();
-                long contactId = realContact.id;
-                if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
-                // Insert into the database. (TODO: Handler, both android.os and musubi.core)
+            /**
+             *  TODO STFAN BJDODSON KANAKB
+             *
+             *  See FriendAcceptObj.handleUnprocessed as template, code is something like:
+             *
+             *  if (!mPublicKeyDirectory.verify(in_obj.getString("email"), in_obj.getPublicKey())) {
+             *    Log.w("Spammer trying to claim public key for email address");
+             *    return;
+             *  }
+             *  if (inAddressBook(email)) {
+             *     // auto-accept and notify of new friend
+             *  } else {
+             *     // notification to accept friend
+             *  }
+             */
 
-                if (!objHandler.handleObjFromNetwork(mContext, realContact, obj)) {
-                    return;
-                }
-
-                Integer intKey = null;
-                if (obj.has(JSON_INT_KEY)) {
-                    intKey = obj.getInt(JSON_INT_KEY);
-                    obj.remove(JSON_INT_KEY);
-                }
-                objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw, intKey);
-				Uri feedUri;
-                if (feedName.equals("friend")) {
-                   feedUri = Feed.uriForName("friend/" + contactId);
-                } else {
-                    feedUri = Feed.uriForName(feedName);
-                }
-                mContext.getContentResolver().notifyChange(feedUri, null);
-                if (feedName.equals("direct") || feedName.equals("friend")) {
-                    long time = obj.optLong(DbObject.TIMESTAMP);
-                    Helpers.updateLastPresence(mContext, realContact, time);
-                    objHandler.handleDirectMessage(mContext, realContact, obj);
-                }
-
-                /**
-                 * Run handlers over all received objects:
-                 */
-
-                // TODO: framework code.
-                DbObj signedObj = App.instance().getMusubi().objForId(objId);
-                getFromNetworkHandlers().handleObj(mContext, DbObjects.forType(type), signedObj);
-
-                // Per-object handlers:
-                if (objHandler instanceof FeedMessageHandler) {
-                    ((FeedMessageHandler) objHandler).handleFeedMessage(mContext, signedObj);
-                }
-                
-            } else {
+            if (!contact.isKnown()) {
                 Log.i(TAG, "Message from unknown contact. " + contents);
+                return;
+            }
+
+            long objId;
+            final Contact realContact = contact.get();
+            long contactId = realContact.id;
+            if (DBG) Log.d(TAG, "Msg from " + contactId + " ( " + realContact.name  + ")");
+            // Insert into the database. (TODO: Handler, both android.os and musubi.core)
+
+            if (!objHandler.handleObjFromNetwork(mContext, realContact, obj)) {
+                return;
+            }
+
+            Integer intKey = null;
+            if (obj.has(JSON_INT_KEY)) {
+                intKey = obj.getInt(JSON_INT_KEY);
+                obj.remove(JSON_INT_KEY);
+            }
+            objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw, intKey);
+			Uri feedUri;
+            if (feedName.equals("friend")) {
+               feedUri = Feed.uriForName("friend/" + contactId);
+            } else {
+                feedUri = Feed.uriForName(feedName);
+            }
+            mContext.getContentResolver().notifyChange(feedUri, null);
+            if (feedName.equals("direct") || feedName.equals("friend")) {
+                long time = obj.optLong(DbObject.TIMESTAMP);
+                Helpers.updateLastPresence(mContext, realContact, time);
+                objHandler.handleDirectMessage(mContext, realContact, obj);
+            }
+
+            /**
+             * Run handlers over all received objects:
+             */
+
+            // TODO: framework code.
+            DbObj signedObj = App.instance().getMusubi().objForId(objId);
+            getFromNetworkHandlers().handleObj(mContext, DbObjects.forType(type), signedObj);
+
+            // Per-object handlers:
+            if (objHandler instanceof FeedMessageHandler) {
+                ((FeedMessageHandler) objHandler).handleFeedMessage(mContext, signedObj);
             }
         }
         catch(Exception e){
