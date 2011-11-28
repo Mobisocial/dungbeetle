@@ -55,8 +55,6 @@ public class AddressBookPicker extends FragmentActivity implements LoaderCallbac
             mAdapter = new ContactListAdapter(loader.getContext(), cursor);
             mListView.setAdapter(mAdapter);
             mListView.setFastScrollEnabled(true);
-            mListView.setItemsCanFocus(false);
-            mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         } else {
             mAdapter.changeCursor(cursor);
         }
@@ -89,9 +87,10 @@ public class AddressBookPicker extends FragmentActivity implements LoaderCallbac
                     uri, projection, selection, selectionArgs, sortOrder);
             String email = null;
             if (cursor.moveToFirst()) {
-                email= cursor.getString(0);
+                email = cursor.getString(0);
             } else {
-                // TODO
+                email = "";
+                frame.setEnabled(false);
             }
             cursor.close();
 
@@ -110,6 +109,7 @@ public class AddressBookPicker extends FragmentActivity implements LoaderCallbac
             }
             cursor.close();
             ((TextView)frame.findViewById(R.id.name)).setText(name);
+            ((TextView)frame.findViewById(R.id.email)).setText(email);
         }
 
         @Override

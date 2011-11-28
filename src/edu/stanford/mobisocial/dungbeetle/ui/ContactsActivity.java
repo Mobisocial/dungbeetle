@@ -93,6 +93,9 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onClickNew(View v) {
+        // TODO: Transitioning to email-only invite system.
+        doSharing(null);
+        /*
         ActivityCallout callout = new ContactPickerCallout(this) {
             @Override
             public void handleResult(int resultCode, Intent data) {
@@ -100,6 +103,7 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
             }
         };
         doActivityForResult(callout);
+        */
     }
 
     private void doSharing(Intent data) {

@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	      android:layout_width="fill_parent"
-	      android:layout_height="?android:attr/listPreferredItemHeight"
-	      android:paddingTop="6dip"
-	      android:paddingBottom="6dip">
-<CheckBox
-	 android:id="@+id/checkbox"
-	 android:layout_alignParentRight="true"
-	 android:layout_width="wrap_content"
-	 android:layout_height="fill_parent" />
+	      android:layout_height="wrap_content"
+	      android:padding="10dip">
 <TextView
     android:id="@+id/name"
-    android_layout_toLeftOf="@id/checkbox"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content" />
+    android:layout_height="wrap_content"
+    android:textAppearance="?android:attr/textAppearanceMedium" />
+<TextView
+    android:id="@+id/email"
+    android:layout_below="@id/name"
+    android:layout_alignParentBottom="true"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:textAppearance="?android:attr/textAppearanceSmall" />
 </RelativeLayout>
