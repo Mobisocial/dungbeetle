@@ -446,6 +446,10 @@ public class DungBeetleContentProvider extends ContentProvider {
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
         } else if(match(uri, "app", ".+")) {
+            if (!realAppId.equals(segs.get(1))) {
+                Log.w(TAG, "Illegal data access.");
+                return null;
+            }
             String table = DbObj.TABLE;
             String select = DbObj.COL_APP_ID + " = ?";
             String[] selectArgs = new String[] { realAppId };
@@ -453,6 +457,8 @@ public class DungBeetleContentProvider extends ContentProvider {
             String groupBy = null;
             String having = null;
             String orderBy = null;
+            select = DBHelper.andClauses(select, selection);
+            selectArgs = DBHelper.andArguments(selectArgs, selectionArgs);
             Cursor c = mHelper.getReadableDatabase().query(
                     table, columns, select, selectArgs, groupBy, having, orderBy);
             c.setNotificationUri(resolver, uri);

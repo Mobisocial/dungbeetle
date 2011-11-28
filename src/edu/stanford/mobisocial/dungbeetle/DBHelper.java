@@ -920,10 +920,12 @@ public class DBHelper extends SQLiteOpenHelper {
         String tables = Group.TABLE + ", " + DbObject.TABLE;
         String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
                     " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " +
-                DbObject.TABLE + "." + DbObject._ID + " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
-        String[] selectionArgs2 = new String[] { realAppId };
+                DbObject.TABLE + "." + DbObject._ID;
+        if (!DungBeetleContentProvider.SUPER_APP_ID.equals(realAppId)) {
+            selection2 += " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
+            selectionArgs = andArguments(selectionArgs, new String[] { realAppId });   
+        }
         selection = andClauses(selection, selection2);
-        selectionArgs = andArguments(selectionArgs2, selectionArgs);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
