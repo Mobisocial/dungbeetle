@@ -451,29 +451,41 @@ public class NearbyActivity extends ListActivity implements
         }
     }
 
-    private static class MulticastBroadcastTask extends AsyncTask<Void, Void, Void> {
+    public static class MulticastBroadcastTask extends AsyncTask<Void, Void, Void> {
         private static MulticastBroadcastTask sInstance;
-        private static final int SEVEN_SECONDS = 7000;
+        public static final int SEVEN_SECONDS = 7000;
+        public static final int THIRTY_SECONDS = 30000;
+        public static final int NO_RETRY = -1;
 
         private InetAddress mNearbyGroup;
         private MulticastSocket mSocket;
         private final byte[] mBroadcastMsg;
         private boolean mRunning;
         private boolean mDone;
+        private final int mDuration;
+        private final int mWaitRetry;
 
         static final int PROTOCOL_BROADCAST_URI = 0x853000;
 
-        private MulticastBroadcastTask(Context context) {
+        /**
+         * 
+         * @param context
+         * @param duration The number of seconds to wait between broadcasts
+         * @param waitRetry After a failure, the number of seconds to wait before retrying
+         */
+        public MulticastBroadcastTask(Context context, int duration, int waitRetry) {
             String requestStr = FriendRequest.getMusubiUri(context).toString();
             mBroadcastMsg = new byte[4 + requestStr.length()];
             ByteBuffer buf = ByteBuffer.wrap(mBroadcastMsg);
             buf.putInt(PROTOCOL_BROADCAST_URI);
             buf.put(requestStr.getBytes());
+            mWaitRetry = waitRetry;
+            mDuration = duration;
         }
 
         public static MulticastBroadcastTask getInstance(Context context) {
             if (sInstance == null || sInstance.mDone) {
-                sInstance = new MulticastBroadcastTask(context);
+                sInstance = new MulticastBroadcastTask(context, SEVEN_SECONDS, NO_RETRY);
             }
             return sInstance;
         }
@@ -509,10 +521,16 @@ public class NearbyActivity extends ListActivity implements
                     // if (DBG) Log.d(TAG, "sending multicast packet");
                     mSocket.send(profile);
                     try {
-                        Thread.sleep(SEVEN_SECONDS);
+                        Thread.sleep(mDuration);
                     } catch (InterruptedException e) {}
                 } catch (IOException e) {
-                    mSocket = null;
+                    if (mWaitRetry > 0) {
+                        try {
+                            Thread.sleep(mWaitRetry);
+                        } catch (InterruptedException e2) {}
+                    } else {
+                        mSocket = null;
+                    }
                 }
             }
             mRunning = false;

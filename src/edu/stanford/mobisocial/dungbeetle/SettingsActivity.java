@@ -39,10 +39,11 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class SettingsActivity extends Activity {
-	
-
     public static final String PREFS_NAME = "DungBeetlePrefsFile";
-	
+	private static NearbyActivity.MulticastBroadcastTask mMulticastBroadcast;
+	private static final int MULTICAST_DELAY = 3;
+	private static final int MULTICAST_RETRY = 15;
+
 	private final class VacuumDatabaseListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
@@ -183,9 +184,21 @@ public class SettingsActivity extends Activity {
 		public void onClick(View v) {
 			boolean global_tv_mode = globalTVMode_.isChecked();
 			global_tv_mode = !global_tv_mode;
-			globalTVMode_.setChecked(global_tv_mode);
 			getSharedPreferences("main", 0).edit()
 					.putBoolean("autoplay", global_tv_mode).commit();
+			globalTVMode_.setChecked(global_tv_mode);
+
+			if (global_tv_mode) {
+			    // TODO: put in a service.
+			    mMulticastBroadcast = new NearbyActivity.MulticastBroadcastTask(
+		                SettingsActivity.this, MULTICAST_DELAY, MULTICAST_RETRY);
+			    mMulticastBroadcast.execute();
+			} else {
+			    if (mMulticastBroadcast != null) {
+			        mMulticastBroadcast.cancel(true);
+			        mMulticastBroadcast = null;
+			    }
+			}
 		}
 	}
 
