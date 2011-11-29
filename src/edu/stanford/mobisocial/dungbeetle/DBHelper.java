@@ -917,15 +917,19 @@ public class DBHelper extends SQLiteOpenHelper {
 
         ContentResolver resolver = mContext.getContentResolver();
 
-        String tables = Group.TABLE + ", " + DbObject.TABLE;
-        String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
-                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " +
-                DbObject.TABLE + "." + DbObject._ID;
+        final String OBJECTS = DbObject.TABLE;
+        final String GROUPS = Group.TABLE;
+
+        String tables = GROUPS + ", " + OBJECTS;
+        String selection2 = GROUPS + "." + Group.PARENT_FEED_ID + " = -1 " +
+                    " AND " + GROUPS + "." + Group.LAST_OBJECT_ID + " = " +
+                OBJECTS + "." + DbObject._ID;
         if (!DungBeetleContentProvider.SUPER_APP_ID.equals(realAppId)) {
-            selection2 += " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
+            selection2 += " AND " + OBJECTS + "." + DbObject.APP_ID + " = ?";
             selectionArgs = andArguments(selectionArgs, new String[] { realAppId });   
         }
         selection = andClauses(selection, selection2);
+        Log.d(TAG, "ISSUING QUERY "  + selection);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
