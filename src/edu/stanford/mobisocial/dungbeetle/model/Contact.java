@@ -25,79 +25,51 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 public class Contact implements Serializable {
 
     public static final String TABLE = "contacts";
-
     public static final long MY_ID = -666;
-
     public static final String UNKNOWN = "UNKNOWN";
-
     public static final String _ID = "_id";
-
     public static final String NAME = "name";
-
     public static final String PUBLIC_KEY = "public_key";
-
     public static final String PERSON_ID = "person_id";
-
     public static final String EMAIL = "email";
-
     public static final String PRESENCE = "presence";
-
     public static final String LAST_PRESENCE_TIME = "last_presence_time";
-
     public static final String STATUS = "status";
-
     public static final String PICTURE = "picture";
-
     public static final String MIME_TYPE = "vnd.mobisocial.db/contact";
-
     public static final String NEARBY = "nearby";
-
     public static final String SHARED_SECRET = "secret";
-
     public static final String LAST_OBJECT_ID = "last_object_id";
-
     public static final String LAST_UPDATED = "last_updated";
-
     public static final String NUM_UNREAD = "num_unread";
-
     public static final String HIDDEN = "hidden";
 
     public final String name;
-
     public final String email;
-
     public final String personId;
-
     public final long id;
-
     public final long lastPresenceTime;
-
     public final int presence;
-
     public final boolean nearby;
-
     public final byte[] secret;
-
     public final String status;
-
     public Long lastObjectId;
-
     public Long lastUpdated;
-
     public long numUnread;
-
     public int hidden;
-
     public android.graphics.Bitmap picture;
 
     // TODO: Move out of Contact and make more standard
     public static final String ATTR_PROTOCOL_VERSION = "vnd.mobisocial.device/protocol_version";
-
     public static final String ATTR_BT_CORRAL_UUID = "vnd.mobisocial.device/bt_corral";
-
     public static final String ATTR_BT_MAC = "vnd.mobisocial.device/bt_mac";
-
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+
+    /**
+     * The time when this device was last known to be "nearby".
+     * This attribute is not syncable from the network.
+     */
+    public static final String ATTR_NEARBY_TIMESTAMP = "vnd.mobisocial.device/nearby_timestamp";
 
     private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
     static {

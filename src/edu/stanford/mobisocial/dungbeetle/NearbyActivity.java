@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -426,11 +427,13 @@ public class NearbyActivity extends ListActivity implements
                         continue;
                     }
 
-                    if (acceptFriend) {
-                        long cid = FriendRequest.getExistingContactId(mContext, friendUri);
-                        if (cid == -1) {
-                            FriendRequest.acceptFriendRequest(mContext, friendUri, false);
-                        }
+                    long cid = FriendRequest.getExistingContactId(mContext, friendUri);
+                    if (cid == -1 && acceptFriend) {
+                        FriendRequest.acceptFriendRequest(mContext, friendUri, false);
+                    }
+                    if (cid != -1) {
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_NEARBY_TIMESTAMP,
+                                Long.toString(new Date().getTime()));
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);
@@ -470,8 +473,8 @@ public class NearbyActivity extends ListActivity implements
         /**
          * 
          * @param context
-         * @param duration The number of seconds to wait between broadcasts
-         * @param waitRetry After a failure, the number of seconds to wait before retrying
+         * @param duration The number of ms to wait between broadcasts
+         * @param waitRetry After a failure, the number of ms to wait before retrying
          */
         public MulticastBroadcastTask(Context context, int duration, int waitRetry) {
             String requestStr = FriendRequest.getMusubiUri(context).toString();

@@ -41,8 +41,8 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 public class SettingsActivity extends Activity {
     public static final String PREFS_NAME = "DungBeetlePrefsFile";
 	private static NearbyActivity.MulticastBroadcastTask mMulticastBroadcast;
-	private static final int MULTICAST_DELAY = 3;
-	private static final int MULTICAST_RETRY = 15;
+	private static final int MULTICAST_DELAY = 2500;
+	private static final int MULTICAST_RETRY = 15000;
 
 	private final class VacuumDatabaseListener implements OnClickListener {
 		@Override
