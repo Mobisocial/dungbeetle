@@ -12,12 +12,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.RSACrypto;
 
@@ -648,6 +648,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
             }
@@ -1112,6 +1113,8 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject.TABLE,
             new String[]{ DbObject._ID,
             			  DbObject.ENCODED + " IS NOT NULL AS is_encoded",
+            			  DbObject.APP_ID,
+            			  DbObject.SEQUENCE_ID,
             			  DbObject.TYPE,
             			  DbObject.SENT,
             			  DbObject.JSON,
@@ -1458,11 +1461,9 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded, String json, byte[] raw, long hash) {
+	public void setEncoded(long id, byte[] encoded, long hash) {
         ContentValues cv = new ContentValues();
         cv.put(DbObject.ENCODED, encoded);
-        cv.put(DbObject.JSON, json);
-        cv.put(DbObject.RAW, raw);
         cv.put(DbObject.HASH, hash);
         getWritableDatabase().update(
             DbObject.TABLE, 
@@ -1492,22 +1493,62 @@ public class DBHelper extends SQLiteOpenHelper {
         }
 	}
 	//gets all known people's id's, in other words, their public keys.
-    public Set<byte[]> getPublicKeys() {
-    	HashSet<byte[]> key_ss = new HashSet<byte[]>();
+    public List<User> getPKUsersForIds(List<Long> ids) {
+        StringBuffer idStr = new StringBuffer();
+        for (Long id : ids) {
+            idStr.append("," + id);
+        }
+        String idList = idStr.substring(1);
+        List<User> users = new ArrayList<User>(ids.size());
+    	String table = Contact.TABLE;
+    	String[] projection = new String[] {Contact.PERSON_ID, Contact.NAME, Contact.PUBLIC_KEY};
+    	String selection = Contact._ID + " in (" + idList + ")";
+    	String[] selectionArgs = null;
+    	String groupBy = null;
+    	String having = null;
+    	String orderBy = null;
         Cursor c = getReadableDatabase().query(
-                Contact.TABLE, 
-                new String[] {Contact._ID, Contact.PUBLIC_KEY},
-                null, null,null,null,null);
+                table, projection, selection, selectionArgs, groupBy, having, orderBy);
         try {
 	        if(c.moveToFirst()) do {
-	        	byte[] pk = c.getBlob(1);
-	        	key_ss.add(pk);
+	        	users.add(new PKUser(c.getString(0), c.getString(1), c.getString(2)));
 	        } while(c.moveToNext());
-	        return key_ss;	
+	        return users;	
         } finally {
         	c.close();
         }
     }
+
+    class PKUser implements User {
+        final String mId;
+        final String mName;
+        final String mPublicKey;
+
+        public PKUser(String id, String name, String publicKey) {
+            mId = id;
+            mName = name;
+            mPublicKey = publicKey;
+        }
+
+        @Override
+        public String getId() {
+            return mId;
+        }
+
+        @Override
+        public String getName() {
+            return mName;
+        }
+
+        @Override
+        public String getAttribute(String attr) {
+            if (ATTR_RSA_PUBLIC_KEY.equals(attr)) {
+                return mPublicKey;
+            }
+            return null;
+        }
+    }
+
     //gets the shared secret for all contacts.
     public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
     	HashMap<byte[], byte[]> key_ss = new HashMap<byte[], byte[]>();
@@ -1535,6 +1576,7 @@ public class DBHelper extends SQLiteOpenHelper {
         	c.close();
         }
     }
+
 	//gets the shared secret with one specific contact or create a shared secret if there is none... null if the public key is unknown
     public byte[] getSharedSecret(byte[] public_key) {
     	String hex = new String(Hex.encodeHex(public_key));

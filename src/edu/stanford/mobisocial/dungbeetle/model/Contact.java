@@ -71,12 +71,23 @@ public class Contact implements Serializable {
      */
     public static final String ATTR_NEARBY_TIMESTAMP = "vnd.mobisocial.device/nearby_timestamp";
 
+    /**
+     * Claimed device modalities.
+     */
+    public static final String ATTR_DEVICE_MODALITY = "vnd.mobisocial.device/modality";
+
+
+    /**
+     * A list of 'well known' attribute types, which are scanned on the network and
+     * automatically pinned to a user.
+     */
     private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
     static {
         sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
         sWellKnownAttrs.add(Contact.ATTR_BT_MAC);
         sWellKnownAttrs.add(Contact.ATTR_BT_CORRAL_UUID);
         sWellKnownAttrs.add(Contact.ATTR_PROTOCOL_VERSION);
+        sWellKnownAttrs.add(Contact.ATTR_DEVICE_MODALITY);
     }
 
     public static boolean isWellKnownAttribute(String attr) {

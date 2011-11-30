@@ -138,7 +138,6 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
-            if (DBG) Log.d(TAG, "binding view");
             ImageView im = (ImageView)view;
             im.setTag(cursor.getLong(COL_ID));
             try {
@@ -152,9 +151,13 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             }
             DbObj obj = App.instance().getMusubi().objForCursor(cursor);
             byte[] bytes = obj.getRaw();
+            if (bytes == null) {
+                Log.e(TAG, "Null image bytes for " + im.getTag());
+                im.setImageResource(R.drawable.icon_full);
+                return;
+            }
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             im.setImageBitmap(bitmap);
-            if (DBG) Log.d(TAG, "done binding view");
         }
 
         @Override

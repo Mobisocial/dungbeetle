@@ -74,7 +74,7 @@ public class VoiceObj extends DbEntryHandler implements FeedRenderer, Activator,
 	}
 
     public static DbObject from(byte[] data) {
-        return new DbObject(TYPE, json(data));
+        return new DbObject(TYPE, new JSONObject(), data);
     }
     public static JSONObject json(byte[] data){
         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
