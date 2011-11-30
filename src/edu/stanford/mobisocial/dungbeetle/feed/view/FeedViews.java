@@ -18,6 +18,7 @@ import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedSlideshowFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.AppsViewFragment;
 
 public class FeedViews {
     private static final List<FeedView> sFeedViews = new ArrayList<FeedView>();
@@ -39,11 +40,10 @@ public class FeedViews {
         List<FeedView> feedViews = new ArrayList<FeedView>();
         feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
         feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
+        feedViews.add(FeedViews.feedViewFrom("Apps", new AppsViewFragment()));
         //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
         feedViews.add(new PresenceView());
-        if (MusubiBaseActivity.isDeveloperModeEnabled(context)) {
-            feedViews.add(new FilterView());
-        }
+        //feedViews.add(new FilterView());
         return feedViews;
     }
 
