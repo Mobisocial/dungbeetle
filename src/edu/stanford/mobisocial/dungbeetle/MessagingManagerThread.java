@@ -11,7 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import mobisocial.socialkit.EncodedObj;
 import mobisocial.socialkit.PreparedObj;
+import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
 
@@ -31,9 +33,7 @@ import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatus;
 import edu.stanford.mobisocial.bumblebee.ConnectionStatusListener;
-import edu.stanford.mobisocial.bumblebee.CryptoException;
 import edu.stanford.mobisocial.bumblebee.IncomingMessage;
-import edu.stanford.mobisocial.bumblebee.MessageFormat;
 import edu.stanford.mobisocial.bumblebee.MessageListener;
 import edu.stanford.mobisocial.bumblebee.MessengerService;
 import edu.stanford.mobisocial.bumblebee.OutgoingMessage;
@@ -125,11 +125,14 @@ public class MessagingManagerThread extends Thread {
 
     // FYI: Invoked on connection reader thread
     private void handleIncomingMessage(final IncomingMessage incoming) {
-        final String personId = incoming.from();
-        final long hash = incoming.hash();
-        
-        Log.w(TAG, "PROBABLY GONNA DIE FROM " + incoming.contents());
-        final String contents = incoming.contents();
+        final SignedObj contents = incoming.contents();
+        final long hash = contents.getHash();
+        if (contents.getSender() == null) {
+            Log.e(TAG, "Null sender for " + contents.getType() + ", " + contents.getJson());
+            return;
+        }
+        final String personId = contents.getSender().getId();
+        // final String personId = incoming.from();
 
         /**
          * TODO: This needs to be updated with the POSI standards to accept a
@@ -139,9 +142,9 @@ public class MessagingManagerThread extends Thread {
         if (DBG)
             Log.i(TAG, "Localized contents: " + contents);
         try {
-            JSONObject in_obj = new JSONObject(contents);
-            String feedName = in_obj.getString("feedName");
-            String type = in_obj.optString(DbObjects.TYPE);
+            JSONObject in_obj = contents.getJson();
+            String feedName = contents.getFeedName();
+            String type = contents.getType();
             Uri feedPreUri = Feed.uriForName(feedName);
             if (mMessageDropHandler.preFiltersObj(mContext, feedPreUri)) {
                 return;
@@ -149,7 +152,7 @@ public class MessagingManagerThread extends Thread {
 
             if (mHelper.queryAlreadyReceived(hash)) {
                 if (DBG)
-                    Log.i(TAG, "Message already received. " + contents);
+                    Log.i(TAG, "Message already received: " + hash);
                 return;
             }
 
@@ -295,6 +298,11 @@ public class MessagingManagerThread extends Thread {
                             // EncodedObj
                             // and does not yet have a hash.
                             DbObj signedObj = App.instance().getMusubi().objForId(objId);
+                            if (signedObj == null) {
+                                Log.e(TAG, "Error, object " + objId + " not found in database");
+                                notSendingObjects.add(objId);
+                                continue;
+                            }
                             DbEntryHandler h = DbObjects.getObjHandler(json);
                             if (h != null && h instanceof FeedMessageHandler) {
                                 ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
@@ -332,7 +340,7 @@ public class MessagingManagerThread extends Thread {
     }
 
     private class OutgoingMsg implements OutgoingMessage {
-        protected SoftReference<byte[]> mEncoded;
+        protected SoftReference<EncodedObj> mEncoded;
         protected PreparedObj mBody;
         protected long mObjectId;
         protected byte[] mRaw;
@@ -377,7 +385,6 @@ public class MessagingManagerThread extends Thread {
             JSONObject json = null;
             try {
                 json = new JSONObject(jsonSrc);
-                Log.d(TAG, "PREPPING FOR ENCODING " + mRaw);
                 User sender = App.instance().getMusubi().userForLocalDevice(feedUri);
                 mBody = new DbPreparedObj(sender, recipients, appId, type, json, mRaw, intKey);
             } catch (JSONException e) {
@@ -413,24 +420,22 @@ public class MessagingManagerThread extends Thread {
         }
 
         @Override
-        public void onEncoded(byte[] encoded) {
-            mEncoded = new SoftReference<byte[]>(encoded);
-            long hash = -1;
-            try {
-                hash = MessageFormat.extractHash(encoded);
-            } catch (CryptoException e) {
-            }
-            mHelper.setEncoded(mObjectId, encoded, hash);
+        public void onEncoded(EncodedObj encoded) {
+            mEncoded = new SoftReference<EncodedObj>(encoded);
+            Log.d(TAG, "Setting encoded with hash " + encoded.getHash());
+            mHelper.setEncoded(mObjectId, encoded);
             mRaw = null;
         }
 
         @Override
-        public byte[] getEncoded() {
-            byte[] cached = mEncoded != null ? mEncoded.get() : null;
-            if (cached != null)
+        public EncodedObj getEncoded() {
+            EncodedObj cached = mEncoded != null ? mEncoded.get() : null;
+            if (cached != null) {
+                Log.d(TAG, "fetching memcached encoding " + cached.getHash());
                 return cached;
+            }
             cached = mHelper.getEncoded(mObjectId);
-            mEncoded = new SoftReference<byte[]>(cached);
+            mEncoded = new SoftReference<EncodedObj>(cached);
             return cached;
         }
     }
@@ -459,7 +464,9 @@ public class MessagingManagerThread extends Thread {
 
             @Override
             public User userForPersonId(String id) {
-                return null; // TODO
+                Uri feedUri = Feed.uriForName(Feed.FEED_NAME_GLOBAL);
+                User u = App.instance().getMusubi().userForGlobalId(feedUri, id);
+                return u;
             }
         };
     }

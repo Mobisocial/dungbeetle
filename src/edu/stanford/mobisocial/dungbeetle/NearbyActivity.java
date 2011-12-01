@@ -356,6 +356,8 @@ public class NearbyActivity extends ListActivity implements
         private final Set<Uri> mSeenUris = new HashSet<Uri>();
         private MulticastSocket mSocket;
         private MulticastLock mLock;
+        private String mWifiBSSID;
+        private String mWifiSSID;
 
         @Override
         protected void onPreExecute() {
@@ -364,6 +366,7 @@ public class NearbyActivity extends ListActivity implements
                 Log.d(TAG, "No wifi available.");
                 return;
             }
+
             mLock = wifi.createMulticastLock("msb-scanner");
             mLock.acquire();
 
@@ -373,6 +376,9 @@ public class NearbyActivity extends ListActivity implements
                 Log.w(TAG, "error multicasting", e);
                 mSocket = null;
             }
+
+            mWifiBSSID = wifi.getConnectionInfo().getBSSID();
+            mWifiSSID = wifi.getConnectionInfo().getSSID();
 
             // Ignore this device's profile:
             mSeenUris.add(FriendRequest.getMusubiUri(NearbyActivity.this));
@@ -398,6 +404,7 @@ public class NearbyActivity extends ListActivity implements
                     Uri friendUri = null;
                     boolean acceptFriend = false;
                     ByteBuffer packet = ByteBuffer.wrap(recv.getData());
+                    String theirIp = recv.getAddress().toString();
                     int protocol = packet.getInt();
                     try {
                         switch (protocol) {
@@ -434,6 +441,14 @@ public class NearbyActivity extends ListActivity implements
                     if (cid != -1) {
                         DbContactAttributes.update(mContext, cid, Contact.ATTR_NEARBY_TIMESTAMP,
                                 Long.toString(new Date().getTime()));
+
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_LAN_IP,
+                                theirIp);
+
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_WIFI_BSSID,
+                                mWifiBSSID);
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_WIFI_SSID,
+                                mWifiSSID);
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);

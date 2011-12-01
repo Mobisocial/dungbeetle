@@ -509,6 +509,11 @@ public class DungBeetleContentProvider extends ContentProvider {
                         selection, selectionArgs, null, null, sortOrder);
             }
             String feedName = segs.get(1);
+            if (feedName == null || Feed.FEED_NAME_GLOBAL.equals(feedName)) {
+                if (!SUPER_APP_ID.equals(realAppId)) {
+                    return null;
+                }
+            }
             Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, feedName, realAppId);
             c.setNotificationUri(resolver, uri);
             return c;

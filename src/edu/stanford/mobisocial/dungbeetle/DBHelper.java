@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mobisocial.socialkit.EncodedObj;
 import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.RSACrypto;
@@ -1461,10 +1462,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void setEncoded(long id, byte[] encoded, long hash) {
+	public void setEncoded(long id, EncodedObj encoded) {
         ContentValues cv = new ContentValues();
-        cv.put(DbObject.ENCODED, encoded);
-        cv.put(DbObject.HASH, hash);
+        cv.put(DbObject.ENCODED, encoded.getEncoded());
+        cv.put(DbObject.HASH, encoded.getHash());
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
@@ -1474,10 +1475,10 @@ public class DBHelper extends SQLiteOpenHelper {
         mContext.getContentResolver().notifyChange(objUri, null);
 	}
 
-	public byte[] getEncoded(long id) {
+	public EncodedObj getEncoded(long id) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
-                new String[]{ DbObject.ENCODED },
+                new String[]{ DbObject.ENCODED, DbObject.HASH },
                 DbObject._ID + "=?",
                 new String[]{ String.valueOf(id) },
                 null,
@@ -1485,9 +1486,32 @@ public class DBHelper extends SQLiteOpenHelper {
                 null);
 
         try {
-            if(!c.moveToFirst())
+            if (!c.moveToFirst()) {
+                Log.w(TAG, "no matching encoded obj");
             	return null;
-        	return c.getBlob(0);
+            }
+            final byte[] encodedBytes = c.getBlob(0);
+            if (encodedBytes == null) {
+                Log.d(TAG, "obj found but with a null encoding");
+                return null;
+            }
+            final long encodedHash = c.getLong(1);
+        	return new EncodedObj() {
+                @Override
+                public long getHash() {
+                    return encodedHash;
+                }
+                
+                @Override
+                public long getEncodingType() {
+                    return 0;
+                }
+                
+                @Override
+                public byte[] getEncoded() {
+                    return encodedBytes;
+                }
+            };
         } finally {
         	c.close();
         }

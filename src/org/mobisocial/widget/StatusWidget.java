@@ -72,7 +72,7 @@ public class StatusWidget extends AppWidgetProvider {
                     selection, selectionArgs, sortOrder);
 
             PendingIntent pendingIntent;
-            if (c.moveToFirst()) {
+            if (c != null && c.moveToFirst()) {
                 DbObj obj = App.instance().getMusubi().objForCursor(c);
                 if (obj == null || obj.getSender() == null) {
                     return null;

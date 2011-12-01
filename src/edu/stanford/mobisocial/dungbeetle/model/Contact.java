@@ -64,6 +64,8 @@ public class Contact implements Serializable {
     public static final String ATTR_BT_CORRAL_UUID = "vnd.mobisocial.device/bt_corral";
     public static final String ATTR_BT_MAC = "vnd.mobisocial.device/bt_mac";
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+    public static final String ATTR_WIFI_SSID = "vnd.mobisocial.device/wifi_ssid";
+    public static final String ATTR_WIFI_BSSID = "vnd.mobisocial.device/wifi_bssid";
 
     /**
      * The time when this device was last known to be "nearby".
