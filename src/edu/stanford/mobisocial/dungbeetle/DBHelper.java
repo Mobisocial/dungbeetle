@@ -277,7 +277,8 @@ public class DBHelper extends SQLiteOpenHelper {
       		} catch(JSONException e) {}
 	            c.close();
           }
-          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
+          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " +
+                  DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
           ids = new ArrayList<Long>();            
           if(c.moveToFirst()) do {
       			ids.add(c.getLong(0));
@@ -285,7 +286,9 @@ public class DBHelper extends SQLiteOpenHelper {
           c.close();
           dbh = DbObjects.forType(VoiceObj.TYPE);
           for(Long id : ids) {
-	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW},
+	                    DbObject._ID + " = ? ",new String[] { String.valueOf(id.longValue()) },
+	                    null, null, null);
 	            if(c.moveToFirst()) try {
 	            	String json = c.getString(0);
 	            	byte[] raw = c.getBlob(1);
@@ -315,7 +318,9 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         if(oldVersion <= 41) {
             db.execSQL("DROP INDEX objects_by_sequence_id");
-            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE +
+                    "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " +
+                    DbObject.SEQUENCE_ID + ")");
         }
         //secret to life, etc
         if(oldVersion <= 42) {
