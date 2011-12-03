@@ -327,8 +327,9 @@ public class NearbyActivity extends ListActivity implements
                     }
                     if (DBG)
                         Log.d(TAG, "Read " + new String(headerBytes));
-                    publishProgress(new NearbyItem(NearbyItem.Type.PERSON, u.getName(), Contact.uriFor(contactId),
-                            Contact.MIME_TYPE));
+                    // Updated definition of 'direct feed', broke this already broken code.
+                    //   publishProgress(new NearbyItem(NearbyItem.Type.PERSON, u.getName(), Contact.uriFor(contactId),
+                    //        Contact.MIME_TYPE));
                     if (DBG)
                         Log.d(TAG, "Bluetooth closing.");
                     socket.close();

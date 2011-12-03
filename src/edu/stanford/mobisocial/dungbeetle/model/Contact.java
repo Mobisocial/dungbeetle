@@ -173,11 +173,17 @@ public class Contact {
     }
 
     public Uri getFeedUri() {
+        TODO
+        /**
+         * TODO: SOLVE THIs BJD.
+         * 
+         * (1) Define the feed as: "direct-alphafirst-alphasecond"
+         * (2) If the feed doesn't exist in subscribers table, add this buddy.
+         * Make sure it doesn't show up in the groups list.
+         * Yeah, it's gross to do it here, but what're you gonna do.
+         * (3) delete any reference to /feeds/friend. 
+         */
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
-    }
-
-    public static Uri uriFor(long id) {
-        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts/" + id);
     }
 
     public static CursorUser userFromCursor(Context context, Cursor c) {
