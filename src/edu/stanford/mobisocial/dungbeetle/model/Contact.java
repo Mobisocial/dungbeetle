@@ -1,14 +1,11 @@
 
 package edu.stanford.mobisocial.dungbeetle.model;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import mobisocial.socialkit.User;
-import mobisocial.socialkit.musubi.DbUser;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -22,73 +19,45 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.ui.ViewContactActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
-public class Contact implements Serializable {
-
+/**
+ * A Musubi contact, backed by a database entry.
+ */
+public class Contact {
     public static final String TABLE = "contacts";
-
     public static final long MY_ID = -666;
-
     public static final String UNKNOWN = "UNKNOWN";
 
     public static final String _ID = "_id";
-
     public static final String NAME = "name";
-
     public static final String PUBLIC_KEY = "public_key";
-
     public static final String PERSON_ID = "person_id";
-
     public static final String EMAIL = "email";
-
     public static final String PRESENCE = "presence";
-
     public static final String LAST_PRESENCE_TIME = "last_presence_time";
-
     public static final String STATUS = "status";
-
     public static final String PICTURE = "picture";
-
     public static final String MIME_TYPE = "vnd.mobisocial.db/contact";
-
     public static final String NEARBY = "nearby";
-
     public static final String SHARED_SECRET = "secret";
-
     public static final String LAST_OBJECT_ID = "last_object_id";
-
     public static final String LAST_UPDATED = "last_updated";
-
     public static final String NUM_UNREAD = "num_unread";
-
     public static final String HIDDEN = "hidden";
 
     public final String name;
-
     public final String email;
-
     public final String personId;
-
     public final long id;
-
     public final long lastPresenceTime;
-
     public final int presence;
-
     public final boolean nearby;
-
     public final byte[] secret;
-
     public final String status;
-
     public Long lastObjectId;
-
     public Long lastUpdated;
-
     public long numUnread;
-
     public int hidden;
-
-    public android.graphics.Bitmap picture;
+    public Bitmap picture;
 
     // TODO: Move out of Contact and make more standard
     public static final String ATTR_PROTOCOL_VERSION = "vnd.mobisocial.device/protocol_version";
@@ -211,8 +180,8 @@ public class Contact implements Serializable {
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts/" + id);
     }
 
-    public static CursorUser userFromCursor(Cursor c) {
-        return new CursorUser(c);
+    public static CursorUser userFromCursor(Context context, Cursor c) {
+        return new CursorUser(context, c);
     }
    
     public static class CursorUser implements User {
@@ -221,12 +190,14 @@ public class Contact implements Serializable {
         private static final String COL_NAME = NAME;
         private static final String COL_PICTURE = PICTURE;
 
+        private final Context mContext;
         private final Long mLocalId;
         private final String mId;
         private final String mName;
         private final Bitmap mPicture;
 
-        CursorUser(Cursor c) {
+        CursorUser(Context context, Cursor c) {
+            mContext = context;
             Bitmap picture = null;
             Long localId = null;
             String id = null;
@@ -278,7 +249,7 @@ public class Contact implements Serializable {
 
         @Override
         public String getAttribute(String attr) {
-            return null;
+            return DbContactAttributes.getAttribute(mContext, mLocalId, attr);
         }
     }
 }

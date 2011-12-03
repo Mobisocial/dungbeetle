@@ -3,9 +3,6 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import mobisocial.socialkit.User;
-import mobisocial.socialkit.musubi.DbUser;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -97,7 +94,7 @@ public class DbContactAttributes /* extends DbTable */ {
             }
             List<CursorUser> users = new ArrayList<CursorUser>(c.getCount());
             while (true) {
-                users.add(Contact.userFromCursor(c));
+                users.add(Contact.userFromCursor(context, c));
                 if (!c.moveToNext()) {
                     break;
                 }
