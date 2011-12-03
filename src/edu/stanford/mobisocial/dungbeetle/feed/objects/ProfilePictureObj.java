@@ -1,6 +1,8 @@
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.LinkedList;
 
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -14,7 +16,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 
-public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
+public class ProfilePictureObj extends DbEntryHandler {
 	public static final String TAG = "ProfilePictureObj";
     public static final String TYPE = "profilepicture";
     public static final String DATA = "data";
@@ -82,7 +84,7 @@ public class ProfilePictureObj extends DbEntryHandler implements NoNotify {
     }*/
 
     @Override
-    public void handleDirectMessage(Context context, Contact from, JSONObject msg) {
-
+    public boolean doNotification(Context context, DbObj obj) {
+        return false;
     }
 }

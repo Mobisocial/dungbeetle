@@ -4,6 +4,7 @@ import java.text.NumberFormat;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,7 +24,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class LocationObj extends DbEntryHandler implements FeedRenderer, Activator, NoNotify {
+public class LocationObj extends DbEntryHandler implements FeedRenderer, Activator {
     public static final String TYPE = "loc";
     public static final String COORD_LAT = "lat";
     public static final String COORD_LONG = "lon";
@@ -79,5 +80,10 @@ public class LocationObj extends DbEntryHandler implements FeedRenderer, Activat
                 content.optDouble(COORD_LONG) + "?z=17";
         Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));
         context.startActivity(map);
+    }
+
+    @Override
+    public boolean doNotification(Context context, DbObj obj) {
+        return false;
     }
 }

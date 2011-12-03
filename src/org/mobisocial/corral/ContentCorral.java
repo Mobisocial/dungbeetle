@@ -121,6 +121,7 @@ public class ContentCorral {
             out.close();
             bin.close();
             in.close();
+
             return Uri.fromFile(copy);
         } catch (IOException e) {
             Log.w(TAG, "Error copying file", e);

@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle.feed.iface;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONObject;
 
 import android.content.Context;
@@ -39,5 +41,9 @@ public abstract class DbEntryHandler {
 	 */
 	public boolean discardOutboundObj() {
 	    return false;
+	}
+
+	public boolean doNotification(Context context, DbObj obj) {
+	    return true;
 	}
 }

@@ -1,17 +1,11 @@
 package edu.stanford.mobisocial.dungbeetle.model;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;

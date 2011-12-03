@@ -3,8 +3,10 @@ import java.util.List;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,7 +18,6 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -304,5 +305,23 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             }
             lv.performItemClick(frame, position, 0);
         }
+    }
+
+    @Override
+    public boolean doNotification(Context context, DbObj obj) {
+        JSONObject json = obj.getJson();
+        if (json == null || !json.has("members")) {
+            return true;
+        }
+        try {
+            String myId = App.instance().getLocalPersonId();
+            JSONArray arr = json.getJSONArray("members");
+            for (int i = 0; i < arr.length(); i++) {
+                if (myId.equals(arr.getString(i))) {
+                    return true;
+                }
+            }
+        } catch (JSONException e) {}
+        return false;
     }
 }

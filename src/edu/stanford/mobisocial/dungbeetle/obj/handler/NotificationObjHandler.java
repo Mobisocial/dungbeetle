@@ -10,7 +10,6 @@ import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -39,7 +38,7 @@ public class NotificationObjHandler extends ObjHandler {
             return;
         }
 
-        if (typeInfo instanceof NoNotify) {
+        if (!typeInfo.doNotification(context, obj)) {
             return;
         }
         
