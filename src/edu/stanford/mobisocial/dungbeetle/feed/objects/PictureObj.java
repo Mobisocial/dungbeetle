@@ -57,12 +57,13 @@ public class PictureObj extends DbEntryHandler
      * This does NOT do any SCALING!
      */
     public static DbObject from(byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(data));
+        return new DbObject(TYPE, new JSONObject(), data);
     }
 
     public static DbObject from(JSONObject base, byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(base, data));
+        return new DbObject(TYPE, base, data);
     }
+
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
 		byte[] raw = FastBase64.decode(json.optString(DATA));
@@ -141,19 +142,6 @@ public class PictureObj extends DbEntryHandler
         return from(base, data);
     }
 
-    public static JSONObject json(byte[] data){
-        JSONObject obj = new JSONObject();
-        return json(obj, data);
-    }
-
-    public static JSONObject json(JSONObject base, byte[] data){
-        String encoded = FastBase64.encodeToString(data);
-        try{
-            base.put("data", encoded);
-        }catch(JSONException e){}
-        return base;
-    }
-	
 	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
 	    JSONObject content = obj.getJson();
         byte[] raw = obj.getRaw();
@@ -166,14 +154,17 @@ public class PictureObj extends DbEntryHandler
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
-        BitmapFactory bf = new BitmapFactory();
-        imageView.setImageBitmap(bf.decodeByteArray(raw, 0, raw.length));
+        imageView.setImageBitmap(BitmapFactory.decodeByteArray(raw, 0, raw.length));
 //        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
         frame.addView(imageView);
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
-        byte[] bytes = FastBase64.decode(msg.optString(DATA));
+	    if (!msg.has(DATA)) {
+	            return null;
+	    }
+
+	    byte[] bytes = FastBase64.decode(msg.optString(DATA));
         msg.remove(DATA);
 		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}

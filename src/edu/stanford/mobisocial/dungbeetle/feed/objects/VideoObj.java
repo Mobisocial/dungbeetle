@@ -56,11 +56,11 @@ public class VideoObj extends DbEntryHandler
      * This does NOT do any SCALING!
      */
     public static DbObject from(byte[] data) {
-        return new DbObject(TYPE, VideoObj.json(data));
+        return new DbObject(TYPE, new JSONObject(), data);
     }
 
     public static DbObject from(JSONObject base, byte[] data) {
-        return new DbObject(TYPE, VideoObj.json(base, data));
+        return new DbObject(TYPE, base, data);
     }
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
@@ -104,19 +104,6 @@ public class VideoObj extends DbEntryHandler
         curThumb.compress(Bitmap.CompressFormat.JPEG, 90, baos);
         byte[] data = baos.toByteArray();
         return from(base, data);
-    }
-
-    public static JSONObject json(byte[] data){
-        JSONObject obj = new JSONObject();
-        return json(obj, data);
-    }
-
-    public static JSONObject json(JSONObject base, byte[] data){
-        String encoded = Base64.encodeToString(data, false);
-        try{
-            base.put("data", encoded);
-        }catch(JSONException e){}
-        return base;
     }
 	
 	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {

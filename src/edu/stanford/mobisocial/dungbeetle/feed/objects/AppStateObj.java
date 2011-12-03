@@ -310,12 +310,12 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
     @Override
     public boolean doNotification(Context context, DbObj obj) {
         JSONObject json = obj.getJson();
-        if (json == null || !json.has("members")) {
+        if (json == null || !json.has("membership")) {
             return true;
         }
         try {
             String myId = App.instance().getLocalPersonId();
-            JSONArray arr = json.getJSONArray("members");
+            JSONArray arr = json.getJSONArray("membership");
             for (int i = 0; i < arr.length(); i++) {
                 if (myId.equals(arr.getString(i))) {
                     return true;

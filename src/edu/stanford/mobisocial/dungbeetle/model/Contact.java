@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -26,7 +27,6 @@ public class Contact {
     public static final String TABLE = "contacts";
     public static final long MY_ID = -666;
     public static final String UNKNOWN = "UNKNOWN";
-
     public static final String _ID = "_id";
     public static final String NAME = "name";
     public static final String PUBLIC_KEY = "public_key";
@@ -61,19 +61,35 @@ public class Contact {
 
     // TODO: Move out of Contact and make more standard
     public static final String ATTR_PROTOCOL_VERSION = "vnd.mobisocial.device/protocol_version";
-
     public static final String ATTR_BT_CORRAL_UUID = "vnd.mobisocial.device/bt_corral";
-
     public static final String ATTR_BT_MAC = "vnd.mobisocial.device/bt_mac";
-
     public static final String ATTR_LAN_IP = "vnd.mobisocial.device/lan_ip";
+    public static final String ATTR_WIFI_SSID = "vnd.mobisocial.device/wifi_ssid";
+    public static final String ATTR_WIFI_BSSID = "vnd.mobisocial.device/wifi_bssid";
 
+    /**
+     * The time when this device was last known to be "nearby".
+     * This attribute is not syncable from the network.
+     */
+    public static final String ATTR_NEARBY_TIMESTAMP = "vnd.mobisocial.device/nearby_timestamp";
+
+    /**
+     * Claimed device modalities.
+     */
+    public static final String ATTR_DEVICE_MODALITY = "vnd.mobisocial.device/modality";
+
+
+    /**
+     * A list of 'well known' attribute types, which are scanned on the network and
+     * automatically pinned to a user.
+     */
     private static final Set<String> sWellKnownAttrs = new LinkedHashSet<String>();
     static {
         sWellKnownAttrs.add(Contact.ATTR_LAN_IP);
         sWellKnownAttrs.add(Contact.ATTR_BT_MAC);
         sWellKnownAttrs.add(Contact.ATTR_BT_CORRAL_UUID);
         sWellKnownAttrs.add(Contact.ATTR_PROTOCOL_VERSION);
+        sWellKnownAttrs.add(Contact.ATTR_DEVICE_MODALITY);
     }
 
     public static boolean isWellKnownAttribute(String attr) {
@@ -173,17 +189,15 @@ public class Contact {
     }
 
     public Uri getFeedUri() {
-        TODO
-        /**
-         * TODO: SOLVE THIs BJD.
-         * 
-         * (1) Define the feed as: "direct-alphafirst-alphasecond"
-         * (2) If the feed doesn't exist in subscribers table, add this buddy.
-         * Make sure it doesn't show up in the groups list.
-         * Yeah, it's gross to do it here, but what're you gonna do.
-         * (3) delete any reference to /feeds/friend. 
-         */
-        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/" + id);
+        String myId = App.instance().getLocalPersonId();
+        String theirId = this.personId;
+        StringBuilder friendFeed = new StringBuilder("friends:");
+        if (myId.compareTo(theirId) < 0) {
+            friendFeed.append(myId).append(":").append(theirId);
+        } else {
+            friendFeed.append(theirId).append(":").append(myId);
+        }
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + friendFeed);
     }
 
     public static CursorUser userFromCursor(Context context, Cursor c) {

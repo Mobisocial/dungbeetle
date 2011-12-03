@@ -377,7 +377,7 @@ public class DbObject implements Obj {
             long objId = (Long)tag;
 
             SignedObj obj = App.instance().getMusubi().objForId(objId);
-            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getJson());
+            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getRaw() + ", " + obj.getJson());
             Activator activator = DbObjects.getActivator(obj.getType());
             activator.activate(mContext, obj);
         }

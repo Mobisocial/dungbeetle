@@ -12,12 +12,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mobisocial.socialkit.EncodedObj;
+import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.RSACrypto;
 
@@ -276,7 +277,8 @@ public class DBHelper extends SQLiteOpenHelper {
       		} catch(JSONException e) {}
 	            c.close();
           }
-          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
+          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " +
+                  DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
           ids = new ArrayList<Long>();            
           if(c.moveToFirst()) do {
       			ids.add(c.getLong(0));
@@ -284,7 +286,9 @@ public class DBHelper extends SQLiteOpenHelper {
           c.close();
           dbh = DbObjects.forType(VoiceObj.TYPE);
           for(Long id : ids) {
-	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW},
+	                    DbObject._ID + " = ? ",new String[] { String.valueOf(id.longValue()) },
+	                    null, null, null);
 	            if(c.moveToFirst()) try {
 	            	String json = c.getString(0);
 	            	byte[] raw = c.getBlob(1);
@@ -314,7 +318,9 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         if(oldVersion <= 41) {
             db.execSQL("DROP INDEX objects_by_sequence_id");
-            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE +
+                    "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " +
+                    DbObject.SEQUENCE_ID + ")");
         }
         //secret to life, etc
         if(oldVersion <= 42) {
@@ -648,6 +654,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
             }
@@ -917,13 +924,19 @@ public class DBHelper extends SQLiteOpenHelper {
 
         ContentResolver resolver = mContext.getContentResolver();
 
-        String tables = Group.TABLE + ", " + DbObject.TABLE;
-        String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
-                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " +
-                DbObject.TABLE + "." + DbObject._ID + " AND " + DbObject.TABLE + "." + DbObject.APP_ID + " = ?";
-        String[] selectionArgs2 = new String[] { realAppId };
+        final String OBJECTS = DbObject.TABLE;
+        final String GROUPS = Group.TABLE;
+
+        String tables = GROUPS + ", " + OBJECTS;
+        String selection2 = GROUPS + "." + Group.PARENT_FEED_ID + " = -1 " +
+                    " AND " + GROUPS + "." + Group.LAST_OBJECT_ID + " = " +
+                OBJECTS + "." + DbObject._ID;
+        if (!DungBeetleContentProvider.SUPER_APP_ID.equals(realAppId)) {
+            selection2 += " AND " + OBJECTS + "." + DbObject.APP_ID + " = ?";
+            selectionArgs = andArguments(selectionArgs, new String[] { realAppId });   
+        }
         selection = andClauses(selection, selection2);
-        selectionArgs = andArguments(selectionArgs2, selectionArgs);
+        Log.d(TAG, "ISSUING QUERY "  + selection);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
@@ -1106,6 +1119,8 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject.TABLE,
             new String[]{ DbObject._ID,
             			  DbObject.ENCODED + " IS NOT NULL AS is_encoded",
+            			  DbObject.APP_ID,
+            			  DbObject.SEQUENCE_ID,
             			  DbObject.TYPE,
             			  DbObject.SENT,
             			  DbObject.JSON,
@@ -1452,12 +1467,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded, String json, byte[] raw, long hash) {
+	public void setEncoded(long id, EncodedObj encoded) {
         ContentValues cv = new ContentValues();
-        cv.put(DbObject.ENCODED, encoded);
-        cv.put(DbObject.JSON, json);
-        cv.put(DbObject.RAW, raw);
-        cv.put(DbObject.HASH, hash);
+        cv.put(DbObject.ENCODED, encoded.getEncoded());
+        cv.put(DbObject.HASH, encoded.getHash());
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
@@ -1467,10 +1480,10 @@ public class DBHelper extends SQLiteOpenHelper {
         mContext.getContentResolver().notifyChange(objUri, null);
 	}
 
-	public byte[] getEncoded(long id) {
+	public EncodedObj getEncoded(long id) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
-                new String[]{ DbObject.ENCODED },
+                new String[]{ DbObject.ENCODED, DbObject.HASH },
                 DbObject._ID + "=?",
                 new String[]{ String.valueOf(id) },
                 null,
@@ -1478,30 +1491,93 @@ public class DBHelper extends SQLiteOpenHelper {
                 null);
 
         try {
-            if(!c.moveToFirst())
+            if (!c.moveToFirst()) {
+                Log.w(TAG, "no matching encoded obj");
             	return null;
-        	return c.getBlob(0);
+            }
+            final byte[] encodedBytes = c.getBlob(0);
+            if (encodedBytes == null) {
+                Log.d(TAG, "obj found but with a null encoding");
+                return null;
+            }
+            final long encodedHash = c.getLong(1);
+        	return new EncodedObj() {
+                @Override
+                public long getHash() {
+                    return encodedHash;
+                }
+                
+                @Override
+                public long getEncodingType() {
+                    return 0;
+                }
+                
+                @Override
+                public byte[] getEncoded() {
+                    return encodedBytes;
+                }
+            };
         } finally {
         	c.close();
         }
 	}
 	//gets all known people's id's, in other words, their public keys.
-    public Set<byte[]> getPublicKeys() {
-    	HashSet<byte[]> key_ss = new HashSet<byte[]>();
+    public List<User> getPKUsersForIds(List<Long> ids) {
+        StringBuffer idStr = new StringBuffer();
+        for (Long id : ids) {
+            idStr.append("," + id);
+        }
+        String idList = idStr.substring(1);
+        List<User> users = new ArrayList<User>(ids.size());
+    	String table = Contact.TABLE;
+    	String[] projection = new String[] {Contact.PERSON_ID, Contact.NAME, Contact.PUBLIC_KEY};
+    	String selection = Contact._ID + " in (" + idList + ")";
+    	String[] selectionArgs = null;
+    	String groupBy = null;
+    	String having = null;
+    	String orderBy = null;
         Cursor c = getReadableDatabase().query(
-                Contact.TABLE, 
-                new String[] {Contact._ID, Contact.PUBLIC_KEY},
-                null, null,null,null,null);
+                table, projection, selection, selectionArgs, groupBy, having, orderBy);
         try {
 	        if(c.moveToFirst()) do {
-	        	byte[] pk = c.getBlob(1);
-	        	key_ss.add(pk);
+	        	users.add(new PKUser(c.getString(0), c.getString(1), c.getString(2)));
 	        } while(c.moveToNext());
-	        return key_ss;	
+	        return users;	
         } finally {
         	c.close();
         }
     }
+
+    class PKUser implements User {
+        final String mId;
+        final String mName;
+        final String mPublicKey;
+
+        public PKUser(String id, String name, String publicKey) {
+            mId = id;
+            mName = name;
+            mPublicKey = publicKey;
+        }
+
+        @Override
+        public String getId() {
+            return mId;
+        }
+
+        @Override
+        public String getName() {
+            return mName;
+        }
+
+        @Override
+        public String getAttribute(String attr) {
+            if (ATTR_RSA_PUBLIC_KEY.equals(attr)) {
+                return mPublicKey;
+            }
+            return null;
+        }
+    }
+
     //gets the shared secret for all contacts.
     public Map<byte[], byte[]> getPublicKeySharedSecretMap() {
     	HashMap<byte[], byte[]> key_ss = new HashMap<byte[], byte[]>();
@@ -1529,6 +1605,7 @@ public class DBHelper extends SQLiteOpenHelper {
         	c.close();
         }
     }
+
 	//gets the shared secret with one specific contact or create a shared secret if there is none... null if the public key is unknown
     public byte[] getSharedSecret(byte[] public_key) {
     	String hex = new String(Hex.encodeHex(public_key));

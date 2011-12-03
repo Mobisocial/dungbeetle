@@ -234,6 +234,7 @@ public class Helpers {
                 values.put(DbObject.RAW, r.second);
             } else {
                 values.put(DbObject.JSON, obj.getJson().toString());
+                values.put(DbObject.RAW, obj.getRaw());
             }
         } else {
             values.put(DbObject.JSON, obj.getJson().toString());

@@ -19,6 +19,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.DeleteObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.InviteToGroupObj;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
@@ -151,6 +152,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             }
         } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
+            String type = values.getAsString(DbObject.TYPE);
             try {
                 JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
                 String objHash = null;
@@ -165,7 +167,16 @@ public class DungBeetleContentProvider extends ContentProvider {
                     values.put(DbObject.JSON, json.toString());
                 }
 
-                long objId = mHelper.addToFeed(appId, feedName, values);
+                String appAuthority = appId;
+                if (SUPER_APP_ID.equals(appId)) {
+                    if (AppObj.TYPE.equals(type)) {
+                        if (json.has(AppObj.ANDROID_PACKAGE_NAME)) {
+                            appAuthority = json.getString(AppObj.ANDROID_PACKAGE_NAME);
+                        }
+                    }
+                }
+
+                long objId = mHelper.addToFeed(appAuthority, feedName, values);
                 Uri objUri = DbObject.uriForObj(objId);
                 resolver.notifyChange(objUri, null);
                 notifyDependencies(mHelper, resolver, segs.get(1));
@@ -445,6 +456,24 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
+        } else if(match(uri, "app", ".+")) {
+            if (!realAppId.equals(segs.get(1))) {
+                Log.w(TAG, "Illegal data access.");
+                return null;
+            }
+            String table = DbObj.TABLE;
+            String select = DbObj.COL_APP_ID + " = ?";
+            String[] selectArgs = new String[] { realAppId };
+            String[] columns = projection;
+            String groupBy = null;
+            String having = null;
+            String orderBy = null;
+            select = DBHelper.andClauses(select, selection);
+            selectArgs = DBHelper.andArguments(selectArgs, selectionArgs);
+            Cursor c = mHelper.getReadableDatabase().query(
+                    table, columns, select, selectArgs, groupBy, having, orderBy);
+            c.setNotificationUri(resolver, uri);
+            return c;
         } else if(match(uri, "feeds", ".+")) {
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
@@ -491,6 +520,11 @@ public class DungBeetleContentProvider extends ContentProvider {
                         selection, selectionArgs, null, null, sortOrder);
             }
             String feedName = segs.get(1);
+            if (feedName == null || Feed.FEED_NAME_GLOBAL.equals(feedName)) {
+                if (!SUPER_APP_ID.equals(realAppId)) {
+                    return null;
+                }
+            }
             Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, feedName, realAppId);
             c.setNotificationUri(resolver, uri);
             return c;

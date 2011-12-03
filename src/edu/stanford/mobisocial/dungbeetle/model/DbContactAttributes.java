@@ -17,6 +17,10 @@ public class DbContactAttributes /* extends DbTable */ {
     public static final String ATTR_NAME = "attr_name";
     public static final String ATTR_VALUE = "attr_value";
 
+    /*
+     * Table definitions:
+     */
+
     public static final String[] getColumnNames() {
         return new String[] { _ID, CONTACT_ID, ATTR_NAME, ATTR_VALUE };
     }
@@ -24,6 +28,10 @@ public class DbContactAttributes /* extends DbTable */ {
     public static final String[] getTypeDefs() {
         return new String[] { "INTEGER PRIMARY KEY", "INTEGER", "TEXT", "TEXT" };
     }
+
+    /*
+     * Utilities:
+     */
 
     public static void update(Context context, long contactId, String attr, String value) {
         ContentValues values = new ContentValues();

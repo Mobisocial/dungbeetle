@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -356,6 +357,8 @@ public class NearbyActivity extends ListActivity implements
         private final Set<Uri> mSeenUris = new HashSet<Uri>();
         private MulticastSocket mSocket;
         private MulticastLock mLock;
+        private String mWifiBSSID;
+        private String mWifiSSID;
 
         @Override
         protected void onPreExecute() {
@@ -364,6 +367,7 @@ public class NearbyActivity extends ListActivity implements
                 Log.d(TAG, "No wifi available.");
                 return;
             }
+
             mLock = wifi.createMulticastLock("msb-scanner");
             mLock.acquire();
 
@@ -373,6 +377,9 @@ public class NearbyActivity extends ListActivity implements
                 Log.w(TAG, "error multicasting", e);
                 mSocket = null;
             }
+
+            mWifiBSSID = wifi.getConnectionInfo().getBSSID();
+            mWifiSSID = wifi.getConnectionInfo().getSSID();
 
             // Ignore this device's profile:
             mSeenUris.add(FriendRequest.getMusubiUri(NearbyActivity.this));
@@ -398,6 +405,7 @@ public class NearbyActivity extends ListActivity implements
                     Uri friendUri = null;
                     boolean acceptFriend = false;
                     ByteBuffer packet = ByteBuffer.wrap(recv.getData());
+                    String theirIp = recv.getAddress().toString();
                     int protocol = packet.getInt();
                     try {
                         switch (protocol) {
@@ -427,11 +435,21 @@ public class NearbyActivity extends ListActivity implements
                         continue;
                     }
 
-                    if (acceptFriend) {
-                        long cid = FriendRequest.getExistingContactId(mContext, friendUri);
-                        if (cid == -1) {
-                            FriendRequest.acceptFriendRequest(mContext, friendUri, false);
-                        }
+                    long cid = FriendRequest.getExistingContactId(mContext, friendUri);
+                    if (cid == -1 && acceptFriend) {
+                        FriendRequest.acceptFriendRequest(mContext, friendUri, false);
+                    }
+                    if (cid != -1) {
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_NEARBY_TIMESTAMP,
+                                Long.toString(new Date().getTime()));
+
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_LAN_IP,
+                                theirIp);
+
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_WIFI_BSSID,
+                                mWifiBSSID);
+                        DbContactAttributes.update(mContext, cid, Contact.ATTR_WIFI_SSID,
+                                mWifiSSID);
                     }
 
                     // TODO: User user = FriendRequest.parseUri(friendUri);
@@ -452,29 +470,41 @@ public class NearbyActivity extends ListActivity implements
         }
     }
 
-    private static class MulticastBroadcastTask extends AsyncTask<Void, Void, Void> {
+    public static class MulticastBroadcastTask extends AsyncTask<Void, Void, Void> {
         private static MulticastBroadcastTask sInstance;
-        private static final int SEVEN_SECONDS = 7000;
+        public static final int SEVEN_SECONDS = 7000;
+        public static final int THIRTY_SECONDS = 30000;
+        public static final int NO_RETRY = -1;
 
         private InetAddress mNearbyGroup;
         private MulticastSocket mSocket;
         private final byte[] mBroadcastMsg;
         private boolean mRunning;
         private boolean mDone;
+        private final int mDuration;
+        private final int mWaitRetry;
 
         static final int PROTOCOL_BROADCAST_URI = 0x853000;
 
-        private MulticastBroadcastTask(Context context) {
+        /**
+         * 
+         * @param context
+         * @param duration The number of ms to wait between broadcasts
+         * @param waitRetry After a failure, the number of ms to wait before retrying
+         */
+        public MulticastBroadcastTask(Context context, int duration, int waitRetry) {
             String requestStr = FriendRequest.getMusubiUri(context).toString();
             mBroadcastMsg = new byte[4 + requestStr.length()];
             ByteBuffer buf = ByteBuffer.wrap(mBroadcastMsg);
             buf.putInt(PROTOCOL_BROADCAST_URI);
             buf.put(requestStr.getBytes());
+            mWaitRetry = waitRetry;
+            mDuration = duration;
         }
 
         public static MulticastBroadcastTask getInstance(Context context) {
             if (sInstance == null || sInstance.mDone) {
-                sInstance = new MulticastBroadcastTask(context);
+                sInstance = new MulticastBroadcastTask(context, SEVEN_SECONDS, NO_RETRY);
             }
             return sInstance;
         }
@@ -510,10 +540,16 @@ public class NearbyActivity extends ListActivity implements
                     // if (DBG) Log.d(TAG, "sending multicast packet");
                     mSocket.send(profile);
                     try {
-                        Thread.sleep(SEVEN_SECONDS);
+                        Thread.sleep(mDuration);
                     } catch (InterruptedException e) {}
                 } catch (IOException e) {
-                    mSocket = null;
+                    if (mWaitRetry > 0) {
+                        try {
+                            Thread.sleep(mWaitRetry);
+                        } catch (InterruptedException e2) {}
+                    } else {
+                        mSocket = null;
+                    }
                 }
             }
             mRunning = false;
