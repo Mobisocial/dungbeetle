@@ -75,7 +75,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 57;
+	public static final int VERSION = 58;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -373,6 +373,10 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP INDEX attrs_by_contact_id");
             createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
         }
+        if (oldVersion <= 57) {
+        	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.LAST_MODIFIED_TIMESTAMP + " INTEGER");
+            db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.LAST_MODIFIED_TIMESTAMP + " = " + DbObject.TIMESTAMP);
+        }
         db.setVersion(VERSION);
     }
 
@@ -438,6 +442,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.DESTINATION, "TEXT",
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
+                        DbObject.LAST_MODIFIED_TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
                         DbObject.DELETED, "INTEGER DEFAULT 0",
                         DbObject.HASH, "INTEGER",
@@ -654,6 +659,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
 
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
@@ -715,6 +721,8 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
+
+            cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
             if (raw != null) {
                 cv.put(DbObject.RAW, raw);
             }
@@ -769,6 +777,19 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put(DbRelation.OBJECT_ID_B, idB);
         cv.put(DbRelation.RELATION_TYPE, relation);
         getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
+    }
+    
+    /**
+     * Update the parent's last modified timestamp
+     */
+    public void updateParentLastModified(long id) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
+        getWritableDatabase().update(
+        		DbObject.TABLE, 
+            cv,
+            DbObject._ID+"='"+id+"'",
+            null);
     }
 
     public long objIdForHash(long hash) {

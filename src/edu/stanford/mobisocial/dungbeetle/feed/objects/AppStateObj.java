@@ -28,6 +28,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
@@ -100,11 +101,23 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         return obj;
     }
 
+
+
     @Override
-    public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
-
-    }
-
+    public boolean handleObjFromNetwork(Context context, Contact contact, JSONObject obj) {
+    	DBHelper helper = new DBHelper(context);
+    	if (obj.has(DbObjects.TARGET_HASH)) {
+            long hashA = obj.optLong(DbObjects.TARGET_HASH);
+            long idA = helper.objIdForHash(hashA);
+            
+            if (idA == -1) {
+                Log.e(TAG, "No objId found for hash " + hashA);
+            } else {
+                helper.updateParentLastModified(idA);
+            }
+        }
+    	return true;
+	}
 	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
 	    JSONObject content = obj.getJson();
 	    // TODO: hack to show object history in app feeds
