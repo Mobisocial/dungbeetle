@@ -59,7 +59,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
         		DbObject._ID,
         		DbObject.FEED_NAME
         	},
-        	DbObjects.getFeedObjectClause(types), null, DbObject._ID + 
+        	DbObjects.getFeedObjectClause(types), null, DbObject.LAST_MODIFIED_TIMESTAMP + 
         	" DESC LIMIT " + BATCH_SIZE);
     }
     private static int getBestBatchSize() {
