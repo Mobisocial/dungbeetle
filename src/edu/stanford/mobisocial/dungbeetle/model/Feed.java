@@ -3,6 +3,7 @@ package edu.stanford.mobisocial.dungbeetle.model;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import org.json.JSONObject;
 
@@ -11,10 +12,12 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 
 public class Feed extends DbObject {
+    public static final String TAG = "db-feed";
     public static final int BACKGROUND_ALPHA = 150;
     public static final String MIME_TYPE = "vnd.mobisocial.db/feed";
 
@@ -84,11 +87,31 @@ public class Feed extends DbObject {
     public static final int FEED_FRIEND = 2;
     public static final int FEED_RELATED = 3;
 	public static int typeOf(Uri feedUri) {
-		if(feedUri.getPath().startsWith("/feeds/friend/")) {
+	    String path = feedUri.getPath();
+		if(path.startsWith("/feeds/friends^") || path.startsWith("/members/friends^")) {
 			return FEED_FRIEND;
-		} else if (feedUri.getPath().startsWith("/feeds/related/")){
+		} else if (path.startsWith("/feeds/related/")){
 			return FEED_RELATED;
 		}
 		return FEED_GROUP;
+	}
+
+	/**
+	 * Returns the personId of the remote friend associated with this feed
+	 */
+	public static String personIdForFeed(Uri friendFeed) {
+	    if (typeOf(friendFeed) != FEED_FRIEND) {
+	        return null;
+	    }
+	    String[] parts = friendFeed.getLastPathSegment().split("\\^");
+        if (parts.length != 3) {
+            Log.w(TAG, "Bad format for friend feed: " + friendFeed);
+            return null;
+        }
+        if (parts[1].equals(App.instance().getLocalPersonId())) {
+            return parts[2];
+        } else {
+            return parts[1];
+        }
 	}
 }

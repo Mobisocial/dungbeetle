@@ -1,12 +1,14 @@
 
 package edu.stanford.mobisocial.dungbeetle.ui;
 
+import mobisocial.socialkit.musubi.DbUser;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
@@ -52,9 +54,15 @@ public class FeedListActivity extends MusubiBaseActivity implements
             ft.replace(R.id.feed_view, feedView);
             ft.commit();
         } else {
-            Intent launch = new Intent(Intent.ACTION_VIEW);
-            launch.setDataAndType(feedUri, Feed.MIME_TYPE);
-            startActivity(launch);
+            if (Feed.typeOf(feedUri) == Feed.FEED_FRIEND) {
+                String personId = Feed.personIdForFeed(feedUri);
+                DbUser u = App.instance().getMusubi().userForGlobalId(feedUri, personId);
+                Helpers.getContact(this, u.getLocalId()).view(this);
+            } else {
+                Intent launch = new Intent(Intent.ACTION_VIEW);
+                launch.setDataAndType(feedUri, Feed.MIME_TYPE);
+                startActivity(launch);
+            }
         }
     }
 }

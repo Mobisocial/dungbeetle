@@ -512,6 +512,17 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "members", ".+")) {
+            if (Feed.typeOf(uri) == Feed.FEED_FRIEND) {
+                String personId = Feed.personIdForFeed(uri);
+                if (personId == null) {
+                    Log.w(TAG, "no  person id in person feed");
+                    return null;
+                }
+                selection = DBHelper.andClauses(selection, Contact.PERSON_ID + " = ?");
+                selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { personId });
+                return mHelper.getReadableDatabase().query(Contact.TABLE, projection,
+                        selection, selectionArgs, null, null, sortOrder);
+            }
             if (match(uri, "members", "friend")) {
                 // TODO: This is a hack so we can us SocialKit
                 // to get the sender of a mass message.

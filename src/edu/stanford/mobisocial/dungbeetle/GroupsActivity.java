@@ -98,13 +98,14 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         setTitleFromActivityLabel (R.id.title_text);
         
         mHelper = DBHelper.getGlobal(this);
-        String selection = DbObject.FEED_NAME + " not in " +
+        String selection = Group.GROUP_TYPE + " = ? AND " + Group.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
+        String[] selectionArgs = new String[] { Group.TYPE_GROUP };
         //actually what ultimately gets called is DBHelper.queryGroups() so change stuff there
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-            null, selection, null, null);
+            null, selection, selectionArgs, null);
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);

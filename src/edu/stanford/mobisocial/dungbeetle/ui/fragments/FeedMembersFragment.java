@@ -40,6 +40,7 @@ import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
@@ -72,16 +73,19 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 		mHelper = DBHelper.getGlobal(getActivity());
 		getLoaderManager().initLoader(0, null, this);
 
-		groupUpdateHack();
+		Uri feedUri = Feed.uriForName(mFeedName);
+		if (Feed.typeOf(feedUri) == Feed.FEED_GROUP) {
+		    groupUpdateHack(feedUri);
+		}
 	}
 
-    private void groupUpdateHack() {
+    private void groupUpdateHack(final Uri feedUri) {
         final Context context = getActivity();
-       
         new Thread() {
             public void run() {
+                String feedName = feedUri.getLastPathSegment();
                 final IdentityProvider ident = new DBIdentityProvider(mHelper);
-                Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+                Maybe<Group> mg = mHelper.groupByFeedName(feedName);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {}

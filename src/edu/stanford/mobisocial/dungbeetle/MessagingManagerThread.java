@@ -17,7 +17,6 @@ import mobisocial.socialkit.PreparedObj;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -351,31 +350,31 @@ public class MessagingManagerThread extends Thread {
         mHelper.close();
     }
 
-    private List<Long> getFeedSubscribers(String feedName) {
-        if (feedName == null) {
-            throw new NullPointerException("Feed name cannot be null");
+    private List<Long> getFeedSubscribers(Uri feedUri) {
+        if (feedUri == null) {
+            throw new NullPointerException("Feed cannot be null");
         }
-        if (feedName.startsWith("friends:")) {
-            String[] parts = feedName.split(":");
-            if (parts.length != 3) {
-                Log.w(TAG, "Bad format for friend feed");
-                return new ArrayList<Long>();
+        if (Feed.typeOf(feedUri) == Feed.FEED_FRIEND) {
+            String personId = Feed.personIdForFeed(feedUri);
+            if (personId == null) {
+                return new ArrayList<Long>(0);
             }
-            String personId;
-            if (parts[1].equals(App.instance().getLocalPersonId())) {
-                personId = parts[2];
-            } else {
-                personId = parts[1];
-            }
-            DbUser u = App.instance().getMusubi().userForGlobalId(
-                    Feed.uriForName(feedName), personId);
-            if (u == null) {
+            String table = Contact.TABLE;
+            String[] columns = new String[] { Contact._ID };
+            String selection = Contact.PERSON_ID + " = ?";
+            String[] selectionArgs = new String[] { personId };
+            String groupBy = null;
+            String having = null;
+            String orderBy = null;
+            Cursor c = mHelper.getReadableDatabase().query(
+                    table, columns, selection, selectionArgs, groupBy, having, orderBy);
+            if (c == null || !c.moveToFirst()) {
                 Log.w(TAG, "Could not find user for id " + personId);
-                return new ArrayList<Long>();
+                return new ArrayList<Long>(0);
             }
-            return Collections.singletonList(u.getLocalId());
+            return Collections.singletonList(c.getLong(0));
         }
-        Cursor subs = mHelper.querySubscribers(feedName);
+        Cursor subs = mHelper.querySubscribers(feedUri.getLastPathSegment());
         List<Long> recipientIds = new ArrayList<Long>(subs.getCount());
         subs.moveToFirst();
         while (!subs.isAfterLast()) {
@@ -409,7 +408,7 @@ public class MessagingManagerThread extends Thread {
             if (to != null) {
                 recipientIds = Util.splitLongsToList(to, ",");
             } else {
-                recipientIds = getFeedSubscribers(feedName);
+                recipientIds = getFeedSubscribers(feedUri);
             }
 
             List<User> recipients = mHelper.getPKUsersForIds(recipientIds);

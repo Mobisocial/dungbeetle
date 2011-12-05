@@ -75,7 +75,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 58;
+	public static final int VERSION = 59;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -377,6 +377,10 @@ public class DBHelper extends SQLiteOpenHelper {
         	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.LAST_MODIFIED_TIMESTAMP + " INTEGER");
             db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.LAST_MODIFIED_TIMESTAMP + " = " + DbObject.TIMESTAMP);
         }
+        if (oldVersion <= 58) {
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.GROUP_TYPE + " TEXT DEFAULT 'group'");
+            db.execSQL("UPDATE " + Group.TABLE + " SET " + Group.GROUP_TYPE + " = 'group'");
+        }
         db.setVersion(VERSION);
     }
 
@@ -507,7 +511,8 @@ public class DBHelper extends SQLiteOpenHelper {
             Group.LAST_UPDATED, "INTEGER",
             Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
             Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
-            Group.NUM_UNREAD, "INTEGER DEFAULT 0"
+            Group.NUM_UNREAD, "INTEGER DEFAULT 0",
+            Group.GROUP_TYPE, "TEXT DEFAULT 'group'"
                 );
 	    createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
 	}
@@ -957,7 +962,6 @@ public class DBHelper extends SQLiteOpenHelper {
             selectionArgs = andArguments(selectionArgs, new String[] { realAppId });   
         }
         selection = andClauses(selection, selection2);
-        Log.d(TAG, "ISSUING QUERY "  + selection);
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
@@ -1323,7 +1327,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryGroups() {
-        String selection = DbObject.FEED_NAME + " not in " +
+        String selection = Group.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
         String[] selectionArgs = null;
@@ -1544,6 +1548,9 @@ public class DBHelper extends SQLiteOpenHelper {
 	}
 	//gets all known people's id's, in other words, their public keys.
     public List<User> getPKUsersForIds(List<Long> ids) {
+        if (ids.size() == 0) {
+            return new ArrayList<User>(0);
+        }
         StringBuffer idStr = new StringBuffer();
         for (Long id : ids) {
             idStr.append("," + id);

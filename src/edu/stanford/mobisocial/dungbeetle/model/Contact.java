@@ -191,11 +191,11 @@ public class Contact {
     public Uri getFeedUri() {
         String myId = App.instance().getLocalPersonId();
         String theirId = this.personId;
-        StringBuilder friendFeed = new StringBuilder("friends:");
+        StringBuilder friendFeed = new StringBuilder("friends^");
         if (myId.compareTo(theirId) < 0) {
-            friendFeed.append(myId).append(":").append(theirId);
+            friendFeed.append(myId).append("^").append(theirId);
         } else {
-            friendFeed.append(theirId).append(":").append(myId);
+            friendFeed.append(theirId).append("^").append(myId);
         }
         return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/" + friendFeed);
     }
