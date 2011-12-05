@@ -66,7 +66,7 @@ public class FeedModifiedObjHandler extends ObjHandler {
 
 	            // One-on-one group feed:
 	            String table = Group.TABLE;
-	            String[] columns = new String[] { Group._ID };
+	            String[] columns = new String[] { Group._ID, Group.NAME };
 	            String selection = Group.FEED_NAME + " = ?";
 	            String[] selectionArgs = new String[] { feedName };
 	            String groupBy = null;
@@ -74,25 +74,37 @@ public class FeedModifiedObjHandler extends ObjHandler {
 	            String orderBy = null;
 	            Cursor c = mHelper.getReadableDatabase().query(
 	                    table, columns, selection, selectionArgs, groupBy, having, orderBy);
+
+	            // Friendly name for this feed
+	            String table2 = Contact.TABLE;
+                String[] columns2 = new String[] { Contact.NAME };
+                String selection2 = Contact.PERSON_ID + " = ?";
+                String[] selectionArgs2 = new String[] { personId };
+                Cursor cursor2 = mHelper.getReadableDatabase().query(
+                        table2, columns2, selection2, selectionArgs2, null, null, null);
+                String friendlyName;
+                if (!cursor2.moveToFirst()) {
+                    friendlyName = "Unknown";
+                } else {
+                    friendlyName = cursor2.getString(0);
+                }
+
 	            if (!c.moveToFirst()) {
 	                // First post
-	                String table2 = Contact.TABLE;
-	                String[] columns2 = new String[] { Contact.NAME };
-	                String selection2 = Contact.PERSON_ID + " = ?";
-	                String[] selectionArgs2 = new String[] { personId };
-	                Cursor cursor2 = mHelper.getReadableDatabase().query(
-	                        table2, columns2, selection2, selectionArgs2, null, null, null);
-	                String friendlyName;
-	                if (!cursor2.moveToFirst()) {
-	                    friendlyName = "Unknown";
-	                } else {
-	                    friendlyName = cursor2.getString(0);
-	                }
 	                ContentValues values = new ContentValues();
 	                values.put(Group.FEED_NAME, feedName);
 	                values.put(Group.GROUP_TYPE, Group.TYPE_FRIEND);
 	                values.put(Group.NAME, friendlyName);
 	                mHelper.getWritableDatabase().insert(table, null, values);
+	            } else {
+	                String currentName = c.getString(1);
+	                if (!friendlyName.equals(currentName)) {
+	                    ContentValues values = new ContentValues();
+	                    values.put(Group.NAME, friendlyName);
+    	                String whereClause = Group.FEED_NAME + " = ";
+    	                String[] whereArgs = new String[] { feedName };
+    	                mHelper.getWritableDatabase().update(table, values, whereClause, whereArgs);
+	                }
 	            }
 
 	            // No break: also update "group feed"
