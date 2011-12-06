@@ -102,10 +102,11 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     }
 
     public void onCreate(Bundle savedInstanceState) {
+    	Helpers.invalidateContacts();
 		super.onCreate(savedInstanceState);
         mHelper = DBHelper.getGlobal(this);
         Intent intent = getIntent();
-
+        
         if (intent.hasExtra("group_id")) {    
     		setContentView(R.layout.group_contacts);
             long groupId = intent.getLongExtra("group_id", -1);

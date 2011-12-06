@@ -47,7 +47,7 @@ public class GridHandler {
     	
 		int gridsize_meters = (int) (gridsize_feet / CONVERSION); // All grids conversions are done in meters.
 		
-		System.err.println("Location retrieved is : Latitude: " + mlatitude + "\t Longitude: " + mlongitude + "\t Grid size (in feet): " + gridsize_feet);
+		//System.err.println("Location retrieved is : Latitude: " + mlatitude + "\t Longitude: " + mlongitude + "\t Grid size (in feet): " + gridsize_feet);
 		
 		
 		float xyz[];
@@ -112,13 +112,13 @@ public class GridHandler {
 		
 		int theta=normalize(0,360,1,numVertLines*gridsize,gridsize/2);
 		int offsetY=normalize(0,360,1,numVertLines,newLat-theta);
-		Log.d("location","x and y values input were: "+x+" and "+y+" and roundoff_x is"+ roundoff_x+" and value of l is: "+l);
-		Log.d("location","newLat is: "+Integer.toString(newLat)+" newLong is: "+Integer.toString(newLong)+ " numVertLines is: "+ Integer.toString(numVertLines));
-		Log.d("location","offsetX is: "+Integer.toString(offsetX)+" offsetY is: "+Integer.toString(offsetY)+ " M is: "+ Integer.toString(M));
+		//Log.d("location","x and y values input were: "+x+" and "+y+" and roundoff_x is"+ roundoff_x+" and value of l is: "+l);
+		//Log.d("location","newLat is: "+Integer.toString(newLat)+" newLong is: "+Integer.toString(newLong)+ " numVertLines is: "+ Integer.toString(numVertLines));
+		//Log.d("location","offsetX is: "+Integer.toString(offsetX)+" offsetY is: "+Integer.toString(offsetY)+ " M is: "+ Integer.toString(M));
 		xy[0]=Integer.toString(newLat+numVertLines*newLong);
 		xy[1]=Integer.toString(offsetX+numVertLines*offsetY);
-		Log.d("location","xy is: "+xy[0]);
-		Log.d("location","offsetxy is:"+xy[1]);
+		//Log.d("location","xy is: "+xy[0]);
+		//Log.d("location","offsetxy is:"+xy[1]);
 		return xy;
 	}
 	
@@ -144,21 +144,21 @@ public class GridHandler {
 		double roundoff_x=(int)Math.abs(x)+ 0.5;
 		double stripWidthPerDeg = (2*Math.PI*RADIUS*Math.cos(roundoff_x))/360.0;
 		
-		System.err.println("x : " + x);
+		//System.err.println("x : " + x);
 		double xDist = x % 1.0;
 		double xMod = x - xDist;
-		System.err.println("xDist : " + xDist);
+		//System.err.println("xDist : " + xDist);
 		
-		System.err.println("stripHeightPerDeg : " + stripHeightPerDeg);
+		//System.err.println("stripHeightPerDeg : " + stripHeightPerDeg);
 		xDist *= stripHeightPerDeg;
-		System.err.println("xDist : " + xDist);
+		//System.err.println("xDist : " + xDist);
 		
-		System.err.println("y : " + y);
+		//System.err.println("y : " + y);
 		y += 180;
-		System.err.println("y : " + y);
-		System.err.println("stripWidthPerDeg : " + stripWidthPerDeg);
+		//System.err.println("y : " + y);
+		//System.err.println("stripWidthPerDeg : " + stripWidthPerDeg);
 		double yDist = y * stripWidthPerDeg;
-		System.err.println("yDist : " + yDist);
+		//System.err.println("yDist : " + yDist);
 		
 		switch(gridType){
 		case 0:
@@ -188,11 +188,11 @@ public class GridHandler {
 			break;
 		}
 		
-		System.err.println("res : " + res[0] + "," + res[1]);
+		//System.err.println("res : " + res[0] + "," + res[1]);
 		res[0]/=stripHeightPerDeg;
 		res[0] += xMod;
 		res[1] = (float) (res[1]/stripWidthPerDeg);
-		System.err.println("lat lon : " + res[0] + "," + res[1]);
+		//System.err.println("lat lon : " + res[0] + "," + res[1]);
 		//return xyz;
 		return res;
 	}
@@ -248,11 +248,11 @@ public class GridHandler {
 					float y3 = (float) (yAdder + 0.665);
 					float dist3 = getDist(x3, y3, xNum, yNum);
 					
-					System.err.println("xNum, yNum " + xNum + "," + yNum);
-					System.err.println("xAddr, yAddr " + xAdder + "," + yAdder);
-					System.err.println("x1, y1, dist1 " + x1 + "," + y1 + "," + dist1);
-					System.err.println("x2, y2, dist2 " + x2 + "," + y2 + "," + dist2);
-					System.err.println("x3, y3, dist3 " + x3 + "," + y3 + "," + dist3);
+					//System.err.println("xNum, yNum " + xNum + "," + yNum);
+					//System.err.println("xAddr, yAddr " + xAdder + "," + yAdder);
+					//System.err.println("x1, y1, dist1 " + x1 + "," + y1 + "," + dist1);
+					//System.err.println("x2, y2, dist2 " + x2 + "," + y2 + "," + dist2);
+					//System.err.println("x3, y3, dist3 " + x3 + "," + y3 + "," + dist3);
 					
 					if(dist1 < dist2){
 						if(dist1 < dist3){
@@ -291,11 +291,11 @@ public class GridHandler {
 					float y3 = (float) (yAdder + 0.665);
 					float dist3 = getDist(x3, y3, xNum, yNum);
 					
-					System.err.println("xNum, yNum " + xNum + "," + yNum);
-					System.err.println("xAddr, yAddr " + xAdder + "," + yAdder);
-					System.err.println("x1, y1, dist1 " + x1 + "," + y1 + "," + dist1);
-					System.err.println("x2, y2, dist2 " + x2 + "," + y2 + "," + dist2);
-					System.err.println("x3, y3, dist3 " + x3 + "," + y3 + "," + dist3);
+					//System.err.println("xNum, yNum " + xNum + "," + yNum);
+					//System.err.println("xAddr, yAddr " + xAdder + "," + yAdder);
+					//System.err.println("x1, y1, dist1 " + x1 + "," + y1 + "," + dist1);
+					//System.err.println("x2, y2, dist2 " + x2 + "," + y2 + "," + dist2);
+					//System.err.println("x3, y3, dist3 " + x3 + "," + y3 + "," + dist3);
 					
 					if(dist1 < dist2){
 						if(dist1 < dist3){

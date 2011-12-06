@@ -49,7 +49,7 @@ public class ClientClass {
 		if (client == null)
 			return false;
 		else{
-			Log.d("ClientClass.java", "Connected to server");
+			//Log.d("ClientClass.java", "Connected to server");
 			return true;
 		}
 	}
@@ -58,7 +58,7 @@ public class ClientClass {
 	public void disconnectMe()
 	{
 		postMethod.releaseConnection();
-		Log.d("ClientClass.java", "Disconneccted from the server");
+		//Log.d("ClientClass.java", "Disconneccted from the server");
 	}
 	
 	//sends packet to server as a http post method
@@ -87,7 +87,7 @@ public class ClientClass {
 			byte[] encryptedData = cipher.doFinal(sharedKey);
 			//put encrypted data into packet with packet type, id, and data to send to server
 			byte[] packet = new byte[9+encryptedData.length];
-			System.err.println("Packet length of the server shared key and user id: " + packet.length);
+			//System.err.println("Packet length of the server shared key and user id: " + packet.length);
 			packet[0] = new Byte("7").byteValue();
 			int startIndex = 1;
 			//next 8 bytes are myID
@@ -108,11 +108,11 @@ public class ClientClass {
 				startIndex++;
 			}
 			boolean result = sendPacketToServer(packet);
-			Log.d("ClientClass.java", "Shared key sent to the server");
+			//Log.d("ClientClass.java", "Shared key sent to the server");
 			return result;
 		}
 		catch(Exception e){
-			System.err.println("Exception in shared key: " + e.toString());
+			//System.err.println("Exception in shared key: " + e.toString());
 			return false;
 		}
 	}
@@ -157,7 +157,7 @@ public class ClientClass {
 			}
 		}
 		boolean result = sendPacketToServer(packet);
-		Log.d("ClientClass.java", "Friend IDs (packet A1) sent to the server");
+		//Log.d("ClientClass.java", "Friend IDs (packet A1) sent to the server");
 		return result;
 	}
 	/* A sends location for every friend she wants to request closeness 
@@ -223,7 +223,7 @@ public class ClientClass {
 			}
 		}
 		boolean result = sendPacketToServer(packet);
-		Log.d("ClientClass.java","Sent encrypted locations (packet A3) to server");
+		//Log.d("ClientClass.java","Sent encrypted locations (packet A3) to server");
 		return result;
 	}
 	/* B sends location whenever his location changes (but every 5 seconds at the most) and every 15 minutes at the least.
@@ -293,7 +293,7 @@ public class ClientClass {
 			}
 		}
 		boolean result = sendPacketToServer(packet);
-		Log.d("ClientClass.java","Sent B-side location to server.");
+		//Log.d("ClientClass.java","Sent B-side location to server.");
 		return result;
 	}
 	
@@ -338,7 +338,7 @@ public class ClientClass {
 		byte[] response = receivePacket();
 		if (response == null)
 			return null;
-		System.err.println("Initial response length: " + response.length);
+		//System.err.println("Initial response length: " + response.length);
 		Map <Long, ArrayList<Byte>> retVal = new HashMap<Long, ArrayList<Byte>>();
 		byte firstByte = response[0];
 		//index to keep track of response packet
@@ -363,7 +363,7 @@ public class ClientClass {
 				retVal.put(friend, gridtimeInfo);
 				
 			}
-			Log.d("ClientClass.java","Received the initial response (packet A2) from server.");
+			//Log.d("ClientClass.java","Received the initial response (packet A2) from server.");
 			return retVal;
 		}
 		else
@@ -401,7 +401,7 @@ public class ClientClass {
 				}
 				retVal.put(friend, closenessInfo);
 			}
-			Log.d("ClientClass.java", "Received final response (packet A4) from the server.");
+			//Log.d("ClientClass.java", "Received final response (packet A4) from the server.");
 			return retVal;
 		}
 		else
