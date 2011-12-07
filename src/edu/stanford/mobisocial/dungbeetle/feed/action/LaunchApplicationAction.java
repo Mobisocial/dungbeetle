@@ -236,6 +236,8 @@ public class LaunchApplicationAction implements FeedAction {
 
                 mContext.getContentResolver().registerContentObserver(objUri, false,
                         new ObjObserver(mContext, new AppObj(), objUri));
+            } else {
+                Log.i(TAG, "No members selected.");
             }
         }
     }

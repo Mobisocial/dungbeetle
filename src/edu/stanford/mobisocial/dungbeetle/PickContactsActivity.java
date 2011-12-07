@@ -34,6 +34,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -54,6 +55,7 @@ public class PickContactsActivity extends TabActivity {
     private Map<String, Group> mResultGroups = new HashMap<String, Group>();
 	protected final BitmapManager mgr = new BitmapManager(20);
 	private Nfc mNfc;
+	private DBHelper mDbHelper;
 
     public static final String TAG = "PickContactsActivity";
 
@@ -76,7 +78,7 @@ public class PickContactsActivity extends TabActivity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		mDbHelper = new DBHelper(this);
 		mIntent = getIntent();
 		mNfc = new Nfc(this);
 
@@ -168,7 +170,8 @@ public class PickContactsActivity extends TabActivity {
         /** Contacts **/
         Cursor c;
         if (feedUri != null) {
-            c = new DBHelper(this).queryFeedMembers(feedUri.getLastPathSegment());
+            Log.d(TAG, "querying feed members");
+            c = queryFeedMembers(feedUri.getLastPathSegment());
         } else {
             c = getContentResolver().query(Uri.parse(
                     DungBeetleContentProvider.CONTENT_URI + "/contacts"),
@@ -236,7 +239,39 @@ public class PickContactsActivity extends TabActivity {
     }
 
 
-	void toastList() {
+	private Cursor queryFeedMembers(String feedName) {
+        // TODO: Check appId against database.
+        Uri feed = Feed.uriForName(feedName);
+        String selection;
+        String[] selectionArgs;
+
+        if (Feed.typeOf(feed) == Feed.FEED_FRIEND) {
+            String personId = Feed.personIdForFeed(feed);
+            selection = new StringBuilder()
+                .append("SELECT *")
+                .append(" FROM " + Contact.TABLE + " ")
+                .append(" WHERE ")
+                .append(Contact.PERSON_ID + " = ?")
+                .toString();
+            selectionArgs = new String[] { personId };
+        } else {
+            selection = new StringBuilder()
+                .append("SELECT C.*")
+                .append(" FROM " + Contact.TABLE + " C, ")
+                .append(GroupMember.TABLE + " M, ")
+                .append(Group.TABLE + " G")
+                .append(" WHERE ")
+                .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+                .append(" AND ")
+                .append("G." + Group.FEED_NAME + " = ? AND " )
+                .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
+                .toString();
+            selectionArgs = new String[] { feedName };
+        }
+        return mDbHelper.getReadableDatabase().rawQuery(selection, selectionArgs);
+    }
+
+    void toastList() {
         if (mResultGroups.size() == 0) {
             Toast.makeText(this, "Sending to " + mResultContacts.size() + " contacts...",
                     Toast.LENGTH_SHORT).show();
@@ -415,12 +450,17 @@ public class PickContactsActivity extends TabActivity {
     protected void onPause() {
         super.onPause();
         mNfc.onPause(this);
+        mDbHelper.close();
+        mDbHelper = null;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mNfc.onResume(this);
+        if (mDbHelper == null) {
+            mDbHelper = new DBHelper(this);
+        }
     }
 
     @Override

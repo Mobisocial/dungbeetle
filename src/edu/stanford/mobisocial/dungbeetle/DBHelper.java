@@ -1297,23 +1297,6 @@ public class DBHelper extends SQLiteOpenHelper {
                 orderBy);
     }
 
-    public Cursor queryFeedMembers(String feedName) {
-        // TODO: Check appId against database.
-        String query = new StringBuilder()
-            .append("SELECT C.*")
-            .append(" FROM " + Contact.TABLE + " C, ")
-            .append(GroupMember.TABLE + " M, ")
-            .append(Group.TABLE + " G")
-            .append(" WHERE ")
-            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
-            .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ? AND " )
-            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
-            .toString();
-        return getReadableDatabase().rawQuery(query,
-                new String[] { feedName });
-    }
-
     public Cursor queryMemberDetails(String feedName, String personId) {
         // TODO: Check appId against database.
         String query = new StringBuilder()

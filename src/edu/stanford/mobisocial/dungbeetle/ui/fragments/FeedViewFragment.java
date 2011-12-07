@@ -212,8 +212,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private View.OnClickListener mSendObject = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            QuickAction qa = DbActions.getActions(getActivity(), mFeedUri, v);
-            qa.show();
+            showMenuForFeed(v, mFeedUri);
         }
     };
 
@@ -274,6 +273,11 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         // Create and show the dialog.
         DialogFragment newFragment = ObjMenuDialogFragment.newInstance(obj);
         newFragment.show(ft, "dialog");
+    }
+
+    void showMenuForFeed(View v, Uri feedUri) {
+        QuickAction qa = DbActions.getActions(getActivity(), feedUri, v);
+        qa.show();
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {
