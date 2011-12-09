@@ -8,10 +8,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
-import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
@@ -21,7 +19,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 /**
  * Metadata marking the beginning of a feed.
  */
-public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler {
+public class FeedAnchorObj extends DbEntryHandler {
     private static final String TAG = "musubi";
     public static final String TYPE = "feed-anchor";
     public static final String PARENT_FEED_NAME = "parent";
@@ -44,7 +42,7 @@ public class FeedAnchorObj extends DbEntryHandler implements FeedMessageHandler 
     }
 
     @Override
-    public void handleFeedMessage(Context context, DbObj obj) {
+    public void afterDbInsertion(Context context, DbObj obj) {
         Uri feedUri = obj.getContainingFeed().getUri();
         String parentFeedName = obj.getJson().optString(PARENT_FEED_NAME);
         if (parentFeedName == null) {

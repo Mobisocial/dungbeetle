@@ -43,7 +43,6 @@ import edu.stanford.mobisocial.bumblebee.StateListener;
 import edu.stanford.mobisocial.bumblebee.TransportIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.UnprocessedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.DropMessagesPresence.MessageDropHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
@@ -235,11 +234,7 @@ public class MessagingManagerThread extends Thread {
             // TODO: framework code.
             DbObj signedObj = App.instance().getMusubi().objForId(objId);
             getFromNetworkHandlers().handleObj(mContext, DbObjects.forType(type), signedObj);
-
-            // Per-object handlers:
-            if (objHandler instanceof FeedMessageHandler) {
-                ((FeedMessageHandler) objHandler).handleFeedMessage(mContext, signedObj);
-            }
+            objHandler.afterDbInsertion(mContext, signedObj);
         } catch (Exception e) {
             Log.e(TAG, "Error handling incoming message.", e);
         }
@@ -315,9 +310,8 @@ public class MessagingManagerThread extends Thread {
                                 continue;
                             }
                             DbEntryHandler h = DbObjects.getObjHandler(json);
-                            if (h != null && h instanceof FeedMessageHandler) {
-                                ((FeedMessageHandler) h).handleFeedMessage(mContext, signedObj);
-                            }
+                            h.afterDbInsertion(mContext, signedObj);
+
                             // TODO: Constraint error thrown for now b/c local
                             // user not in contacts
                             profileScanningObjHandler.handleObj(mContext, h, signedObj);

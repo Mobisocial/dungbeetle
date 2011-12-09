@@ -31,7 +31,6 @@ import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -47,7 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  */
 @Deprecated
 public class AppReferenceObj extends DbEntryHandler
-        implements FeedRenderer, Activator, FeedMessageHandler {
+        implements FeedRenderer, Activator {
 	private static final String TAG = "AppReferenceObj";
 	private static final boolean DBG = false;
 
@@ -220,7 +219,7 @@ public class AppReferenceObj extends DbEntryHandler
      * TODO, work out observers vs. players.
      */
     @Override
-    public void handleFeedMessage(Context context, DbObj obj) {
+    public void afterDbInsertion(Context context, DbObj obj) {
         JSONObject content = obj.getJson();
         if (content.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = content.optString(DbObject.CHILD_FEED_NAME);

@@ -37,6 +37,12 @@ public abstract class DbEntryHandler {
 	}
 
 	/**
+	 * Executed after an obj has been inserted into the database.
+	 */
+	public void afterDbInsertion(Context context, DbObj obj) {
+	}
+
+	/**
 	 * Return true to allow deletions of an obj after it has been sent.
 	 */
 	public boolean discardOutboundObj() {

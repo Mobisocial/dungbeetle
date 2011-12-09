@@ -10,11 +10,10 @@ import android.net.Uri;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
+public class DeleteObj extends DbEntryHandler {
     private static final String TAG = "dungbeetle";
 
     public static final String TYPE = "delete";
@@ -83,11 +82,8 @@ public class DeleteObj extends DbEntryHandler implements FeedMessageHandler {
         }
 	}
 
-	boolean dumb = true;
-
 	@Override
-	public void handleFeedMessage(Context context, DbObj obj) {
-	    if (dumb) Log.d(TAG, "obj " + obj.getJson());
+	public void afterDbInsertion(Context context, DbObj obj) {
 	    Uri feedUri = obj.getContainingFeed().getUri();
 		DBHelper dbh = DBHelper.getGlobal(context);
 		try {
