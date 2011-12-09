@@ -1,5 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -30,6 +32,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
         
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.getSettings().setJavaScriptEnabled(true);
+        mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         mWebView.setWebViewClient(webViewClient);
         mWebView.addJavascriptInterface(new SocialKitJavascript(this,
                 (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), MUSUBI_JS);
@@ -70,7 +73,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
             SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
             SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
             SocialKitJavascript.App app = new SocialKitJavascript.App("appid", feed, obj);
-            SocialKitJavascript.User user = new SocialKitJavascript.User();
+            SocialKitJavascript.User user = new SocialKitJavascript.User("todoName", "todoId", "todoPersonId");
             String initSocialKit = new StringBuilder("javascript:")
                 .append("Musubi._launchApp(")
                 .append(app.toJson() + ", " + user.toJson() + ")").toString();
@@ -128,10 +131,10 @@ public class AppCorralActivity extends MusubiBaseActivity {
             String id;
             String personId;
 
-            public User() {
-                name = "dummyuser";
-                id = "dummyid";
-                personId = "dummydumbdumb";
+            public User(String name, String id, String personId) {
+                this.name = name;
+                this.id = id;
+                this.personId = personId;
             }
 
             @Override
@@ -149,11 +152,18 @@ public class AppCorralActivity extends MusubiBaseActivity {
 
         static class Obj implements Jsonable {
             public String type;
-            public String data;
+            public JSONObject data;
 
             public Obj() {
                 type = "dumbtype";
-                data = "smartdata";
+                data = new JSONObject();
+
+                try {
+                    JSONArray members = new JSONArray();
+                    members.put(new User("alfred", "123", "456").toJson());
+                    members.put(new User("brian", "789", "0ab").toJson());
+                    data.put("membership", members);
+                } catch (JSONException e) {}
             }
 
             @Override
@@ -214,7 +224,9 @@ public class AppCorralActivity extends MusubiBaseActivity {
                 try {
                     json.put("id", id);
                     json.put("feed", feed.toJson());
-                    json.put("obj", obj.toJson());
+                    JSONObject msg = new JSONObject();
+                    msg.put("obj", obj.toJson());
+                    json.put("message", msg);
                 } catch (JSONException e) {}
                 return json;
             }
