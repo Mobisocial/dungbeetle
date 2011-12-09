@@ -13,7 +13,9 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,6 +33,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -39,7 +42,9 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -52,10 +57,11 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction.MusubiApp;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppReferenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppStateObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
@@ -63,6 +69,7 @@ import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
 import edu.stanford.mobisocial.dungbeetle.obj.iface.ObjAction;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.ui.adapter.ObjectListCursorAdapter;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 
 /**
  * Shows a series of posts from a feed.
@@ -82,7 +89,12 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
 
-	private String[] filterTypes = null;
+    private OnClickListener newApp = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            LaunchApplicationAction.promptForApplication(getActivity(), mFeedUri);
+        }
+    };
 
     @Override
     public void onAttach(Activity activity) {
@@ -93,7 +105,15 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.fragment_apps_view, container, false);
+		View view = inflater.inflate(R.layout.fragment_apps_view, container, false);
+		view.findViewById(R.id.new_app).setOnClickListener(newApp);
+
+		// TODO: I didn't like this, but maybe with some work it could look ok
+		/*
+		Gallery appbar = (Gallery)view.findViewById(R.id.app_list);
+		appbar.setAdapter(new AppSpinner(getActivity()));
+		*/
+		return view;
     }
 
     @Override
@@ -452,4 +472,45 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
         }
         
     };
+
+    class AppSpinner extends BaseAdapter {
+        final Context mContext;
+        final List<MusubiApp> mApps;
+        final PackageManager mPackageManager;
+
+        public AppSpinner(Context context) {
+            mContext = context;
+            mPackageManager = context.getPackageManager();
+            mApps = LaunchApplicationAction.getInstalledApps(context);
+        }
+
+        @Override
+        public int getCount() {
+            return mApps.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return mApps.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ImageView iv;
+            if (convertView != null) {
+                iv = (ImageView) convertView;
+                iv.setLayoutParams(CommonLayouts.WRAPPED);
+            } else {
+                iv = new ImageView(mContext);
+            }
+            Drawable icon = mApps.get(position).getAppInfo().loadIcon(mPackageManager);
+            iv.setImageDrawable(icon);
+            return iv;
+        }
+    }
 }

@@ -54,6 +54,7 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
+import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
@@ -82,8 +83,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
 
-	private String[] filterTypes = null;
-
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -93,7 +92,8 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.fragment_feed_view, container, false);
+		View view = inflater.inflate(R.layout.fragment_feed_view, container, false);
+		return view;
     }
 
     @Override

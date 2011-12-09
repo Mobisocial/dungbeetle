@@ -168,12 +168,28 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
     @Override
     public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
-        DbObj dbParentObj = (DbObj) obj;
-        boolean rendered = false;
-
         PackageManager pm = context.getPackageManager();
         Drawable icon = null;
         String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+        if (!(obj instanceof DbObj)) {
+            if (appName.contains(".")) {
+                appName = appName.substring(appName.lastIndexOf(".") + 1);
+            }
+            String text = "Preparing application " + appName + "...";
+            // TODO: Show Market icon or app icon.
+            TextView valueTV = new TextView(context);
+            valueTV.setText(text);
+            valueTV.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+            valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
+            frame.addView(valueTV);
+            return;
+        }
+
+        DbObj dbParentObj = (DbObj) obj;
+        boolean rendered = false;
+
         Intent launch = getLaunchIntent(context, dbParentObj);
         List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
         if (infos.size() > 0) {
@@ -198,22 +214,6 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
             TextView label = (TextView)parentView.findViewById(R.id.name_text);
             label.setText(appName);
-        }
-
-        if (!(obj instanceof DbObj)) {
-            if (appName.contains(".")) {
-                appName = appName.substring(appName.lastIndexOf(".") + 1);
-            }
-            String text = "Preparing application " + appName + "...";
-            // TODO: Show Market icon or app icon.
-            TextView valueTV = new TextView(context);
-            valueTV.setText(text);
-            valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT));
-            valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-            frame.addView(valueTV);
-            return;
         }
 
         // TODO: obj.getLatestChild().render();

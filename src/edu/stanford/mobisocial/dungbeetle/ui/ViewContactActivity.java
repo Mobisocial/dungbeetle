@@ -46,6 +46,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.AppsViewFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -125,11 +126,15 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             doTitleBar(this, title);
             mLabels.add("Feed");
+            mLabels.add("Apps");
             mLabels.add("Profile");
             Fragment feedView = new FeedViewFragment();
             feedView.setArguments(args);
+            Fragment appView = new AppsViewFragment();
+            appView.setArguments(args);
 
             mFragments.add(feedView);
+            mFragments.add(appView);
             mFragments.add(profileFragment);
 
             if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
@@ -137,11 +142,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 sharingView.getFragment().setArguments(args);
                 mLabels.add(sharingView.getName());
                 mFragments.add(sharingView.getFragment());
-                
-                FeedView filteringView = new FilterView();
-                filteringView.getFragment().setArguments(args);
-                mLabels.add(filteringView.getName());
-                mFragments.add(filteringView.getFragment());
             }
         }
 

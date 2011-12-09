@@ -1,6 +1,7 @@
 package edu.stanford.mobisocial.dungbeetle.feed.action;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import mobisocial.socialkit.musubi.DbObj;
@@ -53,9 +54,9 @@ public class LaunchApplicationAction implements FeedAction {
         promptForApplication(context, feedUri);
     }
 
-    public static void promptForApplication(final Context context, final Uri feedUri) {
+    public static List<MusubiApp> getInstalledApps(Context context) {
         final PackageManager mgr = context.getPackageManager();
-        final List<ResolveInfo> availableAppInfos = new ArrayList<ResolveInfo>();
+        List<MusubiApp> apps = new LinkedList<MusubiApp>();
         Intent i = new Intent();
 
         /* Multiplayer applications launched with a child feed */
@@ -67,69 +68,86 @@ public class LaunchApplicationAction implements FeedAction {
         infos = mgr.queryIntentActivities(i, 0);
         if (DBG) Log.d(TAG, "Queried " + infos.size() + " multiplayer apps.");
         for (int j = 0; j < infos.size(); j++) {
-            intentActions.add(Multiplayer.ACTION_MULTIPLAYER);
+            apps.add(new MusubiApp(Multiplayer.ACTION_MULTIPLAYER, infos.get(j)));
         }
-        availableAppInfos.addAll(infos);
 
         i.setAction(Multiplayer.ACTION_TWO_PLAYERS);
         infos = mgr.queryIntentActivities(i, 0);
         if (DBG) Log.d(TAG, "Queried " + infos.size() + " two-player apps.");
         for (int j = 0; j < infos.size(); j++) {
-            intentActions.add(Multiplayer.ACTION_TWO_PLAYERS);
+            apps.add(new MusubiApp(Multiplayer.ACTION_TWO_PLAYERS, infos.get(j)));
         }
-        availableAppInfos.addAll(infos);
-        final int numNPlayer = availableAppInfos.size();
 
         /* Connected applications get a direct connection to the given feed. */
         i.setAction(Multiplayer.ACTION_CONNECTED);
         infos = mgr.queryIntentActivities(i, 0);
         if (DBG) Log.d(TAG, "Queried " + infos.size() + " connected apps.");
         for (int j = 0; j < infos.size(); j++) {
-            intentActions.add(Multiplayer.ACTION_CONNECTED);
+            apps.add(new MusubiApp(Multiplayer.ACTION_CONNECTED, infos.get(j)));
         }
-        availableAppInfos.addAll(infos);
-        final int numConnected = availableAppInfos.size();
         
         /* Negotiate p2p connectivity via receivers */
         i = new Intent();
         i.setAction("android.intent.action.CONFIGURE");
         i.addCategory("android.intent.category.P2P");
         infos = mgr.queryBroadcastReceivers(i, 0);
-        availableAppInfos.addAll(infos);
-
-
-        if (availableAppInfos.isEmpty()) {
-            Toast.makeText(context.getApplicationContext(),
-                    "Sorry, couldn't find any compatible apps.", Toast.LENGTH_SHORT).show();
-            return;
+        for (int j = 0; j < infos.size(); j++) {
+            apps.add(new MusubiApp(Multiplayer.ACTION_MULTIPLAYER, infos.get(j)));
         }
 
-        ArrayList<String> names = new ArrayList<String>();
-        names.add("Find Apps...");
-        for(ResolveInfo info : availableAppInfos){
-            names.add(info.loadLabel(mgr).toString());
+        return apps;
+    }
+
+    public static class MusubiApp {
+        private final String mIntentAction;
+        private final ResolveInfo mInfo;
+
+        public MusubiApp(String intentAction, ResolveInfo info) {
+            mIntentAction = intentAction;
+            mInfo = info;
         }
-        final CharSequence[] items = names.toArray(new CharSequence[]{});
-        final String[] actions = intentActions.toArray(new String[]{});
+
+        public String getIntentAction() {
+            return mIntentAction;
+        }
+
+        public ResolveInfo  getAppInfo() {
+            return mInfo;
+        }
+    }
+
+    public static void promptForApplication(final Context context, final Uri feedUri) {
+        final PackageManager mgr = context.getPackageManager();
+        final List<MusubiApp> apps = getInstalledApps(context);
+        final CharSequence[] items = new CharSequence[apps.size() + 1];
+
+        items[0] = "Find Apps...";
+        int i = 1;
+        for(MusubiApp app : apps){
+            items[i++] = app.getAppInfo().loadLabel(mgr).toString();
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Share application:");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
-                if (item-- == 0) {
+                if (item == 0) {
                     Intent webStore = new Intent(context, AppCorralActivity.class);
                     webStore.putExtra(Musubi.EXTRA_FEED_URI, feedUri);
                     context.startActivity(webStore);
                     return;
                 }
 
-                final ResolveInfo info = availableAppInfos.get(item);
+                item--; // align selection with apps list
+                final ResolveInfo info = apps.get(item).getAppInfo();
+                final String action = apps.get(item).getIntentAction();
                 Intent i = new Intent();
                 i.setClassName(info.activityInfo.packageName, info.activityInfo.name);
-                if (item < numNPlayer) {
+                if (Multiplayer.ACTION_TWO_PLAYERS.equals(action) ||
+                        Multiplayer.ACTION_MULTIPLAYER.equals(action)) {
                     ((InstrumentedActivity)context).doActivityForResult(
-                            new MembersSelectedCallout(context, feedUri, actions[item], info));
+                            new MembersSelectedCallout(context, feedUri, action, info));
                     return;
-                } else if (item < numConnected) {
+                } else if (Multiplayer.ACTION_CONNECTED.equals(action)) {
                     // Create and share new application instance
                     DbObject obj = AppObj.forConnectedApp(context, info);
                     Uri objUri = Helpers.sendToFeed(context, obj, feedUri);
@@ -139,6 +157,7 @@ public class LaunchApplicationAction implements FeedAction {
                 }
 
                 /* Callback to the application for launch details. */
+                // TODO: deprecate?
                 i.setAction("android.intent.action.CONFIGURE");
                 i.addCategory("android.intent.category.P2P");
 

@@ -1,16 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	      android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	      android:layout_width="fill_parent"
 	      android:layout_height="fill_parent"
 	      >
 
-
+    <RelativeLayout
+        android:id="@+id/appbar"
+        android:layout_width="fill_parent"
+        android:layout_height="50dip"
+        android:layout_alignParentTop="true">
+      <ImageView
+	      android:id="@+id/new_app"
+	      android:layout_width="50dip"
+	      android:layout_height="50dip"
+	      android:src="@drawable/ic_menu_more" 
+	      android:scaleType="fitCenter"
+	      android:layout_alignParentRight="true"
+	      android:layout_alignParentTop="true"
+	      android:focusable="true"/>
+      <Gallery 
+          android:id="@+id/app_list"
+          android:layout_width="fill_parent"
+          android:layout_height="match_parent"
+          android:layout_toLeftOf="@id/new_app"
+          android:layout_alignBottom="@id/new_app"
+          />
+   </RelativeLayout>
   <ListView
       android:id="@+id/android:list"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
+      android:layout_below="@id/appbar"
+      android:layout_alignParentBottom="true"
       />
 
-</LinearLayout>
+</RelativeLayout>
 
