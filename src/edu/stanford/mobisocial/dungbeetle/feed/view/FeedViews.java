@@ -36,17 +36,6 @@ public class FeedViews {
         return sFeedViews;
     }
 
-    public static List<FeedView> getDefaultFeedViews(Context context) {
-        List<FeedView> feedViews = new ArrayList<FeedView>();
-        feedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
-        feedViews.add(FeedViews.feedViewFrom("Members", new FeedMembersFragment()));
-        feedViews.add(FeedViews.feedViewFrom("Apps", new AppsViewFragment()));
-        //feedViews.add(FeedViews.feedViewFrom("Map", new FeedMapFragment()));
-        feedViews.add(new PresenceView());
-        //feedViews.add(new FilterView());
-        return feedViews;
-    }
-
     public static void promptForView(final Context context, final Uri feedUri) {
         String[] items = new String[getFeedViews().size()];
         int i = 0;

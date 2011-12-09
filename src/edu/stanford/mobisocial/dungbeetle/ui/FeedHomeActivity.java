@@ -24,10 +24,13 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FeedViews;
+import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.AppsViewFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedListFragment;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedMembersFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
@@ -71,7 +74,12 @@ public class FeedHomeActivity extends MusubiBaseActivity
         	checked[x] = true;
         }
 
-        mFeedViews = FeedViews.getDefaultFeedViews(this);
+        mFeedViews = new ArrayList<FeedView>();
+        mFeedViews.add(FeedViews.feedViewFrom("Feed", new FeedViewFragment()));
+        mFeedViews.add(FeedViews.feedViewFrom("Apps", new AppsViewFragment()));
+        mFeedViews.add(FeedViews.feedViewFrom("People", new FeedMembersFragment()));
+        mFeedViews.add(new PresenceView());
+
         Intent intent = getIntent();
         String feed_name = null;
         String dyn_feed_uri = null;

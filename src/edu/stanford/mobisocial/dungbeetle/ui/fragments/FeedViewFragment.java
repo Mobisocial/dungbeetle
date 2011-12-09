@@ -1,7 +1,9 @@
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import mobisocial.socialkit.musubi.DbObj;
 
@@ -54,6 +56,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
@@ -218,19 +221,23 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-    	
+    	Set<String> forbidden = new HashSet<String>();
+    	forbidden.add(AppObj.TYPE);
+
     	if(getActivity() instanceof Filterable)
     	{
     		Filterable context = (Filterable) getActivity();
 	    	List<String> filterTypes = new ArrayList<String>();
 	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    	    String type = context.getFilterTypes()[x];
 	    		if (context.getFilterCheckboxes()[x]) {
-	    			filterTypes.add(context.getFilterTypes()[x]);
+	    		    if (!forbidden.contains(type))
+	    			filterTypes.add(type);
 	    		}
 	    	}
 	    	Log.w(TAG, "changeFilter reached in feedview");
-			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
-	        
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri,
+			        filterTypes.toArray(new String[filterTypes.size()]));
     	}
     	else {
     		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
