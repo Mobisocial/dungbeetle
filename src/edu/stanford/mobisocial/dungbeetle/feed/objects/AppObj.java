@@ -168,10 +168,39 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
     @Override
     public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
+        DbObj dbParentObj = (DbObj) obj;
         boolean rendered = false;
 
+        PackageManager pm = context.getPackageManager();
+        Drawable icon = null;
+        String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+        Intent launch = getLaunchIntent(context, dbParentObj);
+        List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
+        if (infos.size() > 0) {
+            ResolveInfo info = infos.get(0);
+            if (info.activityInfo.labelRes != 0) {
+                appName = info.activityInfo.loadLabel(pm).toString();
+                icon = info.loadIcon(pm);
+            } else {
+                appName = info.activityInfo.name;
+            }
+        } else {
+            appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+            if (appName.contains(".")) {
+                appName = appName.substring(appName.lastIndexOf(".") + 1);
+            }
+        }
+         // TODO: Safer reference to containing view
+        if (icon != null) {
+            View parentView = (View)frame.getParent().getParent();
+            ImageView avatar = (ImageView)parentView.findViewById(R.id.icon);
+            avatar.setImageDrawable(icon);
+
+            TextView label = (TextView)parentView.findViewById(R.id.name_text);
+            label.setText(appName);
+        }
+
         if (!(obj instanceof DbObj)) {
-            String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
             if (appName.contains(".")) {
                 appName = appName.substring(appName.lastIndexOf(".") + 1);
             }
@@ -188,8 +217,6 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         // TODO: obj.getLatestChild().render();
-
-        DbObj dbParentObj = (DbObj) obj;
         String selection = getRenderableClause();
         String[] selectionArgs = null;
         Cursor cursor = dbParentObj.getSubfeed().query(selection, selectionArgs);
@@ -201,26 +228,6 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         if (!rendered) {
-            PackageManager pm = context.getPackageManager();
-            Drawable icon = null;
-            String appName;
-            Intent launch = getLaunchIntent(context, dbParentObj);
-            List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
-            if (infos.size() > 0) {
-                ResolveInfo info = infos.get(0);
-                if (info.activityInfo.labelRes != 0) {
-                    appName = info.activityInfo.loadLabel(pm).toString();
-                    icon = info.loadIcon(pm);
-                } else {
-                    appName = info.activityInfo.name;
-                }
-            } else {
-                appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
-                if (appName.contains(".")) {
-                    appName = appName.substring(appName.lastIndexOf(".") + 1);
-                }
-            }
-
             String text;
             if (icon != null) {
                 ImageView iv = new ImageView(context);
