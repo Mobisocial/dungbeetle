@@ -1,4 +1,6 @@
 package edu.stanford.mobisocial.dungbeetle;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
@@ -7,16 +9,19 @@ import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
@@ -40,6 +45,17 @@ public class DungBeetleContentProvider extends ContentProvider {
 	public static final String SUPER_APP_ID = "edu.stanford.mobisocial.dungbeetle";
     private DBHelper mHelper;
     private IdentityProvider mIdent;
+
+    private static final int FEEDS = 1;
+    private static final int FEEDS_ID = 2;
+    private static final int OBJS_ID = 3;
+
+    private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    static {
+        sUriMatcher.addURI(AUTHORITY, "feedlist", FEEDS);
+        sUriMatcher.addURI(AUTHORITY, "feeds/*", FEEDS_ID);
+        sUriMatcher.addURI(AUTHORITY, "obj/*", OBJS_ID);
+    }
 
 	public DungBeetleContentProvider() {
 	}
@@ -79,16 +95,19 @@ public class DungBeetleContentProvider extends ContentProvider {
 
 	@Override
 	public String getType(Uri uri) {
-		List<String> segs = uri.getPathSegments();
-		if (segs.size() == 3){
-            return "vnd.android.cursor.item/vnd.dungbeetle.feed";
+		int match = sUriMatcher.match(uri);
+		if (match == UriMatcher.NO_MATCH) {
+		    return null;
+		}
+		switch (match) {
+            case OBJS_ID:
+                return "vnd.android.cursor.item/vnd.mobisocial.obj";
+            case FEEDS:
+                return "vnd.android.cursor.dir/vnd.mobisocial.feed";
+            case FEEDS_ID:
+                return "vnd.android.cursor.item/vnd.mobisocial.feed";
         }
-		else if (segs.size() == 2){
-            return "vnd.android.cursor.dir/vnd.dungbeetle.feed";
-        }
-        else{
-			throw new IllegalArgumentException("Unsupported URI: " + uri);
-        }
+		throw new IllegalStateException("Unmatched-but-known content type");
 	}
 
     private Uri uriWithId(Uri uri, long id){
@@ -124,32 +143,6 @@ public class DungBeetleContentProvider extends ContentProvider {
             resolver.notifyChange(Feed.uriForName("friend"), null);
             resolver.notifyChange(objUri, null);
             return objUri;
-        } else if (match(uri, "feeds", "friend", ".+")) {
-            if (!appId.equals(SUPER_APP_ID)) {
-                return null;
-            }
-            try {
-                /*
-                 * A "virtual feed" for direct messaging with a friend.
-                 * This can be thought of us a sequence of objects "in reply to"
-                 * a virtual object between two contacts.
-                 */
-                /*long timestamp = new Date().getTime();
-                String type = values.getAsString(DbObject.TYPE);
-                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-                mHelper.prepareForSending(json, type, timestamp, appId);
-                mHelper.addObjectByJson(Contact.MY_ID, json, new byte[0]);*/
-                // stitch, stitch
-                long contactId = Long.parseLong(segs.get(2));
-                String type = values.getAsString(DbObject.TYPE);
-                JSONObject json = new JSONObject(values.getAsString(DbObject.JSON));
-                Uri objUri = Helpers.sendMessage(getContext(), contactId, json, type);
-                resolver.notifyChange(uri, null);
-                return objUri;
-            }
-            catch(JSONException e){
-                return null;
-            }
         } else if (match(uri, "feeds", ".+")) {
             String feedName = segs.get(1);
             String type = values.getAsString(DbObject.TYPE);
@@ -484,13 +477,6 @@ public class DungBeetleContentProvider extends ContentProvider {
                     + Contact.MY_ID) : selection;
             Cursor c = mHelper.queryFeed(realAppId,
                     feedName, projection, select, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, uri);
-            return c;
-        } else if (match(uri, "feeds", "friend", ".+")) {
-            Long contactId = Long.parseLong(segs.get(2));
-            String select = selection;
-            Cursor c = mHelper.queryFriend(realAppId, contactId, projection,
-                    select, selectionArgs, sortOrder);
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "groups_membership", ".+")) {

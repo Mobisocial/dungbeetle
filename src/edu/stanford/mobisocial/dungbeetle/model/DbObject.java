@@ -71,7 +71,7 @@ public class DbObject implements Obj {
     public static final String DESTINATION = DbObj.COL_DESTINATION;
     public static final String JSON = DbObj.COL_JSON;
     public static final String TIMESTAMP = DbObj.COL_TIMESTAMP;
-    public static final String LAST_MODIFIED_TIMESTAMP = "last_modified_timestamp";
+    public static final String LAST_MODIFIED_TIMESTAMP = DbObj.COL_LAST_MODIFIED_TIMESTAMP;
     public static final String APP_ID = DbObj.COL_APP_ID;
     public static final String SENT = DbObj.COL_SENT;
 	public static final String ENCODED = DbObj.COL_ENCODED;

@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
@@ -73,7 +74,7 @@ public class CorralClient {
      * currently be fetched.
      */
     public Uri fetchContent(SignedObj obj) throws IOException {
-        if (!obj.getJson().has(OBJ_LOCAL_URI)) {
+        if (obj.getJson() == null || !obj.getJson().has(OBJ_LOCAL_URI)) {
             if (DBG) {
                 Log.d(TAG, "no local uri for obj.");
             }
@@ -120,6 +121,16 @@ public class CorralClient {
             throw new IOException("Failed to fetch file");
         }
         return Uri.fromFile(localFile);
+    }
+
+    public String getMimeType(DbObj obj) {
+        if (obj.getJson() != null && obj.getJson().has(OBJ_MIME_TYPE)) {
+            try {
+                return obj.getJson().getString(OBJ_MIME_TYPE);
+            } catch (JSONException e) {
+            }
+        }
+        return null;
     }
 
     private Uri getFileOverBluetooth(DbUser user, SignedObj obj)
