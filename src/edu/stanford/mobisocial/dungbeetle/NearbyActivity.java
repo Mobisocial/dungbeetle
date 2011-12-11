@@ -405,7 +405,7 @@ public class NearbyActivity extends ListActivity implements
                     Uri friendUri = null;
                     boolean acceptFriend = false;
                     ByteBuffer packet = ByteBuffer.wrap(recv.getData());
-                    String theirIp = recv.getAddress().toString();
+                    String theirIp = recv.getAddress().getHostAddress();
                     int protocol = packet.getInt();
                     try {
                         switch (protocol) {
