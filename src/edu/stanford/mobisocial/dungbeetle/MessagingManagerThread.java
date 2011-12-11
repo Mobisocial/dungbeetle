@@ -116,7 +116,6 @@ public class MessagingManagerThread extends Thread {
         });
 
         mOco = new ObjectContentObserver(new Handler(mContext.getMainLooper()));
-
         mContext.getContentResolver().registerContentObserver(
                 Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), true, mOco);
         mContext.getContentResolver().registerContentObserver(
@@ -348,36 +347,50 @@ public class MessagingManagerThread extends Thread {
         if (feedUri == null) {
             throw new NullPointerException("Feed cannot be null");
         }
-        if (Feed.typeOf(feedUri) == Feed.FEED_FRIEND) {
-            String personId = Feed.personIdForFeed(feedUri);
-            if (personId == null) {
-                return new ArrayList<Long>(0);
-            }
-            String table = Contact.TABLE;
-            String[] columns = new String[] { Contact._ID };
-            String selection = Contact.PERSON_ID + " = ?";
-            String[] selectionArgs = new String[] { personId };
-            String groupBy = null;
-            String having = null;
-            String orderBy = null;
-            Cursor c = mHelper.getReadableDatabase().query(
-                    table, columns, selection, selectionArgs, groupBy, having, orderBy);
-            if (c == null || !c.moveToFirst()) {
-                Log.w(TAG, "Could not find user for id " + personId);
-                return new ArrayList<Long>(0);
-            }
-            return Collections.singletonList(c.getLong(0));
+        String feedName = feedUri.getLastPathSegment();
+        switch (Feed.typeOf(feedUri)) {
+            case FRIEND:
+                String personId = Feed.personIdForFeed(feedUri);
+                if (personId == null) {
+                    return new ArrayList<Long>(0);
+                }
+                String table = Contact.TABLE;
+                String[] columns = new String[] { Contact._ID };
+                String selection = Contact.PERSON_ID + " = ?";
+                String[] selectionArgs = new String[] { personId };
+                String groupBy = null;
+                String having = null;
+                String orderBy = null;
+                Cursor c = mHelper.getReadableDatabase().query(
+                        table, columns, selection, selectionArgs, groupBy, having, orderBy);
+                if (c == null || !c.moveToFirst()) {
+                    Log.w(TAG, "Could not find user for id " + personId);
+                    return new ArrayList<Long>(0);
+                }
+                return Collections.singletonList(c.getLong(0));
+            case APP:
+                // Currently, we send app messages to all users, which are registered
+                // as subscribers to the "friend" feed. The subscribers model needs to
+                // be reworked, and further the "app" feed needs further thinking.
+                // Messages should be lossy, and encryption should not require keys
+                // for each recipient.
+                feedName = "friend";
+                // No break:
+            case GROUP:
+                Cursor subs = mHelper.querySubscribers(feedName);
+                List<Long> recipientIds = new ArrayList<Long>(subs.getCount());
+                subs.moveToFirst();
+                while (!subs.isAfterLast()) {
+                    long id = subs.getLong(subs.getColumnIndexOrThrow(Subscriber.CONTACT_ID));
+                    recipientIds.add(id);
+                    subs.moveToNext();
+                }
+                subs.close();
+                return recipientIds;
+            default:
+                Log.w(TAG, "unmatched feed type for " + feedUri);
+                return new ArrayList<Long>();
         }
-        Cursor subs = mHelper.querySubscribers(feedUri.getLastPathSegment());
-        List<Long> recipientIds = new ArrayList<Long>(subs.getCount());
-        subs.moveToFirst();
-        while (!subs.isAfterLast()) {
-            long id = subs.getLong(subs.getColumnIndexOrThrow(Subscriber.CONTACT_ID));
-            recipientIds.add(id);
-            subs.moveToNext();
-        }
-        subs.close();
-        return recipientIds;
     }
 
     private class OutgoingMsg implements OutgoingMessage {

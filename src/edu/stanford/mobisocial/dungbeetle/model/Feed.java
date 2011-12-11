@@ -72,8 +72,8 @@ public class Feed extends DbObject {
         super(FeedRefObj.TYPE, json);
     }
 
-    public static Uri uriForList() {
-        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+    public static Uri feedListUri() {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds");
     }
 
     public static void view(Activity foreground, Uri feedUri) {
@@ -83,24 +83,24 @@ public class Feed extends DbObject {
         foreground.startActivity(launch);
     }
 
-    public static final int FEED_GROUP = 1;
-    public static final int FEED_FRIEND = 2;
-    public static final int FEED_RELATED = 3;
-	public static int typeOf(Uri feedUri) {
+    public enum FeedType { GROUP, FRIEND, APP, RELATED };
+    public static FeedType typeOf(Uri feedUri) {
 	    String path = feedUri.getPath();
 		if(path.startsWith("/feeds/friends^") || path.startsWith("/members/friends^")) {
-			return FEED_FRIEND;
+			return FeedType.FRIEND;
+		} else if (path.startsWith("/feeds/app^") || path.startsWith("/members/app^")) {
+		    return FeedType.APP;
 		} else if (path.startsWith("/feeds/related/")){
-			return FEED_RELATED;
+			return FeedType.RELATED;
 		}
-		return FEED_GROUP;
+		return FeedType.GROUP;
 	}
 
 	/**
 	 * Returns the personId of the remote friend associated with this feed
 	 */
 	public static String personIdForFeed(Uri friendFeed) {
-	    if (typeOf(friendFeed) != FEED_FRIEND) {
+	    if (typeOf(friendFeed) != FeedType.FRIEND) {
 	        return null;
 	    }
 	    String[] parts = friendFeed.getLastPathSegment().split("\\^");

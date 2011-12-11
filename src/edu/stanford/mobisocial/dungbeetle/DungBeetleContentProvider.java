@@ -1,6 +1,4 @@
 package edu.stanford.mobisocial.dungbeetle;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
@@ -9,7 +7,6 @@ import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mobisocial.corral.CorralClient;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -21,7 +18,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
@@ -48,12 +44,14 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     private static final int FEEDS = 1;
     private static final int FEEDS_ID = 2;
-    private static final int OBJS_ID = 3;
+    private static final int OBJS = 3;
+    private static final int OBJS_ID = 4;
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
     static {
-        sUriMatcher.addURI(AUTHORITY, "feedlist", FEEDS);
+        sUriMatcher.addURI(AUTHORITY, "feeds", FEEDS);
         sUriMatcher.addURI(AUTHORITY, "feeds/*", FEEDS_ID);
+        sUriMatcher.addURI(AUTHORITY, "obj", OBJS);
         sUriMatcher.addURI(AUTHORITY, "obj/*", OBJS_ID);
     }
 
@@ -391,16 +389,14 @@ public class DungBeetleContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-
-        
         //restoreDatabase();
-    
         Log.i(TAG, "Creating DungBeetleContentProvider");
         mHelper = new DBHelper(getContext());
         mIdent = new DBIdentityProvider(mHelper);
         boolean ok = mHelper.getWritableDatabase() == null;
-        if(!ok)
+        if (!ok) {
         	return false;
+        }
 		return true;
     }
 
@@ -417,29 +413,79 @@ public class DungBeetleContentProvider extends ContentProvider {
 
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
+        int match = sUriMatcher.match(uri);
+        if (match != UriMatcher.NO_MATCH)
+        switch (match) {
+            case FEEDS:
+                Cursor c = mHelper.queryFeedList(realAppId,
+                        projection, selection, selectionArgs, sortOrder);
+                c.setNotificationUri(resolver, Feed.feedListUri());
+                return c;
+            case FEEDS_ID:
+                List<String> segs = uri.getPathSegments();
+                switch (Feed.typeOf(uri)) {
+                    case APP:
+                        String queriedAppId = segs.get(1);
+                        queriedAppId = queriedAppId.substring(queriedAppId.lastIndexOf('^') + 1);
+                        int pos = queriedAppId.lastIndexOf(':');
+                        if (pos > 0) {
+                            queriedAppId = queriedAppId.substring(0, pos);
+                        }
+                        if (!realAppId.equals(queriedAppId)) {
+                            Log.w(TAG, "Illegal data access.");
+                            return null;
+                        }
+                        String table = DbObj.TABLE;
+                        String select = DbObj.COL_APP_ID + " = ?";
+                        String[] selectArgs = new String[] { realAppId };
+                        String[] columns = projection;
+                        String groupBy = null;
+                        String having = null;
+                        String orderBy = null;
+                        select = DBHelper.andClauses(select, selection);
+                        selectArgs = DBHelper.andArguments(selectArgs, selectionArgs);
+                        c = mHelper.getReadableDatabase().query(
+                                table, columns, select, selectArgs, groupBy, having, orderBy);
+                        c.setNotificationUri(resolver, uri);
+                        return c;
+                    default:
+                        boolean isMe = segs.get(1).equals("me");
+                        String feedName = isMe ? "friend" : segs.get(1);
+                        if (Feed.FEED_NAME_GLOBAL.equals(feedName)) {
+                            feedName = null;
+                        }
+                        select = isMe ? DBHelper.andClauses(selection, DbObject.CONTACT_ID + "="
+                                + Contact.MY_ID) : selection;
+                        c = mHelper.queryFeed(realAppId, feedName, projection,
+                                select, selectionArgs, sortOrder);
+                        c.setNotificationUri(resolver, uri);
+                        return c;
+                }
+            case OBJS:
+                if (!SUPER_APP_ID.equals(realAppId)) {
+                    String selection2 = DbObj.COL_APP_ID + " = ?";
+                    String[] selectionArgs2 = new String[] { realAppId };
+                    selection = DBHelper.andClauses(selection, selection2);
+                    selectionArgs = DBHelper.andArguments(selectionArgs, selectionArgs2);
+                }
+                return mHelper.getReadableDatabase().query(DbObject.TABLE,
+                        projection, selection, selectionArgs, null, null, sortOrder);
+            case OBJS_ID:
+                if (!SUPER_APP_ID.equals(realAppId)) {
+                    return null;
+                }
+                // objects by database id
+                String objId = uri.getLastPathSegment();
+                selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { objId });
+                selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
+                return mHelper.getReadableDatabase().query(DbObject.TABLE,
+                        projection, selection, selectionArgs, null, null, sortOrder);
+        }
+
+        ///////////////////////////////////////////////////////
+        // TODO: Remove code from here down, add to UriMatcher
         List<String> segs = uri.getPathSegments();
-        if (match(uri, "obj", ".+")) {
-            if (!SUPER_APP_ID.equals(realAppId)) {
-                return null;
-            }
-            // objects by database id
-            String objId = uri.getLastPathSegment();
-            selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { objId });
-            selection = DBHelper.andClauses(selection, DbObject._ID + " = ?");
-            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
-        } else if(match(uri, "obj")) {
-            if (!SUPER_APP_ID.equals(realAppId)) {
-                String selection2 = DbObj.COL_APP_ID + " = ?";
-                String[] selectionArgs2 = new String[] { realAppId };
-                selection = DBHelper.andClauses(selection, selection2);
-                selectionArgs = DBHelper.andArguments(selectionArgs, selectionArgs2);
-            }
-            return mHelper.getReadableDatabase().query(DbObject.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
-        } else if(match(uri, "feedlist")) {
-            Cursor c = mHelper.queryFeedList(realAppId, projection, selection, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feedlist"));
-            return c;
-        } else if(match(uri, "feeds", ".+", "head")){
+        if(match(uri, "feeds", ".+", "head")){
             boolean isMe = segs.get(1).equals("me");
             String feedName = isMe ? "friend" : segs.get(1);
             String select = isMe ? DBHelper.andClauses(
@@ -449,37 +495,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/" + feedName));
             if(isMe) c.setNotificationUri(resolver, Uri.parse(CONTENT_URI + "/feeds/me"));
             return c;
-        } else if(match(uri, "app", ".+")) {
-            if (!realAppId.equals(segs.get(1))) {
-                Log.w(TAG, "Illegal data access.");
-                return null;
-            }
-            String table = DbObj.TABLE;
-            String select = DbObj.COL_APP_ID + " = ?";
-            String[] selectArgs = new String[] { realAppId };
-            String[] columns = projection;
-            String groupBy = null;
-            String having = null;
-            String orderBy = null;
-            select = DBHelper.andClauses(select, selection);
-            selectArgs = DBHelper.andArguments(selectArgs, selectionArgs);
-            Cursor c = mHelper.getReadableDatabase().query(
-                    table, columns, select, selectArgs, groupBy, having, orderBy);
-            c.setNotificationUri(resolver, uri);
-            return c;
-        } else if(match(uri, "feeds", ".+")) {
-            boolean isMe = segs.get(1).equals("me");
-            String feedName = isMe ? "friend" : segs.get(1);
-            if (Feed.FEED_NAME_GLOBAL.equals(feedName)) {
-                feedName = null;
-            }
-            String select = isMe ? DBHelper.andClauses(selection, DbObject.CONTACT_ID + "="
-                    + Contact.MY_ID) : selection;
-            Cursor c = mHelper.queryFeed(realAppId,
-                    feedName, projection, select, selectionArgs, sortOrder);
-            c.setNotificationUri(resolver, uri);
-            return c;
-        } else if(match(uri, "groups_membership", ".+")) {
+        } else if (match(uri, "groups_membership", ".+")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
             Long contactId = Long.valueOf(segs.get(1));
             Cursor c = mHelper.queryGroupsMembership(contactId);
@@ -498,7 +514,7 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "members", ".+")) {
-            if (Feed.typeOf(uri) == Feed.FEED_FRIEND) {
+            if (Feed.typeOf(uri) == Feed.FeedType.FRIEND) {
                 String personId = Feed.personIdForFeed(uri);
                 if (personId == null) {
                     Log.w(TAG, "no  person id in person feed");

@@ -2,7 +2,6 @@ package edu.stanford.mobisocial.dungbeetle;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 
 import mobisocial.nfc.Nfc;
@@ -245,7 +244,7 @@ public class PickContactsActivity extends TabActivity {
         String selection;
         String[] selectionArgs;
 
-        if (Feed.typeOf(feed) == Feed.FEED_FRIEND) {
+        if (Feed.typeOf(feed) == Feed.FeedType.FRIEND) {
             String personId = Feed.personIdForFeed(feed);
             selection = new StringBuilder()
                 .append("SELECT *")

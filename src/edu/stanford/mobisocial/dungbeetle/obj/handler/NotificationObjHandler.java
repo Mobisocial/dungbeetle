@@ -43,7 +43,7 @@ public class NotificationObjHandler extends ObjHandler {
         }
         
         switch(Feed.typeOf(feedUri)) {
-        	case Feed.FEED_FRIEND: {
+        	case FRIEND: {
         	    Intent launch = new Intent().setClass(context, ViewContactActivity.class);
                 launch.putExtra("contact_id", senderId);
                 PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
@@ -53,7 +53,7 @@ public class NotificationObjHandler extends ObjHandler {
                         contentIntent);
         		break;
         	}
-        	case Feed.FEED_GROUP: {
+        	case GROUP: {
                 String feedName = feedUri.getLastPathSegment();
                 Maybe<Group> group = mHelper.groupForFeedName(feedName);
                 Intent launch = new Intent(Intent.ACTION_VIEW);
@@ -74,7 +74,7 @@ public class NotificationObjHandler extends ObjHandler {
                 }
         		break;
         	}
-        	case Feed.FEED_RELATED: {
+        	case RELATED: {
         		throw new RuntimeException("never should get a related feed from the network");
         	}
         }

@@ -32,7 +32,7 @@ public class FeedAdapter extends CursorAdapter {
     }
 
     public static CursorLoader queryObjects(Context context) {
-        Uri feedList = Feed.uriForList();
+        Uri feedList = Feed.feedListUri();
         return new CursorLoader(context, feedList, null, null, null, null);
     }
 

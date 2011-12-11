@@ -30,7 +30,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -42,7 +41,6 @@ import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -74,7 +72,7 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 		getLoaderManager().initLoader(0, null, this);
 
 		Uri feedUri = Feed.uriForName(mFeedName);
-		if (Feed.typeOf(feedUri) == Feed.FEED_GROUP) {
+		if (Feed.typeOf(feedUri) == Feed.FeedType.GROUP) {
 		    groupUpdateHack(feedUri);
 		}
 	}

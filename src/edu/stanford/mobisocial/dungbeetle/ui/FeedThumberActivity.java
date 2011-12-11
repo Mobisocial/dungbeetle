@@ -37,7 +37,7 @@ public class FeedThumberActivity extends MusubiBaseActivity
         setContentView(R.layout.activity_feed_home);
         // getLoaderManager().initLoader(0, null, this); // wtf!
 
-        Uri uri = Feed.uriForList();
+        Uri uri = Feed.feedListUri();
         String[] projection = null;
         String selection = null;
         String[] selectionArgs = null;
@@ -75,9 +75,8 @@ public class FeedThumberActivity extends MusubiBaseActivity
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         if (mLoader == null) {
-            mLoader = new CursorLoader(this, feedlist, null, null, null, null);
+            mLoader = new CursorLoader(this, Feed.feedListUri(), null, null, null, null);
         }
         return mLoader;
     }

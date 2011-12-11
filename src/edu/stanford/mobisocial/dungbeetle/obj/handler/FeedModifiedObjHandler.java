@@ -40,7 +40,7 @@ public class FeedModifiedObjHandler extends ObjHandler {
         }
 
         switch(Feed.typeOf(feedUri)) {
-	        case Feed.FEED_FRIEND: {
+	        case FRIEND: {
 	            String personId = Feed.personIdForFeed(feedUri);
 	            if (personId == null) {
 	                Log.w(TAG, "No contact found for feed uri " + feedUri);
@@ -109,7 +109,7 @@ public class FeedModifiedObjHandler extends ObjHandler {
 
 	            // No break: also update "group feed"
 	        }
-	        case Feed.FEED_GROUP: {
+	        case GROUP: {
 	            long timestamp = new Date().getTime();
 
 	            Uri visibleFeed = App.instance().getCurrentFeed();
@@ -124,8 +124,7 @@ public class FeedModifiedObjHandler extends ObjHandler {
 	                    " , " + Group.LAST_OBJECT_ID + " = " + objId +
 	                    " , " + Group.LAST_UPDATED + " = " + String.valueOf(timestamp) +
 	                    " WHERE " + Group.FEED_NAME + " = '" + feedName + "'");
-	            Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
-	            context.getContentResolver().notifyChange(feedlistUri, null);
+	            context.getContentResolver().notifyChange(Feed.feedListUri(), null);
 	        	break;
 	        }
     	}

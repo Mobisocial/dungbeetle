@@ -36,11 +36,6 @@ import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 
 public class Helpers {
     public static final String TAG = "Helpers";
@@ -364,18 +359,10 @@ public class Helpers {
         ident.close();
     }
 
-    public static void updateProfile(final Context c, final String name, final String about){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        ContentValues values = new ContentValues();
-        //JSONObject obj = ProfileObj.json(name, about);
-        Obj profileObj = ProfileObj.forLocalUser(c, name, about);
-        c.getContentResolver().insert(url, DbObj.toContentValues(profileObj));
-    }
-
     public static void sendToEveryone(final Context c, Obj obj){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        Uri uri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = DbObj.toContentValues(obj);
-        c.getContentResolver().insert(url, values);
+        c.getContentResolver().insert(uri, values);
     }
     
 

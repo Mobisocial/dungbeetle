@@ -3,10 +3,15 @@ package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.ArrayList;
 import java.util.List;
 
+import mobisocial.socialkit.Obj;
+import mobisocial.socialkit.musubi.DbObj;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -40,6 +45,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.view.FilterView;
 import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -290,7 +296,8 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 	                    String about = mProfileAbout.getText().toString();
 	                    MyInfo.setMyName(mHelper, name);
 	                    MyInfo.setMyAbout(mHelper, about);
-	                    Helpers.updateProfile(getActivity(), name, about);
+	                    Obj obj = ProfileObj.forLocalUser(getActivity(), name, about);
+	                    Helpers.sendToEveryone(getActivity(), obj);
 	                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
 	                }
 	            });

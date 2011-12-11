@@ -968,7 +968,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
         Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,
                 null, null, sortOrder, null);
-        c.setNotificationUri(resolver, Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"));
+        c.setNotificationUri(resolver, Feed.feedListUri());
         return c;
     }
 
@@ -1782,9 +1782,8 @@ public class DBHelper extends SQLiteOpenHelper {
         modifiedCv.put(Group.LAST_OBJECT_ID, objId);
         int rows = getWritableDatabase().update(Group.TABLE, modifiedCv,
                 Group.FEED_NAME + " = ?", new String[] { feedName });
-        Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Log.d(TAG, "Updating obj on " + feedName + " with " + objId + ", set " + rows);
-        mContext.getContentResolver().notifyChange(feedlistUri, null);
+        mContext.getContentResolver().notifyChange(Feed.feedListUri(), null);
 	}
 
 	public void markOrDeleteObjs(long[] hashes) {

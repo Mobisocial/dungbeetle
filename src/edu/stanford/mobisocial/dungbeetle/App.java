@@ -127,7 +127,7 @@ public class App extends Application {
     private void resetUnreadMessages(Uri feedUri) {
         try {
             switch(Feed.typeOf(feedUri)) {
-                case Feed.FEED_FRIEND: {
+                case FRIEND: {
                     String personId = Feed.personIdForFeed(feedUri);
                     ContentValues cv = new ContentValues();
                     cv.put(Contact.NUM_UNREAD, 0);
@@ -137,7 +137,7 @@ public class App extends Application {
                     // No break; do group feed too.
                     // TODO, get rid of person msg count?
                 }
-	            case Feed.FEED_GROUP: {
+	            case GROUP: {
 	                String feedName = feedUri.getLastPathSegment();
 	                ContentValues cv = new ContentValues();
 	                cv.put(Group.NUM_UNREAD, 0);
@@ -146,11 +146,11 @@ public class App extends Application {
 	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv,
 	                        Group.FEED_NAME + "='" + feedName + "'", null);
 	                getContentResolver().notifyChange(
-	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
+	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), null);
 	
 	            	break;
 	            }
-	            case Feed.FEED_RELATED: {
+	            case RELATED: {
 	            	//TODO: hmm?
 	            	break;
 	            }
