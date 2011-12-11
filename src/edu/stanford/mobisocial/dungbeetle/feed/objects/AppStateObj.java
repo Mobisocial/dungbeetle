@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -32,7 +31,6 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
@@ -43,7 +41,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
-public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
+public class AppStateObj extends DbEntryHandler implements FeedRenderer {
 	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = false;
 
@@ -181,19 +179,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             frame.addView(valueTV);
         }
     }
-
-	@Override
-	public void activate(Context context, SignedObj obj) {
-	    if (DBG) Log.d(TAG, "activating " + obj.getJson() + "; hash=" + obj.getHash());
-	    Intent launch = getLaunchIntent(context, obj);
-
-	    // TODO: Temporary, while transitioning to AppObj
-        launch.putExtra("obj", obj.getJson().toString());
-	    if (!(context instanceof Activity)) {
-	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    }
-	    context.startActivity(launch);
-	}
 
 	public static Intent getLaunchIntent(Context context, SignedObj obj) {
 	    JSONObject content = obj.getJson();

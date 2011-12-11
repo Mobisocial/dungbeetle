@@ -222,7 +222,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     	Set<String> forbidden = new HashSet<String>();
-    	forbidden.add(AppObj.TYPE);
+    	//forbidden.add(AppObj.TYPE);
 
     	if(getActivity() instanceof Filterable)
     	{

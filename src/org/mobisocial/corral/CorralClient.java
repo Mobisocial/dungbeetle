@@ -169,7 +169,7 @@ public class CorralClient {
             Uri remoteUri = uriForContent(ip, obj);
             URL url = new URL(remoteUri.toString());
             if (DBG)
-                Log.d(TAG, "Attempting to pull file " + remoteUri);
+                Log.d(TAG, "Attempting to pull file " + url);
 
             File localFile = localFileForContent(obj);
             if (!localFile.exists()) {

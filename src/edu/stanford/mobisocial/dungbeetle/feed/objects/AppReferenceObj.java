@@ -189,7 +189,8 @@ public class AppReferenceObj extends DbEntryHandler
                         content.get(DbObject.CHILD_FEED_NAME));
             } catch (JSONException e) {
             }
-            mAppStateObj.activate(context, appContent);
+            //mAppStateObj.activate(context, appContent);
+            Log.wtf(TAG, "dead code exception");
 	    }
 	}
 
