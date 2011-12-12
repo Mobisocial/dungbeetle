@@ -148,17 +148,14 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
     @Override
     public void onResume() {
         super.onResume();
-        App.instance().setCurrentFeed(mFeedUri);
-
-        getLoaderManager().restartLoader(0, null, this);
-    	
-
+        // TODO: Not sure why this was added, but it causes massive slowdown
+        // Discuss with bjd before uncommenting
+        // getLoaderManager().restartLoader(0, null, this);
     }
 
     @Override
     public void onPause() {
     	super.onPause();
-    	App.instance().setCurrentFeed(null);
     }
     
     @Override

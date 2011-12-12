@@ -78,11 +78,7 @@ public class ObjectListCursorAdapter extends CursorAdapter {
 
 	public CursorLoader queryLaterObjects(Context context, Uri feedUri, int total, String[] types) {
     	mTotal = total + BATCH_SIZE;
-    	CursorLoader cl = new CursorLoader(context, feedUri, 
-            	new String[] { 
-            		DbObject._ID,
-            		DbObject.FEED_NAME
-            	},
+    	CursorLoader cl = new CursorLoader(context, feedUri, null,
             	DbObjects.getFeedObjectClause(types), null, DbObject._ID + " DESC LIMIT " + mTotal);
 		Cursor newCursor = cl.loadInBackground(); 
 		

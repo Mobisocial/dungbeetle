@@ -56,6 +56,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Feed.FeedType;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -1254,34 +1255,37 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryFeedMembers(String[] projection, String selection, String[] selectionArgs,
-            String feedName, String appId) {
+            Uri feedUri, String appId) {
         // TODO: Check appId against feed?
 
-        String[] realSelectionArgs = selectionArgs;
+        String feedName = feedUri.getLastPathSegment();
+        FeedType type = Feed.typeOf(feedUri);
         if (feedName != null && !feedName.equals(Feed.FEED_NAME_GLOBAL)) {
-            String feedInnerQuery = new StringBuilder()
-                .append("SELECT M." + GroupMember.CONTACT_ID)
-                .append(" FROM " + GroupMember.TABLE + " M, ")
-                .append(Group.TABLE + " G")
-                .append(" WHERE ")
-                .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
-                .append(" AND ")
-                .append("G." + Group.FEED_NAME + " = ?").toString();
-            String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
-
-            if (selection == null) {
-                selection = forFeed;
-                realSelectionArgs = new String[] { feedName };
-            } else {
-                selection = andClauses(selection, forFeed);
-                if (selectionArgs == null) {
-                    realSelectionArgs = new String[] { feedName };
-                } else {
-                    realSelectionArgs = new String[selectionArgs.length + 1];
-                    System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
-                    realSelectionArgs[selectionArgs.length] = feedName;
-                }
+            String feedInnerQuery;
+            String[] feedInnerArgs = null;
+            switch (type) {
+                case APP:
+                    feedInnerQuery = new StringBuilder()
+                        .append(" SELECT DISTINCT " + DbObject.CONTACT_ID)
+                        .append(" FROM " + DbObject.TABLE)
+                        .append(" WHERE " + DbObject.APP_ID + " = ?").toString();
+                    feedInnerArgs = new String[] { appId };
+                    break;
+                default:
+                    feedInnerQuery = new StringBuilder()
+                        .append("SELECT M." + GroupMember.CONTACT_ID)
+                        .append(" FROM " + GroupMember.TABLE + " M, ")
+                        .append(Group.TABLE + " G")
+                        .append(" WHERE ")
+                        .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+                        .append(" AND ")
+                        .append("G." + Group.FEED_NAME + " = ?").toString();
+                    feedInnerArgs = new String[] { feedName };
+                    break;
             }
+            String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
+            selection = andClauses(selection, forFeed);
+            selectionArgs = andArguments(selectionArgs, feedInnerArgs);
         }
 
         String groupBy = null;
@@ -1291,7 +1295,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 Contact.TABLE,
                 projection,
                 selection,
-                realSelectionArgs,
+                selectionArgs,
                 groupBy,
                 having,
                 orderBy);

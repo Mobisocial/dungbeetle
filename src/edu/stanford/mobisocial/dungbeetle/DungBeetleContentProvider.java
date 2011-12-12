@@ -98,6 +98,8 @@ public class DungBeetleContentProvider extends ContentProvider {
 		    return null;
 		}
 		switch (match) {
+		    case OBJS:
+		        return "vnd.android.cursor.dir/vnd.mobisocial.obj";
             case OBJS_ID:
                 return "vnd.android.cursor.item/vnd.mobisocial.obj";
             case FEEDS:
@@ -414,8 +416,9 @@ public class DungBeetleContentProvider extends ContentProvider {
         if (DBG) Log.d(TAG, "Processing query: " + uri + " from appId " + realAppId);
 
         int match = sUriMatcher.match(uri);
-        if (match != UriMatcher.NO_MATCH)
         switch (match) {
+            case UriMatcher.NO_MATCH:
+                break;
             case FEEDS:
                 Cursor c = mHelper.queryFeedList(realAppId,
                         projection, selection, selectionArgs, sortOrder);
@@ -514,33 +517,40 @@ public class DungBeetleContentProvider extends ContentProvider {
             c.setNotificationUri(resolver, uri);
             return c;
         } else if(match(uri, "members", ".+")) {
-            if (Feed.typeOf(uri) == Feed.FeedType.FRIEND) {
-                String personId = Feed.personIdForFeed(uri);
-                if (personId == null) {
-                    Log.w(TAG, "no  person id in person feed");
-                    return null;
-                }
-                selection = DBHelper.andClauses(selection, Contact.PERSON_ID + " = ?");
-                selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { personId });
-                return mHelper.getReadableDatabase().query(Contact.TABLE, projection,
-                        selection, selectionArgs, null, null, sortOrder);
-            }
+            // TODO: This is a hack so we can us SocialKit
+            // to get the sender of a mass message.
             if (match(uri, "members", "friend")) {
-                // TODO: This is a hack so we can us SocialKit
-                // to get the sender of a mass message.
                 if(!realAppId.equals(SUPER_APP_ID)) return null;
                 return mHelper.getReadableDatabase().query(Contact.TABLE, projection,
                         selection, selectionArgs, null, null, sortOrder);
             }
-            String feedName = segs.get(1);
-            if (feedName == null || Feed.FEED_NAME_GLOBAL.equals(feedName)) {
-                if (!SUPER_APP_ID.equals(realAppId)) {
+
+            switch (Feed.typeOf(uri)) {
+                case FRIEND:
+                    String personId = Feed.personIdForFeed(uri);
+                    if (personId == null) {
+                        Log.w(TAG, "no  person id in person feed");
+                        return null;
+                    }
+                    selection = DBHelper.andClauses(selection, Contact.PERSON_ID + " = ?");
+                    selectionArgs = DBHelper.andArguments(selectionArgs, new String[] { personId });
+                    return mHelper.getReadableDatabase().query(Contact.TABLE, projection,
+                            selection, selectionArgs, null, null, sortOrder);
+                case GROUP:
+                case APP:
+                    String feedName = segs.get(1);
+                    if (feedName == null || Feed.FEED_NAME_GLOBAL.equals(feedName)) {
+                        if (!SUPER_APP_ID.equals(realAppId)) {
+                            return null;
+                        }
+                    }
+                    Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, uri,
+                            realAppId);
+                    c.setNotificationUri(resolver, uri);
+                    return c;
+                default:
                     return null;
-                }
             }
-            Cursor c = mHelper.queryFeedMembers(projection, selection, selectionArgs, feedName, realAppId);
-            c.setNotificationUri(resolver, uri);
-            return c;
         } else if(match(uri, "groups")) {
             if(!realAppId.equals(SUPER_APP_ID)) return null;
             Cursor c = mHelper.queryGroups();

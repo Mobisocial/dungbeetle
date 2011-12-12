@@ -121,13 +121,19 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         // getListView().setCacheColorHint(color);
+
+        // Sets the unread count to 0 and marks this feed
+        // as being displayed on screen.
+        // Do this before setCurrentFeed to avoid a requery.
+        // TODO: Consider moving outside of fragment.
+        App.instance().setCurrentFeed(mFeedUri);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
-        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -139,10 +145,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onResume() {
         super.onResume();
         App.instance().setCurrentFeed(mFeedUri);
-
-        getLoaderManager().restartLoader(0, null, this);
-    	
-
+        // TODO: Not sure why this was added, but it causes massive slowdown
+        // Discuss with bjd before uncommenting
+        // getLoaderManager().restartLoader(0, null, this);
     }
 
     @Override
