@@ -584,9 +584,11 @@ public class DungBeetleContentProvider extends ContentProvider {
         //selection = DBHelper.andClauses(selection, appRestriction);
 
         if (DBG) Log.d(TAG, "Updating uri " + uri + " with " + values);
-        mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
-        getContext().getContentResolver().notifyChange(uri, null);
-        return 0;
+        int count = mHelper.getWritableDatabase().update(segs.get(0), values, selection, selectionArgs);
+        if (count > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return count;
     }
 
 

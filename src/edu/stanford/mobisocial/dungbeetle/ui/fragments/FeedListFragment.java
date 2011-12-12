@@ -206,8 +206,7 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
         if (mLoader == null) {
             mLoader = new CursorLoader(getActivity(), Feed.feedListUri(), 
         		new String[] { 
-            		DbObject.TABLE + "." + DbObject._ID, //must be in position 0 for bind view
-            		DbObject.TABLE + "." + DbObject.FEED_NAME,
+            		DbObject.TABLE + ".*",
                     Group.TABLE + ".*"
             	}, 
         		getFeedObjectClause(), null, null);

@@ -133,7 +133,8 @@ public class App extends Application {
                     cv.put(Contact.NUM_UNREAD, 0);
                     getContentResolver().update(
                             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Contact.TABLE), cv,
-                            Contact.PERSON_ID + "='" + personId + "'", null);
+                            Contact.PERSON_ID + "='" + personId + "' AND " +
+                            Contact.NUM_UNREAD + " != 0", null);
                     // No break; do group feed too.
                     // TODO, get rid of person msg count?
                 }
@@ -142,12 +143,14 @@ public class App extends Application {
 	                ContentValues cv = new ContentValues();
 	                cv.put(Group.NUM_UNREAD, 0);
 	
-	                getContentResolver().update(
+	                int r = getContentResolver().update(
 	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv,
-	                        Group.FEED_NAME + "='" + feedName + "'", null);
-	                getContentResolver().notifyChange(
-	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds"), null);
-	
+	                        Group.FEED_NAME + "='" + feedName + "' AND " +
+	                        Group.NUM_UNREAD + " != 0", null);
+                    if (r > 0) {
+                        getContentResolver().notifyChange(Uri.parse(
+                                DungBeetleContentProvider.CONTENT_URI + "/feeds"), null);
+	                }
 	            	break;
 	            }
 	            case RELATED: {
