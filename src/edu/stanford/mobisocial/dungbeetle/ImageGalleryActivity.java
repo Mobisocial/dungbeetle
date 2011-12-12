@@ -80,7 +80,18 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         mCorralClient = CorralClient.getInstance(this);
         mFeedUri = getIntent().getData();
         long hash = getIntent().getLongExtra("objHash", -1);
-        mInitialObjId = App.instance().getMusubi().objForHash(hash).getLocalId();
+        if (hash == -1) {
+            toast("No image to view!");
+            finish();
+            return;
+        }
+        DbObj obj = App.instance().getMusubi().objForHash(hash);
+        if (obj == null) {
+            toast("Image does not exist!");
+            finish();
+            return;
+        }
+        mInitialObjId = obj.getLocalId();
 
         getSupportLoaderManager().initLoader(0, null, this);
         mGallery = new SlowGallery(this);

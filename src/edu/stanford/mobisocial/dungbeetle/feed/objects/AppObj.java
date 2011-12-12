@@ -22,13 +22,10 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.R;
@@ -170,7 +167,12 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
         PackageManager pm = context.getPackageManager();
         Drawable icon = null;
-        String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+        String appName;
+        if (obj.getJson() != null && obj.getJson().has(ANDROID_PACKAGE_NAME)) {
+            appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+        } else {
+            appName = "Unknown";
+        }
         if (!(obj instanceof DbObj)) {
             if (appName.contains(".")) {
                 appName = appName.substring(appName.lastIndexOf(".") + 1);
