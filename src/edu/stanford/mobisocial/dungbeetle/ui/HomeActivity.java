@@ -45,6 +45,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
+import edu.stanford.mobisocial.dungbeetle.ui.wizard.WelcomeActivity;
 
 public class HomeActivity extends MusubiBaseActivity {
     public static final boolean DBG = true;
@@ -95,6 +96,7 @@ public class HomeActivity extends MusubiBaseActivity {
 
     	boolean firstLoad = settings.getBoolean("firstLoad", true);
         if (firstLoad) {
+        	/*
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Thank you for trying out Stanford Mobisocial's new software Musubi! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
                 .setCancelable(false)
@@ -135,11 +137,22 @@ public class HomeActivity extends MusubiBaseActivity {
                 });
             AlertDialog alert = builder.create();
             alert.show();
+            */
+        	
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("firstLoad", false);
             editor.putString("ringtone", "content://media/internal/audio/media/14");
             editor.commit();
+            
+            
         }
+        
+        if(true) {
+
+            Intent wizard = new Intent(HomeActivity.this, WelcomeActivity.class);
+            HomeActivity.this.startActivity(wizard);
+        }
+        
         if (settings.getString("ringtone", null) == null) {
 
         	RingtoneManager ringtoneManager = new RingtoneManager(this);

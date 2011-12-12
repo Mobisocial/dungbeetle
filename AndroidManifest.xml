@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="80"
-	  android:versionName="0.4.0"
+	  android:versionCode="81"
+	  android:versionName="0.4.1"
 	  android:installLocation="auto"
 	  >
     <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="12" />
@@ -22,8 +22,10 @@
   <uses-permission android:name="android.permission.RECORD_AUDIO" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-  <!--<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-  <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />-->
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+  <uses-permission android:name="android.permission.USE_CREDENTIALS"></uses-permission>
+  <uses-permission android:name="android.permission.MANAGE_ACCOUNTS"></uses-permission>
+  <!--<uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />-->
   
   <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
@@ -347,5 +349,12 @@
     </intent-filter>
 </activity>
 
+<!--  Wizard Activities --> 
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.WelcomeActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.AccountLinkerActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.SetProfileActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.SetProfileInstructionsActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.ChangePictureActivity"/>
+    
   </application>
 </manifest> 
