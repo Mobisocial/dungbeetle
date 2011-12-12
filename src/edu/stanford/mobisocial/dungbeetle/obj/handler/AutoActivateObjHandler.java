@@ -13,15 +13,22 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 public class AutoActivateObjHandler extends ObjHandler {
     @Override
     public void handleObj(Context context, DbEntryHandler handler, DbObj obj) {
-        if (!context.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
-            return;
-        }
-        // Don't activate subfeed items
-        if (obj.getJson() != null && obj.getJson().has(DbObjects.TARGET_HASH)) {
+        if (!willActivate(context, obj)) {
             return;
         }
         if (handler instanceof Activator) {
             ((Activator)handler).activate(context, obj);
         }
+    }
+
+    public boolean willActivate(Context context, DbObj obj) {
+        if (!context.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
+            return false;
+        }
+        // Don't activate subfeed items
+        if (obj.getJson() != null && obj.getJson().has(DbObjects.TARGET_HASH)) {
+            return false;
+        }
+        return true;
     }
 }
