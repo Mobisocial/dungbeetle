@@ -127,13 +127,13 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         // Do this before setCurrentFeed to avoid a requery.
         // TODO: Consider moving outside of fragment.
         App.instance().setCurrentFeed(mFeedUri);
-        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (DBG) Log.d(TAG, "Activity created: " + getActivity());
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
