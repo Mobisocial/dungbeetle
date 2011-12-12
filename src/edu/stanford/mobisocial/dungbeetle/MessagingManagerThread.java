@@ -246,7 +246,6 @@ public class MessagingManagerThread extends Thread {
             mFromNetworkHandlers = new IteratorObjHandler();
             mFromNetworkHandlers.addHandler(TVModePresence.getInstance());
             mFromNetworkHandlers.addHandler(Push2TalkPresence.getInstance());
-            mFromNetworkHandlers.addHandler(new AutoActivateObjHandler());
             mFromNetworkHandlers.addHandler(new ProfileScanningObjHandler());
             mFromNetworkHandlers.addHandler(new NotificationObjHandler(mHelper));
         }

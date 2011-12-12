@@ -71,12 +71,6 @@
     
     <activity android:name=".ui.FeedThumberActivity" android:label="@string/title_latest" />
     <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
-    
-	<receiver android:name="Publisher">
-		<intent-filter>
-			<action android:name="mobisocial.db.action.PUBLISH" />
-		</intent-filter>
-	</receiver>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
 	      android:label="Dungbeetle Status">
@@ -259,15 +253,6 @@
 	    </intent-filter>
     </activity>
      
-
-<!-- Insecure.
-   <receiver android:name="edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj">
-     <intent-filter>
-   	   <action android:name="mobisocial.intent.action.SET_NDEF" />
-   	 </intent-filter>
-   </receiver>
-   -->
-
     <activity 
     	android:name=".ui.ContactsActivity" />
     <activity
