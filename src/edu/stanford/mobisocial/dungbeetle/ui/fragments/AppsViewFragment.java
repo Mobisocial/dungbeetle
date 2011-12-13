@@ -229,13 +229,11 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-    	List<String> filterTypes = new ArrayList<String>();
-    	filterTypes.add(AppObj.TYPE);
-    	filterTypes.add(AppStateObj.TYPE);
-    	mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
-        
-
-        mLoader.loadInBackground();
+        List<String> filterTypes = new ArrayList<String>();
+        filterTypes.add(AppObj.TYPE);
+        filterTypes.add(AppStateObj.TYPE);
+        mLoader = ObjectListCursorAdapter.queryObjects(
+                getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
         return mLoader;
     }
 

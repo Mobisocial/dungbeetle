@@ -76,7 +76,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 59;
+	public static final int VERSION = 60;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -382,6 +382,9 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.GROUP_TYPE + " TEXT DEFAULT 'group'");
             db.execSQL("UPDATE " + Group.TABLE + " SET " + Group.GROUP_TYPE + " = 'group'");
         }
+        if (oldVersion <= 59) {
+            createIndex(db, "INDEX", "objects_last_modified", DbObject.TABLE, DbObject.LAST_MODIFIED_TIMESTAMP);
+        }
         db.setVersion(VERSION);
     }
 
@@ -462,6 +465,7 @@ public class DBHelper extends SQLiteOpenHelper {
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
             createIndex(db, "INDEX", "objects_by_int_key", DbObject.TABLE, DbObject.KEY_INT);
+            createIndex(db, "INDEX", "objects_last_modified", DbObject.TABLE, DbObject.LAST_MODIFIED_TIMESTAMP);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",

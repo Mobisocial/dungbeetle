@@ -247,8 +247,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     	else {
     		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
     	}
-
-        mLoader.loadInBackground();
         return mLoader;
     }
 
