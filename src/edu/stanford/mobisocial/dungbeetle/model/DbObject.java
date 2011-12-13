@@ -225,7 +225,7 @@ public class DbObject implements Obj {
                 TextView attachmentCountText = (TextView)v.findViewById(R.id.obj_attachments);
                 attachmentCountButton.setVisibility(View.VISIBLE);
 
-                if (hash != 0) {
+                if (hash == 0) {
                     attachmentCountButton.setVisibility(View.GONE);
                 } else {
                     //int color = DbObject.colorFor(hash);
