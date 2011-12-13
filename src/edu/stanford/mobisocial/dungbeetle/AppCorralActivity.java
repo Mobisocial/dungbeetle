@@ -20,23 +20,29 @@ import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 
 public class AppCorralActivity extends MusubiBaseActivity {
+    private static final String EXTRA_CURRENT_PAGE = "page";
     private static final String MUSUBI_JS = "Musubi_android_platform";
+    private String mCurrentPage;
     WebView mWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.appcorral);
-
+        if (savedInstanceState != null) {
+            mCurrentPage = savedInstanceState.getString(EXTRA_CURRENT_PAGE);
+        } else {
+            mCurrentPage = "http://musubi.us/apps";
+        }
         WebViewClient webViewClient = new AppStoreWebViewClient();
         
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.getSettings().setJavaScriptEnabled(true);
-        mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+        //mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         mWebView.setWebViewClient(webViewClient);
         mWebView.addJavascriptInterface(new SocialKitJavascript(this,
                 (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), MUSUBI_JS);
-        mWebView.loadUrl("http://musubi.us/apps");
+        mWebView.loadUrl(mCurrentPage);
     }
 
     @Override
@@ -68,15 +74,14 @@ public class AppCorralActivity extends MusubiBaseActivity {
 
         @Override
         public void onPageFinished(WebView view, String url) {
-            if (DBG) Log.d(TAG, "Page loaded, launching musubi app...");
-
+            if (DBG) Log.d(TAG, "Page loaded, injecting musubi SocialKit bridge for " + url);
+            mCurrentPage = url;
             SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
             SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
-            SocialKitJavascript.App app = new SocialKitJavascript.App("appid", feed, obj);
             SocialKitJavascript.User user = new SocialKitJavascript.User("todoName", "todoId", "todoPersonId");
             String initSocialKit = new StringBuilder("javascript:")
-                .append("Musubi._launchApp(")
-                .append(app.toJson() + ", " + user.toJson() + ")").toString();
+                .append("Musubi._launch(\"string\", ")
+                .append(user.toJson() + ", " + feed.toJson() + ",'someappid', {})").toString();
             Log.d(TAG, "Android calling " + initSocialKit);
             mWebView.loadUrl(initSocialKit);
         }
@@ -91,6 +96,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
     }
 
     static class SocialKitJavascript {
+        private static final String TAG = "socialkit.js";
         final Context mContext;
         final Musubi mMusubi;
         final DbFeed mDbFeed;
@@ -99,6 +105,22 @@ public class AppCorralActivity extends MusubiBaseActivity {
             mContext = context;
             mMusubi= Musubi.getInstance(context);
             mDbFeed = mMusubi.getFeed(feedUri);
+        }
+
+        public void _messagesForFeed(String feedName, String callback) {
+            Log.d(TAG, "message for " + feedName);
+        }
+        
+        public void _postObjToFeed(String obj, String feedName) {
+            Log.d(TAG, "posting to " + feedName);
+        }
+
+        public void _setConfig(String config) {
+            Log.d(TAG, "config " + config);
+        }
+
+        public void _log(String text) {
+            Log.d(TAG, text);
         }
 
         public void showToast(String toast) {
@@ -116,11 +138,6 @@ public class AppCorralActivity extends MusubiBaseActivity {
         public void _runCommand(String className, String methodName, Object parameters, Object callback) {
             Log.d(TAG, "SOCIALKIT-ANDROID RAN " + className + "::" + methodName);
         }
-
-        public void log(String text) {
-            Log.d("socialkit.js", text);
-        }
-
 
         /**
          * JSON representations of common Musubi classes.
@@ -207,33 +224,14 @@ public class AppCorralActivity extends MusubiBaseActivity {
             }
         }
 
-        static class App implements Jsonable {
-            final String id;
-            final Feed feed;
-            final Obj obj;
-
-            public App(String id, Feed feed, Obj obj) {
-                this.id = id;
-                this.feed = feed;
-                this.obj = obj;
-            }
-
-            @Override
-            public JSONObject toJson() {
-                JSONObject json = new JSONObject();
-                try {
-                    json.put("id", id);
-                    json.put("feed", feed.toJson());
-                    JSONObject msg = new JSONObject();
-                    msg.put("obj", obj.toJson());
-                    json.put("message", msg);
-                } catch (JSONException e) {}
-                return json;
-            }
-        }
-
         interface Jsonable {
             public JSONObject toJson();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(EXTRA_CURRENT_PAGE, mCurrentPage);
     }
 }
