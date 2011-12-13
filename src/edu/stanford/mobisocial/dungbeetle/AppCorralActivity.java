@@ -1,11 +1,15 @@
 package edu.stanford.mobisocial.dungbeetle;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import mobisocial.socialkit.musubi.DbFeed;
+import mobisocial.socialkit.musubi.Musubi;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import mobisocial.socialkit.musubi.DbFeed;
-import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +17,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -78,10 +81,10 @@ public class AppCorralActivity extends MusubiBaseActivity {
             mCurrentPage = url;
             SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
             SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
-            SocialKitJavascript.User user = new SocialKitJavascript.User("todoName", "todoId", "todoPersonId");
+            SocialKitJavascript.User user = new SocialKitJavascript.User("todoLocalName", "todoLocalId", "todoPersonId");
             String initSocialKit = new StringBuilder("javascript:")
                 .append("Musubi._launch(\"string\", ")
-                .append(user.toJson() + ", " + feed.toJson() + ",'someappid', {})").toString();
+                .append(user.toJson() + ", " + feed.toJson() + ",'someappid', false)").toString();
             Log.d(TAG, "Android calling " + initSocialKit);
             mWebView.loadUrl(initSocialKit);
         }
@@ -194,17 +197,23 @@ public class AppCorralActivity extends MusubiBaseActivity {
             }
         }
 
+        // TODO: Just make a SocialKit.shuttleFeed(DbFeed feed) => JSONObject
         static class Feed implements Jsonable {
             public String name;
             public String uri;
             public String session;
             public String key;
+            public List<User> members;
 
             public Feed(String name) {
                 this.name = name;
                 this.uri = "feeduri";
                 this.session = "feedsession";
                 this.key = "feedkey";
+                this.members = new ArrayList<User>(3);
+                this.members.add(new SocialKitJavascript.User("Funny", "fny", "pid1"));
+                this.members.add(new SocialKitJavascript.User("Folk", "flk", "pid2"));
+                this.members.add(new SocialKitJavascript.User("Fork", "frk", "pid3"));
             }
 
             public String getName() {
@@ -219,6 +228,11 @@ public class AppCorralActivity extends MusubiBaseActivity {
                     o.put("uri", uri);
                     o.put("session", session);
                     o.put("key", key);
+                    JSONArray m = new JSONArray();
+                    for (User u : members) {
+                        m.put(u.toJson());
+                    }
+                    o.put("members", m);
                 } catch (JSONException e) {}
                 return o;
             }
