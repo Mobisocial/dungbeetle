@@ -1,18 +1,10 @@
 package edu.stanford.mobisocial.dungbeetle.ui;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,8 +20,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
@@ -45,7 +35,6 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.social.ThreadRequest;
-import edu.stanford.mobisocial.dungbeetle.ui.wizard.WelcomeActivity;
 
 public class HomeActivity extends MusubiBaseActivity {
     public static final boolean DBG = true;
@@ -147,11 +136,11 @@ public class HomeActivity extends MusubiBaseActivity {
             
         }
         
-        if(true) {
+        /*if(true) {
 
             Intent wizard = new Intent(HomeActivity.this, WelcomeActivity.class);
             HomeActivity.this.startActivity(wizard);
-        }
+        }*/
         
         if (settings.getString("ringtone", null) == null) {
 
