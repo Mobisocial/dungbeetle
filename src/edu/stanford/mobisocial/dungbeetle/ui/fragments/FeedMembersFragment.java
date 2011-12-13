@@ -69,12 +69,11 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mHelper = DBHelper.getGlobal(getActivity());
-		getLoaderManager().initLoader(0, null, this);
-
 		Uri feedUri = Feed.uriForName(mFeedName);
 		if (Feed.typeOf(feedUri) == Feed.FeedType.GROUP) {
 		    groupUpdateHack(feedUri);
 		}
+		getLoaderManager().initLoader(0, null, this);
 	}
 
     private void groupUpdateHack(final Uri feedUri) {
@@ -193,13 +192,9 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
             }
 
             nameText.setText(c.name);
-
             statusText.setText(c.status);
-            
             icon.setImageBitmap(c.picture);
-
             presenceIcon.setImageResource(c.currentPresenceResource());
-
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
 
             more.setOnClickListener(new OnClickListener() {
@@ -256,12 +251,6 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
     public boolean onCreateOptionsMenu(Menu menu){
         return true;
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mHelper.close();
     }
 
     @Override
