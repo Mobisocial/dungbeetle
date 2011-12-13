@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="fill_parent"
+              android:orientation="vertical" 
+              android:layout_alignParentTop="true">
+    <TextView android:id="@+id/text"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:textSize="50sp"
+              android:textStyle="bold" 
+              android:gravity="center"
+              android:text="Welcome to Musubi!" />
+    <TextView android:id="@+id/text"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:textSize="25sp" 
+              android:text="This wizard will guide you through the following steps:" />
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="wrap_content"
+              android:layout_marginTop="20dip">
+            <TextView android:id="@+id/text"
+                      android:layout_width="30dip"
+                      android:layout_height="wrap_content"
+                      android:textSize="25sp" 
+                      android:text="1." />
+            <TextView android:id="@+id/step1"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textSize="20sp" 
+                      android:text="Setting up your profile" />
+    </LinearLayout>
+    
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="wrap_content">
+            <TextView android:id="@+id/text"
+                      android:layout_width="30dip"
+                      android:layout_height="wrap_content"
+                      android:textSize="25sp" 
+                      android:text="2." />
+            <TextView android:id="@+id/step2"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textSize="20sp" 
+                      android:text="Connecting to your existing accounts" />
+    </LinearLayout>
+    
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="wrap_content">
+            <TextView android:id="@+id/text"
+                      android:layout_width="30dip"
+                      android:layout_height="wrap_content"
+                      android:textSize="25sp" 
+                      android:text="3." />
+            <TextView android:id="@+id/step3"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textSize="20sp" 
+                      android:text="Finding friends" />
+    </LinearLayout>
+    
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent" 
+              android:layout_height="wrap_content">
+            <TextView android:id="@+id/text"
+                      android:layout_width="30dip"
+                      android:layout_height="wrap_content"
+                      android:textSize="25sp" 
+                      android:text="4." />
+            <TextView android:id="@+id/step4"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textSize="20sp" 
+                      android:text="Sending a message to your friends" />
+    </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>
