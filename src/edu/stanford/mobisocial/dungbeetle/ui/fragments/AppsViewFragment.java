@@ -33,7 +33,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -44,7 +43,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
-import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -229,11 +227,12 @@ public class AppsViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = new String[] { DbObject._ID };
         List<String> filterTypes = new ArrayList<String>();
         filterTypes.add(AppObj.TYPE);
         filterTypes.add(AppStateObj.TYPE);
-        mLoader = ObjectListCursorAdapter.queryObjects(
-                getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
+        mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri,
+                projection, filterTypes.toArray(new String[filterTypes.size()]));
         return mLoader;
     }
 

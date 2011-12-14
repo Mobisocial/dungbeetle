@@ -79,12 +79,16 @@ public class AppCorralActivity extends MusubiBaseActivity {
         public void onPageFinished(WebView view, String url) {
             if (DBG) Log.d(TAG, "Page loaded, injecting musubi SocialKit bridge for " + url);
             mCurrentPage = url;
+
+            //mWebView.loadUrl("javascript:document.write(\"<script>" + js + "</script>\")");
+            // Launch musubi app
             SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
             SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
-            SocialKitJavascript.User user = new SocialKitJavascript.User("todoLocalName", "todoLocalId", "todoPersonId");
+            SocialKitJavascript.User user = new SocialKitJavascript.User(
+                    "todoLocalName", "todoLocalId", "todoPersonId");
             String initSocialKit = new StringBuilder("javascript:")
-                .append("Musubi._launch(\"string\", ")
-                .append(user.toJson() + ", " + feed.toJson() + ",'someappid', false)").toString();
+                .append("Musubi._launch(").append(
+                        user.toJson() + ", " + feed.toJson() + ",'someappid', false)").toString();
             Log.d(TAG, "Android calling " + initSocialKit);
             mWebView.loadUrl(initSocialKit);
         }

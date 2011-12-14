@@ -158,21 +158,37 @@ public class DbObject implements Obj {
     /**
      * @param v the view to bind
      * @param context standard activity context
-     * @param c the cursor source for the object in the db object table. Must include all columns.
-     * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
+     * @param c the cursor source for the object in the db object table.
+     * Must include _id in the projection.
+     * 
+     * @param allowInteractions controls whether the bound view is
+     * allowed to intercept touch events and do its own processing.
      */
-    public static void bindView(View v, final Context context, Cursor c, boolean allowInteractions) {
+    public static void bindView(View v, final Context context, Cursor cursor, boolean allowInteractions) {
     	TextView nameText = (TextView) v.findViewById(R.id.name_text);
         ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
         frame.removeAllViews();
 
+        for (String name : cursor.getColumnNames()) {
+            Log.d(TAG, "Col " + name);
+        }
+        // make sure we have all the columns we need
+        Long objId = cursor.getLong(cursor.getColumnIndexOrThrow(DbObj.COL_ID));
+        String[] projection = null;
+        String selection = DbObj.COL_ID + " = ?";
+        String[] selectionArgs = new String[] { Long.toString(objId) };
+        String sortOrder = null;
+        Cursor c = context.getContentResolver().query(DbObj.OBJ_URI, projection, selection, selectionArgs, sortOrder);
+        if (!c.moveToFirst()) {
+            Log.w(TAG, "could not find obj " + objId);
+            return;
+        }
         DbObj obj = App.instance().getMusubi().objForCursor(c);
         if (obj == null) {
             nameText.setText("Failed to access database.");
             Log.e("DbObject", "cursor was null for bindView of DbObject");
             return;
         }
-	    Long objId = obj.getLocalId();
         DbUser sender = obj.getSender();
         Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObj.COL_TIMESTAMP));
         Long hash = obj.getHash();

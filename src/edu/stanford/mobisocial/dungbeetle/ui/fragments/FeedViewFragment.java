@@ -54,10 +54,8 @@ import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.VoiceQuickRecordActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.DbActions;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.obj.ObjActions;
@@ -226,6 +224,7 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String[] projection = new String[] { DbObject._ID };
     	Set<String> forbidden = new HashSet<String>();
     	//forbidden.add(AppObj.TYPE);
 
@@ -241,11 +240,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 	    		}
 	    	}
 	    	Log.w(TAG, "changeFilter reached in feedview");
-			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri,
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, projection,
 			        filterTypes.toArray(new String[filterTypes.size()]));
     	}
     	else {
-    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
+    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, projection,
+    		        null);
     	}
         return mLoader;
     }

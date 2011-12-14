@@ -53,9 +53,10 @@ public class ObjectListCursorAdapter extends CursorAdapter {
     	return mTotal;
     }
 
-    public static CursorLoader queryObjects(Context context, Uri feedUri, String[] types) {
-        return new CursorLoader(context, feedUri, null, DbObjects.getFeedObjectClause(types), null,
-                DbObject.LAST_MODIFIED_TIMESTAMP + " DESC LIMIT " + BATCH_SIZE);
+    public static CursorLoader queryObjects(Context context, Uri feedUri, String[] projection,
+            String[] types) {
+        return new CursorLoader(context, feedUri, projection, DbObjects.getFeedObjectClause(types),
+                null, DbObject.LAST_MODIFIED_TIMESTAMP + " DESC LIMIT " + BATCH_SIZE);
     }
     private static int getBestBatchSize() {
     	Runtime runtime = Runtime.getRuntime();
