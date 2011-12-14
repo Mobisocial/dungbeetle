@@ -134,7 +134,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         final Group g = new Group(cursor);
         switch(menuItemIndex) {
         case 0:
-            Helpers.deleteGroup(GroupsActivity.this, g.id);
+            mHelper.deleteGroup(GroupsActivity.this, g.id);
             break;
         case 1:
             if(g.dynUpdateUri != null){

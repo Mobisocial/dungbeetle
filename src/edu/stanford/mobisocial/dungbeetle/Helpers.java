@@ -50,24 +50,7 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void deleteGroup(final Context c, 
-                                   Long groupId){
-        Maybe<Group> mg = Group.forId(c, groupId);
-        try{
-            Group group = mg.get();
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + DbObject.TABLE),
-                DbObject.FEED_NAME + "=?", new String[]{group.feedName});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-                Group._ID + "=?", new String[]{ String.valueOf(groupId)});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
-                GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
-        }
-        catch(Exception e) {
-        }
-    }
+   
 
     public static void deleteContact(final Context c, 
                                      Long contactId){

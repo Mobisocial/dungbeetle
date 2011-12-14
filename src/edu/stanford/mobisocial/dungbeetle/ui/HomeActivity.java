@@ -29,6 +29,7 @@ import edu.stanford.mobisocial.dungbeetle.NearbyActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
+import edu.stanford.mobisocial.dungbeetle.google.OAuthGoogle;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
@@ -138,7 +139,8 @@ public class HomeActivity extends MusubiBaseActivity {
         
         /*if(true) {
 
-            Intent wizard = new Intent(HomeActivity.this, WelcomeActivity.class);
+            //Intent wizard = new Intent(HomeActivity.this, WelcomeActivity.class);
+        	Intent wizard = new Intent(HomeActivity.this, OAuthGoogle.class);
             HomeActivity.this.startActivity(wizard);
         }*/
         

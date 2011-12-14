@@ -1751,6 +1751,24 @@ public class DBHelper extends SQLiteOpenHelper {
 	            DbObject.HASH + " = ? AND " + DbObject.FEED_NAME + " = ?",
 	            new String[] { String.valueOf(hash), feedUri.getLastPathSegment()});
 	}
+	
+	public void deleteGroup(final Context c, Long groupId){
+		Maybe<Group> mg = Group.forId(c, groupId);
+		try{
+			Group group = mg.get();
+			getWritableDatabase().delete(DbObject.TABLE,
+					DbObject.FEED_NAME + "=?", new String[]{group.feedName});
+			getWritableDatabase().delete(Group.TABLE,
+					Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+			getWritableDatabase().delete(GroupMember.TABLE,
+					GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
+			
+			mContext.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), null);
+		}
+		catch(Exception e) {
+		}
+	}
+	
 
 	public void markOrDeleteFeedObjs(Uri feedUri, long[] hashes, boolean force) {
 	    StringBuilder hashBuilder = new StringBuilder();
