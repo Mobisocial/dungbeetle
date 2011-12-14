@@ -169,9 +169,6 @@ public class DbObject implements Obj {
         ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
         frame.removeAllViews();
 
-        for (String name : cursor.getColumnNames()) {
-            Log.d(TAG, "Col " + name);
-        }
         // make sure we have all the columns we need
         Long objId = cursor.getLong(cursor.getColumnIndexOrThrow(DbObj.COL_ID));
         String[] projection = null;

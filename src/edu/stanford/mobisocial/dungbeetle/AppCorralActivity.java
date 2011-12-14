@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mobisocial.socialkit.musubi.DbFeed;
+import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.DbUser;
 import mobisocial.socialkit.musubi.Musubi;
 
 import org.json.JSONArray;
@@ -26,6 +28,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
     private static final String EXTRA_CURRENT_PAGE = "page";
     private static final String MUSUBI_JS = "Musubi_android_platform";
     private String mCurrentPage;
+    private SocialKitJavascript mSocialKitJavascript;
     WebView mWebView;
 
     @Override
@@ -43,8 +46,9 @@ public class AppCorralActivity extends MusubiBaseActivity {
         mWebView.getSettings().setJavaScriptEnabled(true);
         //mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         mWebView.setWebViewClient(webViewClient);
-        mWebView.addJavascriptInterface(new SocialKitJavascript(this,
-                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI)), MUSUBI_JS);
+        mSocialKitJavascript = new SocialKitJavascript(this,
+                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI));
+        mWebView.addJavascriptInterface(mSocialKitJavascript, MUSUBI_JS);
         mWebView.loadUrl(mCurrentPage);
     }
 
@@ -82,10 +86,10 @@ public class AppCorralActivity extends MusubiBaseActivity {
 
             //mWebView.loadUrl("javascript:document.write(\"<script>" + js + "</script>\")");
             // Launch musubi app
-            SocialKitJavascript.Obj obj = new SocialKitJavascript.Obj();
-            SocialKitJavascript.Feed feed = new SocialKitJavascript.Feed("feedName");
-            SocialKitJavascript.User user = new SocialKitJavascript.User(
-                    "todoLocalName", "todoLocalId", "todoPersonId");
+            DbFeed dbFeed = mSocialKitJavascript.mDbFeed;
+            SocialKitJavascript.Feed feed = mSocialKitJavascript.new Feed(dbFeed);
+            SocialKitJavascript.User user = mSocialKitJavascript.new User(
+                    App.instance().getMusubi().userForLocalDevice(dbFeed.getUri()));
             String initSocialKit = new StringBuilder("javascript:")
                 .append("Musubi._launch(").append(
                         user.toJson() + ", " + feed.toJson() + ",'someappid', false)").toString();
@@ -135,7 +139,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
         }
 
         public Feed getFeed() {
-            return new Feed(mDbFeed.getUri().getLastPathSegment());
+            return new Feed(mDbFeed);
         }
 
         public boolean isDeveloperModeEnabled() {
@@ -149,92 +153,69 @@ public class AppCorralActivity extends MusubiBaseActivity {
         /**
          * JSON representations of common Musubi classes.
          */
+        abstract class SocialKitApiConversion<JavaType> implements Jsonable {
+            private final JavaType mNativeType;
+            public SocialKitApiConversion(JavaType nativeType) {
+                mNativeType = nativeType;
+            }
 
-        static class User implements Jsonable {
-            String name;
-            String id;
-            String personId;
+            public JavaType getNative() {
+                return mNativeType;
+            }
+        }
 
-            public User(String name, String id, String personId) {
-                this.name = name;
-                this.id = id;
-                this.personId = personId;
+        class User extends SocialKitApiConversion<DbUser> {
+            public User(DbUser user) {
+                super(user);
             }
 
             @Override
             public JSONObject toJson() {
+                DbUser user = getNative();
                 JSONObject o = new JSONObject();
                 try {
-                    o.put("name", name);
-                    o.put("id", id);
-                    o.put("personId", personId);
+                    o.put("name", user.getName());
+                    o.put("id", user.getLocalId());
+                    o.put("personId", user.getId());
                 } catch (JSONException e) {}
                 return o;
             }
-            
         }
 
-        static class Obj implements Jsonable {
-            public String type;
-            public JSONObject data;
-
-            public Obj() {
-                type = "dumbtype";
-                data = new JSONObject();
-
-                try {
-                    JSONArray members = new JSONArray();
-                    members.put(new User("alfred", "123", "456").toJson());
-                    members.put(new User("brian", "789", "0ab").toJson());
-                    data.put("membership", members);
-                } catch (JSONException e) {}
+        class Obj extends SocialKitApiConversion<DbObj> {
+            public Obj(DbObj obj) {
+                super(obj);
             }
 
             @Override
             public JSONObject toJson() {
-                JSONObject json = new JSONObject();
+                DbObj obj = getNative();
+                JSONObject json = obj.getJson();
                 try {
-                    json.put("type", type);
-                    json.put("data", data);
+                    json.put("type", obj.getType());
+                    json.put("data", json);
                 } catch (JSONException e) {}
                 return json;
             }
         }
 
-        // TODO: Just make a SocialKit.shuttleFeed(DbFeed feed) => JSONObject
-        static class Feed implements Jsonable {
-            public String name;
-            public String uri;
-            public String session;
-            public String key;
-            public List<User> members;
-
-            public Feed(String name) {
-                this.name = name;
-                this.uri = "feeduri";
-                this.session = "feedsession";
-                this.key = "feedkey";
-                this.members = new ArrayList<User>(3);
-                this.members.add(new SocialKitJavascript.User("Funny", "fny", "pid1"));
-                this.members.add(new SocialKitJavascript.User("Folk", "flk", "pid2"));
-                this.members.add(new SocialKitJavascript.User("Fork", "frk", "pid3"));
-            }
-
-            public String getName() {
-                return name;
+        class Feed extends SocialKitApiConversion<DbFeed> {
+            public Feed(DbFeed feed) {
+                super(feed);
             }
 
             @Override
             public JSONObject toJson() {
+                DbFeed feed = getNative();
                 JSONObject o = new JSONObject();
                 try {
-                    o.put("name", name);
-                    o.put("uri", uri);
-                    o.put("session", session);
-                    o.put("key", key);
+                    o.put("name", feed.getUri().getLastPathSegment());
+                    o.put("uri", feed.getUri().toString());
+                    o.put("session", "what is a session?");
+                    o.put("key", "what is a key?");
                     JSONArray m = new JSONArray();
-                    for (User u : members) {
-                        m.put(u.toJson());
+                    for (DbUser u : feed.getRemoteUsers()) {
+                        m.put(new User(u).toJson());
                     }
                     o.put("members", m);
                 } catch (JSONException e) {}
