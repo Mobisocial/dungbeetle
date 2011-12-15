@@ -6,6 +6,7 @@ import java.util.List;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import org.json.JSONArray;
@@ -28,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.AppCorralActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -36,6 +38,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -48,6 +51,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     public static final String ANDROID_PACKAGE_NAME = "android_pkg";
     public static final String ANDROID_CLASS_NAME = "android_cls";
     public static final String ANDROID_ACTION = "android_action";
+    public static final String WEB_URL = "web_url";
 
     @Override
     public String getType() {
@@ -140,27 +144,35 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
     public static Intent getLaunchIntent(Context context, DbObj obj) {
         JSONObject content = obj.getJson(); 
-        Uri appFeed = obj.getContainingFeed().getUri();
-        String action = content.optString(ANDROID_ACTION);
-        String pkgName = content.optString(ANDROID_PACKAGE_NAME);
-        String className = content.optString(ANDROID_CLASS_NAME);
+        if (content.has(ANDROID_PACKAGE_NAME)) {
+            Uri appFeed = obj.getContainingFeed().getUri();
+            String action = content.optString(ANDROID_ACTION);
+            String pkgName = content.optString(ANDROID_PACKAGE_NAME);
+            String className = content.optString(ANDROID_CLASS_NAME);
+    
+            Intent launch = new Intent(action);
+            launch.setClassName(pkgName, className);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            // TODO: feed for related objs, not parent feed
+            launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+            launch.putExtra(AppState.EXTRA_OBJ_HASH, obj.getHash());
+            // TODO: Remove
+            launch.putExtra("obj", content.toString());
 
-        Intent launch = new Intent(action);
-        launch.setClassName(pkgName, className);
-        launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        // TODO: feed for related objs, not parent feed
-        launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
-        launch.putExtra(AppState.EXTRA_OBJ_HASH, obj.getHash());
-        // TODO: Remove
-        launch.putExtra("obj", content.toString());
+            List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
+            if (resolved.size() > 0) {
+                return launch;
+            }
 
-        List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
-        if (resolved.size() > 0) {
-            return launch;
+            Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkgName));
+            return market;
+        } else if (content.has(WEB_URL)) {
+            Intent app = new Intent(Intent.ACTION_VIEW, Uri.parse(content.optString(WEB_URL)));
+            app.setClass(context, AppCorralActivity.class);
+            app.putExtra(Musubi.EXTRA_FEED_URI, Feed.uriForName(obj.getFeedName()));
+            return app;
         }
-
-        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkgName));
-        return market;
+        return null;
     }
 
     @Override

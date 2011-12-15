@@ -1,12 +1,12 @@
 package edu.stanford.mobisocial.dungbeetle;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.DbUser;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
+import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,28 +15,40 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.AppObj;
+import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
+import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 public class AppCorralActivity extends MusubiBaseActivity {
     private static final String EXTRA_CURRENT_PAGE = "page";
     private static final String MUSUBI_JS = "Musubi_android_platform";
     private String mCurrentPage;
     private SocialKitJavascript mSocialKitJavascript;
+    private Uri mFeedUri;
     WebView mWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mFeedUri = (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI);
         setContentView(R.layout.appcorral);
         if (savedInstanceState != null) {
             mCurrentPage = savedInstanceState.getString(EXTRA_CURRENT_PAGE);
+        } else if (getIntent().getData() != null) {
+            mCurrentPage = getIntent().getDataString();
         } else {
             mCurrentPage = "http://musubi.us/apps";
         }
@@ -46,8 +58,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
         mWebView.getSettings().setJavaScriptEnabled(true);
         //mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         mWebView.setWebViewClient(webViewClient);
-        mSocialKitJavascript = new SocialKitJavascript(this,
-                (Uri)getIntent().getParcelableExtra(Musubi.EXTRA_FEED_URI));
+        mSocialKitJavascript = new SocialKitJavascript(this, mFeedUri);
         mWebView.addJavascriptInterface(mSocialKitJavascript, MUSUBI_JS);
         mWebView.loadUrl(mCurrentPage);
     }
@@ -68,10 +79,19 @@ public class AppCorralActivity extends MusubiBaseActivity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             Uri uri = Uri.parse(url);
-            if (uri.getScheme().startsWith("http")) {
+            String scheme = uri.getScheme();
+            if (scheme.startsWith("http")) {
                 if (!uri.getPath().endsWith(".apk")) {
                     return false;   
                 }
+            }
+
+            if (scheme.startsWith("socialkit")) {
+                String appUrl = uri.buildUpon().scheme("http").build().toString();
+                MembersSelectedCallout callout = new MembersSelectedCallout(
+                        AppCorralActivity.this, mFeedUri, appUrl);
+                doActivityForResult(callout);
+                return false;
             }
             // Otherwise, the link is not for a page on my site, so launch another Activity that handles URLs
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -118,12 +138,16 @@ public class AppCorralActivity extends MusubiBaseActivity {
             mDbFeed = mMusubi.getFeed(feedUri);
         }
 
-        public void _messagesForFeed(String feedName, String callback) {
+        public String _messagesForFeed(String feedName, String callback) {
             Log.d(TAG, "message for " + feedName);
+            return null;
         }
         
         public void _postObjToFeed(String obj, String feedName) {
-            Log.d(TAG, "posting to " + feedName);
+            DbFeed feed = App.instance().getMusubi().getFeed(
+                    edu.stanford.mobisocial.dungbeetle.model.Feed.uriForName(feedName));
+            //feed.postObj(obj);
+            Log.d(TAG, "posting " + obj);
         }
 
         public void _setConfig(String config) {
@@ -144,10 +168,6 @@ public class AppCorralActivity extends MusubiBaseActivity {
 
         public boolean isDeveloperModeEnabled() {
             return MusubiBaseActivity.isDeveloperModeEnabled(mContext);
-        }
-
-        public void _runCommand(String className, String methodName, Object parameters, Object callback) {
-            Log.d(TAG, "SOCIALKIT-ANDROID RAN " + className + "::" + methodName);
         }
 
         /**
@@ -232,5 +252,83 @@ public class AppCorralActivity extends MusubiBaseActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(EXTRA_CURRENT_PAGE, mCurrentPage);
+    }
+
+    private class MembersSelectedCallout implements ActivityCallout {
+        private final Context mContext;
+        private final Uri mFeedUri;
+        private final String mAppUrl;
+
+        public MembersSelectedCallout(Context context, Uri feedUri, String appUrl) {
+            mFeedUri = feedUri;
+            mContext = context;
+            mAppUrl = appUrl;
+        }
+
+        @Override
+        public Intent getStartIntent() {
+            Intent i = new Intent(PickContactsActivity.INTENT_ACTION_PICK_CONTACTS);
+            i.putExtra(PickContactsActivity.INTENT_EXTRA_PARENT_FEED, mFeedUri);
+            return i;
+        }
+
+        @Override
+        public void handleResult(int resultCode, Intent data) {
+            if (resultCode == Activity.RESULT_OK) {
+                // Create and share new application instance
+                Obj obj = objForPickerResult(mAppUrl, data);
+                Uri objUri = Helpers.sendToFeed(mContext, obj, mFeedUri);
+
+                mContext.getContentResolver().registerContentObserver(objUri, false,
+                        new ObjObserver(mContext, new AppObj(), objUri));
+            } else {
+                Log.i(TAG, "No members selected.");
+            }
+        }
+
+        private class ObjObserver extends ContentObserver {
+            private final Uri mUri;
+            private final Context mContext;
+            private final Activator mActivator;
+
+            public ObjObserver(Context context, Activator activator, Uri uri) {
+                super(new Handler(context.getMainLooper()));
+                mUri = uri;
+                mContext = context;
+                mActivator = activator;
+            }
+
+            @Override
+            public void onChange(boolean selfChange) {
+                mContext.getContentResolver().unregisterContentObserver(this);
+                Long objId = Long.parseLong(mUri.getLastPathSegment());
+                DbObj obj = App.instance().getMusubi().objForId(objId);
+                Log.d(TAG, "Launching app obj " + obj + " for " + objId);
+                mActivator.activate(mContext, obj);
+            }
+        }
+
+        public Obj objForPickerResult(String appUrl, Intent data) {
+            long[] contactIds = data.getLongArrayExtra("contacts");
+            JSONArray participantIds = new JSONArray();
+            participantIds.put(App.instance().getLocalPersonId());
+            for (long id : contactIds) {
+                Maybe<Contact> annoyingContact = Contact.forId(AppCorralActivity.this, id);
+                try {
+                    Contact contact = annoyingContact.get();
+                    participantIds.put(contact.personId);
+                } catch (NoValError e) {
+                    participantIds.put(Contact.UNKNOWN);
+                }
+            }
+            JSONObject json = new JSONObject();
+            try {
+                json.put(Multiplayer.OBJ_MEMBERSHIP, participantIds);
+                json.put(AppObj.WEB_URL, appUrl);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error setting up json");
+            }
+            return new MemObj("app", json);
+        }
     }
 }
