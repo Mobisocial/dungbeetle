@@ -1263,6 +1263,10 @@ public class DBHelper extends SQLiteOpenHelper {
         // TODO: Check appId against feed?
 
         String feedName = feedUri.getLastPathSegment();
+        int sep = feedName.indexOf(':');
+        if (sep >= 0) {
+            feedName = feedName.substring(0, sep);
+        }
         FeedType type = Feed.typeOf(feedUri);
         if (feedName != null && !feedName.equals(Feed.FEED_NAME_GLOBAL)) {
             String feedInnerQuery;
