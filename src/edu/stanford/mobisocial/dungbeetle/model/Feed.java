@@ -99,11 +99,16 @@ public class Feed extends DbObject {
 	/**
 	 * Returns the personId of the remote friend associated with this feed
 	 */
-	public static String personIdForFeed(Uri friendFeed) {
+	public static String friendIdForFeed(Uri friendFeed) {
 	    if (typeOf(friendFeed) != FeedType.FRIEND) {
 	        return null;
 	    }
-	    String[] parts = friendFeed.getLastPathSegment().split("\\^");
+	    String feedName = friendFeed.getLastPathSegment();
+	    int sep = feedName.lastIndexOf(':');
+	    if (sep > 0) {
+	        feedName = feedName.substring(0, sep);
+	    }
+	    String[] parts = feedName.split("\\^");
         if (parts.length != 3) {
             Log.w(TAG, "Bad format for friend feed: " + friendFeed);
             return null;

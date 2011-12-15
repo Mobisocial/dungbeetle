@@ -128,7 +128,7 @@ public class App extends Application {
         try {
             switch(Feed.typeOf(feedUri)) {
                 case FRIEND: {
-                    String personId = Feed.personIdForFeed(feedUri);
+                    String personId = Feed.friendIdForFeed(feedUri);
                     ContentValues cv = new ContentValues();
                     cv.put(Contact.NUM_UNREAD, 0);
                     getContentResolver().update(

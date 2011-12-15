@@ -527,7 +527,7 @@ public class DungBeetleContentProvider extends ContentProvider {
 
             switch (Feed.typeOf(uri)) {
                 case FRIEND:
-                    String personId = Feed.personIdForFeed(uri);
+                    String personId = Feed.friendIdForFeed(uri);
                     if (personId == null) {
                         Log.w(TAG, "no  person id in person feed");
                         return null;

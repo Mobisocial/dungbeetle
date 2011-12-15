@@ -41,7 +41,7 @@ public class FeedModifiedObjHandler extends ObjHandler {
 
         switch(Feed.typeOf(feedUri)) {
 	        case FRIEND: {
-	            String personId = Feed.personIdForFeed(feedUri);
+	            String personId = Feed.friendIdForFeed(feedUri);
 	            if (personId == null) {
 	                Log.w(TAG, "No contact found for feed uri " + feedUri);
 	                return;

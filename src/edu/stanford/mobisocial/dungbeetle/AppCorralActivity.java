@@ -211,7 +211,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
                 try {
                     o.put("name", feed.getUri().getLastPathSegment());
                     o.put("uri", feed.getUri().toString());
-                    o.put("session", "what is a session?");
+                    o.put("session", feed.getUri().getLastPathSegment());
                     o.put("key", "what is a key?");
                     JSONArray m = new JSONArray();
                     for (DbUser u : feed.getRemoteUsers()) {

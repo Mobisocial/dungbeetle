@@ -55,7 +55,7 @@ public class FeedListActivity extends MusubiBaseActivity implements
             ft.commit();
         } else {
             if (Feed.typeOf(feedUri) == Feed.FeedType.FRIEND) {
-                String personId = Feed.personIdForFeed(feedUri);
+                String personId = Feed.friendIdForFeed(feedUri);
                 DbUser u = App.instance().getMusubi().userForGlobalId(feedUri, personId);
                 Helpers.getContact(this, u.getLocalId()).view(this);
             } else {

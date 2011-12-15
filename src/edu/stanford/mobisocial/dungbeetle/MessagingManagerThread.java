@@ -349,7 +349,7 @@ public class MessagingManagerThread extends Thread {
         String feedName = feedUri.getLastPathSegment();
         switch (Feed.typeOf(feedUri)) {
             case FRIEND:
-                String personId = Feed.personIdForFeed(feedUri);
+                String personId = Feed.friendIdForFeed(feedUri);
                 if (personId == null) {
                     return new ArrayList<Long>(0);
                 }

@@ -245,7 +245,7 @@ public class PickContactsActivity extends TabActivity {
         String[] selectionArgs;
 
         if (Feed.typeOf(feed) == Feed.FeedType.FRIEND) {
-            String personId = Feed.personIdForFeed(feed);
+            String personId = Feed.friendIdForFeed(feed);
             selection = new StringBuilder()
                 .append("SELECT *")
                 .append(" FROM " + Contact.TABLE + " ")
