@@ -178,6 +178,7 @@ public class DbObject implements Obj {
         Cursor c = context.getContentResolver().query(DbObj.OBJ_URI, projection, selection, selectionArgs, sortOrder);
         if (!c.moveToFirst()) {
             Log.w(TAG, "could not find obj " + objId);
+            c.close();
             return;
         }
         DbObj obj = App.instance().getMusubi().objForCursor(c);
@@ -193,6 +194,9 @@ public class DbObject implements Obj {
         String feedName = obj.getFeedName();
         String type = obj.getType();
         Date date = new Date(timestamp);
+        c.close();
+        c = null;
+
         if (sender == null) {
             nameText.setText("Message from unknown contact.");
             return;
@@ -220,7 +224,7 @@ public class DbObject implements Obj {
         timeText.setText(RelativeDate.getRelativeDate(date));
 
         frame.setTag(objId); // TODO: error prone! This is database id
-        frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
+        frame.setTag(R.id.object_entry, cursor.getPosition()); // this is cursor id
         FeedRenderer renderer = DbObjects.getFeedRenderer(type);
 		if(renderer != null) {
 			renderer.render(context, frame, obj, allowInteractions);
