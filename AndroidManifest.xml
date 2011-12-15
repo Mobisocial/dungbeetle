@@ -306,7 +306,7 @@
     
     </activity>
     
-    <activity android:name=".AppCorralActivity"
+    <activity android:name=".AppFinderActivity"
 	      android:label="@string/app_store_name">
     </activity>
     

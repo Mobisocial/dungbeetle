@@ -52,6 +52,7 @@ public final class DbObjects {
     public static final String TIMESTAMP = "timestamp";
     public static final String APP_ID = "appId";
 
+    public static final String JSON_INT_KEY = "obj_intkey";
     /**
      * {@see DbRelation}
      */

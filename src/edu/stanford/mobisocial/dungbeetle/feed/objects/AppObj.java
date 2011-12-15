@@ -29,7 +29,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
-import edu.stanford.mobisocial.dungbeetle.AppCorralActivity;
+import edu.stanford.mobisocial.dungbeetle.AppFinderActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
@@ -168,7 +168,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
             return market;
         } else if (content.has(WEB_URL)) {
             Intent app = new Intent(Intent.ACTION_VIEW, Uri.parse(content.optString(WEB_URL)));
-            app.setClass(context, AppCorralActivity.class);
+            app.setClass(context, AppFinderActivity.class);
             app.putExtra(Musubi.EXTRA_FEED_URI, Feed.uriForName(obj.getFeedName()));
             return app;
         }

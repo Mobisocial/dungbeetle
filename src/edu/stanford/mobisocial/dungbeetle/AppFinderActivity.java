@@ -32,7 +32,11 @@ import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
-public class AppCorralActivity extends MusubiBaseActivity {
+/**
+ * A web-based 'app store' for finding new Musubi apps. Also
+ * contains a partial implementaion of the SocialKit-JS library.
+ */
+public class AppFinderActivity extends MusubiBaseActivity {
     private static final String EXTRA_CURRENT_PAGE = "page";
     private static final String MUSUBI_JS = "Musubi_android_platform";
     private String mCurrentPage;
@@ -89,9 +93,9 @@ public class AppCorralActivity extends MusubiBaseActivity {
             if (scheme.startsWith("socialkit")) {
                 String appUrl = uri.buildUpon().scheme("http").build().toString();
                 MembersSelectedCallout callout = new MembersSelectedCallout(
-                        AppCorralActivity.this, mFeedUri, appUrl);
+                        AppFinderActivity.this, mFeedUri, appUrl);
                 doActivityForResult(callout);
-                return false;
+                return true;
             }
             // Otherwise, the link is not for a page on my site, so launch another Activity that handles URLs
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -254,6 +258,15 @@ public class AppCorralActivity extends MusubiBaseActivity {
         outState.putString(EXTRA_CURRENT_PAGE, mCurrentPage);
     }
 
+    /**
+     * When a webapp is launched, we create an Obj of type "app"
+     * representing the app session. The obj's json has a field
+     * web_url identifying the webapp code, and a "membership"
+     * list of participants. This class manages the picker for
+     * selecting contacts. Once the user has selected participants,
+     * the obj is created and sent to the current feed, and the app is
+     * launched.
+     */
     private class MembersSelectedCallout implements ActivityCallout {
         private final Context mContext;
         private final Uri mFeedUri;
@@ -313,7 +326,7 @@ public class AppCorralActivity extends MusubiBaseActivity {
             JSONArray participantIds = new JSONArray();
             participantIds.put(App.instance().getLocalPersonId());
             for (long id : contactIds) {
-                Maybe<Contact> annoyingContact = Contact.forId(AppCorralActivity.this, id);
+                Maybe<Contact> annoyingContact = Contact.forId(AppFinderActivity.this, id);
                 try {
                     Contact contact = annoyingContact.get();
                     participantIds.put(contact.personId);

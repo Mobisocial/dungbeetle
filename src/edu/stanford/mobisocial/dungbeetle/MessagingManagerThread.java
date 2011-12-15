@@ -51,13 +51,17 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Subscriber;
-import edu.stanford.mobisocial.dungbeetle.obj.handler.AutoActivateObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.IteratorObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.NotificationObjHandler;
 import edu.stanford.mobisocial.dungbeetle.obj.handler.ProfileScanningObjHandler;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
+/**
+ * The main thread for sending and receiving messages from the network.
+ * Also see the Bumblebee project for code relating to network connectivity,
+ * identity management, and message encryption.
+ */
 public class MessagingManagerThread extends Thread {
     public static final String TAG = "MessagingManagerThread";
     public static final boolean DBG = true;
@@ -67,7 +71,6 @@ public class MessagingManagerThread extends Thread {
     private DBHelper mHelper;
     private IdentityProvider mIdent;
     private final MessageDropHandler mMessageDropHandler;
-    private static final String JSON_INT_KEY = "obj_intkey";
 
     public MessagingManagerThread(final Context context) {
         mContext = context;
@@ -207,9 +210,9 @@ public class MessagingManagerThread extends Thread {
             }
 
             Integer intKey = null;
-            if (obj.has(JSON_INT_KEY)) {
-                intKey = obj.getInt(JSON_INT_KEY);
-                obj.remove(JSON_INT_KEY);
+            if (obj.has(DbObjects.JSON_INT_KEY)) {
+                intKey = obj.getInt(DbObjects.JSON_INT_KEY);
+                obj.remove(DbObjects.JSON_INT_KEY);
             }
             objId = mHelper.addObjectByJson(contact.otherwise(Contact.NA()).id, obj, hash, raw,
                     intKey);

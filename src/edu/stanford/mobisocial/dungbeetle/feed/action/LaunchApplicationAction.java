@@ -22,7 +22,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.App;
-import edu.stanford.mobisocial.dungbeetle.AppCorralActivity;
+import edu.stanford.mobisocial.dungbeetle.AppFinderActivity;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
@@ -131,7 +131,7 @@ public class LaunchApplicationAction implements FeedAction {
         builder.setItems(items, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
                 if (item == 0) {
-                    Intent webStore = new Intent(context, AppCorralActivity.class);
+                    Intent webStore = new Intent(context, AppFinderActivity.class);
                     webStore.putExtra(Musubi.EXTRA_FEED_URI, feedUri);
                     context.startActivity(webStore);
                     return;
