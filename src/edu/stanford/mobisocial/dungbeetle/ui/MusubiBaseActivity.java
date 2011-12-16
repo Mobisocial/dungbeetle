@@ -33,7 +33,6 @@ import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.RemoteControlReceiver;
-import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.model.PresenceAwareNotify;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -162,17 +161,6 @@ public abstract class MusubiBaseActivity extends FragmentActivity implements Ins
 
     public void onClickHome(View v) {
         goHome(this);
-    }
-
-    /**
-     * Handle the click on the search button.
-     * 
-     * @param v View
-     * @return void
-     */
-
-    public void onClickSearch(View v) {
-        startActivity(new Intent(getApplicationContext(), SearchActivity.class));
     }
 
     /**

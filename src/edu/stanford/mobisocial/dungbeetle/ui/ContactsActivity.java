@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui;
 import java.util.Collections;
 
@@ -35,14 +55,12 @@ import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
-import edu.stanford.mobisocial.dungbeetle.SearchActivity;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
-import edu.stanford.mobisocial.dungbeetle.util.ContactPickerCallout;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 
@@ -79,12 +97,6 @@ public class ContactsActivity extends ListActivity implements OnItemClickListene
     public void onClickHome (View v)
     {
         goHome (this);
-    }
-
-
-    public void onClickSearch (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
     }
 
     public void onClickAbout (View v)

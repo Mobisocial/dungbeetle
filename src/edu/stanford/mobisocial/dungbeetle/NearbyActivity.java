@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 package edu.stanford.mobisocial.dungbeetle;
 
@@ -66,19 +85,22 @@ import edu.stanford.mobisocial.dungbeetle.feed.action.LaunchApplicationAction;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders;
 import edu.stanford.mobisocial.dungbeetle.group_providers.GroupProviders.GroupProvider;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
-import edu.stanford.mobisocial.dungbeetle.model.Feed;
-import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.Contact.CursorUser;
 import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.social.FriendRequest;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.ActivityCallout;
 import edu.stanford.mobisocial.dungbeetle.util.BluetoothBeacon;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
-import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
+/**
+ * Shows groups and users that have been found nearby.
+ */
 public class NearbyActivity extends ListActivity implements
         AdapterView.OnItemLongClickListener, InstrumentedActivity {
     private static final String TAG = "Nearby";

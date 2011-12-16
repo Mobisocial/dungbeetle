@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +28,6 @@ import mobisocial.socialkit.obj.MemObj;
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.util.Log;
 import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
@@ -35,9 +54,7 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.PictureObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.RemoteIntentObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.SubscribeReqObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.UnknownObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VideoObj;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.VoiceObj;
@@ -65,7 +82,6 @@ public final class DbObjects {
         objs.add(new AppObj());
         objs.add(new AppStateObj());
         objs.add(new AppReferenceObj());
-		objs.add(new SubscribeReqObj());
 		objs.add(new IMObj());
 		objs.add(new InviteToWebSessionObj());
         objs.add(new InviteToSharedAppFeedObj());
@@ -87,7 +103,6 @@ public final class DbObjects {
         objs.add(new FeedAnchorObj());
         objs.add(new DeleteObj());
         objs.add(new LikeObj());
-        objs.add(new RemoteIntentObj());
     }
 
 	public static FeedRenderer getFeedRenderer(String type) {

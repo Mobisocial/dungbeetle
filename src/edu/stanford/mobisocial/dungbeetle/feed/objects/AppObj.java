@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
 import java.lang.ref.SoftReference;
@@ -43,6 +63,12 @@ import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
+/**
+ * Entry point for application sessions. Typically, an AppObj is created by
+ * Musubi, but "owned" by a third-party application. That application can
+ * attach application data
+ *
+ */
 public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     private static final String TAG = "musubi-appObj";
     private static final boolean DBG = false;
