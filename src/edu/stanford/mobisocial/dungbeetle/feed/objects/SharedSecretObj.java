@@ -29,11 +29,8 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
-<<<<<<< HEAD
 import android.util.Pair;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-=======
->>>>>>> master
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
