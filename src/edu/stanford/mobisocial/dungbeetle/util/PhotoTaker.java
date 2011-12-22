@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.util;
 
 import java.io.ByteArrayOutputStream;
@@ -58,13 +78,12 @@ public class PhotoTaker implements ActivityCallout {
 			path.mkdir();
 		}
 
-		file = new File(path, "image.tmp");
+		file = getTempFile(mContext);
 		try {
 			BitmapFactory.Options options = new BitmapFactory.Options();
 			options.inJustDecodeBounds = true;
 			BitmapFactory.decodeStream(new FileInputStream(file), null, options);
-			
-			
+
 			int targetSize = mSize;
 			int xScale = (options.outWidth + targetSize - 1) / targetSize;
 			int yScale = (options.outHeight + targetSize - 1) / targetSize;
@@ -114,14 +133,14 @@ public class PhotoTaker implements ActivityCallout {
 			resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
 			byte[] data = baos.toByteArray();
 
-			mResultHandler.onResult(data);
+			mResultHandler.onResult(Uri.fromFile(file), data);
 		} catch (Exception e) {
 			Log.wtf(TAG, "failed snapshot exception", e);
 		}
 	}
 
 	public interface ResultHandler {
-		public void onResult(byte[] data);
+		public void onResult(Uri imageUri, byte[] thumbnail);
 	}
 
 	private static File getTempFile(Context context) {

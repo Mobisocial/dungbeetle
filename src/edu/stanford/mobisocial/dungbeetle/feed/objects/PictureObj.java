@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,12 +77,13 @@ public class PictureObj extends DbEntryHandler
      * This does NOT do any SCALING!
      */
     public static DbObject from(byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(data));
+        return new DbObject(TYPE, new JSONObject(), data);
     }
 
     public static DbObject from(JSONObject base, byte[] data) {
-        return new DbObject(TYPE, PictureObj.json(base, data));
+        return new DbObject(TYPE, base, data);
     }
+
 	@Override
 	public Pair<JSONObject, byte[]> splitRaw(JSONObject json) {
 		byte[] raw = FastBase64.decode(json.optString(DATA));
@@ -123,35 +144,24 @@ public class PictureObj extends DbEntryHandler
 
         JSONObject base = new JSONObject();
         if (ContentCorral.CONTENT_CORRAL_ENABLED) {
-            String localIp = ContentCorral.getLocalIpAddress();
-            if (localIp != null) {
-                try {
-                    // TODO: Security breach.
-                    // Send to trusted users only.
-                    base.put(Contact.ATTR_LAN_IP, localIp);
-                    base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
-                    base.put(CorralClient.OBJ_MIME_TYPE, cr.getType(imageUri));
-                } catch (JSONException e) {
-                    Log.e(TAG, "impossible json error possible!");
+            try {
+                String type = cr.getType(imageUri);
+                if (type == null) {
+                    type = "image/jpeg";
                 }
+                base.put(CorralClient.OBJ_LOCAL_URI, imageUri.toString());
+                base.put(CorralClient.OBJ_MIME_TYPE, type);
+                String localIp = ContentCorral.getLocalIpAddress();
+                if (localIp != null) {
+                    base.put(Contact.ATTR_LAN_IP, localIp);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "impossible json error possible!");
             }
         }
         return from(base, data);
     }
 
-    public static JSONObject json(byte[] data){
-        JSONObject obj = new JSONObject();
-        return json(obj, data);
-    }
-
-    public static JSONObject json(JSONObject base, byte[] data){
-        String encoded = FastBase64.encodeToString(data);
-        try{
-            base.put("data", encoded);
-        }catch(JSONException e){}
-        return base;
-    }
-	
 	public void render(Context context, ViewGroup frame, Obj obj, boolean allowInteractions) {
 	    JSONObject content = obj.getJson();
         byte[] raw = obj.getRaw();
@@ -164,14 +174,17 @@ public class PictureObj extends DbEntryHandler
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                                       LinearLayout.LayoutParams.WRAP_CONTENT,
                                       LinearLayout.LayoutParams.WRAP_CONTENT));
-        BitmapFactory bf = new BitmapFactory();
-        imageView.setImageBitmap(bf.decodeByteArray(raw, 0, raw.length));
+        imageView.setImageBitmap(BitmapFactory.decodeByteArray(raw, 0, raw.length));
 //        App.instance().objectImages.lazyLoadImage(raw.hashCode(), raw, imageView);
         frame.addView(imageView);
 	}
 	public Pair<JSONObject, byte[]> handleUnprocessed(Context context,
 			JSONObject msg) {
-        byte[] bytes = FastBase64.decode(msg.optString(DATA));
+	    if (!msg.has(DATA)) {
+	            return null;
+	    }
+
+	    byte[] bytes = FastBase64.decode(msg.optString(DATA));
         msg.remove(DATA);
 		return new Pair<JSONObject, byte[]>(msg, bytes);
 	}

@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	  package="edu.stanford.mobisocial.dungbeetle"
-	  android:versionCode="78"
-	  android:versionName="0.3.8"
+	  android:versionCode="83"
+	  android:versionName="0.4.3"
 	  android:installLocation="auto"
 	  >
     <uses-sdk android:minSdkVersion="6" android:targetSdkVersion="12" />
 
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <uses-permission android:name="android.permission.READ_CONTACTS" />
   <uses-permission android:name="android.permission.GET_ACCOUNTS" />
   <uses-permission android:name="android.permission.INTERNET" />
@@ -20,8 +22,10 @@
   <uses-permission android:name="android.permission.RECORD_AUDIO" />
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-  <!--<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-  <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />-->
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+  <uses-permission android:name="android.permission.USE_CREDENTIALS"></uses-permission>
+  <uses-permission android:name="android.permission.MANAGE_ACCOUNTS"></uses-permission>
+  <!--<uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />-->
   
   <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
@@ -69,12 +73,6 @@
     
     <activity android:name=".ui.FeedThumberActivity" android:label="@string/title_latest" />
     <activity android:name=".ui.FeedHistoryActivity" android:label="@string/title_latest" />
-    
-	<receiver android:name="Publisher">
-		<intent-filter>
-			<action android:name="mobisocial.db.action.PUBLISH" />
-		</intent-filter>
-	</receiver>
 
     <activity android:name="edu.stanford.mobisocial.dungbeetle.StatusUpdateActivity"
 	      android:label="Dungbeetle Status">
@@ -198,15 +196,11 @@
             android:label="@string/title_settings"
             
             />
-      <activity android:name=".NearbyGroupsActivity"
-            android:theme="@style/Theme.D1"
-            android:label="@string/title_nearby"
-            android:noHistory="true"
-            />
 
       <activity android:name=".NearbyActivity"
             android:theme="@style/Theme.D1"
             android:label="@string/title_nearby"
+            android:windowSoftInputMode="stateHidden"
             />
 
     <activity
@@ -263,17 +257,10 @@
 	    </intent-filter>
     </activity>
      
-
-<!-- Insecure.
-   <receiver android:name="edu.stanford.mobisocial.dungbeetle.objects.ActivityPullObj">
-     <intent-filter>
-   	   <action android:name="mobisocial.intent.action.SET_NDEF" />
-   	 </intent-filter>
-   </receiver>
-   -->
-
     <activity 
     	android:name=".ui.ContactsActivity" />
+    <activity
+        android:name=".util.AddressBookPicker" />
 
     <activity 
     	android:name=".PickContactsActivity"
@@ -321,7 +308,7 @@
     
     </activity>
     
-    <activity android:name=".AppCorralActivity"
+    <activity android:name=".AppFinderActivity"
 	      android:label="@string/app_store_name">
     </activity>
     
@@ -349,5 +336,15 @@
     </intent-filter>
 </activity>
 
+<!--  Wizard Activities --> 
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.WelcomeActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.AccountLinkerActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.SetProfileActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.SetProfileInstructionsActivity"/>
+<activity android:name="edu.stanford.mobisocial.dungbeetle.ui.wizard.ChangePictureActivity"/>
+    
+<!--  OAuth Activities -->
+
+<activity android:name="edu.stanford.mobisocial.dungbeetle.google.OAuthGoogle"/>
   </application>
 </manifest> 

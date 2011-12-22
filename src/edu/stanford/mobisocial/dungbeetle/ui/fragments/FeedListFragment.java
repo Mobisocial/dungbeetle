@@ -1,5 +1,26 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
+import mobisocial.socialkit.musubi.DbObj;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -21,7 +42,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
@@ -29,6 +49,8 @@ import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe;
+import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
 /**
  * Displays a list of all user-accessible threads (feeds).
@@ -92,38 +114,34 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
         @Override
         public void bindView(final View v, final Context context, final Cursor c) {
-            String[] cols = c.getColumnNames();
-            int feedCol = -1;
-            // There are two selected 'feed_name' columns, one can be null.
-            for (int i = 0; i < cols.length; i++) {
-                if (cols[i].equals(DbObject.FEED_NAME)) {
-                    feedCol = i;
-                    break;
-                }
-            }
-
-            String feedName = c.getString(feedCol);
+            String feedName = c.getString(c.getColumnIndexOrThrow(Group.FEED_NAME));
             String groupName = c.getString(c.getColumnIndexOrThrow(Group.NAME));
-            int numUnread = c.getInt(c.getColumnIndex(Group.NUM_UNREAD));
+            int numUnread = c.getInt(c.getColumnIndexOrThrow(Group.NUM_UNREAD));
 
             TextView labelView = (TextView) v.findViewById(R.id.feed_label);
             DbObject.bindView(v, context, c, false);
+
+            Long groupId = c.getLong(c.getColumnIndex("group_id"));
+            Maybe<Group> mg = Group.forId(context, groupId);
             v.setTag(R.id.feed_label, feedName);
             if (groupName != null) {
-                Group g = new Group(c);
-                v.setTag(R.id.group_name, g.name);
-                v.setTag(R.id.group_id, g.id);
-                v.setTag(R.id.group_uri, g.dynUpdateUri);
-                if (numUnread > 0) {
-                    labelView.setText(g.name + " (" + numUnread + " unread)");
-                }
-                else {
-                	labelView.setText(g.name);
+                try {
+                    Group g = mg.get();
+                    v.setTag(R.id.group_name, g.name);
+                    v.setTag(R.id.group_id, g.id);
+                    v.setTag(R.id.group_uri, g.dynUpdateUri);
+                    if (numUnread > 0) {
+                        labelView.setText(g.name + " (" + numUnread + " unread)");
+                    } else {
+                        labelView.setText(g.name);
+                    }
+                } catch (NoValError e) {
+                    Log.w(TAG, "maybe... not");
                 }
             } else {
-            	if (numUnread > 0) {
-            		labelView.setText(feedName + " (" + numUnread + " unread)");
-            	}
+                if (numUnread > 0) {
+                    labelView.setText(feedName + " (" + numUnread + " unread)");
+                }
             	else {
             		labelView.setText(feedName);
             	}
@@ -203,13 +221,14 @@ public class FeedListFragment extends ListFragment implements LoaderManager.Load
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Uri feedlist = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         if (mLoader == null) {
-            mLoader = new CursorLoader(getActivity(), feedlist, 
+            mLoader = new CursorLoader(getActivity(), Feed.feedListUri(), 
         		new String[] { 
-            		DbObject.TABLE + "." + DbObject._ID, //must be in position 0 for bind view
-            		DbObject.TABLE + "." + DbObject.FEED_NAME,
-                    Group.TABLE + ".*"
+                    DbObject.TABLE + "." + DbObj.COL_ID + " as " + DbObj.COL_ID,
+                    Group.TABLE + "." + Group.FEED_NAME + " as " + Group.FEED_NAME,
+                    Group.TABLE + "." + Group.NAME + " as " + Group.NAME,
+                    Group.TABLE + "." + Group.NUM_UNREAD + " as " + Group.NUM_UNREAD,
+                    Group.TABLE + "." + Group._ID + " as group_id"
             	}, 
         		getFeedObjectClause(), null, null);
         }

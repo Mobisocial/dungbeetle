@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.model;
 
 import java.nio.ByteBuffer;
@@ -9,7 +29,7 @@ import java.util.List;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.MemObj;
+import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -71,6 +91,7 @@ public class DbObject implements Obj {
     public static final String DESTINATION = DbObj.COL_DESTINATION;
     public static final String JSON = DbObj.COL_JSON;
     public static final String TIMESTAMP = DbObj.COL_TIMESTAMP;
+    public static final String LAST_MODIFIED_TIMESTAMP = DbObj.COL_LAST_MODIFIED_TIMESTAMP;
     public static final String APP_ID = DbObj.COL_APP_ID;
     public static final String SENT = DbObj.COL_SENT;
 	public static final String ENCODED = DbObj.COL_ENCODED;
@@ -157,142 +178,130 @@ public class DbObject implements Obj {
     /**
      * @param v the view to bind
      * @param context standard activity context
-     * @param c the cursor source for the object in the db object table
-     * @param contactCache prevents copious lookups of contact information from the sqlite database
-     * @param allowInteractions controls whether the bound view is allowed to intercept touch events and do its own processing.
+     * @param c the cursor source for the object in the db object table.
+     * Must include _id in the projection.
+     * 
+     * @param allowInteractions controls whether the bound view is
+     * allowed to intercept touch events and do its own processing.
      */
-    public static void bindView(View v, final Context context, Cursor c, boolean allowInteractions) {
-    	//there is probably a utility or should be one that does this
-        long objId = c.getLong(0);
-    	Cursor cursor = context.getContentResolver().query(OBJ_URI, null,
-            	DbObject._ID + " = ?", new String[] {String.valueOf(objId)}, null);
-
+    public static void bindView(View v, final Context context, Cursor cursor, boolean allowInteractions) {
     	TextView nameText = (TextView) v.findViewById(R.id.name_text);
         ViewGroup frame = (ViewGroup)v.findViewById(R.id.object_content);
         frame.removeAllViews();
-    	if(cursor == null) {
-    		nameText.setText("Failed to access database.");
-    		Log.wtf("DbObject", "cursor was null for bindView of DbObject");
-    		return;
-    	}
-    	try {
-	        if(!cursor.moveToFirst()) {
-	    		nameText.setText("Object not found?!.");
-	        	return;
-	        }
 
-	        Long contactId = cursor.getLong(cursor.getColumnIndexOrThrow(CONTACT_ID));
-	        Long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(TIMESTAMP));
-	        Long hash = cursor.getLong(cursor.getColumnIndexOrThrow(HASH));
-	        short deleted = cursor.getShort(cursor.getColumnIndexOrThrow(DELETED));
-	        String feedName = cursor.getString(cursor.getColumnIndexOrThrow(FEED_NAME));
-	        String type = cursor.getString(cursor.getColumnIndexOrThrow(TYPE));
-	        Date date = new Date(timestamp);
-        	Contact contact = Helpers.getContact(context, contactId);
-        	if(contact == null) {
-        		nameText.setText("Message from unknown contact.");
-        		return;
-        	}
-            nameText.setText(contact.name);
+        // make sure we have all the columns we need
+        Long objId = cursor.getLong(cursor.getColumnIndexOrThrow(DbObj.COL_ID));
+        String[] projection = null;
+        String selection = DbObj.COL_ID + " = ?";
+        String[] selectionArgs = new String[] { Long.toString(objId) };
+        String sortOrder = null;
+        Cursor c = context.getContentResolver().query(DbObj.OBJ_URI, projection, selection, selectionArgs, sortOrder);
+        if (!c.moveToFirst()) {
+            Log.w(TAG, "could not find obj " + objId);
+            c.close();
+            return;
+        }
+        DbObj obj = App.instance().getMusubi().objForCursor(c);
+        if (obj == null) {
+            nameText.setText("Failed to access database.");
+            Log.e("DbObject", "cursor was null for bindView of DbObject");
+            return;
+        }
+        DbUser sender = obj.getSender();
+        Long timestamp = c.getLong(c.getColumnIndexOrThrow(DbObj.COL_TIMESTAMP));
+        Long hash = obj.getHash();
+        short deleted = c.getShort(c.getColumnIndexOrThrow(DELETED));
+        String feedName = obj.getFeedName();
+        String type = obj.getType();
+        Date date = new Date(timestamp);
+        c.close();
+        c = null;
 
-            final ImageView icon = (ImageView)v.findViewById(R.id.icon);
-            if (sViewProfileAction == null) {
-                sViewProfileAction = new OnClickViewProfile((Activity)context);
-            }
-            icon.setTag(contactId);
-            if (allowInteractions) {
-                icon.setOnClickListener(sViewProfileAction);
-                v.setTag(objId);
-            }
-            icon.setImageBitmap(contact.picture);
+        if (sender == null) {
+            nameText.setText("Message from unknown contact.");
+            return;
+        }
+        nameText.setText(sender.getName());
 
-            if (deleted == 1) {
-                v.setBackgroundColor(sDeletedColor);
+        final ImageView icon = (ImageView)v.findViewById(R.id.icon);
+        if (sViewProfileAction == null) {
+            sViewProfileAction = new OnClickViewProfile((Activity)context);
+        }
+        icon.setTag(sender.getLocalId());
+        if (allowInteractions) {
+            icon.setOnClickListener(sViewProfileAction);
+            v.setTag(objId);
+        }
+        icon.setImageBitmap(sender.getPicture());
+
+        if (deleted == 1) {
+            v.setBackgroundColor(sDeletedColor);
+        } else {
+            v.setBackgroundColor(Color.TRANSPARENT);
+        }
+
+        TextView timeText = (TextView)v.findViewById(R.id.time_text);
+        timeText.setText(RelativeDate.getRelativeDate(date));
+
+        frame.setTag(objId); // TODO: error prone! This is database id
+        frame.setTag(R.id.object_entry, cursor.getPosition()); // this is cursor id
+        FeedRenderer renderer = DbObjects.getFeedRenderer(type);
+		if(renderer != null) {
+			renderer.render(context, frame, obj, allowInteractions);
+		}
+
+        if (!allowInteractions) {
+            v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
+            v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
+        } else {
+            if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
+                v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
+                v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
             } else {
-                v.setBackgroundColor(Color.TRANSPARENT);
-            }
+                ImageView attachmentCountButton = (ImageView)v.findViewById(R.id.obj_attachments_icon);
+                TextView attachmentCountText = (TextView)v.findViewById(R.id.obj_attachments);
+                attachmentCountButton.setVisibility(View.VISIBLE);
 
-            try {
-                Obj renderingObj;
                 if (hash == 0) {
-                    String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(JSON));
-                    JSONObject json = new JSONObject(jsonSrc);
-                    byte[] raw = cursor.getBlob(cursor.getColumnIndexOrThrow(RAW));
-                    renderingObj = new MemObj(type, json, raw);
+                    attachmentCountButton.setVisibility(View.GONE);
                 } else {
-                    renderingObj = App.instance().getMusubi().objForCursor(cursor);
-                }
-
-                TextView timeText = (TextView)v.findViewById(R.id.time_text);
-                timeText.setText(RelativeDate.getRelativeDate(date));
-
-                frame.setTag(objId); // TODO: error prone! This is database id
-                frame.setTag(R.id.object_entry, c.getPosition()); // this is cursor id
-                FeedRenderer renderer = DbObjects.getFeedRenderer(type);
-        		if(renderer != null) {
-        			renderer.render(context, frame, renderingObj, allowInteractions);
-        		}
-
-                if (!allowInteractions) {
-                    v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
-                    v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                } else {
-                    if (!MusubiBaseActivity.isDeveloperModeEnabled(context)){
-                        v.findViewById(R.id.obj_attachments_icon).setVisibility(View.GONE);
-                        v.findViewById(R.id.obj_attachments).setVisibility(View.GONE);
-                    } else {
-                        ImageView attachmentCountButton = (ImageView)v.findViewById(R.id.obj_attachments_icon);
-                        TextView attachmentCountText = (TextView)v.findViewById(R.id.obj_attachments);
-                        attachmentCountButton.setVisibility(View.VISIBLE);
-
-                        if (hash == 0) {
-                            attachmentCountButton.setVisibility(View.GONE);
-                        } else {
-                            //int color = DbObject.colorFor(hash);
-                            boolean selfPost = false;
-                            DBHelper helper = new DBHelper(context);
-                            try {
-                                Cursor attachments = ((DbObj)renderingObj).getSubfeed()
-                                        .query("type=?", new String[] { LikeObj.TYPE });
-	                            try {
-		                            attachmentCountText.setText("+" + attachments.getCount());
-		                            
-		                            if(attachments.moveToFirst()) {
-			                            while (!attachments.isAfterLast()) {
-			                            	if (attachments.getInt(attachments.getColumnIndex(CONTACT_ID)) == -666) {
-			                            		selfPost = true;
-			                            		break;
-			                            	}
-			                            	attachments.moveToNext();
-			                            	
-			                            }
-		                            }
-	                            } finally {
-	                            	attachments.close();
+                    //int color = DbObject.colorFor(hash);
+                    boolean selfPost = false;
+                    DBHelper helper = new DBHelper(context);
+                    try {
+                        Cursor attachments = obj.getSubfeed()
+                                .query("type=?", new String[] { LikeObj.TYPE });
+                        try {
+                            attachmentCountText.setText("+" + attachments.getCount());
+                            
+                            if(attachments.moveToFirst()) {
+	                            while (!attachments.isAfterLast()) {
+	                            	if (attachments.getInt(attachments.getColumnIndex(CONTACT_ID)) == -666) {
+	                            		selfPost = true;
+	                            		break;
+	                            	}
+	                            	attachments.moveToNext();
+	                            	
 	                            }
-                            } finally {
-	                            helper.close();
                             }
-                            if (selfPost) {
-                            	attachmentCountButton.setImageResource(R.drawable.ic_menu_love_red);
-                            }
-                            else {
-                            	attachmentCountButton.setImageResource(R.drawable.ic_menu_love);
-                            }
-                            attachmentCountText.setTag(R.id.object_entry, hash);
-                            attachmentCountText.setTag(R.id.feed_label, Feed.uriForName(feedName));
-                            attachmentCountText.setOnClickListener(LikeListener.getInstance(context));
+                        } finally {
+                        	attachments.close();
                         }
+                    } finally {
+                        helper.close();
                     }
+                    if (selfPost) {
+                    	attachmentCountButton.setImageResource(R.drawable.ic_menu_love_red);
+                    }
+                    else {
+                    	attachmentCountButton.setImageResource(R.drawable.ic_menu_love);
+                    }
+                    attachmentCountText.setTag(R.id.object_entry, hash);
+                    attachmentCountText.setTag(R.id.feed_label, Feed.uriForName(feedName));
+                    attachmentCountText.setOnClickListener(LikeListener.getInstance(context));
                 }
-            } catch (JSONException e) {
-        		nameText.setText("Failed to process JSON.");
-                Log.e("db", "error opening json", e);
             }
-       	} finally {
-    		cursor.close();
-    	}
-
+        }
     }
 
     private static int colorFor(Long hash) {
@@ -377,7 +386,7 @@ public class DbObject implements Obj {
             long objId = (Long)tag;
 
             SignedObj obj = App.instance().getMusubi().objForId(objId);
-            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getJson());
+            if (HomeActivity.DBG) Log.i(TAG, "Clicked object: " + obj.getRaw() + ", " + obj.getJson());
             Activator activator = DbObjects.getActivator(obj.getType());
             activator.activate(mContext, obj);
         }

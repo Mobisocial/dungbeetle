@@ -1,10 +1,27 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.model;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import mobisocial.socialkit.User;
-import mobisocial.socialkit.musubi.DbUser;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -20,6 +37,10 @@ public class DbContactAttributes /* extends DbTable */ {
     public static final String ATTR_NAME = "attr_name";
     public static final String ATTR_VALUE = "attr_value";
 
+    /*
+     * Table definitions:
+     */
+
     public static final String[] getColumnNames() {
         return new String[] { _ID, CONTACT_ID, ATTR_NAME, ATTR_VALUE };
     }
@@ -27,6 +48,10 @@ public class DbContactAttributes /* extends DbTable */ {
     public static final String[] getTypeDefs() {
         return new String[] { "INTEGER PRIMARY KEY", "INTEGER", "TEXT", "TEXT" };
     }
+
+    /*
+     * Utilities:
+     */
 
     public static void update(Context context, long contactId, String attr, String value) {
         ContentValues values = new ContentValues();
@@ -97,7 +122,7 @@ public class DbContactAttributes /* extends DbTable */ {
             }
             List<CursorUser> users = new ArrayList<CursorUser>(c.getCount());
             while (true) {
-                users.add(Contact.userFromCursor(c));
+                users.add(Contact.userFromCursor(context, c));
                 if (!c.moveToNext()) {
                     break;
                 }

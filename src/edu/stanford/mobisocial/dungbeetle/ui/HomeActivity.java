@@ -1,18 +1,30 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
 import mobisocial.nfc.NdefFactory;
 import mobisocial.nfc.NdefHandler;
 import mobisocial.nfc.Nfc;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,15 +40,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleService;
 import edu.stanford.mobisocial.dungbeetle.GroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleGroupSessionActivity;
 import edu.stanford.mobisocial.dungbeetle.HandleNfcContact;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.NearbyActivity;
-import edu.stanford.mobisocial.dungbeetle.NearbyGroupsActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.SettingsActivity;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.StatusObj;
@@ -101,6 +110,7 @@ public class HomeActivity extends MusubiBaseActivity {
 
     	boolean firstLoad = settings.getBoolean("firstLoad", true);
         if (firstLoad) {
+        	/*
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Thank you for trying out Stanford Mobisocial's new software Musubi! Would you like to actively participate in our beta test? Press yes to receive e-mail updates about our progress.")
                 .setCancelable(false)
@@ -141,11 +151,23 @@ public class HomeActivity extends MusubiBaseActivity {
                 });
             AlertDialog alert = builder.create();
             alert.show();
+            */
+        	
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("firstLoad", false);
             editor.putString("ringtone", "content://media/internal/audio/media/14");
             editor.commit();
+            
+            
         }
+        
+        /*if(true) {
+
+            //Intent wizard = new Intent(HomeActivity.this, WelcomeActivity.class);
+        	Intent wizard = new Intent(HomeActivity.this, OAuthGoogle.class);
+            HomeActivity.this.startActivity(wizard);
+        }*/
+        
         if (settings.getString("ringtone", null) == null) {
 
         	RingtoneManager ringtoneManager = new RingtoneManager(this);
@@ -266,9 +288,15 @@ public class HomeActivity extends MusubiBaseActivity {
         
         if(uri.getScheme().equals(SHARE_SCHEME)
                 || uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN)) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.setClass(this, HandleNfcContact.class);
-            startActivity(intent);
+            long contactId = FriendRequest.getExistingContactId(this, uri);
+            if (contactId != -1) {
+                Contact.view(this, contactId);
+                return;
+            } else {
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                intent.setClass(this, HandleNfcContact.class);
+                startActivity(intent);
+            }
         } else if(uri.getScheme().equals(GROUP_SESSION_SCHEME)) {
             Intent intent = new Intent().setClass(this, HandleGroupSessionActivity.class);
             intent.setData(uri);

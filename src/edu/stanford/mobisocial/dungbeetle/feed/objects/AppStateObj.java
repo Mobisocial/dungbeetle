@@ -1,14 +1,35 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -16,7 +37,6 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,10 +47,10 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
@@ -41,7 +61,7 @@ import edu.stanford.mobisocial.dungbeetle.model.Feed;
 /**
  * A snapshot of an application's state.
  */
-public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activator {
+public class AppStateObj extends DbEntryHandler implements FeedRenderer {
 	private static final String TAG = "AppStateObj";
 	private static final boolean DBG = false;
 
@@ -99,11 +119,23 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
         return obj;
     }
 
+
+
     @Override
-    public void handleDirectMessage(Context context, Contact from, JSONObject obj) {
-
-    }
-
+    public boolean handleObjFromNetwork(Context context, Contact contact, JSONObject obj) {
+    	DBHelper helper = new DBHelper(context);
+    	if (obj.has(DbObjects.TARGET_HASH)) {
+            long hashA = obj.optLong(DbObjects.TARGET_HASH);
+            long idA = helper.objIdForHash(hashA);
+            
+            if (idA == -1) {
+                Log.e(TAG, "No objId found for hash " + hashA);
+            } else {
+                helper.updateParentLastModified(idA);
+            }
+        }
+    	return true;
+	}
 	public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
 	    JSONObject content = obj.getJson();
 	    // TODO: hack to show object history in app feeds
@@ -167,19 +199,6 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             frame.addView(valueTV);
         }
     }
-
-	@Override
-	public void activate(Context context, SignedObj obj) {
-	    if (DBG) Log.d(TAG, "activating " + obj.getJson() + "; hash=" + obj.getHash());
-	    Intent launch = getLaunchIntent(context, obj);
-
-	    // TODO: Temporary, while transitioning to AppObj
-        launch.putExtra("obj", obj.getJson().toString());
-	    if (!(context instanceof Activity)) {
-	        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    }
-	    context.startActivity(launch);
-	}
 
 	public static Intent getLaunchIntent(Context context, SignedObj obj) {
 	    JSONObject content = obj.getJson();
@@ -304,5 +323,23 @@ public class AppStateObj extends DbEntryHandler implements FeedRenderer, Activat
             }
             lv.performItemClick(frame, position, 0);
         }
+    }
+
+    @Override
+    public boolean doNotification(Context context, DbObj obj) {
+        JSONObject json = obj.getJson();
+        if (json == null || !json.has("membership")) {
+            return true;
+        }
+        try {
+            String myId = App.instance().getLocalPersonId();
+            JSONArray arr = json.getJSONArray("membership");
+            for (int i = 0; i < arr.length(); i++) {
+                if (myId.equals(arr.getString(i))) {
+                    return true;
+                }
+            }
+        } catch (JSONException e) {}
+        return false;
     }
 }

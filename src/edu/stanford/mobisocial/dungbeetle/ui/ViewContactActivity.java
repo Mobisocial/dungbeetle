@@ -1,7 +1,29 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import mobisocial.socialkit.Obj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,24 +53,22 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Filterable;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.PresenceObj;
-import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfilePictureObj;
-import edu.stanford.mobisocial.dungbeetle.feed.view.FilterView;
+import edu.stanford.mobisocial.dungbeetle.feed.objects.ProfileObj;
 import edu.stanford.mobisocial.dungbeetle.feed.view.PresenceView;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
 import edu.stanford.mobisocial.dungbeetle.model.Presence;
+import edu.stanford.mobisocial.dungbeetle.ui.fragments.AppsViewFragment;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedViewFragment;
 import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
@@ -128,11 +148,15 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             args.putParcelable(FeedViewFragment.ARG_FEED_URI, feedUri);
             doTitleBar(this, title);
             mLabels.add("Feed");
+            mLabels.add("Apps");
             mLabels.add("Profile");
             Fragment feedView = new FeedViewFragment();
             feedView.setArguments(args);
+            Fragment appView = new AppsViewFragment();
+            appView.setArguments(args);
 
             mFragments.add(feedView);
+            mFragments.add(appView);
             mFragments.add(profileFragment);
 
             if (MusubiBaseActivity.getInstance().isDeveloperModeEnabled()) {
@@ -140,11 +164,6 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 sharingView.getFragment().setArguments(args);
                 mLabels.add(sharingView.getName());
                 mFragments.add(sharingView.getFragment());
-                
-                FeedView filteringView = new FilterView();
-                filteringView.getFragment().setArguments(args);
-                mLabels.add(filteringView.getName());
-                mFragments.add(filteringView.getFragment());
             }
         }
 
@@ -293,7 +312,8 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 	                    String about = mProfileAbout.getText().toString();
 	                    MyInfo.setMyName(mHelper, name);
 	                    MyInfo.setMyAbout(mHelper, about);
-	                    Helpers.updateProfile(getActivity(), name, about);
+	                    Obj obj = ProfileObj.forLocalUser(getActivity(), name, about);
+	                    Helpers.sendToEveryone(getActivity(), obj);
 	                    Toast.makeText(getActivity(), "Profile updated.", Toast.LENGTH_SHORT).show();
 	                }
 	            });
@@ -346,11 +366,11 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
             	mIdent.close();
             }
             if (mContactId == Contact.MY_ID) {
-            	if(c.picture == null) {
-            		mIcon.setImageResource(R.drawable.anonymous);        		
-            	} else {
-                	mIcon.setImageBitmap(c.picture);
-            	}
+                if (c.picture == null) {
+                    mIcon.setImageResource(R.drawable.anonymous);
+                } else {
+                    mIcon.setImageBitmap(c.picture);
+                }
                 mIcon.setOnClickListener(new OnClickListener() {
                     public void onClick(View v) {
                         Toast.makeText(mActivity, "Loading camera...", Toast.LENGTH_SHORT)
@@ -358,7 +378,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                         ((InstrumentedActivity) mActivity).doActivityForResult(new PhotoTaker(
                         		mActivity, new PhotoTaker.ResultHandler() {
                                     @Override
-                                    public void onResult(byte[] data) {
+                                    public void onResult(Uri imageUri, byte[] data) {
                                         Helpers.updatePicture(mActivity, data);
                                         // updateProfileToGroups();
                                     }
@@ -385,31 +405,24 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
         		return;
             Spinner presence = (Spinner) view.findViewById(R.id.presence);
             if (mContactId == Contact.MY_ID) {
-                Cursor c = getActivity().getContentResolver().query(
-                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/friend/head"), null,
-                        DbObject.TYPE + "= ? AND " + DbObject.CONTACT_ID + "= ?", new String[] {
-                                "profile", Long.toString(mContactId)
-                        }, DbObject.TIMESTAMP + " DESC");
+                final DBHelper mHelper = DBHelper.getGlobal(mActivity);
+                final DBIdentityProvider mIdent = new DBIdentityProvider(mHelper);
+                Contact c = null;
                 try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                    DBHelper mHelper = DBHelper.getGlobal(getActivity());
-	                    IdentityProvider mIdent = new DBIdentityProvider(mHelper);
-	                    try {
-	                        JSONObject obj = new JSONObject(jsonSrc);
-	                        String name = obj.optString("name");
-	                        String about = obj.optString("about");
-	                        mProfileName.setText(name);
-	                        mProfileEmail.setText(mIdent.userEmail());
-	                        mProfileAbout.setText(about);
-	                    } catch (JSONException e) {
-	                    } finally {
-	                    	mIdent.close();
-	                    	mHelper.close();
-	                    }
-	                }
+                    c = mIdent.contactForUser();
                 } finally {
-                	c.close();
+                    mHelper.close();
+                    mIdent.close();
+                }
+
+                try {
+                    mProfileName.setText(c.name);
+                    mProfileEmail.setText(c.email);
+                    mProfileAbout.setText(c.status);
+                    mIcon.setImageBitmap(c.picture);
+                } finally {
+                    mIdent.close();
+                    mHelper.close();
                 }
 
                 presence.setOnItemSelectedListener(new PresenceOnItemSelectedListener(getActivity()));
@@ -418,14 +431,14 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 presence.setAdapter(adapter);
 
-                c = getActivity().getContentResolver().query(
+                Cursor cursor = getActivity().getContentResolver().query(
                         Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"), null,
                         DbObject.TYPE + "=?", new String[] {
                             PresenceObj.TYPE
                         }, DbObject.TIMESTAMP + " DESC");
                 try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
+	                if (cursor.moveToFirst()) {
+	                    String jsonSrc = cursor.getString(cursor.getColumnIndexOrThrow(DbObject.JSON));
 	                    try {
 	                        JSONObject obj = new JSONObject(jsonSrc);
 	                        int myPresence = Integer.parseInt(obj.optString("presence"));
@@ -434,29 +447,7 @@ public class ViewContactActivity extends MusubiBaseActivity implements ViewPager
 	                    }
 	                }
                 } finally {
-                	c.close();
-                }
-
-                Uri profileUri = Uri
-                        .parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head");
-                c = getActivity().getContentResolver().query(profileUri, null, DbObject.TYPE + "=?",
-                        new String[] {
-                            ProfilePictureObj.TYPE
-                        }, DbObject.TIMESTAMP + " DESC");
-                try {
-	                if (c.moveToFirst()) {
-	                    String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	
-	                    try {
-	                        JSONObject obj = new JSONObject(jsonSrc);
-	                        String bytes = obj.optString(ProfilePictureObj.DATA);
-	                        ((App) getActivity().getApplication()).objectImages.lazyLoadImage(
-	                                bytes.hashCode(), bytes, mIcon);
-	                    } catch (JSONException e) {
-	                    }
-	                }
-                } finally {
-                	c.close();
+                    cursor.close();
                 }
             } else {
                 presence.setVisibility(View.GONE);

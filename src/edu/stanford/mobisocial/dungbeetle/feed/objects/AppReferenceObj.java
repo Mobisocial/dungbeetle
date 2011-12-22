@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.util.List;
 
@@ -31,7 +51,6 @@ import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedMessageHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
@@ -47,7 +66,7 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
  */
 @Deprecated
 public class AppReferenceObj extends DbEntryHandler
-        implements FeedRenderer, Activator, FeedMessageHandler {
+        implements FeedRenderer, Activator {
 	private static final String TAG = "AppReferenceObj";
 	private static final boolean DBG = false;
 
@@ -190,7 +209,8 @@ public class AppReferenceObj extends DbEntryHandler
                         content.get(DbObject.CHILD_FEED_NAME));
             } catch (JSONException e) {
             }
-            mAppStateObj.activate(context, appContent);
+            //mAppStateObj.activate(context, appContent);
+            Log.wtf(TAG, "dead code exception");
 	    }
 	}
 
@@ -220,7 +240,7 @@ public class AppReferenceObj extends DbEntryHandler
      * TODO, work out observers vs. players.
      */
     @Override
-    public void handleFeedMessage(Context context, DbObj obj) {
+    public void afterDbInsertion(Context context, DbObj obj) {
         JSONObject content = obj.getJson();
         if (content.has(DbObject.CHILD_FEED_NAME)) {
             String feedName = content.optString(DbObject.CHILD_FEED_NAME);

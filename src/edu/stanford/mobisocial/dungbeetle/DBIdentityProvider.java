@@ -1,14 +1,34 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
-import java.security.KeyFactory;
+
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
+
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,7 +40,6 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
 import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.JSON;
 
@@ -56,8 +75,9 @@ public class DBIdentityProvider implements IdentityProvider {
 	        }
 	
 	        mPubKeyString = c.getString(c.getColumnIndexOrThrow(MyInfo.PUBLIC_KEY));
-	        mPubKey = publicKeyFromString(mPubKeyString);
-	        mPrivKey = privateKeyFromString(c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
+	        mPubKey = RSACrypto.publicKeyFromString(mPubKeyString);
+	        mPrivKey = RSACrypto.privateKeyFromString(
+	                c.getString(c.getColumnIndexOrThrow(MyInfo.PRIVATE_KEY)));
 	        mName = c.getString(c.getColumnIndexOrThrow(MyInfo.NAME));
 	        mEmail = c.getString(c.getColumnIndexOrThrow(MyInfo.EMAIL));
 	        mPubKeyTag = personIdForPublicKey(mPubKey);
@@ -138,8 +158,8 @@ public class DBIdentityProvider implements IdentityProvider {
 	            return null;
 	        }
 	
-	        RSAPublicKey k = (RSAPublicKey)publicKeyFromString(
-	            c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
+	        RSAPublicKey k = RSACrypto.publicKeyFromString(
+	                c.getString(c.getColumnIndexOrThrow(Contact.PUBLIC_KEY)));
 	        return k;
         } finally {
         	c.close();
@@ -153,7 +173,7 @@ public class DBIdentityProvider implements IdentityProvider {
 			s.bindLong(1, id.longValue());
 			try {
 				String pks = s.simpleQueryForString();
-				result.add(publicKeyFromString(pks));
+				result.add(RSACrypto.publicKeyFromString(pks));
 			} catch (SQLiteDoneException e) {
 				Log.e(TAG, "Data consisteny error: unknown contact id " + id);
 			}
@@ -162,53 +182,29 @@ public class DBIdentityProvider implements IdentityProvider {
 		return result;
     }
 
-    public String personIdForPublicKey(RSAPublicKey key){
-        return edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
-    }
-
-    public static KeyPair generateKeyPair(){
-        try {
-            // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(1024);
-            return keyGen.genKeyPair();        
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Failed to generate key pair! " + e);
-        }
-    }
-
+	public static KeyPair generateKeyPair() {
+	    try {
+	        // Generate a 1024-bit Digital Signature Algorithm (RSA) key pair
+	        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+	        keyGen.initialize(1024);
+	        return keyGen.genKeyPair();
+	    } catch (java.security.NoSuchAlgorithmException e) {
+	        throw new IllegalStateException("Failed to generate key pair! " + e);
+	    }
+	}
 
     public static String publicKeyToString(PublicKey pubkey){
         return FastBase64.encodeToString(pubkey.getEncoded());
-    }
-
-    public static RSAPublicKey publicKeyFromString(String str){
-        try{
-            byte[] pubKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyBytes);
-            return (RSAPublicKey)keyFactory.generatePublic(publicKeySpec);                
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
-    }
-
-    public static RSAPrivateKey privateKeyFromString(String str){
-        try{
-            byte[] privKeyBytes = FastBase64.decode(str);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-            return (RSAPrivateKey)keyFactory.generatePrivate(privateKeySpec);
-        }
-        catch(Exception e){
-            throw new IllegalStateException("Error loading public key: " + e);
-        }
     }
 
     @Override
     public void close() {
     	mUnclosedException = null;
     	mHelper.close();
+    }
+
+    @Override
+    public String personIdForPublicKey(RSAPublicKey key) {
+        return RSACrypto.makePersonIdForPublicKey(key);
     }
 }

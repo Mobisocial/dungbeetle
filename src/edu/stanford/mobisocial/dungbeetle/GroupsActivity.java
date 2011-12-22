@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -49,7 +69,9 @@ import edu.stanford.mobisocial.dungbeetle.ui.HomeActivity;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.MyLocation;
 
-
+/**
+ * UI for showing a list of all user groups.
+ */
 public class GroupsActivity extends ListActivity implements OnItemClickListener {
 	private GroupListCursorAdapter mGroups;
     public static final String SHARE_SCHEME = "db-share-contact";
@@ -79,12 +101,6 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         goHome (this);
     }
 
-
-    public void onClickSearch (View v)
-    {
-        startActivity (new Intent(getApplicationContext(), SearchActivity.class));
-    }
-
     public void onClickAbout (View v)
     {
         startActivity (new Intent(getApplicationContext(), AboutActivity.class));
@@ -98,13 +114,14 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         setTitleFromActivityLabel (R.id.title_text);
         
         mHelper = DBHelper.getGlobal(this);
-        String selection = DbObject.FEED_NAME + " not in " +
+        String selection = Group.GROUP_TYPE + " = ? AND " + Group.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
+        String[] selectionArgs = new String[] { Group.TYPE_GROUP };
         //actually what ultimately gets called is DBHelper.queryGroups() so change stuff there
         Cursor c = getContentResolver().query(
             Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-            null, selection, null, null);
+            null, selection, selectionArgs, null);
 		mGroups = new GroupListCursorAdapter(this, c);
 		setListAdapter(mGroups);
 		getListView().setOnItemClickListener(this);
@@ -133,7 +150,7 @@ public class GroupsActivity extends ListActivity implements OnItemClickListener 
         final Group g = new Group(cursor);
         switch(menuItemIndex) {
         case 0:
-            Helpers.deleteGroup(GroupsActivity.this, g.id);
+            mHelper.deleteGroup(GroupsActivity.this, g.id);
             break;
         case 1:
             if(g.dynUpdateUri != null){

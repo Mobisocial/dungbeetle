@@ -1,10 +1,32 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 
+import java.lang.ref.SoftReference;
 import java.util.List;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.musubi.multiplayer.Multiplayer;
 
 import org.json.JSONArray;
@@ -14,30 +36,39 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.AppFinderActivity;
 import edu.stanford.mobisocial.dungbeetle.R;
+import edu.stanford.mobisocial.dungbeetle.feed.DbObjects;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
 import edu.stanford.mobisocial.dungbeetle.model.AppState;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 
+/**
+ * Entry point for application sessions. Typically, an AppObj is created by
+ * Musubi, but "owned" by a third-party application. That application can
+ * attach application data
+ *
+ */
 public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     private static final String TAG = "musubi-appObj";
     private static final boolean DBG = false;
@@ -46,6 +77,7 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
     public static final String ANDROID_PACKAGE_NAME = "android_pkg";
     public static final String ANDROID_CLASS_NAME = "android_cls";
     public static final String ANDROID_ACTION = "android_action";
+    public static final String WEB_URL = "web_url";
 
     @Override
     public String getType() {
@@ -138,35 +170,48 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
 
     public static Intent getLaunchIntent(Context context, DbObj obj) {
         JSONObject content = obj.getJson(); 
-        Uri appFeed = obj.getContainingFeed().getUri();
-        String action = content.optString(ANDROID_ACTION);
-        String pkgName = content.optString(ANDROID_PACKAGE_NAME);
-        String className = content.optString(ANDROID_CLASS_NAME);
+        if (content.has(ANDROID_PACKAGE_NAME)) {
+            Uri appFeed = obj.getContainingFeed().getUri();
+            String action = content.optString(ANDROID_ACTION);
+            String pkgName = content.optString(ANDROID_PACKAGE_NAME);
+            String className = content.optString(ANDROID_CLASS_NAME);
+    
+            Intent launch = new Intent(action);
+            launch.setClassName(pkgName, className);
+            launch.addCategory(Intent.CATEGORY_LAUNCHER);
+            // TODO: feed for related objs, not parent feed
+            launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
+            launch.putExtra(AppState.EXTRA_OBJ_HASH, obj.getHash());
+            // TODO: Remove
+            launch.putExtra("obj", content.toString());
 
-        Intent launch = new Intent(action);
-        launch.setClassName(pkgName, className);
-        launch.addCategory(Intent.CATEGORY_LAUNCHER);
-        // TODO: feed for related objs, not parent feed
-        launch.putExtra(AppState.EXTRA_FEED_URI, appFeed);
-        launch.putExtra(AppState.EXTRA_OBJ_HASH, obj.getHash());
-        // TODO: Remove
-        launch.putExtra("obj", content.toString());
+            List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
+            if (resolved.size() > 0) {
+                return launch;
+            }
 
-        List<ResolveInfo> resolved = context.getPackageManager().queryIntentActivities(launch, 0);
-        if (resolved.size() > 0) {
-            return launch;
+            Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkgName));
+            return market;
+        } else if (content.has(WEB_URL)) {
+            Intent app = new Intent(Intent.ACTION_VIEW, Uri.parse(content.optString(WEB_URL)));
+            app.setClass(context, AppFinderActivity.class);
+            app.putExtra(Musubi.EXTRA_FEED_URI, Feed.uriForName(obj.getFeedName()));
+            return app;
         }
-
-        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkgName));
-        return market;
+        return null;
     }
 
     @Override
     public void render(final Context context, final ViewGroup frame, Obj obj, boolean allowInteractions) {
-        boolean rendered = false;
-
+        PackageManager pm = context.getPackageManager();
+        Drawable icon = null;
+        String appName;
+        if (obj.getJson() != null && obj.getJson().has(ANDROID_PACKAGE_NAME)) {
+            appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+        } else {
+            appName = "Unknown";
+        }
         if (!(obj instanceof DbObj)) {
-            String appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
             if (appName.contains(".")) {
                 appName = appName.substring(appName.lastIndexOf(".") + 1);
             }
@@ -183,67 +228,59 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
 
         DbObj dbParentObj = (DbObj) obj;
-        String selection = "type = ?";
-        String[] selectionArgs = new String[] { AppStateObj.TYPE };
+        boolean rendered = false;
+
+        Intent launch = getLaunchIntent(context, dbParentObj);
+        List<ResolveInfo> infos = pm.queryIntentActivities(launch, 0);
+        if (infos.size() > 0) {
+            ResolveInfo info = infos.get(0);
+            if (info.activityInfo.labelRes != 0) {
+                appName = info.activityInfo.loadLabel(pm).toString();
+                icon = info.loadIcon(pm);
+            } else {
+                appName = info.activityInfo.name;
+            }
+        } else {
+            appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
+            if (appName.contains(".")) {
+                appName = appName.substring(appName.lastIndexOf(".") + 1);
+            }
+        }
+         // TODO: Safer reference to containing view
+        if (icon != null) {
+            View parentView = (View)frame.getParent().getParent();
+            ImageView avatar = (ImageView)parentView.findViewById(R.id.icon);
+            avatar.setImageDrawable(icon);
+
+            TextView label = (TextView)parentView.findViewById(R.id.name_text);
+            label.setText(appName);
+        }
+
+        // TODO: obj.getLatestChild().render();
+        String selection = getRenderableClause();
+        String[] selectionArgs = null;
         Cursor cursor = dbParentObj.getSubfeed().query(selection, selectionArgs);
         if (cursor.moveToFirst()) {
             DbObj dbObj = App.instance().getMusubi().objForCursor(cursor);
-            AppState ref = new AppState(dbObj);
-            String thumbnail = ref.getThumbnailImage();
-            if (thumbnail != null) {
-                rendered = true;
-                ImageView imageView = new ImageView(context);
-                imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                              LinearLayout.LayoutParams.WRAP_CONTENT,
-                                              LinearLayout.LayoutParams.WRAP_CONTENT));
-                App.instance().objectImages.lazyLoadImage(thumbnail.hashCode(), thumbnail, imageView);
-                frame.addView(imageView);
-            }
-    
-            thumbnail = ref.getThumbnailText();
-            if (thumbnail != null) {
-                rendered = true;
-                TextView valueTV = new TextView(context);
-                valueTV.setText(thumbnail);
-                valueTV.setLayoutParams(new LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                valueTV.setGravity(Gravity.TOP | Gravity.LEFT);
-                frame.addView(valueTV);
-            }
-    
-            thumbnail = ref.getThumbnailHtml();
-            if (thumbnail != null) {
-                rendered = true;
-                WebView webview = new WebView(context);
-                webview.loadData(thumbnail, "text/html", "UTF-8");
-                webview.setLayoutParams(new LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                Object o = frame.getTag(R.id.object_entry);
-                webview.setOnTouchListener(new WebViewClickListener(webview, frame, (Integer)o));
-                frame.addView(webview);
-            }
+            DbObjects.getFeedRenderer(dbObj.getType())
+                    .render(context, frame, dbObj, allowInteractions);
+            rendered = true;
         }
 
         if (!rendered) {
-            String appName;
-            Intent launch = getLaunchIntent(context, dbParentObj);
-            List<ResolveInfo> infos = context.getPackageManager().queryIntentActivities(launch, 0);
-            if (infos.size() > 0) {
-                ResolveInfo info = infos.get(0);
-                if (info.activityInfo.labelRes != 0) {
-                    appName = info.activityInfo.loadLabel(context.getPackageManager()).toString();
-                } else {
-                    appName = info.activityInfo.name;
-                }
+            String text;
+            if (icon != null) {
+                ImageView iv = new ImageView(context);
+                iv.setImageDrawable(icon);
+                iv.setAdjustViewBounds(true);
+                iv.setMaxWidth(60);
+                iv.setMaxHeight(60);
+                iv.setLayoutParams(CommonLayouts.WRAPPED);
+                frame.addView(iv);
+                text = appName;
             } else {
-                appName = obj.getJson().optString(ANDROID_PACKAGE_NAME);
-                if (appName.contains(".")) {
-                    appName = appName.substring(appName.lastIndexOf(".") + 1);
-                }
+                text = "New application: " + appName + ".";
             }
-            String text = "New application: " + appName + ".";
             // TODO: Show Market icon or app icon.
             TextView valueTV = new TextView(context);
             valueTV.setText(text);
@@ -255,41 +292,23 @@ public class AppObj extends DbEntryHandler implements Activator, FeedRenderer {
         }
     }
 
-    private class WebViewClickListener implements View.OnTouchListener {
-        private int position;
-        private ViewGroup vg;
-        private ViewGroup frame;
-        private ListView lv;
-
-        public WebViewClickListener(WebView wv, ViewGroup vg, int position) {
-            this.vg = vg;
-            this.position = position;
-        }
-
-        public boolean onTouch(View v, MotionEvent event) {
-            int action = event.getAction();
-            switch (action) {
-                case MotionEvent.ACTION_CANCEL:
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    sendClick();
-                    return true;
+    static SoftReference<String> mRenderableClause;
+    private String getRenderableClause() {
+        if (mRenderableClause != null) {
+            String renderable = mRenderableClause.get();
+            if (renderable != null) {
+                return renderable;
             }
-
-            return false;
         }
-
-        public void sendClick() {
-            if (lv == null) {
-                while (!(vg instanceof ListView)) {
-                    if (null != vg.getTag(R.id.object_entry)) {
-                        frame = vg;
-                    }
-                    vg = (ViewGroup)vg.getParent();
-                }
-                lv = (ListView) vg;
+        StringBuffer allowed = new StringBuffer();
+        String[] types = DbObjects.getRenderableTypes();
+        for (String type : types) {
+            if (!AppObj.TYPE.equals(type)) {
+                allowed.append(",'").append(type).append("'");
             }
-            lv.performItemClick(frame, position, 0);
         }
+        String clause = DbObject.TYPE + " in (" + allowed.substring(1) + ")";
+        mRenderableClause = new SoftReference<String>(clause);
+        return clause;
     }
 }

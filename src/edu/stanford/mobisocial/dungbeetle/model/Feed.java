@@ -1,8 +1,29 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import org.json.JSONObject;
 
@@ -11,10 +32,12 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FeedRefObj;
 
 public class Feed extends DbObject {
+    public static final String TAG = "db-feed";
     public static final int BACKGROUND_ALPHA = 150;
     public static final String MIME_TYPE = "vnd.mobisocial.db/feed";
 
@@ -69,8 +92,8 @@ public class Feed extends DbObject {
         super(FeedRefObj.TYPE, json);
     }
 
-    public static Uri uriForList() {
-        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
+    public static Uri feedListUri() {
+        return Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds");
     }
 
     public static void view(Activity foreground, Uri feedUri) {
@@ -80,15 +103,40 @@ public class Feed extends DbObject {
         foreground.startActivity(launch);
     }
 
-    public static final int FEED_GROUP = 1;
-    public static final int FEED_FRIEND = 2;
-    public static final int FEED_RELATED = 3;
-	public static int typeOf(Uri feedUri) {
-		if(feedUri.getPath().startsWith("/feeds/friend/")) {
-			return FEED_FRIEND;
-		} else if (feedUri.getPath().startsWith("/feeds/related/")){
-			return FEED_RELATED;
+    public enum FeedType { GROUP, FRIEND, APP, RELATED };
+    public static FeedType typeOf(Uri feedUri) {
+	    String path = feedUri.getPath();
+		if(path.startsWith("/feeds/friends^") || path.startsWith("/members/friends^")) {
+			return FeedType.FRIEND;
+		} else if (path.startsWith("/feeds/app^") || path.startsWith("/members/app^")) {
+		    return FeedType.APP;
+		} else if (path.startsWith("/feeds/related/")){
+			return FeedType.RELATED;
 		}
-		return FEED_GROUP;
+		return FeedType.GROUP;
+	}
+
+	/**
+	 * Returns the personId of the remote friend associated with this feed
+	 */
+	public static String friendIdForFeed(Uri friendFeed) {
+	    if (typeOf(friendFeed) != FeedType.FRIEND) {
+	        return null;
+	    }
+	    String feedName = friendFeed.getLastPathSegment();
+	    int sep = feedName.lastIndexOf(':');
+	    if (sep > 0) {
+	        feedName = feedName.substring(0, sep);
+	    }
+	    String[] parts = feedName.split("\\^");
+        if (parts.length != 3) {
+            Log.w(TAG, "Bad format for friend feed: " + friendFeed);
+            return null;
+        }
+        if (parts[1].equals(App.instance().getLocalPersonId())) {
+            return parts[2];
+        } else {
+            return parts[1];
+        }
 	}
 }

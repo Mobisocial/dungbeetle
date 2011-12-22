@@ -1,12 +1,33 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 package edu.stanford.mobisocial.dungbeetle.ui;
 
+import mobisocial.socialkit.musubi.DbUser;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
+import edu.stanford.mobisocial.dungbeetle.App;
+import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.ui.fragments.FeedActionsFragment;
@@ -52,9 +73,15 @@ public class FeedListActivity extends MusubiBaseActivity implements
             ft.replace(R.id.feed_view, feedView);
             ft.commit();
         } else {
-            Intent launch = new Intent(Intent.ACTION_VIEW);
-            launch.setDataAndType(feedUri, Feed.MIME_TYPE);
-            startActivity(launch);
+            if (Feed.typeOf(feedUri) == Feed.FeedType.FRIEND) {
+                String personId = Feed.friendIdForFeed(feedUri);
+                DbUser u = App.instance().getMusubi().userForGlobalId(feedUri, personId);
+                Helpers.getContact(this, u.getLocalId()).view(this);
+            } else {
+                Intent launch = new Intent(Intent.ACTION_VIEW);
+                launch.setDataAndType(feedUri, Feed.MIME_TYPE);
+                startActivity(launch);
+            }
         }
     }
 }

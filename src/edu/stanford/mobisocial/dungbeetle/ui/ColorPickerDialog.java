@@ -1,4 +1,3 @@
-package edu.stanford.mobisocial.dungbeetle.ui;
 /*
  * Copyright (C) 2007 The Android Open Source Project
  *
@@ -14,6 +13,8 @@ package edu.stanford.mobisocial.dungbeetle.ui;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package edu.stanford.mobisocial.dungbeetle.ui;
 //package com.example.android.apis.graphics;
 
 import android.os.Bundle;

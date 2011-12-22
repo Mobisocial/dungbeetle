@@ -1,7 +1,29 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import mobisocial.socialkit.musubi.DbObj;
 
@@ -79,8 +101,6 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private ImageView mSendObjectButton;
 	private CursorLoader mLoader;
 
-	private String[] filterTypes = null;
-
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -90,7 +110,8 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.fragment_feed_view, container, false);
+		View view = inflater.inflate(R.layout.fragment_feed_view, container, false);
+		return view;
     }
 
     @Override
@@ -118,6 +139,12 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         MusubiBaseActivity.getInstance().setOnKeyListener(this);
         // int color = Feed.colorFor(feedName, Feed.BACKGROUND_ALPHA);
         // getListView().setCacheColorHint(color);
+
+        // Sets the unread count to 0 and marks this feed
+        // as being displayed on screen.
+        // Do this before setCurrentFeed to avoid a requery.
+        // TODO: Consider moving outside of fragment.
+        App.instance().setCurrentFeed(mFeedUri);
     }
 
     @Override
@@ -136,10 +163,9 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     public void onResume() {
         super.onResume();
         App.instance().setCurrentFeed(mFeedUri);
-
-        getLoaderManager().restartLoader(0, null, this);
-    	
-
+        // TODO: Not sure why this was added, but it causes massive slowdown
+        // Discuss with bjd before uncommenting
+        // getLoaderManager().restartLoader(0, null, this);
     }
 
     @Override
@@ -212,32 +238,35 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
     private View.OnClickListener mSendObject = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            QuickAction qa = DbActions.getActions(getActivity(), mFeedUri, v);
-            qa.show();
+            showMenuForFeed(v, mFeedUri);
         }
     };
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-    	
+        String[] projection = new String[] { DbObject._ID };
+    	Set<String> forbidden = new HashSet<String>();
+    	//forbidden.add(AppObj.TYPE);
+
     	if(getActivity() instanceof Filterable)
     	{
     		Filterable context = (Filterable) getActivity();
 	    	List<String> filterTypes = new ArrayList<String>();
 	    	for(int x = 0; x < context.getFilterTypes().length; x++) {
+	    	    String type = context.getFilterTypes()[x];
 	    		if (context.getFilterCheckboxes()[x]) {
-	    			filterTypes.add(context.getFilterTypes()[x]);
+	    		    if (!forbidden.contains(type))
+	    			filterTypes.add(type);
 	    		}
 	    	}
 	    	Log.w(TAG, "changeFilter reached in feedview");
-			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, filterTypes.toArray(new String[filterTypes.size()]));
-	        
+			mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, projection,
+			        filterTypes.toArray(new String[filterTypes.size()]));
     	}
     	else {
-    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, null);
+    		mLoader = ObjectListCursorAdapter.queryObjects(getActivity(), mFeedUri, projection,
+    		        null);
     	}
-
-        mLoader.loadInBackground();
         return mLoader;
     }
 
@@ -274,6 +303,11 @@ public class FeedViewFragment extends ListFragment implements OnScrollListener,
         // Create and show the dialog.
         DialogFragment newFragment = ObjMenuDialogFragment.newInstance(obj);
         newFragment.show(ft, "dialog");
+    }
+
+    void showMenuForFeed(View v, Uri feedUri) {
+        QuickAction qa = DbActions.getActions(getActivity(), feedUri, v);
+        qa.show();
     }
 
     public static class ObjMenuDialogFragment extends DialogFragment {

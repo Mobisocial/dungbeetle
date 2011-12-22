@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.ui.fragments;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +50,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.stanford.mobisocial.dungbeetle.ActionItem;
-import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
@@ -40,8 +59,8 @@ import edu.stanford.mobisocial.dungbeetle.QuickAction;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.UIHelpers;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
+import edu.stanford.mobisocial.dungbeetle.model.Feed;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
-import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
 import edu.stanford.mobisocial.dungbeetle.util.BitmapManager;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
@@ -70,18 +89,20 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
     public void onActivityCreated(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mHelper = DBHelper.getGlobal(getActivity());
+		Uri feedUri = Feed.uriForName(mFeedName);
+		if (Feed.typeOf(feedUri) == Feed.FeedType.GROUP) {
+		    groupUpdateHack(feedUri);
+		}
 		getLoaderManager().initLoader(0, null, this);
-
-		groupUpdateHack();
 	}
 
-    private void groupUpdateHack() {
+    private void groupUpdateHack(final Uri feedUri) {
         final Context context = getActivity();
-       
         new Thread() {
             public void run() {
+                String feedName = feedUri.getLastPathSegment();
                 final IdentityProvider ident = new DBIdentityProvider(mHelper);
-                Maybe<Group> mg = mHelper.groupByFeedName(mFeedName);
+                Maybe<Group> mg = mHelper.groupByFeedName(feedName);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {}
@@ -191,13 +212,9 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
             }
 
             nameText.setText(c.name);
-
             statusText.setText(c.status);
-            
             icon.setImageBitmap(c.picture);
-
             presenceIcon.setImageResource(c.currentPresenceResource());
-
         	nearbyIcon.setVisibility(c.nearby ? View.VISIBLE : View.GONE);
 
             more.setOnClickListener(new OnClickListener() {
@@ -254,12 +271,6 @@ public class FeedMembersFragment extends ListFragment implements OnItemClickList
 
     public boolean onCreateOptionsMenu(Menu menu){
         return true;
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mHelper.close();
     }
 
     @Override

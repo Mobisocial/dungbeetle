@@ -1,9 +1,30 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle.feed.objects;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,11 +40,10 @@ import android.widget.TextView;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.Activator;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.DbEntryHandler;
 import edu.stanford.mobisocial.dungbeetle.feed.iface.FeedRenderer;
-import edu.stanford.mobisocial.dungbeetle.feed.iface.NoNotify;
 import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 
-public class LocationObj extends DbEntryHandler implements FeedRenderer, Activator, NoNotify {
+public class LocationObj extends DbEntryHandler implements FeedRenderer, Activator {
     public static final String TYPE = "loc";
     public static final String COORD_LAT = "lat";
     public static final String COORD_LONG = "lon";
@@ -79,5 +99,10 @@ public class LocationObj extends DbEntryHandler implements FeedRenderer, Activat
                 content.optDouble(COORD_LONG) + "?z=17";
         Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(loc));
         context.startActivity(map);
+    }
+
+    @Override
+    public boolean doNotification(Context context, DbObj obj) {
+        return false;
     }
 }

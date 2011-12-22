@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 package edu.stanford.mobisocial.dungbeetle.social;
 
@@ -6,9 +25,11 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.UUID;
 
+import edu.stanford.mobisocial.bumblebee.util.Util;
 import edu.stanford.mobisocial.dungbeetle.App;
 import edu.stanford.mobisocial.dungbeetle.DBHelper;
 import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
+import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.Helpers;
 import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
 import edu.stanford.mobisocial.dungbeetle.feed.objects.FriendAcceptObj;
@@ -16,19 +37,32 @@ import edu.stanford.mobisocial.dungbeetle.model.Contact;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
+
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.json.JSONObject;
 
 public class FriendRequest {
     private static final String TAG = "DbFriendRequest";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     public static final String PREF_FRIEND_CAPABILITY = "friend.cap";
 
     public static final String PREFIX_JOIN = "//mobisocial.stanford.edu/musubi/join";
+
+    /**
+     * Returns a friending uri under the 'musubi' scheme.
+     */
+    public static Uri getMusubiUri(Context c) {
+        Uri uri = getInvitationUri(c, true);
+        return uri.buildUpon().scheme("musubi").build();
+    }
 
     public static Uri getInvitationUri(Context c) {
         return getInvitationUri(c, true);
@@ -47,13 +81,13 @@ public class FriendRequest {
         try {
 	        // String name = ident.userName();
 	        String email = ident.userEmail();
-	        String profile = "{name:" + ident.userName() + "}";
+	        String name = ident.userName();
 	
 	        PublicKey pubKey = ident.userPublicKey();
 	        helper.close();
 	
 	        Uri.Builder builder = new Uri.Builder().scheme("http").authority("mobisocial.stanford.edu")
-	                .path("musubi/join").appendQueryParameter("profile", profile)
+	                .path("musubi/join").appendQueryParameter("name", name)
 	                .appendQueryParameter("email", email)
 	                .appendQueryParameter("publicKey", DBIdentityProvider.publicKeyToString(pubKey));
 	        if (appendCapability) {
@@ -65,20 +99,41 @@ public class FriendRequest {
         }
     }
 
+    /**
+     * Returns the contact id for the contact associated with the given uri,
+     * or -1 if no such contact exists.
+     */
+    public static long getExistingContactId(Context context, Uri friendRequest) {
+        String personId = null;
+        try {
+            String pubKeyStr = friendRequest.getQueryParameter("publicKey");
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
+            personId = Util.makePersonIdForPublicKey(key);
+        } catch (Exception e) {
+            return -1;
+        }
+        Uri uri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/contacts");
+        String[] projection = new String[] { Contact._ID };
+        String selection = Contact.PERSON_ID + " = ?";
+        String[] selectionArgs = new String[] { personId };
+        String sortOrder = null;
+        Cursor c = context.getContentResolver().query(uri, projection, selection, selectionArgs, sortOrder);
+        if (!c.moveToFirst()) {
+            return -1;
+        }
+        return c.getLong(0);
+    }
+
     public static long acceptFriendRequest(Context c, Uri friendRequest, boolean requireCapability) {
         String email = friendRequest.getQueryParameter("email");
-        String name = email;
-
-        try {
-            JSONObject o = new JSONObject(friendRequest.getQueryParameter("profile"));
-            name = o.getString("name");
-            // picture = FastBase64.decode(o.getString("picture"));
-        } catch (Exception e) {
+        String name = friendRequest.getQueryParameter("name");
+        if (name == null) {
+            name = email;
         }
+        
 
         String pubKeyStr = friendRequest.getQueryParameter("publicKey");
-        DBIdentityProvider.publicKeyFromString(pubKeyStr); // may throw
-                                                           // exception
+        RSACrypto.publicKeyFromString(pubKeyStr); // may throw exception
         String cap = friendRequest.getQueryParameter("cap");
         if (requireCapability) {
             if (cap == null) {

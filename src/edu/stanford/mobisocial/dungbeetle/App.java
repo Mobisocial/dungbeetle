@@ -1,4 +1,25 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
@@ -127,29 +148,33 @@ public class App extends Application {
     private void resetUnreadMessages(Uri feedUri) {
         try {
             switch(Feed.typeOf(feedUri)) {
-	            case Feed.FEED_GROUP: {
+                case FRIEND: {
+                    String personId = Feed.friendIdForFeed(feedUri);
+                    ContentValues cv = new ContentValues();
+                    cv.put(Contact.NUM_UNREAD, 0);
+                    getContentResolver().update(
+                            Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Contact.TABLE), cv,
+                            Contact.PERSON_ID + "='" + personId + "' AND " +
+                            Contact.NUM_UNREAD + " != 0", null);
+                    // No break; do group feed too.
+                    // TODO, get rid of person msg count?
+                }
+	            case GROUP: {
 	                String feedName = feedUri.getLastPathSegment();
 	                ContentValues cv = new ContentValues();
 	                cv.put(Group.NUM_UNREAD, 0);
 	
-	                getContentResolver().update(
+	                int r = getContentResolver().update(
 	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Group.TABLE), cv,
-	                        Group.FEED_NAME + "='" + feedName + "'", null);
-	                getContentResolver().notifyChange(
-	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"), null);
-	
+	                        Group.FEED_NAME + "='" + feedName + "' AND " +
+	                        Group.NUM_UNREAD + " != 0", null);
+                    if (r > 0) {
+                        getContentResolver().notifyChange(Uri.parse(
+                                DungBeetleContentProvider.CONTENT_URI + "/feeds"), null);
+	                }
 	            	break;
 	            }
-	            case Feed.FEED_FRIEND: {
-	            	long contact_id = Long.valueOf(feedUri.getLastPathSegment());
-	                ContentValues cv = new ContentValues();
-	                cv.put(Contact.NUM_UNREAD, 0);
-	                getContentResolver().update(
-	                        Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + Contact.TABLE), cv,
-	                        Contact._ID + "='" + contact_id + "'", null);
-	            	break;
-	            } 
-	            case Feed.FEED_RELATED: {
+	            case RELATED: {
 	            	//TODO: hmm?
 	            	break;
 	            }

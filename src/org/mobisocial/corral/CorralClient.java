@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package org.mobisocial.corral;
 
 import java.io.ByteArrayOutputStream;
@@ -14,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import mobisocial.socialkit.SignedObj;
+import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.DbUser;
 
 import org.json.JSONException;
@@ -73,7 +94,7 @@ public class CorralClient {
      * currently be fetched.
      */
     public Uri fetchContent(SignedObj obj) throws IOException {
-        if (!obj.getJson().has(OBJ_LOCAL_URI)) {
+        if (obj.getJson() == null || !obj.getJson().has(OBJ_LOCAL_URI)) {
             if (DBG) {
                 Log.d(TAG, "no local uri for obj.");
             }
@@ -122,6 +143,16 @@ public class CorralClient {
         return Uri.fromFile(localFile);
     }
 
+    public String getMimeType(DbObj obj) {
+        if (obj.getJson() != null && obj.getJson().has(OBJ_MIME_TYPE)) {
+            try {
+                return obj.getJson().getString(OBJ_MIME_TYPE);
+            } catch (JSONException e) {
+            }
+        }
+        return null;
+    }
+
     private Uri getFileOverBluetooth(DbUser user, SignedObj obj)
             throws IOException {
         String macStr = DbContactAttributes.getAttribute(mContext, user.getLocalId(),
@@ -158,7 +189,7 @@ public class CorralClient {
             Uri remoteUri = uriForContent(ip, obj);
             URL url = new URL(remoteUri.toString());
             if (DBG)
-                Log.d(TAG, "Attempting to pull file " + remoteUri);
+                Log.d(TAG, "Attempting to pull file " + url);
 
             File localFile = localFileForContent(obj);
             if (!localFile.exists()) {
@@ -215,7 +246,7 @@ public class CorralClient {
     private File localFileForContent(SignedObj obj) {
         try {
             JSONObject json = obj.getJson();
-            String suffix = suffixForType(json.optString(OBJ_MIME_TYPE));
+            String suffix = extensionForType(json.optString(OBJ_MIME_TYPE));
             File feedDir = new File(mContext.getExternalCacheDir(), obj.getFeedName());
             String fname = hashToString(obj.getHash()) + "." + suffix;
             return new File(feedDir, fname);
@@ -225,7 +256,7 @@ public class CorralClient {
         }
     }
 
-    static String suffixForType(String type) {
+    static String extensionForType(String type) {
         final String DEFAULT = "dat";
         if (type == null) {
             return DEFAULT;
@@ -240,6 +271,22 @@ public class CorralClient {
             return "png";
         }
         return DEFAULT;
+    }
+
+    static String typeForExtension(String ext) {
+        if (ext == null) {
+            return null;
+        }
+        if (ext.equals("jpg")) {
+            return "image/jpeg";
+        }
+        if (ext.equals("3gp")) {
+            return "video/3gp";
+        }
+        if (ext.equals("png")) {
+            return "image/png";
+        }
+        return null;
     }
 
     private static class HashUtils {

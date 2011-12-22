@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
 import java.util.BitSet;
 
@@ -26,9 +46,10 @@ public class HandleNfcContact extends Activity {
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.handle_give);
 		Intent intent = getIntent();
-        final Uri uri = intent.getData();
+		final Uri uri = intent.getData();
+
+		setContentView(R.layout.handle_give);
 		Button saveButton = (Button)findViewById(R.id.save_contact_button);
 		Button cancelButton = (Button)findViewById(R.id.cancel_button);
 		Button mutualFriendsButton = (Button)findViewById(R.id.mutual_friends_button);
@@ -37,20 +58,13 @@ public class HandleNfcContact extends Activity {
 		if (uri != null && 
 		        (uri.getScheme().equals(HomeActivity.SHARE_SCHEME) ||
 		         uri.getSchemeSpecificPart().startsWith(FriendRequest.PREFIX_JOIN))){
-			
+
 	        mEmail = uri.getQueryParameter("email");
-	        mName = mEmail;
 
-            String mProfile = uri.getQueryParameter("profile");
-
-            //byte[] mPicture = new byte[0];
+	        mName = uri.getQueryParameter("name");
+            if (mName == null) {
+                mName = mEmail;
             
-            try{
-                JSONObject o = new JSONObject(mProfile);
-                mName = o.getString("name");
-                //mPicture = FastBase64.decode(o.getString("picture"));
-            }
-            catch(Exception e){
             }
 
             TextView nameView = (TextView)findViewById(R.id.name_text);
@@ -104,11 +118,10 @@ public class HandleNfcContact extends Activity {
                     finish();
                 }
             });
-			Toast.makeText(this, "Failed to receive contact :(", 
+			Toast.makeText(this, "Failed to receive contact.", 
                            Toast.LENGTH_SHORT).show();
 			Log.d(TAG, "Failed to handle " + uri);
 		}
-
 	}
 
 

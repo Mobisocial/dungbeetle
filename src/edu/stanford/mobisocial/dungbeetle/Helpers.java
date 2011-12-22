@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
 
 import java.lang.ref.SoftReference;
@@ -36,12 +56,11 @@ import edu.stanford.mobisocial.dungbeetle.util.FastBase64;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
-import edu.stanford.mobisocial.dungbeetle.IdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DBIdentityProvider;
-import edu.stanford.mobisocial.dungbeetle.DBHelper;
 
-import edu.stanford.mobisocial.dungbeetle.util.Base64;
-
+/**
+ * A grab bag of utility methods. Avoid adding new code here.
+ *
+ */
 public class Helpers {
     public static final String TAG = "Helpers";
 
@@ -55,24 +74,7 @@ public class Helpers {
         c.getContentResolver().insert(url, values);
     }
 
-    public static void deleteGroup(final Context c, 
-                                   Long groupId){
-        Maybe<Group> mg = Group.forId(c, groupId);
-        try{
-            Group group = mg.get();
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/" + DbObject.TABLE),
-                DbObject.FEED_NAME + "=?", new String[]{group.feedName});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"),
-                Group._ID + "=?", new String[]{ String.valueOf(groupId)});
-            c.getContentResolver().delete(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/group_members"),
-                GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
-        }
-        catch(Exception e) {
-        }
-    }
+   
 
     public static void deleteContact(final Context c, 
                                      Long contactId){
@@ -150,7 +152,7 @@ public class Helpers {
     }
 
     @Deprecated
-    public static void sendMessage(final Context c, long contactId, JSONObject json, String type) {
+    public static Uri sendMessage(final Context c, long contactId, JSONObject json, String type) {
         Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/out");
         Obj obj = DbObjects.convertOldJsonToObj(c, type, json);
         ContentValues values = new ContentValues();
@@ -161,7 +163,7 @@ public class Helpers {
         }
         String to = Long.toString(contactId);
         values.put(DbObject.DESTINATION, to);
-        c.getContentResolver().insert(url, values);
+        return c.getContentResolver().insert(url, values);
     }
 
     @Deprecated
@@ -234,6 +236,7 @@ public class Helpers {
                 values.put(DbObject.RAW, r.second);
             } else {
                 values.put(DbObject.JSON, obj.getJson().toString());
+                values.put(DbObject.RAW, obj.getRaw());
             }
         } else {
             values.put(DbObject.JSON, obj.getJson().toString());
@@ -363,18 +366,10 @@ public class Helpers {
         ident.close();
     }
 
-    public static void updateProfile(final Context c, final String name, final String about){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
-        ContentValues values = new ContentValues();
-        //JSONObject obj = ProfileObj.json(name, about);
-        Obj profileObj = ProfileObj.forLocalUser(c, name, about);
-        c.getContentResolver().insert(url, DbObj.toContentValues(profileObj));
-    }
-
     public static void sendToEveryone(final Context c, Obj obj){
-        Uri url = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
+        Uri uri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me");
         ContentValues values = DbObj.toContentValues(obj);
-        c.getContentResolver().insert(url, values);
+        c.getContentResolver().insert(uri, values);
     }
     
 

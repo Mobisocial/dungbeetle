@@ -1,17 +1,31 @@
-package edu.stanford.mobisocial.dungbeetle.model;
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-import org.json.JSONException;
-import org.json.JSONObject;
+package edu.stanford.mobisocial.dungbeetle.model;
 
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-import edu.stanford.mobisocial.dungbeetle.DungBeetleContentProvider;
 import edu.stanford.mobisocial.dungbeetle.R;
 import edu.stanford.mobisocial.dungbeetle.feed.presence.Push2TalkPresence;
 import edu.stanford.mobisocial.dungbeetle.ui.MusubiBaseActivity;
@@ -32,58 +46,22 @@ public class PresenceAwareNotify {
     }
         
     public void notify(String notificationTitle, String notificationMsg, String notificationSubMsg, PendingIntent contentIntent) {
-    	Log.w(TAG, "notify me");
-    	boolean doVibrate = true;
+    	boolean doAlert = true;
         if (mContext.getSharedPreferences("main", 0).getBoolean("autoplay", false)) {
             return;
         }
                 
         if (Push2TalkPresence.getInstance().isOnCall()) {
-        	doVibrate = false;
+        	doAlert = false;
         }
 
         if (MusubiBaseActivity.getInstance().amResumed()) {
             // TODO: Filter per getInstance().getFeedUri(), but how do we get info here?
-        	doVibrate = false;
+        	doAlert = false;
         }
 
         Notification notification = new Notification(
-            R.drawable.icon, notificationTitle, System.currentTimeMillis());
-        
-        if(doVibrate) {
-        	notification.vibrate = VIBRATE;
-        	
-        	// Disable vibrate if busy
-            Cursor c = mContext.getContentResolver().query(
-                Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feeds/me/head"),
-                null, 
-                DbObject.TYPE + "=?", 
-                new String[]{ "presence"}, 
-                DbObject.TIMESTAMP + " DESC");
-            if (c == null) {
-                Log.e(TAG, "Error querying feeds/me/head");
-                return;
-            }
-            try {
-            	if(c.moveToFirst()) {
-	                String jsonSrc = c.getString(c.getColumnIndexOrThrow(DbObject.JSON));
-	                try{
-	                    JSONObject obj = new JSONObject(jsonSrc);
-	                    int myPresence = Integer.parseInt(obj.optString("presence"));
-	                    if(myPresence == Presence.BUSY) {
-	                        notification.vibrate = null;
-	                    }
-	                }catch(JSONException e){}
-	            }
-            } finally {
-            	c.close();
-            }
-    	}
-        else {
-        	notification.vibrate = null;
-        }
-
-        
+            R.drawable.icon, notificationTitle, System.currentTimeMillis());        
 
         notification.setLatestEventInfo(
             mContext, 
@@ -92,11 +70,16 @@ public class PresenceAwareNotify {
             contentIntent);
         notification.flags = Notification.FLAG_ONLY_ALERT_ONCE|Notification.FLAG_AUTO_CANCEL;
 
-        SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
-        String uri = settings.getString("ringtone", null);
-        
-        if(!uri.equals("none")) {
-        	notification.sound = Uri.parse(uri);
+        if (doAlert) {
+            SharedPreferences settings = mContext.getSharedPreferences(PREFS_NAME, 0);
+            String uri = settings.getString("ringtone", null);
+
+            //if (uri.equals("dungbeetle")) {
+                notification.vibrate = VIBRATE;
+            //}
+            if(!uri.equals("none")) {
+            	notification.sound = Uri.parse(uri);
+            }
         }
         mNotificationManager.notify(NOTIFY_ID, notification);
     }

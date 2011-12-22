@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -16,13 +36,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mobisocial.socialkit.EncodedObj;
+import mobisocial.socialkit.User;
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.RSACrypto;
 
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONException;
@@ -58,6 +80,7 @@ import edu.stanford.mobisocial.dungbeetle.model.DbContactAttributes;
 import edu.stanford.mobisocial.dungbeetle.model.DbObject;
 import edu.stanford.mobisocial.dungbeetle.model.DbRelation;
 import edu.stanford.mobisocial.dungbeetle.model.Feed;
+import edu.stanford.mobisocial.dungbeetle.model.Feed.FeedType;
 import edu.stanford.mobisocial.dungbeetle.model.Group;
 import edu.stanford.mobisocial.dungbeetle.model.GroupMember;
 import edu.stanford.mobisocial.dungbeetle.model.MyInfo;
@@ -70,6 +93,10 @@ import edu.stanford.mobisocial.dungbeetle.util.Maybe;
 import edu.stanford.mobisocial.dungbeetle.util.Maybe.NoValError;
 import edu.stanford.mobisocial.dungbeetle.util.Util;
 
+/**
+ * Utility methods for managing the database.
+ *
+ */
 public class DBHelper extends SQLiteOpenHelper {
 	public static final String TAG = "DBHelper";
 	private static final boolean DBG = true;
@@ -77,7 +104,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	//for legacy purposes
 	public static final String OLD_DB_NAME = "DUNG_HEAP.db";
 	public static final String DB_PATH = "/data/edu.stanford.mobisocial.dungbeetle/databases/";
-	public static final int VERSION = 58;
+	public static final int VERSION = 61;
 	public static final int SIZE_LIMIT = 480 * 1024;
     private final Context mContext;
     private long mNextId = -1;
@@ -279,7 +306,8 @@ public class DBHelper extends SQLiteOpenHelper {
       		} catch(JSONException e) {}
 	            c.close();
           }
-          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " + DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
+          c = db.query(DbObject.TABLE, new String[] {DbObject._ID}, DbObject.TYPE + " = ? AND " +
+                  DbObject.RAW + " IS NULL", new String[] { VoiceObj.TYPE }, null, null, null);
           ids = new ArrayList<Long>();            
           if(c.moveToFirst()) do {
       			ids.add(c.getLong(0));
@@ -287,7 +315,9 @@ public class DBHelper extends SQLiteOpenHelper {
           c.close();
           dbh = DbObjects.forType(VoiceObj.TYPE);
           for(Long id : ids) {
-	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW}, DbObject._ID + " = ? ", new String[] { String.valueOf(id.longValue()) }, null, null, null);
+	            c = db.query(DbObject.TABLE, new String[] {DbObject.JSON, DbObject.RAW},
+	                    DbObject._ID + " = ? ",new String[] { String.valueOf(id.longValue()) },
+	                    null, null, null);
 	            if(c.moveToFirst()) try {
 	            	String json = c.getString(0);
 	            	byte[] raw = c.getBlob(1);
@@ -317,7 +347,9 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         if(oldVersion <= 41) {
             db.execSQL("DROP INDEX objects_by_sequence_id");
-            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE + "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " + DbObject.SEQUENCE_ID + ")");
+            db.execSQL("CREATE INDEX objects_by_sequence_id ON " + DbObject.TABLE +
+                    "(" + DbObject.CONTACT_ID + ", " + DbObject.FEED_NAME + ", " +
+                    DbObject.SEQUENCE_ID + ")");
         }
         //secret to life, etc
         if(oldVersion <= 42) {
@@ -370,7 +402,18 @@ public class DBHelper extends SQLiteOpenHelper {
             db.execSQL("DROP INDEX attrs_by_contact_id");
             createIndex(db, "INDEX", "attrs_by_contact_id", DbContactAttributes.TABLE, DbContactAttributes.CONTACT_ID);
         }
-        if(oldVersion <= 57) {
+        if (oldVersion <= 57) {
+        	db.execSQL("ALTER TABLE " + DbObject.TABLE + " ADD COLUMN " + DbObject.LAST_MODIFIED_TIMESTAMP + " INTEGER");
+            db.execSQL("UPDATE " + DbObject.TABLE + " SET " + DbObject.LAST_MODIFIED_TIMESTAMP + " = " + DbObject.TIMESTAMP);
+        }
+        if (oldVersion <= 58) {
+            db.execSQL("ALTER TABLE " + Group.TABLE + " ADD COLUMN " + Group.GROUP_TYPE + " TEXT DEFAULT 'group'");
+            db.execSQL("UPDATE " + Group.TABLE + " SET " + Group.GROUP_TYPE + " = 'group'");
+        }
+        if (oldVersion <= 59) {
+            createIndex(db, "INDEX", "objects_last_modified", DbObject.TABLE, DbObject.LAST_MODIFIED_TIMESTAMP);
+        }
+        if(oldVersion <= 60) {
             db.execSQL("ALTER TABLE " + Contact.TABLE + " ADD COLUMN " + Contact.PUBLIC_KEY_HASH_64 + " INTEGER DEFAULT 0");
             createIndex(db, "INDEX", "contacts_by_pkp", Contact.TABLE, Contact.PUBLIC_KEY_HASH_64);
             Cursor peeps = db.rawQuery("SELECT " + Contact._ID + "," + Contact.PUBLIC_KEY + " FROM " + Contact.TABLE, null);
@@ -447,6 +490,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         DbObject.DESTINATION, "TEXT",
                         DbObject.JSON, "TEXT",
                         DbObject.TIMESTAMP, "INTEGER",
+                        DbObject.LAST_MODIFIED_TIMESTAMP, "INTEGER",
                         DbObject.SENT, "INTEGER DEFAULT 0",
                         DbObject.DELETED, "INTEGER DEFAULT 0",
                         DbObject.HASH, "INTEGER",
@@ -461,6 +505,7 @@ public class DBHelper extends SQLiteOpenHelper {
             createIndex(db, "INDEX", "child_feeds", DbObject.TABLE, DbObject.CHILD_FEED_NAME);
             createIndex(db, "INDEX", "objects_by_hash", DbObject.TABLE, DbObject.HASH);
             createIndex(db, "INDEX", "objects_by_int_key", DbObject.TABLE, DbObject.KEY_INT);
+            createIndex(db, "INDEX", "objects_last_modified", DbObject.TABLE, DbObject.LAST_MODIFIED_TIMESTAMP);
 
             createTable(db, Contact.TABLE, null,
                         Contact._ID, "INTEGER PRIMARY KEY",
@@ -513,7 +558,8 @@ public class DBHelper extends SQLiteOpenHelper {
                     Group.LAST_UPDATED, "INTEGER",
                     Group.LAST_OBJECT_ID, "INTEGER DEFAULT -1",
                     Group.PARENT_FEED_ID, "INTEGER DEFAULT -1",
-                    Group.NUM_UNREAD, "INTEGER DEFAULT 0"
+            Group.NUM_UNREAD, "INTEGER DEFAULT 0",
+            Group.GROUP_TYPE, "TEXT DEFAULT 'group'"
                         );
             createIndex(db, "INDEX", "last_updated", Group.TABLE, Group.LAST_OBJECT_ID);
 	}
@@ -621,8 +667,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             if(cv.getAsString(DbObject.JSON).length() > SIZE_LIMIT)
             	throw new RuntimeException("Messasge size is too large for sending");
-            db.insertOrThrow(DbObject.TABLE, null, cv);
-            return 0;
+            return db.insertOrThrow(DbObject.TABLE, null, cv);
         }
         catch(Exception e){
             // TODO, too spammy
@@ -666,6 +711,8 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.SEQUENCE_ID, nextSeqId);
             cv.put(DbObject.JSON, json.toString());
             cv.put(DbObject.TIMESTAMP, timestamp);
+            cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
+
             if (values.containsKey(DbObject.RAW)) {
                 cv.put(DbObject.RAW, values.getAsByteArray(DbObject.RAW));
             }
@@ -726,6 +773,8 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put(DbObject.TIMESTAMP, timestamp);
             cv.put(DbObject.HASH, hash);
             cv.put(DbObject.SENT, 1);
+
+            cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
             if (raw != null) {
             cv.put(DbObject.RAW, raw);
             }
@@ -782,6 +831,19 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().insertOrThrow(DbRelation.TABLE, null, cv);
     }
 
+    /**
+     * Update the parent's last modified timestamp
+     */
+    public void updateParentLastModified(long id) {
+    	ContentValues cv = new ContentValues();
+    	cv.put(DbObject.LAST_MODIFIED_TIMESTAMP, new Date().getTime());
+        getWritableDatabase().update(
+        		DbObject.TABLE, 
+            cv,
+            DbObject._ID+"='"+id+"'",
+            null);
+    }
+
     public long objIdForHash(long hash) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
@@ -810,7 +872,7 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.i(TAG, "Inserting contact: " + cv);
             String pubKeyStr = cv.getAsString(Contact.PUBLIC_KEY);
             assert (pubKeyStr != null) && pubKeyStr.length() > 0;
-            PublicKey key = DBIdentityProvider.publicKeyFromString(pubKeyStr);
+            PublicKey key = RSACrypto.publicKeyFromString(pubKeyStr);
             cv.put(Contact.PUBLIC_KEY_HASH_64, hashPublicKey(key.getEncoded()));
             String tag = edu.stanford.mobisocial.bumblebee.util.Util.makePersonIdForPublicKey(key);
             cv.put(Contact.PERSON_ID, tag);
@@ -926,8 +988,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
     }
 
-    public Cursor queryFeedList(String[] projection, String selection, String[] selectionArgs,
-            String sortOrder){
+    public Cursor queryFeedList(String realAppId, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder){
 
         /*return getReadableDatabase().rawQuery("SELECT * 
             FROM Group.TABLE, DBObject.TABLE
@@ -936,18 +998,25 @@ public class DBHelper extends SQLiteOpenHelper {
 
         ContentResolver resolver = mContext.getContentResolver();
 
-        String tables = Group.TABLE + ", " + DbObject.TABLE;
-        String selection2 = Group.TABLE + "." + Group.PARENT_FEED_ID + " = -1 " +
-                    " AND " + Group.TABLE + "." + Group.LAST_OBJECT_ID + " = " + DbObject.TABLE + "." + DbObject._ID;
+        final String OBJECTS = DbObject.TABLE;
+        final String GROUPS = Group.TABLE;
+
+        String tables = GROUPS + ", " + OBJECTS;
+        String selection2 = GROUPS + "." + Group.PARENT_FEED_ID + " = -1 " +
+                    " AND " + GROUPS + "." + Group.LAST_OBJECT_ID + " = " +
+                OBJECTS + "." + DbObject._ID;
+        if (!DungBeetleContentProvider.SUPER_APP_ID.equals(realAppId)) {
+            selection2 += " AND " + OBJECTS + "." + DbObject.APP_ID + " = ?";
+            selectionArgs = andArguments(selectionArgs, new String[] { realAppId });   
+        }
         selection = andClauses(selection, selection2);
-        selectionArgs = null;
         if (sortOrder == null) {
             sortOrder = Group.LAST_UPDATED + " DESC";
         }
 
         Cursor c = getReadableDatabase().query(tables, projection, selection, selectionArgs,
                 null, null, sortOrder, null);
-        c.setNotificationUri(resolver, Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist"));
+        c.setNotificationUri(resolver, Feed.feedListUri());
         return c;
     }
 
@@ -1064,8 +1133,9 @@ public class DBHelper extends SQLiteOpenHelper {
         select = andClauses(select, DbObject.APP_ID + "='" + appId + "'");
         }
 
-        // Don't allow custom projection. Just grab everything.
-        String[] projection = new String[]{
+        String[] projection;
+        if (proj == null) {
+            projection = new String[]{
             "o." + DbObject._ID + " as " + DbObject._ID,
             "o." + DbObject.TYPE + " as " + DbObject.TYPE,
             "o." + DbObject.SEQUENCE_ID + " as " + DbObject.SEQUENCE_ID,
@@ -1073,9 +1143,16 @@ public class DBHelper extends SQLiteOpenHelper {
             "o." + DbObject.CONTACT_ID + " as " + DbObject.CONTACT_ID,
             "o." + DbObject.DESTINATION + " as " + DbObject.DESTINATION,
             "o." + DbObject.JSON + " as " + DbObject.JSON,
+                "o." + DbObject.RAW + " as " + DbObject.RAW,
             "o." + DbObject.TIMESTAMP + " as " + DbObject.TIMESTAMP,
             "o." + DbObject.APP_ID + " as " + DbObject.APP_ID
         };
+        } else {
+            projection = new String[proj.length];
+            for (int i = 0; i < proj.length; i++) {
+                projection[i] = "o." + proj[i] + " as " + proj[i];
+            }
+        }
 
         // Double this because select appears twice in full query
         String[] selectArgs = selectionArgs == null ? 
@@ -1115,6 +1192,8 @@ public class DBHelper extends SQLiteOpenHelper {
             DbObject.TABLE,
             new String[]{ DbObject._ID,
             			  DbObject.ENCODED + " IS NOT NULL AS is_encoded",
+            			  DbObject.APP_ID,
+            			  DbObject.SEQUENCE_ID,
             			  DbObject.TYPE,
             			  DbObject.SENT,
             			  DbObject.JSON,
@@ -1223,35 +1302,42 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryFeedMembers(String[] projection, String selection, String[] selectionArgs,
-            String feedName, String appId) {
+            Uri feedUri, String appId) {
         // TODO: Check appId against feed?
 
-        String[] realSelectionArgs = selectionArgs;
+        String feedName = feedUri.getLastPathSegment();
+        int sep = feedName.indexOf(':');
+        if (sep >= 0) {
+            feedName = feedName.substring(0, sep);
+        }
+        FeedType type = Feed.typeOf(feedUri);
         if (feedName != null && !feedName.equals(Feed.FEED_NAME_GLOBAL)) {
-        String feedInnerQuery = new StringBuilder()
-            .append("SELECT M." + GroupMember.CONTACT_ID)
-            .append(" FROM " + GroupMember.TABLE + " M, ")
-            .append(Group.TABLE + " G")
-            .append(" WHERE ")
-            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
-            .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ?").toString();
-        String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
-
-        if (selection == null) {
-            selection = forFeed;
-            realSelectionArgs = new String[] { feedName };
-        } else {
-            selection = andClauses(selection, forFeed);
-            if (selectionArgs == null) {
-                realSelectionArgs = new String[] { feedName };
-            } else {
-                realSelectionArgs = new String[selectionArgs.length + 1];
-                System.arraycopy(selectionArgs, 0, realSelectionArgs, 0, selectionArgs.length);
-                realSelectionArgs[selectionArgs.length] = feedName;
+            String feedInnerQuery;
+            String[] feedInnerArgs = null;
+            switch (type) {
+                case APP:
+                    feedInnerQuery = new StringBuilder()
+                        .append(" SELECT DISTINCT " + DbObject.CONTACT_ID)
+                        .append(" FROM " + DbObject.TABLE)
+                        .append(" WHERE " + DbObject.APP_ID + " = ?").toString();
+                    feedInnerArgs = new String[] { appId };
+                    break;
+                default:
+                    feedInnerQuery = new StringBuilder()
+                        .append("SELECT M." + GroupMember.CONTACT_ID)
+                        .append(" FROM " + GroupMember.TABLE + " M, ")
+                        .append(Group.TABLE + " G")
+                        .append(" WHERE ")
+                        .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
+                        .append(" AND ")
+                        .append("G." + Group.FEED_NAME + " = ?").toString();
+                    feedInnerArgs = new String[] { feedName };
+                    break;
             }
-        }
-        }
+        String forFeed = Contact._ID + " IN ( " + feedInnerQuery + ")";
+            selection = andClauses(selection, forFeed);
+            selectionArgs = andArguments(selectionArgs, feedInnerArgs);
+            }
 
         String groupBy = null;
         String having = null;
@@ -1260,27 +1346,10 @@ public class DBHelper extends SQLiteOpenHelper {
                 Contact.TABLE,
                 projection,
                 selection,
-                realSelectionArgs,
+                selectionArgs,
                 groupBy,
                 having,
                 orderBy);
-    }
-
-    public Cursor queryFeedMembers(String feedName) {
-        // TODO: Check appId against database.
-        String query = new StringBuilder()
-            .append("SELECT C.*")
-            .append(" FROM " + Contact.TABLE + " C, ")
-            .append(GroupMember.TABLE + " M, ")
-            .append(Group.TABLE + " G")
-            .append(" WHERE ")
-            .append("M." + GroupMember.GROUP_ID + " = G." + Group._ID)
-            .append(" AND ")
-            .append("G." + Group.FEED_NAME + " = ? AND " )
-            .append("C." + Contact._ID + " = M." + GroupMember.CONTACT_ID)
-            .toString();
-        return getReadableDatabase().rawQuery(query,
-                new String[] { feedName });
     }
 
     public Cursor queryMemberDetails(String feedName, String personId) {
@@ -1296,7 +1365,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor queryGroups() {
-        String selection = DbObject.FEED_NAME + " not in " +
+        String selection = Group.FEED_NAME + " not in " +
                 "(select " + DbObject.CHILD_FEED_NAME + " from " + DbObject.TABLE +
                 " where " + DbObject.CHILD_FEED_NAME + " is not null)";
         String[] selectionArgs = null;
@@ -1305,10 +1374,16 @@ public class DBHelper extends SQLiteOpenHelper {
         return c;
     }
 
-    public Cursor queryLocalUser(String feed_name) {
+    public Cursor queryLocalUser(String appId, String feed_name) {
         String table = MyInfo.TABLE;
-        String[] columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+        String[] columns;
+        if (DungBeetleContentProvider.SUPER_APP_ID.equals(appId)) {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
+                    MyInfo.PICTURE, MyInfo.PUBLIC_KEY, MyInfo.PRIVATE_KEY };
+        } else {
+            columns = new String[] { Contact.MY_ID + " as " + MyInfo._ID, MyInfo.NAME,
                 MyInfo.PICTURE, MyInfo.PUBLIC_KEY };
+        }
         String selection = null;
         String selectionArgs[] = null;
         String groupBy = null;
@@ -1455,12 +1530,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return C;
     }
 
-	public void markEncoded(long id, byte[] encoded, String json, byte[] raw, long hash) {
+	public void setEncoded(long id, EncodedObj encoded) {
         ContentValues cv = new ContentValues();
-        cv.put(DbObject.ENCODED, encoded);
-        cv.put(DbObject.JSON, json);
-        cv.put(DbObject.RAW, raw);
-        cv.put(DbObject.HASH, hash);
+        cv.put(DbObject.ENCODED, encoded.getEncoded());
+        cv.put(DbObject.HASH, encoded.getHash());
         getWritableDatabase().update(
             DbObject.TABLE, 
             cv,
@@ -1470,10 +1543,10 @@ public class DBHelper extends SQLiteOpenHelper {
         mContext.getContentResolver().notifyChange(objUri, null);
 	}
 
-	public byte[] getEncoded(long id) {
+	public EncodedObj getEncoded(long id) {
         Cursor c = getReadableDatabase().query(
                 DbObject.TABLE,
-                new String[]{ DbObject.ENCODED },
+                new String[]{ DbObject.ENCODED, DbObject.HASH },
                 DbObject._ID + "=?",
                 new String[]{ String.valueOf(id) },
                 null,
@@ -1481,30 +1554,96 @@ public class DBHelper extends SQLiteOpenHelper {
                 null);
 
         try {
-            if(!c.moveToFirst())
+            if (!c.moveToFirst()) {
+                Log.w(TAG, "no matching encoded obj");
             	return null;
-        	return c.getBlob(0);
+            }
+            final byte[] encodedBytes = c.getBlob(0);
+            if (encodedBytes == null) {
+                Log.d(TAG, "obj found but with a null encoding");
+                return null;
+            }
+            final long encodedHash = c.getLong(1);
+        	return new EncodedObj() {
+                @Override
+                public long getHash() {
+                    return encodedHash;
+                }
+                
+                @Override
+                public long getEncodingType() {
+                    return 0;
+                }
+                
+                @Override
+                public byte[] getEncoded() {
+                    return encodedBytes;
+                }
+            };
         } finally {
         	c.close();
         }
 	}
 	//gets all known people's id's, in other words, their public keys.
-    public Set<byte[]> getPublicKeys() {
-    	HashSet<byte[]> key_ss = new HashSet<byte[]>();
+    public List<User> getPKUsersForIds(List<Long> ids) {
+        if (ids.size() == 0) {
+            return new ArrayList<User>(0);
+        }
+        StringBuffer idStr = new StringBuffer();
+        for (Long id : ids) {
+            idStr.append("," + id);
+        }
+        String idList = idStr.substring(1);
+        List<User> users = new ArrayList<User>(ids.size());
+    	String table = Contact.TABLE;
+    	String[] projection = new String[] {Contact.PERSON_ID, Contact.NAME, Contact.PUBLIC_KEY};
+    	String selection = Contact._ID + " in (" + idList + ")";
+    	String[] selectionArgs = null;
+    	String groupBy = null;
+    	String having = null;
+    	String orderBy = null;
         Cursor c = getReadableDatabase().query(
-                Contact.TABLE, 
-                new String[] {Contact._ID, Contact.PUBLIC_KEY},
-                null, null,null,null,null);
+                table, projection, selection, selectionArgs, groupBy, having, orderBy);
         try {
 	        if(c.moveToFirst()) do {
-        	byte[] pk = c.getBlob(1);
-        	key_ss.add(pk);
+	        	users.add(new PKUser(c.getString(0), c.getString(1), c.getString(2)));
 	        } while(c.moveToNext());
-	        return key_ss;	
+	        return users;	
         } finally {
         	c.close();
         }
     }
+
+    class PKUser implements User {
+        final String mId;
+        final String mName;
+        final String mPublicKey;
+
+        public PKUser(String id, String name, String publicKey) {
+            mId = id;
+            mName = name;
+            mPublicKey = publicKey;
+        }
+
+        @Override
+        public String getId() {
+            return mId;
+        }
+
+        @Override
+        public String getName() {
+            return mName;
+        }
+
+        @Override
+        public String getAttribute(String attr) {
+            if (ATTR_RSA_PUBLIC_KEY.equals(attr)) {
+                return mPublicKey;
+            }
+            return null;
+        }
+    }
+
     public static long hashPublicKey(byte[] data) {
     	try {
 	    	MessageDigest m = MessageDigest.getInstance("MD5");
@@ -1774,6 +1913,24 @@ public class DBHelper extends SQLiteOpenHelper {
 	            new String[] { String.valueOf(hash), feedUri.getLastPathSegment()});
 	}
 
+	public void deleteGroup(final Context c, Long groupId){
+		Maybe<Group> mg = Group.forId(c, groupId);
+		try{
+			Group group = mg.get();
+			getWritableDatabase().delete(DbObject.TABLE,
+					DbObject.FEED_NAME + "=?", new String[]{group.feedName});
+			getWritableDatabase().delete(Group.TABLE,
+					Group._ID + "=?", new String[]{ String.valueOf(groupId)});
+			getWritableDatabase().delete(GroupMember.TABLE,
+					GroupMember.GROUP_ID + "=?", new String[]{ String.valueOf(groupId)});
+			
+			mContext.getContentResolver().notifyChange(Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/groups"), null);
+		}
+		catch(Exception e) {
+		}
+	}
+	
+
 	public void markOrDeleteFeedObjs(Uri feedUri, long[] hashes, boolean force) {
 	    StringBuilder hashBuilder = new StringBuilder();
 	    for (long hash : hashes) {
@@ -1812,9 +1969,8 @@ public class DBHelper extends SQLiteOpenHelper {
         modifiedCv.put(Group.LAST_OBJECT_ID, objId);
         int rows = getWritableDatabase().update(Group.TABLE, modifiedCv,
                 Group.FEED_NAME + " = ?", new String[] { feedName });
-        Uri feedlistUri = Uri.parse(DungBeetleContentProvider.CONTENT_URI + "/feedlist");
         Log.d(TAG, "Updating obj on " + feedName + " with " + objId + ", set " + rows);
-        mContext.getContentResolver().notifyChange(feedlistUri, null);
+        mContext.getContentResolver().notifyChange(Feed.feedListUri(), null);
 	}
 
 	public void markOrDeleteObjs(long[] hashes) {

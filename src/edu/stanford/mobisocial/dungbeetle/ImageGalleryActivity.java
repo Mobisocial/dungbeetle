@@ -1,4 +1,25 @@
+/*
+ * Copyright (C) 2011 The Stanford MobiSocial Laboratory
+ *
+ * This file is part of Musubi, a mobile social network.
+ *
+ *  This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 package edu.stanford.mobisocial.dungbeetle;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -53,6 +74,10 @@ import edu.stanford.mobisocial.dungbeetle.util.CommonLayouts;
 import edu.stanford.mobisocial.dungbeetle.util.InstrumentedActivity;
 import edu.stanford.mobisocial.dungbeetle.util.PhotoTaker;
 
+/**
+ * A gallery for viewing all photos in a feed.
+ *
+ */
 public class ImageGalleryActivity extends FragmentActivity implements LoaderCallbacks<Cursor>,
         InstrumentedActivity {
     private static final String TAG = "imageGallery";
@@ -67,6 +92,10 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 	private int mInitialSelection = -1;
 	private CorralClient mCorralClient;
 
+	String mSelection = "type = ?";
+    String[] mSelectionArgs = new String[] { PictureObj.TYPE };
+    String mSortOrder = DbObject._ID + " DESC";
+
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -76,7 +105,18 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         mCorralClient = CorralClient.getInstance(this);
         mFeedUri = getIntent().getData();
         long hash = getIntent().getLongExtra("objHash", -1);
-        mInitialObjId = App.instance().getMusubi().objForHash(hash).getLocalId();
+        if (hash == -1) {
+            toast("No image to view!");
+            finish();
+            return;
+        }
+        DbObj obj = App.instance().getMusubi().objForHash(hash);
+        if (obj == null) {
+            toast("Image does not exist!");
+            finish();
+            return;
+        }
+        mInitialObjId = obj.getLocalId();
 
         getSupportLoaderManager().initLoader(0, null, this);
         mGallery = new SlowGallery(this);
@@ -93,41 +133,35 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
         outState.putInt("selection", mGallery.getSelectedItemPosition());
     }
 
+    // Cursor must be ordered DESC.
+    // The sort order and search order are opposite!
+    private static int binarySearch(Cursor c, long id, int colId) {
+        long test;
+        int first = 0;
+        int max = c.getCount();
+        while (first < max) {
+            int mid = (first + max) / 2;
+            c.moveToPosition(mid);
+            test = c.getLong(colId);
+            if (id > test) {
+                max = mid;
+            } else if (id < test) {
+                first = mid + 1;
+            } else {
+                return mid;
+            }
+        }
+        return 0;
+    }
+
     private static class ImageGalleryAdapter extends CursorAdapter {
         private final Context mContext;
         private final int mInitialSelection;
         private final int COL_JSON;
         private final int COL_ID;
 
-        public static ImageGalleryAdapter forObj(Context context, Cursor cursor, long objId) {
-            int colId = cursor.getColumnIndexOrThrow(DbObject._ID);
-            int init = binarySearch(cursor, objId, colId);
-            return new ImageGalleryAdapter(context, cursor, init);
-        }
-
         public int getInitialSelection() {
             return mInitialSelection;
-        }
-
-        // Cursor must be ordered DESC.
-        // The sort order and search order are opposite!
-        private static int binarySearch(Cursor c, long id, int colId) {
-            long test;
-            int first = 0;
-            int max = c.getCount();
-            while (first < max) {
-                int mid = (first + max) / 2;
-                c.moveToPosition(mid);
-                test = c.getLong(colId);
-                if (id > test) {
-                    max = mid;
-                } else if (id < test) {
-                    first = mid + 1;
-                } else {
-                    return mid;
-                }
-            }
-            return 0;
         }
 
         private ImageGalleryAdapter(Context context, Cursor c, int init) {
@@ -140,7 +174,6 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
-            if (DBG) Log.d(TAG, "binding view");
             ImageView im = (ImageView)view;
             im.setTag(cursor.getLong(COL_ID));
             try {
@@ -154,9 +187,13 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
             }
             DbObj obj = App.instance().getMusubi().objForCursor(cursor);
             byte[] bytes = obj.getRaw();
+            if (bytes == null) {
+                Log.e(TAG, "Null image bytes for " + im.getTag());
+                im.setImageResource(R.drawable.icon_full);
+                return;
+            }
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             im.setImageBitmap(bitmap);
-            if (DBG) Log.d(TAG, "done binding view");
         }
 
         @Override
@@ -377,16 +414,17 @@ public class ImageGalleryActivity extends FragmentActivity implements LoaderCall
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        String selection = "type = ?";
-        String[] selectionArgs = new String[] { PictureObj.TYPE };
-        String order = DbObject._ID + " DESC";
-        return new CursorLoader(this, mFeedUri, null, selection, selectionArgs, order);
+        return new CursorLoader(this, mFeedUri, null, mSelection, mSelectionArgs, mSortOrder);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (mAdapter == null) {
-            mAdapter = ImageGalleryAdapter.forObj(this, cursor, mInitialObjId);
+            String[] projection = new String[] { DbObj.COL_ID };
+            Cursor hashes = getContentResolver().query(
+                    mFeedUri, projection, mSelection, mSelectionArgs, mSortOrder);
+            int init = binarySearch(hashes, mInitialObjId, 0);
+            mAdapter = new ImageGalleryAdapter(this, cursor, init);
             mGallery.setAdapter(mAdapter);
             mGallery.setSelection((mInitialSelection == -1)
                     ? mAdapter.getInitialSelection() : mInitialSelection);
