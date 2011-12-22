@@ -34,32 +34,32 @@ public class AESKeyGenerator {
 		
 		try { // Set up the Cipher class of Android to use AES to generate keys
 			mCipher = Cipher.getInstance("AES");
-			Log.d("Encryption Log", "Created an uninitialized instance AES cipher successfully.");
+			//Log.d("Encryption Log", "Created an uninitialized instance AES cipher successfully.");
 			// Set up key to use in algorithm
 			MessageDigest hasher = MessageDigest.getInstance("SHA-256"); // Initialize object that will hash my key.
-			Log.d("Encryption Log", "Created SHA-256 hasher successfully.");
+			//Log.d("Encryption Log", "Created SHA-256 hasher successfully.");
 			byte[] key256 = hasher.digest(dhkey.getBytes()); // Hash the key to 256 bits using SHA
 			
-			Log.d("Encryption Log", "Key hashed sucessfully.");
+			//Log.d("Encryption Log", "Key hashed sucessfully.");
 			SecretKeySpec K = new SecretKeySpec(key256, "AES");
-			Log.d("Encryption Log", "Secret key spec created successfully.");
+			//Log.d("Encryption Log", "Secret key spec created successfully.");
 			mCipher.init(Cipher.ENCRYPT_MODE, K);
-			Log.d("Encryption Log", "Cipher initialized correctly to encrypt using K.");
+			//Log.d("Encryption Log", "Cipher initialized correctly to encrypt using K.");
 		// Encrypt the parameter toEncrypt
 		try { 
 			retVal = mCipher.doFinal(toEncrypt.getBytes());
-			Log.d("Encryption Log", "Encrypted \"message\" successfully, so now a key has been generated. The key pointer is: " + retVal.toString());
+			//Log.d("Encryption Log", "Encrypted \"message\" successfully, so now a key has been generated. The key pointer is: " + retVal.toString());
 			
 			return retVal;
 		}
 		catch (Exception e)
 		{
-			System.err.println("Was able to create an object Cipher but could not encrypt the bytes");
+			//System.err.println("Was able to create an object Cipher but could not encrypt the bytes");
 		}
 		
 		}
 		catch (Exception e) {
-			System.err.println("Could not create and initialize object Cipher.");
+			//System.err.println("Could not create and initialize object Cipher.");
 		}
 		
 		return null;
@@ -80,34 +80,34 @@ public class AESKeyGenerator {
 			IvParameterSpec ivspec = new IvParameterSpec(iv);*/
 			// Set up the Cipher class of Android to use AES to generate keys
 			mCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-			Log.d("Encryption Log", "Created an uninitialized instance AES cipher successfully.");
+			//Log.d("Encryption Log", "Created an uninitialized instance AES cipher successfully.");
 			// Set up key to use in algorithm
 			MessageDigest hasher = MessageDigest.getInstance("SHA-256"); // Initialize object that will hash my key.
-			Log.d("Encryption Log", "Created SHA-256 hasher successfully.");
+			//Log.d("Encryption Log", "Created SHA-256 hasher successfully.");
 			
 			System.err.println("server key is: " + sharedKey);
 			byte[] key256 = hasher.digest(sharedKey); // Hash the key to 256 bits using SHA
-			Log.d("Encryption Log", "Hashed random value key: " + new BigInteger(key256).toString());
-			Log.d("Encryption Log", "Key hashed sucessfully.");
+			//Log.d("Encryption Log", "Hashed random value key: " + new BigInteger(key256).toString());
+			//Log.d("Encryption Log", "Key hashed sucessfully.");
 			SecretKeySpec K = new SecretKeySpec(key256, "AES");
-			Log.d("Encryption Log", "Secret key spec created successfully.");
+			//Log.d("Encryption Log", "Secret key spec created successfully.");
 			mCipher.init(Cipher.ENCRYPT_MODE, K);
-			Log.d("Encryption Log", "Cipher initialized correctly to encrypt using shared server key.");
+			//Log.d("Encryption Log", "Cipher initialized correctly to encrypt using shared server key.");
 		// Encrypt the parameter toEncrypt
 		try { 
 			retVal = mCipher.doFinal(toEncrypt.getBytes());
-			Log.d("Encryption Log", "Encrypted \"message\" successfully, so now a key has been generated. The key pointer is: " + retVal.toString());
+			//Log.d("Encryption Log", "Encrypted \"message\" successfully, so now a key has been generated. The key pointer is: " + retVal.toString());
 			
 			return retVal;
 		}
 		catch (Exception e)
 		{
-			System.err.println("Was able to create an object Cipher but could not encrypt the bytes");
+			//System.err.println("Was able to create an object Cipher but could not encrypt the bytes");
 		}
 		
 		}
 		catch (Exception e) {
-			System.err.println(e.toString());
+			//System.err.println(e.toString());
 		}
 		
 		return null;

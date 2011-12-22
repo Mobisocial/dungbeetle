@@ -53,7 +53,7 @@ public class UpdateLocation extends Service {
 	// --- CONSTANTS --- //
 	private static final long INTERVAL = 900000; // Interval in which to send encrypted location to server, in milliseconds (900000 = 15 minutes)
 	private static final BigInteger PRIME = BigInteger.valueOf(28147497699961L);
-	private static final int GRID_SIZE = 1000; // 1000 feet is default
+	private static final int GRID_SIZE = 5000; // 5000 feet is default
 	private static final String IP_ADDRESS = "184.106.71.177";
 
 	
@@ -84,13 +84,13 @@ public class UpdateLocation extends Service {
 	
 	private LocationListener locationUpdater = new LocationListener() {
 		public void onLocationChanged(Location location) {
-			Log.d("UpdateLocation.java","Location has changed. About to update location to server.");
+			//Log.d("UpdateLocation.java","Location has changed. About to update location to server.");
 			if (location != null)
 			{
 				
 				latitude=location.getLatitude(); 
 				longitude=location.getLongitude();
-				System.err.println("Location is not null. Latitude: " + latitude + "\t Longitude: " + longitude);
+				//System.err.println("Location is not null. Latitude: " + latitude + "\t Longitude: " + longitude);
 				
 			    // Saved Preferences method of storing variables
 			    // place in random locations for gps locations
@@ -128,10 +128,11 @@ public class UpdateLocation extends Service {
 
 	private void sendLocation()
 	{
+			
 		// get grid size
-	    gridsize = GRID_SIZE; // default is 300 FEET
+	    gridsize = GRID_SIZE;
 	    
-	    Log.d("UpdateLocation.java", "The grid size is: " + gridsize);
+	    //Log.d("UpdateLocation.java", "The grid size is: " + gridsize);
 		
 		// generate locations that are converted to the grid size
 		GridHandler locHelper = new GridHandler();
@@ -154,12 +155,12 @@ public class UpdateLocation extends Service {
 		// because of this lost of precision, I am restricting updating my location to not more than once every 5 seconds.
 		long toEncrypt = ( curDate.getTime() ) >> 12;  
 		
-		Log.d("UpdateLocation.java","B-side, time to encrypt: " + toEncrypt);
+		//Log.d("UpdateLocation.java","B-side, time to encrypt: " + toEncrypt);
 		
 		// Store the most least significant byte of the shifted-by-12-time.
 		Byte timeToSend = new Byte ( (byte) ( toEncrypt & 0xFF) );
 		
-		Log.d("UpdateLocation.java", "Generating and sending keys...");
+		//Log.d("UpdateLocation.java", "Generating and sending keys...");
 		
 		// Create a key generator (that I created)
 		AESKeyGenerator keygen = new AESKeyGenerator();
@@ -170,7 +171,7 @@ public class UpdateLocation extends Service {
 		// calculate the encrypted location for each friend
 		for (Long friend:friendsList){
 			dhkey = new BigInteger(idToSharedKeyMap.get(friend)).toString();
-			Log.d("UpdateLocation.java","FriendID: " + friend + " with key: " + dhkey);
+			//Log.d("UpdateLocation.java","FriendID: " + friend + " with key: " + dhkey);
 			if (dhkey != null){
 				friendIDs.add(friend); // put the array in the map
 				// Generate k_1 and k_2 using toEncrypt variable, each friend has a different k_1 and k_2 and each round in the loop is a different k_1 and k_2
@@ -181,23 +182,23 @@ public class UpdateLocation extends Service {
 					k_2 = new BigInteger (keygen.generate_k(dhkey, (Long.toString( (toEncrypt*10) + (2*j + 2) )) ) ); // generate k_1 by encrypting time concatenated with 2
 
 					randVal = new BigInteger (keygen.generate_r(serverKey, Long.toString(toEncrypt) + Long.toString((3*friendCount) + j + 1) ) ); // generate the random value, r, by encrypting time concatenated with 1
-					System.err.println ("to encrypt before concat: " + Long.toString(toEncrypt));
-					System.err.println ("to encrypt for r: "  + Long.toString(toEncrypt) + Long.toString((3*friendCount) + j + 1) );
+					//System.err.println ("to encrypt before concat: " + Long.toString(toEncrypt));
+					//System.err.println ("to encrypt for r: "  + Long.toString(toEncrypt) + Long.toString((3*friendCount) + j + 1) );
 					// Note: We generate k_1, k_2, and randVal three times per location because of the three grid colors.
-					Log.d("UpdateLocation.java","k_1: " + k_1 + "\t\t k_2: " + k_2.mod(PRIME));
-					Log.d("UpdateLocation.java", "random value, r: "+randVal.toString());
+					//Log.d("UpdateLocation.java","k_1: " + k_1 + "\t\t k_2: " + k_2.mod(PRIME));
+					//Log.d("UpdateLocation.java", "random value, r: "+randVal.toString());
 					friendLocations.add((k_2.add( randVal.multiply(gridLocation[j].add(k_1)) )).mod(PRIME) );
 				}
 				friendCount++;
 			}
 		}
 		
-		System.err.println ("UpdateLocation GRID SIZE: " + gridsize);
+		//System.err.println ("UpdateLocation GRID SIZE: " + gridsize);
 		
 		    
 		if (mClient.sendCurrentLocation(myID, timeToSend, friendIDs, friendLocations, gridsize) && myID != 0)
 		{
-			Log.d("UpdateLocation.java", "Encrypted location has been sent to the server.");
+			//Log.d("UpdateLocation.java", "Encrypted location has been sent to the server.");
 			//Toast.makeText(getApplicationContext(), "Encrypted location has been sent to the server.", Toast.LENGTH_LONG).show();
 		}
 		
@@ -211,8 +212,8 @@ public class UpdateLocation extends Service {
 	
 	@Override
 	public void onCreate() {
-		Toast.makeText(this, "Generating my encrypted location..", Toast.LENGTH_LONG).show();
-		Log.d(TAG, "Within onCreate of UpdateLocation.java");
+		//Toast.makeText(this, "Generating my encrypted location..", Toast.LENGTH_LONG).show();
+		//Log.d(TAG, "Within onCreate of UpdateLocation.java");
 
 		DBHelper dbh = new DBHelper(this);
 		// Initialize the list of friends
@@ -236,10 +237,9 @@ public class UpdateLocation extends Service {
 		    }
 		   	stopSelf();
 		 }
-		// Get my id from saved pref
-		SharedPreferences mySavedID = getSharedPreferences("myID", MODE_PRIVATE); 
-	    myID = mySavedID.getLong("myID", 0L);
-		
+		// Get my id from saved database
+	    myID = dbh.getPublicKeyPrint();
+		//System.err.println("UpdateLocation.java (B-side), ID being sent to server: " + myID);
 		for (int i = 0; i < 3; i++)
 			gridLocation[i] = BigInteger.valueOf(0);
 		
@@ -263,11 +263,11 @@ public class UpdateLocation extends Service {
 		SecureRandom randGenerator = new SecureRandom(seed_bytes);
 		serverKey = new byte[16];
 		randGenerator.nextBytes(serverKey);
-		System.err.println("ServerKey sent to Server: " + new BigInteger(serverKey).toString());
+		//System.err.println("ServerKey sent to Server: " + new BigInteger(serverKey).toString());
 		// send it to the server using client class's function sendSharedKey
 		mClient.sendSharedKey(myID, serverKey);
 		//Toast.makeText(this, "Shared key sent to server", Toast.LENGTH_LONG).show();
-		Log.d("UpdateLocation.java", "Shared key sent to server.");
+		//Log.d("UpdateLocation.java", "Shared key sent to server.");
 		
 		// More or less tell the server that we are still alive, just haven't moved
 		
@@ -281,8 +281,8 @@ public class UpdateLocation extends Service {
 
 	@Override
 	public void onDestroy() {
-		Toast.makeText(this, "Sending encrypted locations stopped.", Toast.LENGTH_LONG).show();
-		Log.d(TAG, "onDestroy");
+		//Toast.makeText(this, "Sending encrypted locations stopped.", Toast.LENGTH_LONG).show();
+		//Log.d(TAG, "onDestroy");
 		//player.stop();
 	}
 	

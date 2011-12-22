@@ -73,15 +73,15 @@ public class RequestLocation extends Service {
 	    		for(;;) {
 	    			iteration();
 	    			try {
-						Thread.sleep(1000 * 5 * 60);
+						Thread.sleep(1000 * 60);
 					} catch (InterruptedException e) {}
 	    		}
 	    	}
 	    	public void iteration() {
 	    	
-	    	    System.err.println("Friends to send to server. Number of friends: " + friendsList.size());
+	    	   // System.err.println("Friends to send to server. Number of friends: " + friendsList.size());
 	    	    for (Long f:friendsList){
-	    	    	System.err.println("Friend: " + f.longValue());
+	    	    	//System.err.println("Friend: " + f.longValue());
 	    	    }
 	    	      
 	    	    // Send friend IDs to the server
@@ -111,7 +111,7 @@ public class RequestLocation extends Service {
 	    	    		if (response.containsKey(friend)){
 	    	    			// Retrieve raw value of time and grid
 	    	    			timeGridBytes = response.get(friend);
-	    	    			System.err.println("Friend that I'm about to send a location for: id=" + friend);
+	    	    			//System.err.println("Friend that I'm about to send a location for: id=" + friend);
 	    	    		
 	    	    			// Separate bytes of time and grid
 	    	    			timeByte = timeGridBytes.get(0);
@@ -123,7 +123,7 @@ public class RequestLocation extends Service {
 	    	    				grid_toOR = grid_toOR & 0x000000FF;
 	    	    				gridsize = gridsize | grid_toOR;
 	    	    			}
-	    	    			System.err.println("Gridsize of this friend: " + gridsize + "\tTime byte: " + timeByte);
+	    	    			//System.err.println("Gridsize of this friend: " + gridsize + "\tTime byte: " + timeByte);
 	    	    	  
 	    	    			// Create the locations converted to the grid size and for every overlapping grid color/type
 	    	    			ArrayList<BigInteger> myLocs = new ArrayList<BigInteger>();
@@ -142,7 +142,7 @@ public class RequestLocation extends Service {
 	    	    			long toOR = timeByte.longValue();
 	    	    			toOR = toOR & 0x00000000000000FFL; 
 	    	    			toEncrypt = toEncrypt | toOR; // Add on the time byte that B sent to completely synchronize the times
-	    	    			Log.d("UpdateLocation.java","A-side, time to encrypt: " + toEncrypt);
+	    	    			//Log.d("UpdateLocation.java","A-side, time to encrypt: " + toEncrypt);
 	    	    			
 	    	    			// k_1 is different for each friend and each overlapping grid
 	    	    			for (int j = 0; j < 3; j++){
@@ -150,7 +150,7 @@ public class RequestLocation extends Service {
 	    	    				BigInteger k_2_temp = new BigInteger (keygen.generate_k(dhkey, (Long.toString( (toEncrypt*10) + (2*j + 2) )) ) );
 	    	    				k_2_temp = k_2_temp.mod(PRIME);
 	    	    				three_k_2.add( k_2_temp ); // generate k_2 and store it in an array for later usage
-	    	    				Log.d("UpdateLocation.java","k_1: " + k_1 + "\tk_2: " + k_2_temp);
+	    	    				//Log.d("UpdateLocation.java","k_1: " + k_1 + "\tk_2: " + k_2_temp);
 	    	    				myLocs.set( j, (k_1.add(myLocs.get(j))).mod(PRIME) );  
 	    	    			}
 	    	    			
@@ -164,7 +164,7 @@ public class RequestLocation extends Service {
 	    	    		}
 	    	    	}
 	    	    
-	    	    	System.err.println ("About to send the server packet A3");
+	    	    	//System.err.println ("About to send the server packet A3");
 	    	    	// Send server my info corresponding to the grid size of each friend
 	    	    	mClient.sendClosenessPacket(myLocationsMap, myID);
 	    	    	
@@ -186,12 +186,12 @@ public class RequestLocation extends Service {
 	    	    					{
 	    	    						BigInteger loc = g.next();
 	    	    						ArrayList<BigInteger> keys = k_2Array.get(friendID);
-	    	    						Log.d("UpdateLocation.java", "Final response to match up with k_2: loc: " + loc + "\t key: " + keys.get(keyIndex));
+	    	    						//Log.d("UpdateLocation.java", "Final response to match up with k_2: loc: " + loc + "\t key: " + keys.get(keyIndex));
 	    	    						
 	    	    	    				if (  (loc).equals( keys.get(keyIndex) )  ) // If the final response is k_2, then the friend is nearby
 	    	    	    				{
 	    	    	    					nearby = true;
-	    	    	    					Log.d("UpdateLocation.java", "Final response that matched up: " + loc);
+	    	    	    					//Log.d("UpdateLocation.java", "Final response that matched up: " + loc);
 	    	    	    				}
 	    	    	    				else
 	    	    	    					nearby = false;
@@ -220,7 +220,7 @@ public class RequestLocation extends Service {
 	    	    else // If initial response message is null, it means all friends are not available
 	    	    { 
 		    	    for (Long friend:friendsList){
-		    	    	System.err.println("ID of Friend who isn't available: " + friend);
+		    	    	//System.err.println("ID of Friend who isn't available: " + friend);
 		    	    	dbh.setNearby(friend, false);
 		    	    }
 	    	    }
@@ -231,60 +231,6 @@ public class RequestLocation extends Service {
 	    AThread.start();
 	    
 	}
-	// --- HANDLER --- //
-	/*final Handler messageHandler = new Handler() {
-		public void handleMessage(Message msg)
-		{
-			Bundle b;
-			switch(msg.what)
-			{
-				case(1):
-					b = msg.getData();
-					mNearby.append( b.getString("nearby") + "\n" );
-					System.err.println("setting nearby");
-				break;
-				case(2):
-					b = msg.getData();
-					mNotNearby.append( b.getString("notNearby") + "\n" );
-					System.err.println("setting not nearby");
-				break;
-				case (3):
-					b = msg.getData();
-					mNotAvail.append( b.getString("notAvail") + "\n" );
-					System.err.println("setting not available");
-				break;
-				
-			}
-			
-		}
-	};*/
-	
-	/*private void updateNearby(String name)
-	{
-		Message msg = Message.obtain(messageHandler, 1, name);
-		Bundle bundle = new Bundle(1);
-		bundle.putString("nearby", name);
-		msg.setData(bundle);
-		messageHandler.sendMessage(msg);
-	}
-	
-	private void updateNotNearby(String name)
-	{
-		Message msg = Message.obtain(messageHandler, 2, name);
-		Bundle bundle = new Bundle(1);
-		bundle.putString("notNearby", name);
-		msg.setData(bundle);
-		messageHandler.sendMessage(msg);
-	}
-	
-	private void updateNotAvailable(String name)
-	{
-		Message msg = Message.obtain(messageHandler, 3, name);
-		Bundle bundle = new Bundle(1);
-		bundle.putString("notAvail", name);
-		msg.setData(bundle);
-		messageHandler.sendMessage(msg);
-	}*/
 	
 	@Override
 	public IBinder onBind(Intent intent) {
